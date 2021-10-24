@@ -107,6 +107,25 @@ pub fn build_login_packet(uin: u32, body_type: u8, key: &[u8], body: &[u8], extr
     w
 }
 
+pub fn build_uni_packet(uin: i64, seq: u16, command_name: &str, encrypt_type: u8, session_id: &[u8], extra_data: &[u8], key: &[u8], body: &[u8]) -> Vec<u8> {
+    let mut w2 = Vec::new();
+    {
+        w2.put_u32(0x0B);
+        w2.put_u8(encrypt_type);
+        w2.put_u32(seq as u32);
+        w2.put_u8(0);
+        w2.write_string(&uin.to_string());
+
+        let mut w3 = Vec::new();
+        w3.write_uni_packet(command_name, session_id, extra_data, body);
+        w2.encrypt_and_write(key, &w3);
+    }
+    let mut w = Vec::new();
+    w.put_u32((w2.len() + 4) as u32);
+    w.put_slice(&w2);
+    w
+}
+
 // pub fn build_qrcode_fetch_request_packet(seq: u16) -> Vec<u8> {
 //     let watch = gen_version_info(&ClientProtocol::AndroidWatch);
 // }

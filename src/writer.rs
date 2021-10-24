@@ -8,6 +8,7 @@ pub trait BinaryWriter {
     fn write_hex(&mut self, h: &str);
     fn write_int_lv_packet(&mut self, offset: usize, data: &[u8]);
     fn write_string(&mut self, v: &str);
+    fn write_uni_packet(&mut self, command_name: &str, session_id: &[u8], extra_data: &[u8], body: &[u8]);
 }
 
 impl<B> BinaryWriter for B
@@ -36,5 +37,26 @@ impl<B> BinaryWriter for B
         let payload = v.as_bytes();
         self.put_u32((payload.len() + 4) as u32);
         self.put_slice(&payload)
+    }
+
+    fn write_uni_packet(&mut self, command_name: &str, session_id: &[u8], extra_data: &[u8], body: &[u8]) {
+        let mut w1 = Vec::new();
+        {
+            w1.write_string(command_name);
+            w1.put_u32(8);
+            w1.put_slice(session_id);
+            if extra_data.len() == 0 {
+                w1.put_u32(0x04)
+            } else {
+                w1.put_u32((extra_data.len() + 4) as u32);
+                w1.put_slice(extra_data);
+            }
+        }
+
+        let mut w = Vec::new();
+        w.put_u32((w1.len() + 4) as u32);
+        w.put_slice(&w1);
+        w.put_u32((body.len() + 4) as u32);
+        w.put_slice(body);
     }
 }
