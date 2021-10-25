@@ -8,6 +8,7 @@ pub trait BinaryWriter {
     fn write_hex(&mut self, h: &str);
     fn write_int_lv_packet(&mut self, offset: usize, data: &[u8]);
     fn write_string(&mut self, v: &str);
+    fn write_tlv_limited_size(&mut self, data: &[u8], limit: isize);
 }
 
 impl<B> BinaryWriter for B
@@ -36,5 +37,17 @@ impl<B> BinaryWriter for B
         let payload = v.as_bytes();
         self.put_u32((payload.len() + 4) as u32);
         self.put_slice(&payload)
+    }
+
+    fn write_tlv_limited_size(&mut self, data: &[u8], limit: isize) {
+        if data.len() <= limit as usize {
+            self.write_bytes_short(data);
+            return;
+        }
+        let mut count: usize = 0;
+        while count != limit as usize {
+            self.put_u8(data[count]);
+            count += 1;
+        }
     }
 }
