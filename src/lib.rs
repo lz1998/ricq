@@ -6,6 +6,8 @@ pub mod encrypt;
 pub mod hex;
 pub mod tea;
 pub mod client;
+pub mod device;
+pub mod client_packet;
 
 pub mod protocol {
     pub fn test() -> i32 {

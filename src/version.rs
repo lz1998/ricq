@@ -7,18 +7,18 @@ pub enum ClientProtocol {
 }
 
 pub struct VersionInfo {
-    apk_sign: Vec<u8>,
-    apk_id: String,
-    sort_version_name: String,
-    sdk_version: String,
-    app_id: u32,
-    sub_app_id: u32,
-    build_time: u32,
-    sso_version: u32,
-    misc_bitmap: u32,
-    sub_sig_map: u32,
-    main_sig_map: u32,
-    protocol: ClientProtocol,
+    pub apk_sign: Vec<u8>,
+    pub apk_id: String,
+    pub sort_version_name: String,
+    pub sdk_version: String,
+    pub app_id: u32,
+    pub sub_app_id: u32,
+    pub build_time: u32,
+    pub sso_version: u32,
+    pub misc_bitmap: u32,
+    pub sub_sig_map: u32,
+    pub main_sig_map: u32,
+    pub protocol: ClientProtocol,
 }
 
 pub fn gen_version_info(p: &ClientProtocol) -> VersionInfo {

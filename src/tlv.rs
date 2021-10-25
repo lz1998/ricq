@@ -22,7 +22,7 @@ pub fn t1(uin: u32, ip: &Vec<u8>) -> Vec<u8> {
     return buf;
 }
 
-pub fn t1b(micro: u32, version: u32, size: u32, margin: u32, dpi: u32, ecLevel: u32, hint: u32) -> Vec<u8> {
+pub fn t1b(micro: u32, version: u32, size: u32, margin: u32, dpi: u32, ec_level: u32, hint: u32) -> Vec<u8> {
     let mut buf = Vec::new();
     buf.put_u16(0x1b);
     buf.write_bytes_short(&{
@@ -32,7 +32,7 @@ pub fn t1b(micro: u32, version: u32, size: u32, margin: u32, dpi: u32, ecLevel: 
         w.put_u32(size);
         w.put_u32(margin);
         w.put_u32(dpi);
-        w.put_u32(ecLevel);
+        w.put_u32(ec_level);
         w.put_u32(hint);
         w.put_u16(0);
         w
@@ -111,6 +111,12 @@ pub fn t35(product_type: u32) -> Vec<u8> {
 mod tests {
     use chrono::Utc;
     use crate::tlv::{t1, t16, t1b, t1d, t1f, t33, t35};
+
+    #[test]
+    fn test_time() {
+        println!("{}", Utc::now().timestamp());
+        // println!("{:?}", result)
+    }
 
     #[test]
     fn test_t1() {

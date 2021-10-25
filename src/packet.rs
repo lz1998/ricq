@@ -3,7 +3,7 @@ use crate::writer::{BinaryWriter};
 use crate::encrypt::IEncryptMethod;
 use crate::version::{ClientProtocol, gen_version_info};
 
-pub fn build_oicq_request_packet<E>(uin: u32, command_id: u16, encrypt: E, key: &[u8], body: &[u8]) -> Vec<u8>
+pub fn build_oicq_request_packet<E>(uin: u32, command_id: u16, encrypt: &E, key: &[u8], body: &[u8]) -> Vec<u8>
     where E: IEncryptMethod
 {
     let body = encrypt.do_encrypt(body, key);
