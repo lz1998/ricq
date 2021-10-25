@@ -1,5 +1,5 @@
 use bytes::BufMut;
-use crate::writer::{BinaryWriter};
+use crate::binary_writer::{BinaryWriter};
 use crate::encrypt::IEncryptMethod;
 use crate::version::{ClientProtocol, gen_version_info};
 

@@ -4,7 +4,7 @@ use openssl::ec::{EcGroup, EcPoint, EcKey, PointConversionForm};
 use openssl::nid::Nid;
 use crate::hex::decode_hex;
 use crate::tea::qqtea_encrypt;
-use crate::writer::BinaryWriter;
+use crate::binary_writer::BinaryWriter;
 
 pub trait IEncryptMethod {
     fn id(&self) -> u8;

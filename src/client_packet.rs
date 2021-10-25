@@ -5,7 +5,7 @@ use crate::client::Client;
 use crate::packet::{build_code2d_request_packet, build_login_packet, build_oicq_request_packet, build_sso_packet};
 use crate::tlv::{t16, t1b, t1d, t1f, t33, t35};
 use crate::version::{ClientProtocol, gen_version_info};
-use crate::writer::BinaryWriter;
+use crate::binary_writer::BinaryWriter;
 
 trait ClientPacket {
     fn build_qrcode_fetch_request_packet(&mut self) -> (u16, Vec<u8>);

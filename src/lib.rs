@@ -1,6 +1,6 @@
 pub mod packet;
 pub mod tlv;
-pub mod writer;
+pub mod binary_writer;
 pub mod version;
 pub mod encrypt;
 pub mod hex;

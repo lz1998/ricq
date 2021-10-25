@@ -1,3 +1,4 @@
+//手机设备信息
 pub struct DeviceInfo {
     pub display: String,
     pub product: String,
@@ -24,6 +25,7 @@ pub struct DeviceInfo {
     pub guid: Vec<u8>,
 }
 
+//系统版本
 pub struct Version {
     pub incremental: String,
     pub release: String,

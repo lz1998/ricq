@@ -1,6 +1,6 @@
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use chrono::Utc;
-use crate::writer::BinaryWriter;
+use crate::binary_writer::BinaryWriter;
 
 
 pub fn t1(uin: u32, ip: &Vec<u8>) -> Vec<u8> {
