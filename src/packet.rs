@@ -72,7 +72,7 @@ pub fn build_code2d_request_packet(seq: u32, j: u64, cmd: u16, body: &[u8]) -> V
     w.put_u8(2);
     w.put_u16((43 + body.len() + 1) as u16);
     w.put_u16(cmd);
-    w.put_slice(&vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+    w.put_slice(&vec![0; 21]);
     w.put_u8(3);
     w.put_u16(0);
     w.put_u16(50);

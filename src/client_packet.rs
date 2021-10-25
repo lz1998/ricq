@@ -40,7 +40,7 @@ impl ClientPacket for Client {
             w
         });
         let sso = build_sso_packet(seq, watch.app_id, self.version.sub_app_id, "wtlogin.trans_emp", &self.device_info.imei, &vec![], &self.out_going_packet_session_id, &req, &self.ksid);
-        let packet = build_login_packet(0, 2, &vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], &sso, &vec![]);
+        let packet = build_login_packet(0, 2, &vec![0; 16], &sso, &vec![]);
         return (seq, packet);
     }
 
@@ -67,7 +67,7 @@ impl ClientPacket for Client {
             w
         });
         let sso = build_sso_packet(seq, watch.app_id, self.version.sub_app_id, "wtlogin.trans_emp", &self.device_info.imei, &vec![], &self.out_going_packet_session_id, &req, &self.ksid);
-        let packet = build_login_packet(0, 2, &vec![0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], &sso, &vec![]);
+        let packet = build_login_packet(0, 2, &vec![0; 16], &sso, &vec![]);
         return (seq, packet);
     }
 }
