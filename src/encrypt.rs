@@ -1,7 +1,10 @@
+use bytes::BufMut;
 use openssl::bn::{BigNum, BigNumContext};
 use openssl::ec::{EcGroup, EcPoint, EcKey, PointConversionForm};
 use openssl::nid::Nid;
 use crate::hex::decode_hex;
+use crate::tea::qqtea_encrypt;
+use crate::writer::BinaryWriter;
 
 pub trait IEncryptMethod {
     fn id(&self) -> u8;
@@ -10,7 +13,7 @@ pub trait IEncryptMethod {
 
 #[derive(Debug)]
 pub struct EncryptECDH {
-    initial_share_key: Vec<u8>,
+    pub initial_share_key: Vec<u8>,
     public_key: Vec<u8>,
     public_key_ver: u16,
 }
@@ -54,7 +57,16 @@ impl IEncryptMethod for EncryptECDH {
     }
 
     fn do_encrypt(&self, data: &[u8], key: &[u8]) -> Vec<u8> {
-        todo!()
+        let mut w = Vec::new();
+        w.put_u8(0x02);
+        w.put_u8(0x01);
+        w.put_slice(key);
+        w.put_u16(0x01_31);
+        w.put_u16(self.public_key_ver);
+        w.put_u16(self.public_key.len() as u16);
+        w.put_slice(&self.public_key);
+        w.encrypt_and_write(&self.initial_share_key, data);
+        w
     }
 }
 
@@ -68,7 +80,12 @@ impl IEncryptMethod for EncryptSession {
     }
 
     fn do_encrypt(&self, data: &[u8], key: &[u8]) -> Vec<u8> {
-        todo!()
+        let encrypt = qqtea_encrypt(data, key);
+        let mut w = Vec::new();
+        w.put_u16(self.t133.len() as u16);
+        w.put_slice(&self.t133);
+        w.put_slice(&encrypt);
+        w
     }
 }
 
