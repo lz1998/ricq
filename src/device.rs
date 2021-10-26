@@ -30,7 +30,7 @@ pub struct DeviceInfo {
     pub vendor_name: String,
     pub vendor_os_name: String,
     // generate
-    pub(crate) guid: Vec<u8>,
+    pub guid: Vec<u8>,
     // generate
     tgtgt_key: Vec<u8>,
 }

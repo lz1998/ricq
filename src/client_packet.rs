@@ -7,7 +7,7 @@ use crate::tlv::{t16, t1b, t1d, t1f, t33, t35};
 use crate::version::{ClientProtocol, gen_version_info};
 use crate::binary_writer::BinaryWriter;
 
-trait ClientPacket {
+pub trait ClientPacket {
     fn build_qrcode_fetch_request_packet(&mut self) -> (u16, Vec<u8>);
     fn build_qrcode_result_query_request_packet(&mut self, sig: &[u8]) -> (u16, Vec<u8>);
 }

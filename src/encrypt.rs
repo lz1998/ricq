@@ -14,7 +14,7 @@ pub trait IEncryptMethod {
 #[derive(Debug)]
 pub struct EncryptECDH {
     pub initial_share_key: Vec<u8>,
-    public_key: Vec<u8>,
+    pub public_key: Vec<u8>,
     public_key_ver: u16,
 }
 
