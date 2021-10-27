@@ -21,6 +21,7 @@ mod tests {
     use std::io::{Read, Write};
     use std::net::TcpStream;
     use std::str::from_utf8;
+    use byteorder::{BigEndian, ReadBytesExt};
     use crate::client::Client;
     use crate::client_packet::ClientPacket;
 
@@ -44,9 +45,11 @@ mod tests {
                 stream.write(&pkt).unwrap();
                 println!("Sent Hello, awaiting reply...");
 
-                let mut data = [0 as u8; 10240]; // using 6 byte buffer
+                let l = stream.read_i32::<BigEndian>().unwrap();
+                println!("recv_pkt_len: {}", l);
+                let mut data = vec![0 as u8; l as usize - 4];
                 stream.read(&mut data);
-                println!("resp: {:?}", data);
+                println!("recv_pkt: {:?}", data);
                 // match stream.read_exact(&mut data) {
                 //     Ok(_) => {
                 //         if &data == msg {
