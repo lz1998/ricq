@@ -9,6 +9,7 @@ pub trait BinaryWriter {
     fn write_int_lv_packet(&mut self, offset: usize, data: &[u8]);
     fn write_string(&mut self, v: &str);
     fn write_uni_packet(&mut self, command_name: &str, session_id: &[u8], extra_data: &[u8], body: &[u8]);
+    fn write_tlv_limited_size(&mut self, data: &[u8], limit: isize);
 }
 
 impl<B> BinaryWriter for B
@@ -58,5 +59,13 @@ impl<B> BinaryWriter for B
         w.put_slice(&w1);
         w.put_u32((body.len() + 4) as u32);
         w.put_slice(body);
+    }
+
+    fn write_tlv_limited_size(&mut self, data: &[u8], limit: isize) {
+        if data.len() <= limit as usize {
+            self.write_bytes_short(data);
+            return;
+        }
+        self.write_bytes_short(&data[..(limit as usize)])
     }
 }
