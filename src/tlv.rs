@@ -8,10 +8,10 @@ pub fn t1(uin: u32, ip: &Vec<u8>) -> Vec<u8> {
     if ip.len() != 4 {
         panic!("invalid ip")
     }
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x01);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u16(1);
         w.put_u32(rand::random());
         w.put_u32(uin);
@@ -24,10 +24,10 @@ pub fn t1(uin: u32, ip: &Vec<u8>) -> Vec<u8> {
 }
 
 pub fn t1b(micro: u32, version: u32, size: u32, margin: u32, dpi: u32, ec_level: u32, hint: u32) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x1b);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u32(micro);
         w.put_u32(version);
         w.put_u32(size);
@@ -42,10 +42,10 @@ pub fn t1b(micro: u32, version: u32, size: u32, margin: u32, dpi: u32, ec_level:
 }
 
 pub fn t1d(misc_bitmap: u32) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x1d);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u8(1);
         w.put_u32(misc_bitmap);
         w.put_u32(0);
@@ -57,10 +57,10 @@ pub fn t1d(misc_bitmap: u32) -> Vec<u8> {
 }
 
 pub fn t1f(is_root: bool, os_name: &[u8], os_version: &[u8], sim_operator_name: &[u8], apn: &[u8], network_type: u16) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x1f);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u8(if is_root { 1 } else { 0 });
         w.write_bytes_short(os_name);
         w.write_bytes_short(os_version);
@@ -74,10 +74,10 @@ pub fn t1f(is_root: bool, os_name: &[u8], os_version: &[u8], sim_operator_name: 
 }
 
 pub fn t2(result: &str, sign: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x02);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u16(0);
         w.write_bytes_short(&result.as_bytes().to_vec());
         w.write_bytes_short(sign);
@@ -87,10 +87,10 @@ pub fn t2(result: &str, sign: &[u8]) -> Vec<u8> {
 }
 
 pub fn t8(local_id: u32) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x8);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u16(0);
         w.put_u32(local_id);
         w.put_u16(0);
@@ -100,17 +100,17 @@ pub fn t8(local_id: u32) -> Vec<u8> {
 }
 
 pub fn t10a(arr: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x10A);
     buf.write_bytes_short(arr);
     return buf;
 }
 
 pub fn t16(sso_version: u32, app_id: u32, sub_app_id: u32, guid: &[u8], apk_id: &[u8], apk_version_name: &[u8], apk_sign: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x16);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u32(sso_version);
         w.put_u32(app_id);
         w.put_u32(sub_app_id);
@@ -124,17 +124,17 @@ pub fn t16(sso_version: u32, app_id: u32, sub_app_id: u32, guid: &[u8], apk_id: 
 }
 
 pub fn t16a(arr: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x16A);
     buf.write_bytes_short(arr);
     return buf;
 }
 
 pub fn t16e(build_model: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x16E);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_slice(&build_model);
         w
     });
@@ -142,10 +142,10 @@ pub fn t16e(build_model: &[u8]) -> Vec<u8> {
 }
 
 pub fn t17a(value: i32) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x17a);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u32(value as u32);
         w
     });
@@ -153,10 +153,10 @@ pub fn t17a(value: i32) -> Vec<u8> {
 }
 
 pub fn t17c(code: &str) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x17c);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.write_bytes_short(&code.as_bytes().to_vec());
         w
     });
@@ -164,10 +164,10 @@ pub fn t17c(code: &str) -> Vec<u8> {
 }
 
 pub fn t18(app_id: u32, uin: u32) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x18);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u16(1);
         w.put_u32(1536);
         w.put_u32(app_id);
@@ -181,17 +181,17 @@ pub fn t18(app_id: u32, uin: u32) -> Vec<u8> {
 }
 
 pub fn t33(guid: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x33);
     buf.write_bytes_short(guid);
     return buf;
 }
 
 pub fn t35(product_type: u32) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x35);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u32(product_type);
         w
     });
@@ -199,10 +199,10 @@ pub fn t35(product_type: u32) -> Vec<u8> {
 }
 
 pub fn t52d(dev_info: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x52d);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_slice(&dev_info);
         w
     });
@@ -210,10 +210,10 @@ pub fn t52d(dev_info: &[u8]) -> Vec<u8> {
 }
 
 pub fn t100(sso_version: u32, protocol: u32, main_sig_map: u32) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x100);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u16(1);
         w.put_u32(sso_version);
         w.put_u32(16);
@@ -226,17 +226,17 @@ pub fn t100(sso_version: u32, protocol: u32, main_sig_map: u32) -> Vec<u8> {
 }
 
 pub fn t104(data: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x104);
     buf.write_bytes_short(&data);
     buf
 }
 
 pub fn t106(uin: u32, salt: u32, app_id: u32, sso_ver: u32, password_md5: [u8; 16], guid_available: bool, guid: &[u8], tgtgt_key: &[u8], wtf: u32) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x106);
-    let body = &{
-        let mut w = Vec::new();
+    let body: &Vec<u8> = &{
+        let mut w: Vec<u8> = Vec::new();
         w.put_u16(4);
         w.put_u32(rand::random::<u32>());
         w.put_u32(sso_ver);
@@ -275,12 +275,12 @@ pub fn t106(uin: u32, salt: u32, app_id: u32, sso_ver: u32, password_md5: [u8; 1
             b[2] = (v >> 8 as u8) as u8;
             b[3] = (v as u8);
         }
-        let mut w = Vec::new();
-        let mut b= vec![0; 4];
+        let mut w: Vec<u8> = Vec::new();
+        let mut b: Vec<u8> = vec![0; 4];
         if salt != 0 {
-            put_u32( & mut b , salt)
+            put_u32(&mut b, salt)
         } else {
-            put_u32( & mut b , uin)
+            put_u32(&mut b, uin)
         }
         let mut v: Vec<u8> = Vec::new();
         for i in password_md5 {
@@ -292,20 +292,17 @@ pub fn t106(uin: u32, salt: u32, app_id: u32, sso_ver: u32, password_md5: [u8; 1
         for i in b {
             v.push(i)
         }
-        println!("{:?}", &v);
-        let key = md5::compute(&v);
-        println!("{:?}", key.as_ref());
-        w.encrypt_and_write(key.as_ref(), body);
+        w.encrypt_and_write(md5::compute(&v).as_ref(), body);
         w
     });
     buf
 }
 
 pub fn t107(pic_type: u16) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x107);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u16(pic_type);
         w.push(0x00);
         w.put_u16(0);
@@ -316,14 +313,14 @@ pub fn t107(pic_type: u16) -> Vec<u8> {
 }
 
 pub fn t108(imei: &str) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x108);
     buf.write_bytes_short(&imei.as_bytes().to_vec());
     buf
 }
 
 pub fn t109(android_id: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x109);
     buf.write_bytes_short(&{
         let mut w: Vec<u8> = Vec::new();
@@ -338,10 +335,10 @@ pub fn t109(android_id: &[u8]) -> Vec<u8> {
 }
 
 pub fn t116(misc_bitmap: u32, sub_sig_map: u32) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x116);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.push(0x00);
         w.put_u32(misc_bitmap);
         w.put_u32(sub_sig_map);
@@ -353,10 +350,10 @@ pub fn t116(misc_bitmap: u32, sub_sig_map: u32) -> Vec<u8> {
 }
 
 pub fn t124(os_type: &[u8], os_version: &[u8], sim_info: &[u8], apn: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x124);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.write_tlv_limited_size(os_type, 16);
         w.write_tlv_limited_size(os_version, 16);
         w.put_u16(2);
@@ -370,10 +367,10 @@ pub fn t124(os_type: &[u8], os_version: &[u8], sim_info: &[u8], apn: &[u8]) -> V
 }
 
 pub fn t128(is_guid_from_file_null: bool, is_guid_available: bool, is_guid_changed: bool, guid_flag: u32, build_model: &[u8], guid: &[u8], build_brand: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x128);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u16(0);
         w.put_u8(if is_guid_from_file_null { 1 } else { 0 });
         w.put_u8(if is_guid_available { 1 } else { 0 });
@@ -388,10 +385,10 @@ pub fn t128(is_guid_from_file_null: bool, is_guid_available: bool, is_guid_chang
 }
 
 pub fn t141(sim_info: &[u8], apn: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x141);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u16(1);
         w.write_bytes_short(sim_info);
         w.put_u16(2);
@@ -402,10 +399,10 @@ pub fn t141(sim_info: &[u8], apn: &[u8]) -> Vec<u8> {
 }
 
 pub fn t142(apk_id: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x142);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u16(0);
         w.write_tlv_limited_size(apk_id, 32);
         w
@@ -414,7 +411,7 @@ pub fn t142(apk_id: &[u8]) -> Vec<u8> {
 }
 
 pub fn t143(arr: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x143);
     buf.write_bytes_short(arr);
     buf
@@ -423,12 +420,12 @@ pub fn t143(arr: &[u8]) -> Vec<u8> {
 pub fn t144(imei: &[u8], dev_info: &[u8], os_type: &[u8], os_version: &[u8], sim_info: &[u8], apn: &[u8],
             is_guid_from_file_null: bool, is_guid_available: bool, is_guid_changed: bool,
             guid_flag: u32,
-            build_model: &[u8], guid: &[u8], build_brand: &[u8], tgtgt_key: &[u8]
+            build_model: &[u8], guid: &[u8], build_brand: &[u8], tgtgt_key: &[u8],
 ) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x144);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.encrypt_and_write(tgtgt_key, &{
             let mut ww = Vec::new();
             ww.put_u16(5);
@@ -439,7 +436,6 @@ pub fn t144(imei: &[u8], dev_info: &[u8], os_type: &[u8], os_version: &[u8], sim
             ww.put_slice(&t16e(build_model));
             ww
         });
-        println!("{:?}",w);
         w
     });
     buf
@@ -447,10 +443,10 @@ pub fn t144(imei: &[u8], dev_info: &[u8], os_type: &[u8], os_version: &[u8], sim
 
 
 pub fn t145(guid: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x145);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_slice(&guid);
         w
     });
@@ -458,10 +454,10 @@ pub fn t145(guid: &[u8]) -> Vec<u8> {
 }
 
 pub fn t147(app_id: u32, apk_version_name: &[u8], apk_signature_md5: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x147);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u32(app_id);
         w.write_tlv_limited_size(apk_version_name, 32);
         w.write_tlv_limited_size(apk_signature_md5, 32);
@@ -471,10 +467,10 @@ pub fn t147(app_id: u32, apk_version_name: &[u8], apk_signature_md5: &[u8]) -> V
 }
 
 pub fn t154(seq: u16) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x154);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u32(seq as u32);
         w
     });
@@ -482,10 +478,10 @@ pub fn t154(seq: u16) -> Vec<u8> {
 }
 
 pub fn t166(image_type: u8) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x166);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u8(image_type);
         w
     });
@@ -493,17 +489,17 @@ pub fn t166(image_type: u8) -> Vec<u8> {
 }
 
 pub fn t174(data: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x174);
     buf.write_bytes_short(&data);
     buf
 }
 
 pub fn t177(build_time: u32, sdk_version: &str) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x177);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u8(0x01);
         w.put_u32(build_time);
         w.write_bytes_short(sdk_version.as_bytes());
@@ -513,10 +509,10 @@ pub fn t177(build_time: u32, sdk_version: &str) -> Vec<u8> {
 }
 
 pub fn t187(mac_address: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x187);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_slice(md5::compute(&mac_address).as_ref());
         w
     });
@@ -524,10 +520,10 @@ pub fn t187(mac_address: &[u8]) -> Vec<u8> {
 }
 
 pub fn t188(android_id: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x188);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         let mut v: Vec<u8> = Vec::new();
         for i in android_id {
             v.push(*i)
@@ -539,10 +535,10 @@ pub fn t188(android_id: &[u8]) -> Vec<u8> {
 }
 
 pub fn t191(k: u8) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x191);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u8(k);
         w
     });
@@ -550,10 +546,10 @@ pub fn t191(k: u8) -> Vec<u8> {
 }
 
 pub fn t193(ticket: &str) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x193);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_slice(ticket.as_bytes());
         w
     });
@@ -561,10 +557,10 @@ pub fn t193(ticket: &str) -> Vec<u8> {
 }
 
 pub fn t194(imsi_md5: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x194);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_slice(imsi_md5);
         w
     });
@@ -572,7 +568,7 @@ pub fn t194(imsi_md5: &[u8]) -> Vec<u8> {
 }
 
 pub fn t197() -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x197);
     let v: [u8; 1] = [0];
     buf.write_bytes_short(&v);
@@ -580,7 +576,7 @@ pub fn t197() -> Vec<u8> {
 }
 
 pub fn t198() -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x198);
     let v: [u8; 1] = [0];
     buf.write_bytes_short(&v);
@@ -588,10 +584,10 @@ pub fn t198() -> Vec<u8> {
 }
 
 pub fn t202(wifi_bssid: &[u8], wifi_ssid: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x202);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.write_tlv_limited_size(wifi_bssid, 16);
         w.write_tlv_limited_size(wifi_ssid, 32);
         w
@@ -600,10 +596,10 @@ pub fn t202(wifi_bssid: &[u8], wifi_ssid: &[u8]) -> Vec<u8> {
 }
 
 pub fn t400(g: &[u8], uin: i64, guid: &[u8], dpwd: &[u8], j2: i64, j3: i64, rand_seed: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x400);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.encrypt_and_write(g, &{
             let mut ww = Vec::new();
             ww.put_u16(1);
@@ -622,7 +618,7 @@ pub fn t400(g: &[u8], uin: i64, guid: &[u8], dpwd: &[u8], j2: i64, j3: i64, rand
 }
 
 pub fn t401(d: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x401);
     buf.write_bytes_short(&d);
     buf
@@ -635,21 +631,21 @@ pub fn t511(domains: Vec<&str>) -> Vec<u8> {
             arr2.push(d)
         }
     }
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x511);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u16(arr2.len() as u16);
         for d in arr2 {
             let index_of: isize;
             match d.find('(') {
-                None => { index_of = -1}
-                Some(i) => {index_of = i as isize }
+                None => { index_of = -1 }
+                Some(i) => { index_of = i as isize }
             }
             let index_of2: isize;
             match d.find(')') {
-                None => { index_of2 = -1}
-                Some(i) => {index_of2 = i as isize }
+                None => { index_of2 = -1 }
+                Some(i) => { index_of2 = i as isize }
             }
             if index_of != 0 || index_of2 <= 0 {
                 w.put_u8(0x01);
@@ -686,10 +682,10 @@ pub fn t511(domains: Vec<&str>) -> Vec<u8> {
 }
 
 pub fn t516() -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x516);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u32(0);
         w
     });
@@ -697,10 +693,10 @@ pub fn t516() -> Vec<u8> {
 }
 
 pub fn t521(i: u32) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x521);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u32(i);
         w.put_u16(0);
         w
@@ -709,10 +705,10 @@ pub fn t521(i: u32) -> Vec<u8> {
 }
 
 pub fn t525(t536: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x525);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_u16(1);
         w.put_slice(&t536);
         w
@@ -721,10 +717,10 @@ pub fn t525(t536: &[u8]) -> Vec<u8> {
 }
 
 pub fn t536(login_extra_data: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
+    let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x536);
     buf.write_bytes_short(&{
-        let mut w = Vec::new();
+        let mut w: Vec<u8> = Vec::new();
         w.put_slice(&login_extra_data);
         w
     });
@@ -745,7 +741,7 @@ mod tests {
     use crate::tlv::{guid_flag, t1, t100, t104, t106, t107, t108, t109, t10a, t116, t124, t128, t141, t142, t143, t144, t145, t147, t154, t16, t166, t16a, t16e, t174, t177, t17a, t17c, t18, t187, t188, t191, t193, t194, t197, t198, t1b, t1d, t1f, t2, t202, t33, t35, t400, t401, t511, t516, t521, t525, t52d, t536, t8};
 
     static GUID: [u8; 16] = [142, 27, 163, 177, 172, 31, 181, 137, 118, 115, 8, 126, 24, 49, 54, 169];
-    static TGTGT_KEY: [u8; 16] = [199,12,183,107,3,28,81,148,116,20,229,112,0,64,152,255];
+    static TGTGT_KEY: [u8; 16] = [199, 12, 183, 107, 3, 28, 81, 148, 116, 20, 229, 112, 0, 64, 152, 255];
     static UIN: u32 = 349195854;
     static OS_NAME: &[u8] = "android".as_bytes();
     static OS_VERSION: &[u8] = "7.1.2".as_bytes();
@@ -1102,7 +1098,9 @@ mod tests {
 
     #[test]
     fn test_t511() {
-        let result = t511(vec!["domain1", "domain2"]);
+        let result = t511(vec!["tenpay.com", "openmobile.qq.com", "docs.qq.com", "connect.qq.com",
+                               "qzone.qq.com", "vip.qq.com", "gamecenter.qq.com", "qun.qq.com", "game.qq.com",
+                               "qqweb.qq.com", "office.qq.com", "ti.qq.com", "mail.qq.com", "mma.qq.com"]);
         println!("{}", result.len());
         println!("{:?}", result);
     }

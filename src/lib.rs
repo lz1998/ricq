@@ -84,7 +84,15 @@ mod tests {
                         LoginState::QRCodeTimeout => {}
                         LoginState::QRCodeConfirmed => {
                             println!("QRCode confirmed");
-                            // TODO buildQRCodeLoginPacket
+                            let (seq, pkt) = cli.build_qrcode_login_packet(&resp.login_info.tmp_pwd, &resp.login_info.tmp_no_pic_sig, &resp.login_info.tgt_qr);
+                            stream.write(&pkt).unwrap();
+                            let l = stream.read_i32::<BigEndian>().unwrap();
+                            println!("QRCode confirmed - Receive packet length: {}", l);
+                            let mut data = vec![0 as u8; l as usize - 4];
+                            stream.read(&mut data);
+                            println!("QRCode confirmed - Receive packet data: {:?}", data);
+                            let pkt = cli.parse_incoming_packet(&mut data);
+                            println!("QRCode confirmed - Incoming packet: {:?}", pkt);
                             // TODO decode response
                             break
                         }
