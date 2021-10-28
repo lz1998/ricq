@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::io::Read;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use bytes::{Buf, BufMut, Bytes, BytesMut};
@@ -5,7 +6,7 @@ use chrono::Utc;
 use crate::binary_reader::BinaryReader;
 use crate::client::Client;
 use crate::packet::{build_code2d_request_packet, build_login_packet, build_oicq_request_packet, build_sso_packet};
-use crate::tlv::{t16, t1b, t1d, t1f, t33, t35};
+use crate::tlv::{guid_flag, t1, t100, t107, t116, t141, t142, t144, t147, t154, t16, t177, t18, t187, t188, t191, t194, t1b, t1d, t1f, t202, t33, t35, t511, t516, t521, t525, t536, t8};
 use crate::version::{ClientProtocol, gen_version_info};
 use crate::binary_writer::BinaryWriter;
 use crate::tea::qqtea_decrypt;
@@ -57,6 +58,7 @@ pub trait ClientPacket {
     fn build_qrcode_result_query_request_packet(&mut self, sig: &[u8]) -> (u16, Vec<u8>);
     fn parse_incoming_packet(&mut self, payload: &mut [u8]) -> Option<IncomingPacket>;
     fn parse_sso_frame(&mut self, pkt: &mut IncomingPacket) -> bool;
+    fn build_qrcode_login_packet(&mut self, t106: &[u8], t16a: &[u8], t318: &[u8]) -> (u16, Vec<u8>);
 }
 
 impl ClientPacket for Client {
@@ -195,6 +197,95 @@ impl ClientPacket for Client {
         };
         pkt.payload = packet;
         true
+    }
+
+    fn build_qrcode_login_packet(&mut self, t106: &[u8], t16a: &[u8], t318: &[u8]) -> (u16, Vec<u8>) {
+        let seq = self.next_seq();
+        let req = build_oicq_request_packet(self.uin as u32, 0x0810, &self.ecdh, &self.random_key, &{
+            let mut w: Vec<u8> = Vec::new();
+            w.put_u16(9);
+            w.put_u16(24);
+
+            w.put_slice(&t18(16, self.uin as u32));
+            w.put_slice(&t1(self.uin as u32, &self.device_info.ip_address));
+            w.put_slice(&{
+                let mut ww = Vec::new();
+                ww.put_u16(0x106);
+                ww.write_bytes_short(t106);
+                ww
+            });
+            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+            w.put_slice(&t100(self.version.sso_version, self.version.sub_app_id, self.version.main_sig_map));
+            w.put_slice(&t107(0));
+            w.put_slice(&t142(self.version.apk_id.as_bytes()));
+            let device_info = crate::pb::DeviceInfo {
+                bootloader: "".to_string(),
+                proc_version: "".to_string(),
+                codename: "".to_string(),
+                incremental: "".to_string(),
+                fingerprint: "".to_string(),
+                boot_id: "".to_string(),
+                android_id: "".to_string(),
+                base_band: "".to_string(),
+                inner_version: "".to_string()
+            };
+            let mut buf = Vec::new();
+            prost::Message::encode(&device_info, &mut buf).unwrap();
+            w.put_slice(&t144(
+                self.device_info.imei.as_bytes(),
+                &buf,
+                self.device_info.os_type.as_bytes(),
+                self.device_info.version.release.as_bytes(),
+                self.device_info.sim_info.as_bytes(),
+                self.device_info.apn.as_bytes(),
+                false, true, false, guid_flag(),
+                self.device_info.model.as_bytes(),
+                &self.device_info.guid,
+                self.device_info.brand.as_bytes(),
+                &self.device_info.tgtgt_key,
+            ));
+
+            w.put_slice(&t154(seq));
+            w.put_slice(&t147(16,
+                              self.version.sort_version_name.as_bytes(),
+                              &self.version.apk_sign));
+            w.put_slice(&{
+                let mut ww = Vec::new();
+                ww.put_u16(0x16A);
+                ww.write_bytes_short(t16a);
+                ww
+            });
+            w.put_slice(&t154(seq));
+            w.put_slice(&t141(self.device_info.sim_info.as_bytes(), self.device_info.apn.as_bytes()));
+            w.put_slice(&t8(2052));
+            w.put_slice(&t511(vec!["tenpay.com", "openmobile.qq.com", "docs.qq.com", "connect.qq.com",
+                                   "qzone.qq.com", "vip.qq.com", "gamecenter.qq.com", "qun.qq.com", "game.qq.com",
+                                   "qqweb.qq.com", "office.qq.com", "ti.qq.com", "mail.qq.com", "mma.qq.com"]));
+            w.put_slice(&t187(self.device_info.mac_address.as_bytes()));
+            w.put_slice(&t188(self.device_info.android_id.as_bytes()));
+            if self.device_info.imsi_md5.len() != 0 {
+                w.put_slice(&t194(self.device_info.imsi_md5.as_slice()))
+            }
+            w.put_slice(&t191(0x00));
+            if self.device_info.wifi_bssid.len() != 0 && self.device_info.wifi_ssid.len() != 0 {
+                w.put_slice(&t202(self.device_info.wifi_bssid.as_bytes(), self.device_info.wifi_ssid.as_bytes()));
+            }
+            w.put_slice(&t177(self.version.build_time, self.version.sdk_version.as_str()));
+            w.put_slice(&t516());
+            w.put_slice(&t521(8));
+            // let v:Vec<u8> = vec![0x01, 0x00];
+            // w.put_slice(&t525(&t536(&v)));
+            w.put_slice(&{
+                let mut ww = Vec::new();
+                ww.put_u16(0x318);
+                ww.write_bytes_short(t318);
+                ww
+            });
+            w
+        });
+        let sso: Vec<u8> = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", self.device_info.imei.as_str(), &[], self.out_going_packet_session_id.as_slice(), &req, self.ksid.as_slice());
+        let packet: Vec<u8> = build_login_packet(self.uin as u32, 2, &vec![0; 16], &sso, &[]);
+        (seq, packet)
     }
 
 }
