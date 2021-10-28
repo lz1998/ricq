@@ -42,11 +42,10 @@ mod tests {
         match TcpStream::connect("42.81.172.81:80") {
             Ok(mut stream) => {
                 println!("Successfully connected to server");
-                let (seq, pkt) = cli.build_qrcode_fetch_request_packet();
 
+                let (seq, pkt) = cli.build_qrcode_fetch_request_packet();
                 stream.write(&pkt).unwrap();
                 println!("Sent fetch qrcode request");
-
                 let l = stream.read_i32::<BigEndian>().unwrap();
                 println!("Receive packet length: {}", l);
                 let mut data = vec![0 as u8; l as usize - 4];
@@ -54,10 +53,23 @@ mod tests {
                 println!("Receive packet data: {:?}", data);
                 let pkt = cli.parse_incoming_packet(&mut data);
                 println!("Incoming packet: {:?}", pkt);
-                let resp = decode_trans_emp_response(&mut cli, &mut pkt.unwrap().payload);
+                let resp = decode_trans_emp_response(&mut cli, &mut pkt.unwrap().payload).unwrap();
                 println!("FetchQRCodeResp: {:?}", resp);
-                std::fs::write("qrcode.png", resp.unwrap().image_data);
+                std::fs::write("qrcode.png", resp.image_data);
                 println!("qrcode.png is saved.");
+
+
+                let (seq, pkt) = cli.build_qrcode_result_query_request_packet(&resp.sig);
+                stream.write(&pkt).unwrap();
+                let l = stream.read_i32::<BigEndian>().unwrap();
+                println!("Receive packet length: {}", l);
+                let mut data = vec![0 as u8; l as usize - 4];
+                stream.read(&mut data);
+                println!("Receive packet data: {:?}", data);
+                let pkt = cli.parse_incoming_packet(&mut data);
+                println!("Incoming packet: {:?}", pkt);
+                let resp = decode_trans_emp_response(&mut cli, &mut pkt.unwrap().payload).unwrap();
+                println!("QueryQRCodeResp: {:?}", resp);
             }
             Err(e) => {
                 println!("Failed to connect: {}", e);
