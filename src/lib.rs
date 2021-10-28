@@ -23,10 +23,11 @@ mod tests {
     use std::io::{Read, Write};
     use std::net::TcpStream;
     use std::str::from_utf8;
+    use std::time::Duration;
     use byteorder::{BigEndian, ReadBytesExt};
     use crate::client::Client;
     use crate::client_packet::ClientPacket;
-    use crate::decoder::decode_trans_emp_response;
+    use crate::decoder::{decode_trans_emp_response, LoginState};
 
     #[test]
     fn test_connect() {
@@ -43,7 +44,7 @@ mod tests {
             Ok(mut stream) => {
                 println!("Successfully connected to server");
 
-                let (seq, pkt) = cli.build_qrcode_fetch_request_packet();
+                let (seq, pkt) = cli.build_qrcode_fetch_request_packet(); // 获取登录二维码
                 stream.write(&pkt).unwrap();
                 println!("Sent fetch qrcode request");
                 let l = stream.read_i32::<BigEndian>().unwrap();
@@ -58,18 +59,34 @@ mod tests {
                 std::fs::write("qrcode.png", resp.image_data);
                 println!("qrcode.png is saved.");
 
-
-                let (seq, pkt) = cli.build_qrcode_result_query_request_packet(&resp.sig);
-                stream.write(&pkt).unwrap();
-                let l = stream.read_i32::<BigEndian>().unwrap();
-                println!("Receive packet length: {}", l);
-                let mut data = vec![0 as u8; l as usize - 4];
-                stream.read(&mut data);
-                println!("Receive packet data: {:?}", data);
-                let pkt = cli.parse_incoming_packet(&mut data);
-                println!("Incoming packet: {:?}", pkt);
-                let resp = decode_trans_emp_response(&mut cli, &mut pkt.unwrap().payload).unwrap();
-                println!("QueryQRCodeResp: {:?}", resp);
+                loop {
+                    std::thread::sleep(Duration::from_secs(5));// 5秒查询一次登录二维码状态
+                    let (seq, pkt) = cli.build_qrcode_result_query_request_packet(&resp.sig);
+                    stream.write(&pkt).unwrap();
+                    let l = stream.read_i32::<BigEndian>().unwrap();
+                    println!("Receive packet length: {}", l);
+                    let mut data = vec![0 as u8; l as usize - 4];
+                    stream.read(&mut data);
+                    println!("Receive packet data: {:?}", data);
+                    let pkt = cli.parse_incoming_packet(&mut data);
+                    println!("Incoming packet: {:?}", pkt);
+                    let resp = decode_trans_emp_response(&mut cli, &mut pkt.unwrap().payload).unwrap();
+                    println!("QueryQRCodeResp: {:?}", resp);
+                    match resp.state {
+                        LoginState::QRCodeImageFetch => {}
+                        LoginState::QRCodeWaitingForScan => {
+                        }
+                        LoginState::QRCodeWaitingForConfirm => {}
+                        LoginState::QRCodeTimeout => {}
+                        LoginState::QRCodeConfirmed => {
+                            println!("QRCode confirmed");
+                            // TODO buildQRCodeLoginPacket
+                            // TODO decode response
+                            break
+                        }
+                        LoginState::QRCodeCanceled => {}
+                    }
+                }
             }
             Err(e) => {
                 println!("Failed to connect: {}", e);
