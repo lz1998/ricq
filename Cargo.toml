@@ -14,3 +14,9 @@ md5 = "0.7.0"
 byteorder = "1.4"
 generic-array = "0.14"
 flate2 = { version = "1.0.17", features = ["zlib"], default-features = false }
+prost = "0.8"
+# Only necessary if using Protobuf well-known types:
+prost-types = "0.8"
+
+[build-dependencies]
+prost-build = { version = "0.8.0" }

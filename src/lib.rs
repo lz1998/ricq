@@ -11,6 +11,9 @@ pub mod device;
 pub mod client_packet;
 pub mod decoder;
 pub mod tlv_decoder;
+pub mod pb{
+    include!(concat!(env!("OUT_DIR"), "/pb.rs"));
+}
 
 pub mod protocol {
     pub fn test() -> i32 {
