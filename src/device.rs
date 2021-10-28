@@ -32,7 +32,7 @@ pub struct DeviceInfo {
     // generate
     pub guid: Vec<u8>,
     // generate
-    tgtgt_key: Vec<u8>,
+    pub tgtgt_key: Vec<u8>,
 }
 
 impl DeviceInfo {

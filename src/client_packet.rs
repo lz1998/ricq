@@ -23,6 +23,35 @@ pub struct IncomingPacket {
     pub payload: Vec<u8>,
 }
 
+impl IncomingPacket {
+    fn decrypt_payload(&mut self, ecdh_share_key: &[u8], random: &[u8], session_key: &[u8]) {
+        let mut payload = Bytes::from(self.payload.to_owned());
+        if payload.get_u8() != 2 {
+            // err
+            return;
+        }
+        payload.advance(2);
+        payload.advance(2);
+        payload.get_u16();
+        payload.get_u16();
+        payload.get_i32();
+        let encrypt_type = payload.get_u16();
+        payload.get_u8();
+        if encrypt_type == 0 {
+            let len = payload.remaining() - 1;
+            let data = payload.copy_to_bytes(len);
+            self.payload = qqtea_decrypt(&data, ecdh_share_key);
+        }
+        if encrypt_type == 3 {
+            let len = payload.remaining() - 1;
+            let data = payload.copy_to_bytes(len);
+            self.payload = qqtea_decrypt(&data, session_key);
+        }
+        //return error
+    }
+}
+
+
 pub trait ClientPacket {
     fn build_qrcode_fetch_request_packet(&mut self) -> (u16, Vec<u8>);
     fn build_qrcode_result_query_request_packet(&mut self, sig: &[u8]) -> (u16, Vec<u8>);
@@ -114,11 +143,14 @@ impl ClientPacket for Client {
         if !self.parse_sso_frame(&mut pkt) {
             return None;
         }
+        if pkt.flag2 == 2 {
+            pkt.decrypt_payload(&self.ecdh.initial_share_key, &self.random_key, &self.sig_info.wt_session_ticket_key)
+        }
         Some(pkt)
     }
 
     fn parse_sso_frame(&mut self, pkt: &mut IncomingPacket) -> bool {
-        let mut payload = Bytes::from(pkt.payload.clone());
+        let mut payload = Bytes::from(pkt.payload.to_owned());
         let len = payload.get_i32() as usize - 4;
         if payload.remaining() < len {
             return false;
@@ -144,6 +176,7 @@ impl ClientPacket for Client {
             return true;
         }
         let compressed_flag = payload.get_i32();
+        println!("compress_flag: {}", compressed_flag);
         let packet = match compressed_flag {
             0 => {
                 let _ = (payload.get_i32() as u64) & 0xffffffff;
@@ -163,6 +196,7 @@ impl ClientPacket for Client {
         pkt.payload = packet;
         true
     }
+
 }
 
 #[cfg(test)]

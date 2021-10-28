@@ -8,6 +8,7 @@ use crate::version::{ClientProtocol, gen_version_info, VersionInfo};
 
 pub struct Client {
     seq_id: Arc<AtomicU16>,
+    pub uin: i64,
     pub ecdh: EncryptECDH,
     //随机16位
     pub random_key: Vec<u8>,
@@ -22,6 +23,7 @@ impl Client {
     pub fn new() -> Client {
         Client {
             seq_id: Arc::new(AtomicU16::new(0x3635)),
+            uin: 0,
             ecdh: EncryptECDH::new(),
             random_key: Vec::from(rand::thread_rng().gen::<[u8; 16]>()),
             version: gen_version_info(&ClientProtocol::IPad),
