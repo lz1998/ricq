@@ -10,6 +10,7 @@ pub mod client;
 pub mod device;
 pub mod client_packet;
 pub mod decoder;
+pub mod tlv_decoder;
 
 pub mod protocol {
     pub fn test() -> i32 {
