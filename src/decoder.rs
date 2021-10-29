@@ -2,6 +2,7 @@ use crate::client::Client;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use crate::binary_reader::BinaryReader;
 use crate::binary_writer::BinaryWriter;
+use crate::tlv_decoder::TlvDecoder;
 
 #[derive(Debug)]
 pub enum LoginState {
@@ -115,4 +116,53 @@ pub fn decode_trans_emp_response(cli:&mut Client, payload: &[u8]) -> Option<QRCo
         });
     }
     return None;
+}
+
+
+////// decodeExchangeEmpResponse
+
+
+pub fn decode_exchange_emp_response(cli:&mut Client, payload: &[u8]) -> Option<QRCodeLoginResponse> {
+
+    // reader := binary.NewReader(payload)
+    let mut payload = Bytes::from(payload.to_owned());
+
+    // cmd := reader.ReadUInt16()
+    let cmd = payload.get_u16();
+
+    // t := reader.ReadByte()
+	let t = payload.get_u8();
+
+    // reader.ReadUInt16()
+    payload.get_u16();
+
+	// m := reader.ReadTlvMap(2)
+	let m = payload.read_tlv_map(2);
+
+    // if t != 0 {
+	// 	c.Error("exchange_emp error: %v", t)
+	// 	return nil, errors.New("exchange_emp failed")
+	// }
+    if t != 0 {
+        return None
+    }
+
+	// if cmd == 15 {
+	// 	c.decodeT119R(m[0x119])
+	// }
+    if cmd == 15 {
+        cli.decode_t119r(m[0x119])
+    }
+
+	// if cmd == 11 {
+	// 	h := md5.Sum(c.sigInfo.d2Key)
+	// 	c.decodeT119(m[0x119], h[:])
+	// }
+    if cmd == 11 {
+        let h = md5::compute(&cli.sig_info.d2key);
+        cli.decode_t119(m[0x119], &h)
+    }
+
+	// return nil, nil
+    return None
 }
