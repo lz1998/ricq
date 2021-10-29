@@ -219,15 +219,15 @@ impl ClientPacket for Client {
             w.put_slice(&t107(0));
             w.put_slice(&t142(self.version.apk_id.as_bytes()));
             let device_info = crate::pb::DeviceInfo {
-                bootloader: "".to_string(),
-                proc_version: "".to_string(),
-                codename: "".to_string(),
-                incremental: "".to_string(),
-                fingerprint: "".to_string(),
-                boot_id: "".to_string(),
-                android_id: "".to_string(),
-                base_band: "".to_string(),
-                inner_version: "".to_string()
+                bootloader: self.device_info.bootloader.clone(),
+                proc_version: self.device_info.proc_version.clone(),
+                codename: self.device_info.version.codename.clone(),
+                incremental: self.device_info.version.incremental.clone(),
+                fingerprint: self.device_info.finger_print.clone(),
+                boot_id: self.device_info.boot_id.clone(),
+                android_id: self.device_info.android_id.clone(),
+                base_band: self.device_info.base_band.clone(),
+                inner_version: self.device_info.version.incremental.clone()
             };
             let mut buf = Vec::new();
             prost::Message::encode(&device_info, &mut buf).unwrap();
