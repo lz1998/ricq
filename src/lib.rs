@@ -94,7 +94,7 @@ mod tests {
                             let pkt = cli.parse_incoming_packet(&mut data);
                             println!("QRCode confirmed - Incoming packet: {:?}", pkt);
                             // TODO decode response
-                            let resp = decode_login_response(&mut cli, &mut pkt.unwrap().payload).unwrap();
+                            let resp = decode_login_response(&mut cli, &mut pkt.unwrap().payload);
                             println!("QRCode confirmed - QueryQRCodeResp: {:?}", resp);
                             break
                         }

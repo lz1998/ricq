@@ -17,6 +17,11 @@ pub struct Client {
     pub out_going_packet_session_id: Vec<u8>,
     pub ksid: Vec<u8>,
 
+    // account info
+    pub nickname: String,
+    pub age: u16,
+    pub gender: u16,
+
     // tlv cache
     pub t104: Vec<u8>,
     pub t174: Vec<u8>,
@@ -32,6 +37,9 @@ pub struct Client {
     // session info
     pub sig_info: LoginSigInfo,
     pub dpwd: Vec<u8>,
+    pub time_diff: i64,
+    pub pwd_flag: bool,
+
 }
 
 impl Client {
@@ -45,6 +53,9 @@ impl Client {
             device_info: DeviceInfo::random(),
             out_going_packet_session_id: vec![0x02, 0xB0, 0x5B, 0x8B],
             ksid: vec![],
+            nickname: "".to_string(),
+            age: 0,
+            gender: 0,
             t104: vec![],
             t174: vec![],
             g: vec![],
@@ -56,7 +67,9 @@ impl Client {
             rand_seed: vec![],
             rollback_sig: vec![],
             sig_info: LoginSigInfo::default(),
-            dpwd: vec![]
+            dpwd: vec![],
+            time_diff: 0,
+            pwd_flag: false
         }
     }
     pub fn next_seq(&mut self) -> u16 {
