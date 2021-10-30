@@ -359,3 +359,23 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
     }
     return None;
 }
+
+
+pub fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> Option<QRCodeLoginResponse> {
+    let mut payload = Bytes::from(payload.to_owned());
+    let cmd = payload.get_u16();
+    let t = payload.get_u8();
+    payload.get_u16();
+    let m = payload.read_tlv_map(2);
+    if t != 0 {
+        return None;
+    }
+    if cmd == 15 {
+        cli.decode_t119r(m.get(&0x119).unwrap())
+    }
+    if cmd == 11 {
+        let h = md5::compute(&cli.sig_info.d2key).to_vec();
+        cli.decode_t119(m.get(&0x119).unwrap(), &h)
+    }
+    return None;
+}
