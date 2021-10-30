@@ -73,13 +73,13 @@ pub fn t1f(is_root: bool, os_name: &[u8], os_version: &[u8], sim_operator_name: 
     return buf;
 }
 
-pub fn t2(result: &str, sign: &[u8]) -> Vec<u8> {
+pub fn t2(result: String, sign: &[u8]) -> Vec<u8> {
     let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x02);
     buf.write_bytes_short(&{
         let mut w: Vec<u8> = Vec::new();
         w.put_u16(0);
-        w.write_bytes_short(&result.as_bytes().to_vec());
+        w.write_bytes_short(&result.as_bytes());
         w.write_bytes_short(sign);
         w
     });
@@ -152,12 +152,12 @@ pub fn t17a(value: i32) -> Vec<u8> {
     return buf;
 }
 
-pub fn t17c(code: &str) -> Vec<u8> {
+pub fn t17c(code: String) -> Vec<u8> {
     let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x17c);
     buf.write_bytes_short(&{
         let mut w: Vec<u8> = Vec::new();
-        w.write_bytes_short(&code.as_bytes().to_vec());
+        w.write_bytes_short(&code.as_bytes());
         w
     });
     return buf;
@@ -545,7 +545,7 @@ pub fn t191(k: u8) -> Vec<u8> {
     buf
 }
 
-pub fn t193(ticket: &str) -> Vec<u8> {
+pub fn t193(ticket: String) -> Vec<u8> {
     let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x193);
     buf.write_bytes_short(&{
@@ -746,7 +746,7 @@ mod tests {
     static OS_NAME: &[u8] = "android".as_bytes();
     static OS_VERSION: &[u8] = "7.1.2".as_bytes();
     static SIM_INFO: &[u8] = "T-Mobile".as_bytes();
-    static IMEI: &str = "468356291846738";
+    static IMEI: String = "468356291846738".to_string();
     static IMEI_MD5: &[u8] = "9792b1bba1867318bf782af418306ef8".as_bytes();
     static WIFI_BSSID: &[u8] = "00:50:56:C0:00:08".as_bytes();
     static WIFI_SSID: &[u8] = "<unknown ssid>".as_bytes();
@@ -805,7 +805,7 @@ mod tests {
 
     #[test]
     fn test_t2() {
-        let result = t2("result", "sign".as_ref());
+        let result = t2("result".to_string(), "sign".as_ref());
         println!("{}", result.len());
         println!("{:?}", result)
     }
@@ -855,7 +855,7 @@ mod tests {
 
     #[test]
     fn test_t17c() {
-        let result = t17c(IMEI);
+        let result = t17c(IMEI.to_string());
         println!("{}", result.len());
         println!("{:?}", result)
     }
@@ -919,7 +919,7 @@ mod tests {
 
     #[test]
     fn test_t108() {
-        let result = t108(IMEI);
+        let result = t108(&IMEI);
         println!("{}", result.len());
         println!("{:?}", result);
     }
@@ -1049,7 +1049,7 @@ mod tests {
 
     #[test]
     fn test_t193() {
-        let result = t193("some ticket");
+        let result = t193("some ticket".to_string());
         println!("{}", result.len());
         println!("{:?}", result);
     }

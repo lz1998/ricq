@@ -1,7 +1,11 @@
+use std::io::{Read, Write};
+use std::net::TcpStream;
+use byteorder::{BigEndian, ReadBytesExt};
 use crate::client::Client;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use crate::binary_reader::BinaryReader;
 use crate::binary_writer::BinaryWriter;
+use crate::client_packet::ClientPacket;
 use crate::device::random_string;
 use crate::tlv_decoder::TlvDecoder;
 
@@ -176,7 +180,6 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
         if m.contains_key(&0x403) {
             cli.rand_seed = m.remove(&0x403).unwrap();
         }
-        // TODO
         cli.decode_t119(&m.get(&0x119).unwrap(), &cli.device_info.tgtgt_key.clone());
         return Some(LoginResponse::Success);
     }
@@ -255,6 +258,8 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
         cli.t104 = m.remove(&0x104).unwrap();
         cli.rand_seed = m.remove(&0x403).unwrap();
         // TODO c.sendAndWait(c.buildDeviceLockLoginPacket())
+        let (num, vec) = cli.build_device_lock_login_packet();
+        println!("{} - {:?}", num, vec);
         return None;
     } // drive lock
 
@@ -277,7 +282,6 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
     }
     return None;
 }
-
 
 pub fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> Option<QRCodeLoginResponse> {
     let mut payload = Bytes::from(payload.to_owned());

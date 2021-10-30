@@ -6,7 +6,7 @@ use chrono::Utc;
 use crate::binary_reader::BinaryReader;
 use crate::client::Client;
 use crate::packet::{build_code2d_request_packet, build_login_packet, build_oicq_request_packet, build_sso_packet};
-use crate::tlv::{guid_flag, t1, t100, t107, t116, t141, t142, t144, t145, t147, t154, t16, t177, t18, t187, t188, t191, t194, t1b, t1d, t1f, t202, t33, t35, t511, t516, t521, t525, t536, t8};
+use crate::tlv::{guid_flag, t1, t100, t104, t107, t108, t10a, t116, t141, t142, t143, t144, t145, t147, t154, t16, t16a, t174, t177, t17a, t17c, t18, t187, t188, t191, t193, t194, t197, t198, t1b, t1d, t1f, t2, t202, t33, t35, t400, t401, t511, t516, t521, t525, t536, t8};
 use crate::version::{ClientProtocol, gen_version_info};
 use crate::binary_writer::BinaryWriter;
 use crate::tea::qqtea_decrypt;
@@ -59,6 +59,13 @@ pub trait ClientPacket {
     fn parse_incoming_packet(&mut self, payload: &mut [u8]) -> Option<IncomingPacket>;
     fn parse_sso_frame(&mut self, pkt: &mut IncomingPacket) -> bool;
     fn build_qrcode_login_packet(&mut self, t106: &[u8], t16a: &[u8], t318: &[u8]) -> (u16, Vec<u8>);
+    fn build_device_lock_login_packet(&mut self) -> (u16, Vec<u8>);
+    fn build_captcha_packet(&mut self, result: String, sign: &[u8]) -> (u16, Vec<u8>);
+    fn build_sms_request_packet(&mut self) -> (u16, Vec<u8>);
+    fn build_sms_code_submit_packet(&mut self, code: String) -> (u16, Vec<u8>);
+    fn build_ticket_submit_packet(&mut self, ticket: String) -> (u16, Vec<u8>);
+    fn build_request_tgtgt_no_pic_sig_packet(&mut self) -> (u16, Vec<u8>);
+    fn build_request_change_sig_packet(&mut self) -> (u16, Vec<u8>);
 }
 
 impl ClientPacket for Client {
@@ -288,6 +295,230 @@ impl ClientPacket for Client {
         (seq, packet)
     }
 
+    fn build_device_lock_login_packet(&mut self) -> (u16, Vec<u8>) {
+        let seq = self.next_seq();
+        let req = build_oicq_request_packet(self.uin as u32, 0x0810, &self.ecdh, &self.random_key, &{
+            let mut w = Vec::new();
+            w.put_u16(20);
+            w.put_u16(4);
+
+            w.put_slice(&t8(2052));
+            w.put_slice(&t104(&self.t104));
+            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+            w.put_slice(&t401(&self.g));
+            w
+        });
+        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
+        let packet = build_login_packet(self.uin as u32, 2, &vec![0; 16], &sso, &[]);
+        (seq, packet)
+    }
+
+    fn build_captcha_packet(&mut self, result: String, sign: &[u8]) -> (u16, Vec<u8>) {
+        let seq = self.next_seq();
+        let req = build_oicq_request_packet(self.uin as u32, 0x810, &self.ecdh, &self.random_key, &{
+            let mut w = Vec::new();
+            w.put_u16(2); // sub command
+            w.put_u16(4);
+
+            w.put_slice(&t2(result, sign));
+            w.put_slice(&t8(2052));
+            w.put_slice(&t104(&self.t104));
+            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+            w
+        });
+        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
+        let packet = build_login_packet(self.uin as u32, 2, &vec![0; 16], &sso, &[]);
+        (seq, packet)
+    }
+
+    fn build_sms_request_packet(&mut self) -> (u16, Vec<u8>) {
+        let seq = self.next_seq();
+        let req = build_oicq_request_packet(self.uin as u32, 0x810, &self.ecdh, &self.random_key, &{
+            let mut w = Vec::new();
+            w.put_u16(8);
+            w.put_u16(6);
+
+            w.put_slice(&t8(2052));
+            w.put_slice(&t104(&self.t104));
+            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+            w.put_slice(&t174(&self.t174));
+            w.put_slice(&t17a(9));
+            w.put_slice(&t197());
+            w
+        });
+        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
+        let packet = build_login_packet(self.uin as u32, 2, &vec![0; 16], &sso, &[]);
+        (seq, packet)
+    }
+
+    fn build_sms_code_submit_packet(&mut self, code: String) -> (u16, Vec<u8>) {
+        let seq = self.next_seq();
+        let req = build_oicq_request_packet(self.uin as u32, 0x810, &self.ecdh, &self.random_key, &{
+            let mut w = Vec::new();
+            w.put_u16(7);
+            w.put_u16(7);
+
+            w.put_slice(&t8(2052));
+            w.put_slice(&t104(&self.t104));
+            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+            w.put_slice(&t174(&self.t174));
+            w.put_slice(&t17c(code));
+            w.put_slice(&t401(&self.g));
+            w.put_slice(&t198());
+            w
+        });
+        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
+        let packet = build_login_packet(self.uin as u32, 2, &vec![0; 16], &sso, &[]);
+        (seq, packet)
+    }
+
+    fn build_ticket_submit_packet(&mut self, ticket: String) -> (u16, Vec<u8>) {
+        let seq = self.next_seq();
+        let req = build_oicq_request_packet(self.uin as u32, 0x810, &self.ecdh, &self.random_key, &{
+            let mut w = Vec::new();
+            w.put_u16(2);
+            w.put_u16(4);
+
+            w.put_slice(&t193(ticket));
+            w.put_slice(&t8(2052));
+            w.put_slice(&t104(&self.t104));
+            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+            w
+        });
+        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
+        let packet = build_login_packet(self.uin as u32, 2, &vec![0; 16], &sso, &[]);
+        (seq, packet)
+    }
+
+    fn build_request_tgtgt_no_pic_sig_packet(&mut self) -> (u16, Vec<u8>) {
+        let seq = self.next_seq();
+        let req = build_oicq_request_packet(self.uin as u32, 0x810, &self.ecdh, &self.random_key, &{
+            let mut w = Vec::new();
+            w.put_u16(15);
+            w.put_u16(24);
+
+            w.put_slice(&t18(16, self.uin as u32));
+            w.put_slice(&t1(self.uin as u32, &self.device_info.ip_address));
+            w.put_slice(&{
+                let mut buf = Vec::new();
+                buf.put_u16(0x106);
+                buf.write_bytes_short(&self.sig_info.encrypted_a1);
+                buf
+            });
+            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+            w.put_slice(&t100(self.version.sso_version, 2, self.version.main_sig_map));
+            w.put_slice(&t107(0));
+            let device_info = crate::pb::DeviceInfo {
+                bootloader: self.device_info.bootloader.clone(),
+                proc_version: self.device_info.proc_version.clone(),
+                codename: self.device_info.version.codename.clone(),
+                incremental: self.device_info.version.incremental.clone(),
+                fingerprint: self.device_info.finger_print.clone(),
+                boot_id: self.device_info.boot_id.clone(),
+                android_id: self.device_info.android_id.clone(),
+                base_band: self.device_info.base_band.clone(),
+                inner_version: self.device_info.version.incremental.clone()
+            };
+            let mut buf = Vec::new();
+            prost::Message::encode(&device_info, &mut buf).unwrap();
+            w.put_slice(&t144(
+                self.device_info.android_id.as_bytes(),
+                &buf,
+                self.device_info.os_type.as_bytes(),
+                self.device_info.version.release.as_bytes(),
+                self.device_info.sim_info.as_bytes(),
+                self.device_info.apn.as_bytes(),
+                false, true, false, guid_flag(),
+                self.device_info.model.as_bytes(),
+                &self.device_info.guid,
+                self.device_info.brand.as_bytes(),
+                &self.device_info.tgtgt_key,
+            ));
+            w.put_slice(&t142(self.version.apk_id.as_bytes()));
+            w.put_slice(&t145(&self.device_info.guid));
+            w.put_slice(&t16a(&self.sig_info.srm_token));
+            w.put_slice(&t141(self.device_info.sim_info.as_bytes(), self.device_info.apn.as_bytes()));
+            w.put_slice(&t8(2052));
+            w.put_slice(&t511(vec!["tenpay.com", "openmobile.qq.com", "docs.qq.com", "connect.qq.com",
+                                   "qzone.qq.com", "vip.qq.com", "gamecenter.qq.com", "qun.qq.com", "game.qq.com",
+                                   "qqweb.qq.com", "office.qq.com", "ti.qq.com", "mail.qq.com", "mma.qq.com"]
+            ));
+            w.put_slice(&t147(16, self.version.sort_version_name.as_bytes(), &self.version.apk_sign));
+            w.put_slice(&t177(self.version.build_time, &self.version.sdk_version));
+            w.put_slice(&t400(&self.g, self.uin, &self.device_info.guid, &self.dpwd, 1, 16, &self.random_key));
+            w.put_slice(&t187(self.device_info.mac_address.as_bytes()));
+            w.put_slice(&t194(&self.device_info.imsi_md5));
+            w.put_slice(&t202(self.device_info.wifi_bssid.as_bytes(), self.device_info.wifi_ssid.as_bytes()));
+            w.put_slice(&t516());
+            w.put_slice(&t521(0));
+            w.put_slice(&t525(&t536(&vec![0x01, 0x00])));
+            w
+        });
+        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
+        let packet = build_login_packet(self.uin as u32, 2, &vec![0; 16], &sso, &[]);
+        (seq, packet)
+    }
+
+    fn build_request_change_sig_packet(&mut self) -> (u16, Vec<u8>) {
+        let seq = self.next_seq();
+        let req = build_oicq_request_packet(self.uin as u32, 0x810, &self.ecdh, &self.random_key, &{
+            let mut w = Vec::new();
+            w.put_u16(11);
+            w.put_u16(17);
+
+            w.put_slice(&t100(self.version.sso_version, 2, self.version.main_sig_map));
+            w.put_slice(&t10a(&self.sig_info.tgt));
+            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+            w.put_slice(&t108(&self.device_info.imei));
+            let h = md5::compute(&self.sig_info.d2key).to_vec();
+            let device_info = crate::pb::DeviceInfo {
+                bootloader: self.device_info.bootloader.clone(),
+                proc_version: self.device_info.proc_version.clone(),
+                codename: self.device_info.version.codename.clone(),
+                incremental: self.device_info.version.incremental.clone(),
+                fingerprint: self.device_info.finger_print.clone(),
+                boot_id: self.device_info.boot_id.clone(),
+                android_id: self.device_info.android_id.clone(),
+                base_band: self.device_info.base_band.clone(),
+                inner_version: self.device_info.version.incremental.clone()
+            };
+            let mut buf = Vec::new();
+            prost::Message::encode(&device_info, &mut buf).unwrap();
+            w.put_slice(&t144(
+                self.device_info.android_id.as_bytes(),
+                &buf,
+                self.device_info.os_type.as_bytes(),
+                self.device_info.version.release.as_bytes(),
+                self.device_info.sim_info.as_bytes(),
+                self.device_info.apn.as_bytes(),
+                false, true, false, guid_flag(),
+                self.device_info.model.as_bytes(),
+                &self.device_info.guid,
+                self.device_info.brand.as_bytes(),
+                &h,
+            ));
+            w.put_slice(&t143(&self.sig_info.d2));
+            w.put_slice(&t142(self.version.apk_id.as_bytes()));
+            w.put_slice(&t154(seq));
+            w.put_slice(&t18(16, self.uin as u32));
+            w.put_slice(&t141(self.device_info.sim_info.as_bytes(), self.device_info.apn.as_bytes()));
+            w.put_slice(&t8(2052));
+            w.put_slice(&t147(16, self.version.sort_version_name.as_bytes(), &self.version.apk_sign));
+            w.put_slice(&t177(self.version.build_time, &self.version.sdk_version));
+            w.put_slice(&t187(self.device_info.mac_address.as_bytes()));
+            w.put_slice(&t188(self.device_info.android_id.as_bytes()));
+            w.put_slice(&t194(&self.device_info.imsi_md5));
+            w.put_slice(&t511(vec!["tenpay.com", "openmobile.qq.com", "docs.qq.com", "connect.qq.com",
+                                   "qzone.qq.com", "vip.qq.com", "gamecenter.qq.com", "qun.qq.com", "game.qq.com",
+                                   "qqweb.qq.com", "office.qq.com", "ti.qq.com", "mail.qq.com", "mma.qq.com"]
+            ));
+            // w.put_slice(&t202(self.device_info.wifi_bssid.as_bytes(), self.device_info.wifi_ssid.as_bytes()));
+            w
+        });
+        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
+        let packet = build_login_packet(self.uin as u32, 2, &vec![0; 16], &sso, &[]);
+        (seq, packet)
+    }
 }
 
 #[cfg(test)]

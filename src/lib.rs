@@ -93,9 +93,8 @@ mod tests {
                             println!("QRCode confirmed - Receive packet data: {:?}", data);
                             let pkt = cli.parse_incoming_packet(&mut data);
                             println!("QRCode confirmed - Incoming packet: {:?}", pkt);
-                            // TODO decode response
                             let resp = decode_login_response(&mut cli, &mut pkt.unwrap().payload);
-                            println!("QRCode confirmed - QueryQRCodeResp: {:?}", resp);
+                            println!("QRCode confirmed - Decode Login Resp: {:?}", resp);
                             break
                         }
                         LoginState::QRCodeCanceled => {}
