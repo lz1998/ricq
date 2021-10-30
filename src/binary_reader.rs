@@ -3,6 +3,7 @@ use bytes::Buf;
 
 pub trait BinaryReader {
     fn read_string(&mut self) -> String;
+    fn read_string_short(&mut self) -> String;
     fn read_bytes_short(&mut self) -> Vec<u8>;
     fn read_tlv_map(&mut self, tag_size: usize) -> HashMap<u16, Vec<u8>>;
 }
@@ -11,6 +12,11 @@ impl<B> BinaryReader for B
     where B: Buf {
     fn read_string(&mut self) -> String {
         let len = self.get_i32() as usize - 4;
+        String::from_utf8(self.copy_to_bytes(len).to_vec()).unwrap()
+    }
+
+    fn read_string_short(&mut self) -> String {
+        let len = self.get_u16() as usize - 4;
         String::from_utf8(self.copy_to_bytes(len).to_vec()).unwrap()
     }
 

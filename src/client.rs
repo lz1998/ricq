@@ -16,7 +16,22 @@ pub struct Client {
     pub device_info: DeviceInfo,
     pub out_going_packet_session_id: Vec<u8>,
     pub ksid: Vec<u8>,
+
+    // tlv cache
+    pub t104: Vec<u8>,
+    pub t174: Vec<u8>,
+    pub g: Vec<u8>,
+    pub t402: Vec<u8>,
+    pub t150: Vec<u8>,
+    pub t149: Vec<u8>,
+    pub t528: Vec<u8>,
+    pub t530: Vec<u8>,
+    pub rand_seed: Vec<u8>, // t403
+    pub rollback_sig: Vec<u8>,
+
+    // session info
     pub sig_info: LoginSigInfo,
+    pub dpwd: Vec<u8>,
 }
 
 impl Client {
@@ -30,7 +45,18 @@ impl Client {
             device_info: DeviceInfo::random(),
             out_going_packet_session_id: vec![0x02, 0xB0, 0x5B, 0x8B],
             ksid: vec![],
+            t104: vec![],
+            t174: vec![],
+            g: vec![],
+            t402: vec![],
+            t150: vec![],
+            t149: vec![],
+            t528: vec![],
+            t530: vec![],
+            rand_seed: vec![],
+            rollback_sig: vec![],
             sig_info: LoginSigInfo::default(),
+            dpwd: vec![]
         }
     }
     pub fn next_seq(&mut self) -> u16 {
@@ -57,4 +83,18 @@ pub struct LoginSigInfo {
     pub device_token: Vec<u8>,
     pub ps_key_map: HashMap<String, Vec<u8>>,
     pub pt4token_map: HashMap<String, Vec<u8>>,
+}
+
+pub struct QiDianAccountInfo {
+    pub master_uin: i64,
+    pub ext_name: String,
+    pub create_time: i64,
+
+    pub big_data_req_addrs: Vec<String>,
+    pub big_data_req_session: BigDataReqSessionInfo
+}
+
+pub struct BigDataReqSessionInfo {
+    pub sig_session: Vec<u8>,
+    pub session_key: Vec<u8>
 }

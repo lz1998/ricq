@@ -31,7 +31,7 @@ mod tests {
     use byteorder::{BigEndian, ReadBytesExt};
     use crate::client::Client;
     use crate::client_packet::ClientPacket;
-    use crate::decoder::{decode_trans_emp_response, LoginState};
+    use crate::decoder::{decode_login_response, decode_trans_emp_response, LoginState};
 
     #[test]
     fn test_connect() {
@@ -94,6 +94,8 @@ mod tests {
                             let pkt = cli.parse_incoming_packet(&mut data);
                             println!("QRCode confirmed - Incoming packet: {:?}", pkt);
                             // TODO decode response
+                            let resp = decode_login_response(&mut cli, &mut pkt.unwrap().payload).unwrap();
+                            println!("QRCode confirmed - QueryQRCodeResp: {:?}", resp);
                             break
                         }
                         LoginState::QRCodeCanceled => {}
