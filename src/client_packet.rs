@@ -6,7 +6,7 @@ use chrono::Utc;
 use crate::binary_reader::BinaryReader;
 use crate::client::Client;
 use crate::packet::{build_code2d_request_packet, build_login_packet, build_oicq_request_packet, build_sso_packet};
-use crate::tlv::{guid_flag, t1, t100, t107, t116, t141, t142, t144, t147, t154, t16, t177, t18, t187, t188, t191, t194, t1b, t1d, t1f, t202, t33, t35, t511, t516, t521, t525, t536, t8};
+use crate::tlv::{guid_flag, t1, t100, t107, t116, t141, t142, t144, t145, t147, t154, t16, t177, t18, t187, t188, t191, t194, t1b, t1d, t1f, t202, t33, t35, t511, t516, t521, t525, t536, t8};
 use crate::version::{ClientProtocol, gen_version_info};
 use crate::binary_writer::BinaryWriter;
 use crate::tea::qqtea_decrypt;
@@ -209,10 +209,10 @@ impl ClientPacket for Client {
             w.put_slice(&t18(16, self.uin as u32));
             w.put_slice(&t1(self.uin as u32, &self.device_info.ip_address));
             w.put_slice(&{
-                let mut ww = Vec::new();
-                ww.put_u16(0x106);
-                ww.write_bytes_short(t106);
-                ww
+                let mut w = Vec::new();
+                w.put_u16(0x106);
+                w.write_bytes_short(t106);
+                w
             });
             w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
             w.put_slice(&t100(self.version.sso_version, self.version.sub_app_id, self.version.main_sig_map));
@@ -245,15 +245,15 @@ impl ClientPacket for Client {
                 &self.device_info.tgtgt_key,
             ));
 
-            w.put_slice(&t154(seq));
+            w.put_slice(&t145(&self.device_info.guid));
             w.put_slice(&t147(16,
                               self.version.sort_version_name.as_bytes(),
                               &self.version.apk_sign));
             w.put_slice(&{
-                let mut ww = Vec::new();
-                ww.put_u16(0x16A);
-                ww.write_bytes_short(t16a);
-                ww
+                let mut w = Vec::new();
+                w.put_u16(0x16A);
+                w.write_bytes_short(t16a);
+                w
             });
             w.put_slice(&t154(seq));
             w.put_slice(&t141(self.device_info.sim_info.as_bytes(), self.device_info.apn.as_bytes()));
@@ -276,14 +276,14 @@ impl ClientPacket for Client {
             // let v:Vec<u8> = vec![0x01, 0x00];
             // w.put_slice(&t525(&t536(&v)));
             w.put_slice(&{
-                let mut ww = Vec::new();
-                ww.put_u16(0x318);
-                ww.write_bytes_short(t318);
-                ww
+                let mut w = Vec::new();
+                w.put_u16(0x318);
+                w.write_bytes_short(t318);
+                w
             });
             w
         });
-        let sso: Vec<u8> = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", self.device_info.imei.as_str(), &[], self.out_going_packet_session_id.as_slice(), &req, self.ksid.as_slice());
+        let sso: Vec<u8> = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
         let packet: Vec<u8> = build_login_packet(self.uin as u32, 2, &vec![0; 16], &sso, &[]);
         (seq, packet)
     }
