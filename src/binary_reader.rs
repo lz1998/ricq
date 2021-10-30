@@ -6,6 +6,7 @@ pub trait BinaryReader {
     fn read_string_short(&mut self) -> String;
     fn read_bytes_short(&mut self) -> Vec<u8>;
     fn read_tlv_map(&mut self, tag_size: usize) -> HashMap<u16, Vec<u8>>;
+    fn read_string_limit(&mut self, limit: usize) -> String;
 }
 
 impl<B> BinaryReader for B
@@ -45,5 +46,9 @@ impl<B> BinaryReader for B
             let len = self.get_u16() as usize;
             m.insert(k, self.copy_to_bytes(len).to_vec());
         }
+    }
+
+    fn read_string_limit(&mut self, limit: usize) -> String {
+        String::from_utf8(self.copy_to_bytes(limit).to_vec()).unwrap()
     }
 }

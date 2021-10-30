@@ -25,6 +25,7 @@ pub enum LoginError {
     SMSOrVerifyNeededError = 7,
     SliderNeededError = 8,
     UnknownLoginError = -1,
+    Success = 0,
 }
 
 #[derive(Debug, Default)]
@@ -166,44 +167,44 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
     reader.get_u16(); // sub command
     let t = reader.get_u8();
     reader.get_u16();
-    let m = reader.read_tlv_map(2);
+    let mut m = reader.read_tlv_map(2);
     if m.contains_key(&0x402) {
         cli.dpwd = random_string(16).into_bytes();
-        cli.t402 = m.get(&0x150).as_ref().unwrap().to_vec();
+        cli.t402 = m.remove(&0x402).unwrap();
         let mut v: Vec<u8> = Vec::new();
         v.put_slice(&cli.device_info.guid);
         v.put_slice(&cli.dpwd);
         v.put_slice(&cli.t402);
-        cli.g = md5::compute(&v).as_ref().to_vec();
+        cli.g = md5::compute(&v).to_vec();
     }
     if t == 0 {
         if m.contains_key(&0x150) {
-            cli.t150 = m.get(&0x150).as_ref().unwrap().to_vec();
+            cli.t150 = m.remove(&0x150).unwrap();
         }
         if m.contains_key(&0x161) {
-            cli.decode_t161(&m.get(&0x161).as_ref().unwrap().to_vec())
+            cli.decode_t161(&m.remove(&0x161).unwrap())
         }
         if m.contains_key(&0x403) {
-            cli.rand_seed = m.get(&0x403).as_ref().unwrap().to_vec();
+            cli.rand_seed = m.remove(&0x403).unwrap();
         }
         // TODO
-        // cli.decode_t119(m.get(&0x119).as_ref().unwrap(), &cli.device_info.tgtgt_key);
+        cli.decode_t119(&m.get(&0x119).unwrap(), &cli.device_info.tgtgt_key.clone());
         return Some(LoginResponse {
             success: true,
-            error: LoginError::OtherLoginError,
+            error: LoginError::Success,
             captcha_image: vec![],
             captcha_sign: vec![],
             verify_url: "".to_string(),
             sms_phone: "".to_string(),
-            error_message: "".to_string()
+            error_message: "".to_string(),
         });
     }
     if t == 2 {
-        cli.t104 = m.get(&0x104).as_ref().unwrap().to_vec();
+        cli.t104 = m.remove(&0x104).unwrap();
         if m.contains_key(&0x192) {
             return Some(LoginResponse {
                 success: false,
-                verify_url: String::from_utf8_lossy(&m[&0x192]).into_owned(),
+                verify_url: String::from_utf8(m.remove(&0x192).unwrap()).unwrap(),
                 sms_phone: "".to_string(),
                 error: LoginError::SliderNeededError,
                 captcha_image: vec![],
@@ -212,14 +213,14 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
             });
         }
         if m.contains_key(&0x165) {
-            let mut img_data = Bytes::from(m.get(&0x105).as_ref().unwrap().to_vec());
+            let mut img_data = Bytes::from(m.remove(&0x105).unwrap());
             let sign_len = img_data.get_u16();
             img_data.get_u16();
             let sign = img_data.copy_to_bytes(sign_len as usize).to_vec();
             return Some(LoginResponse {
                 success: false,
                 error: LoginError::NeedCaptcha,
-                captcha_image: img_data.read_bytes_short(),
+                captcha_image: img_data.chunk().to_vec(),
                 captcha_sign: sign,
                 verify_url: "".to_string(),
                 sms_phone: "".to_string(),
@@ -252,38 +253,38 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
 
     if t == 160 || t == 239 {
         if m.contains_key(&0x174) {
-            let t174 = m.get(&0x147);
-            cli.t104 = m.get(&0x104).as_ref().unwrap().to_vec();
-            cli.t174 = t174.unwrap().to_vec();
-            cli.rand_seed = m.get(&0x403).as_ref().unwrap().to_vec();
-            let mut r = Bytes::from(m.get(&0x178).as_ref().unwrap().to_vec());
-            let i = r.get_u16() as usize;
-            let sms_phone = String::from_utf8_lossy(r.copy_to_bytes(i).as_ref()).into_owned();
-            let error_message = String::from_utf8_lossy(&m[&0x17E]).into_owned();
+            cli.t174 = m.remove(&0x147).unwrap();
+            cli.t104 = m.remove(&0x104).unwrap();
+            cli.rand_seed = m.remove(&0x403).unwrap();
+            let phone = {
+                let mut r = Bytes::from(m.remove(&0x178).unwrap());
+                let len = r.get_i32() as usize;
+                r.read_string_limit(len)
+            };
             if m.contains_key(&0x204) {
                 return Some(LoginResponse {
                     success: false,
                     error: LoginError::SMSOrVerifyNeededError,
+                    verify_url: String::from_utf8(m.remove(&0x204).unwrap()).unwrap(),
+                    sms_phone: phone,
                     captcha_image: vec![],
                     captcha_sign: vec![],
-                    verify_url: String::from_utf8_lossy(&m[&0x204]).into_owned(),
-                    sms_phone,
-                    error_message,
-                })
+                    error_message: String::from_utf8(m.remove(&0x17e).unwrap()).unwrap(),
+                });
             }
             return Some(LoginResponse {
                 success: false,
                 error: LoginError::SMSNeededError,
+                sms_phone: phone,
+                error_message: String::from_utf8(m.remove(&0x17e).unwrap()).unwrap(),
                 captcha_image: vec![],
                 captcha_sign: vec![],
                 verify_url: "".to_string(),
-                sms_phone,
-                error_message
-            })
+            });
         }
 
-        if m.contains_key(&0x17B) {
-            cli.t104 = m.get(&0x104).unwrap().to_vec();
+        if m.contains_key(&0x17b) {
+            cli.t104 = m.remove(&0x104).unwrap();
             return Some(LoginResponse {
                 success: false,
                 error: LoginError::SMSNeededError,
@@ -291,20 +292,20 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
                 captcha_sign: vec![],
                 verify_url: "".to_string(),
                 sms_phone: "".to_string(),
-                error_message: "".to_string()
-            })
+                error_message: "".to_string(),
+            });
         }
 
         if m.contains_key(&0x204) {
             return Some(LoginResponse {
                 success: false,
                 error: LoginError::UnsafeDeviceError,
+                verify_url: String::from_utf8(m.remove(&0x204).unwrap()).unwrap(),
                 captcha_image: vec![],
                 captcha_sign: vec![],
-                verify_url: String::from_utf8_lossy(&m[&0x204]).into_owned(),
                 sms_phone: "".to_string(),
-                error_message: "".to_string()
-            })
+                error_message: "".to_string(),
+            });
         }
     }
 
@@ -316,45 +317,45 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
             captcha_sign: vec![],
             verify_url: "".to_string(),
             sms_phone: "".to_string(),
-            error_message: "".to_string()
-        })
+            error_message: "".to_string(),
+        });
     }
 
     if t == 204 {
-        cli.t104 = m.get(&0x104).unwrap().to_vec();
-        cli.rand_seed = m.get(&0x403).as_ref().unwrap().to_vec();
+        cli.t104 = m.remove(&0x104).unwrap();
+        cli.rand_seed = m.remove(&0x403).unwrap();
         // TODO c.sendAndWait(c.buildDeviceLockLoginPacket())
         return None;
     } // drive lock
 
     if m.contains_key(&0x149) {
-        let mut t149r = Bytes::from(m.get(&0x149).as_ref().unwrap().to_vec());
-        t149r.advance(5);
-        t149r.read_string_short();
+        let mut t149r = Bytes::from(m.remove(&0x149).unwrap());
+        t149r.advance(2);
+        t149r.read_string_short();//title
         return Some(LoginResponse {
             success: false,
             error: LoginError::OtherLoginError,
+            error_message: t149r.read_string_short(),
             captcha_image: vec![],
             captcha_sign: vec![],
             verify_url: "".to_string(),
             sms_phone: "".to_string(),
-            error_message: t149r.read_string_short(),
-        })
+        });
     }
 
     if m.contains_key(&0x146) {
-        let mut t146r = Bytes::from(m.get(&0x146).as_ref().unwrap().to_vec());
-        t146r.advance(4);
-        t146r.read_string_short();
+        let mut t146r = Bytes::from(m.remove(&0x146).unwrap());
+        t146r.advance(4); // ver and code
+        t146r.read_string_short(); // title
         return Some(LoginResponse {
             success: false,
             error: LoginError::OtherLoginError,
+            error_message: t146r.read_string_short(),
             captcha_image: vec![],
             captcha_sign: vec![],
             verify_url: "".to_string(),
             sms_phone: "".to_string(),
-            error_message: t146r.read_string_short(),
-        })
+        });
     }
     return None;
 }

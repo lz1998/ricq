@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use crate::client::Client;
+use crate::tea::qqtea_decrypt;
 
 pub trait TlvDecoder {
     fn decode_t161(&mut self, data: &[u8]);
@@ -16,6 +17,7 @@ impl TlvDecoder for Client {
     }
 
     fn decode_t119(&mut self, data: &[u8], ek: &[u8]) {
+        qqtea_decrypt(data,ek);
         todo!()
     }
 
