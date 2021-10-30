@@ -31,7 +31,8 @@ pub struct Client {
     pub t149: Vec<u8>,
     pub t528: Vec<u8>,
     pub t530: Vec<u8>,
-    pub rand_seed: Vec<u8>, // t403
+    pub rand_seed: Vec<u8>,
+    // t403
     pub rollback_sig: Vec<u8>,
 
     // session info
@@ -69,7 +70,7 @@ impl Client {
             sig_info: LoginSigInfo::default(),
             dpwd: vec![],
             time_diff: 0,
-            pwd_flag: false
+            pwd_flag: false,
         }
     }
     pub fn next_seq(&mut self) -> u16 {
@@ -93,7 +94,8 @@ pub struct LoginSigInfo {
     pub d2: Vec<u8>,
     pub d2key: Vec<u8>,
     pub wt_session_ticket_key: Vec<u8>,
-    pub device_token: Vec<u8>,
+    // TODO 是不是可能None？
+    pub device_token: Option<Vec<u8>>,
     pub ps_key_map: HashMap<String, Vec<u8>>,
     pub pt4token_map: HashMap<String, Vec<u8>>,
 }
@@ -104,10 +106,10 @@ pub struct QiDianAccountInfo {
     pub create_time: i64,
 
     pub big_data_req_addrs: Vec<String>,
-    pub big_data_req_session: BigDataReqSessionInfo
+    pub big_data_req_session: BigDataReqSessionInfo,
 }
 
 pub struct BigDataReqSessionInfo {
     pub sig_session: Vec<u8>,
-    pub session_key: Vec<u8>
+    pub session_key: Vec<u8>,
 }

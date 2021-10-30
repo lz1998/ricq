@@ -19,13 +19,13 @@ impl TlvDecoder for Client {
         let mut reader = Bytes::from(data.to_owned());
         reader.advance(2);
         let mut m = reader.read_tlv_map(2);
-        if m.contains_key(&0x130) {
+        if m.contains_key(&0x172) {
             self.rollback_sig = m.remove(&0x172).unwrap();
         }
     }
 
     fn decode_t119(&mut self, data: &[u8], ek: &[u8]) {
-        let mut reader = Bytes::from(qqtea_decrypt(data,ek).to_owned());
+        let mut reader = Bytes::from(qqtea_decrypt(data, ek).to_owned());
         reader.advance(2);
         let mut m = reader.read_tlv_map(2);
         if m.contains_key(&0x130) {
@@ -44,9 +44,6 @@ impl TlvDecoder for Client {
             self.ksid = m.remove(&0x108).unwrap()
         }
 
-        let mut gender: u16 = 0;
-        let mut age: u16 = 0;
-        let mut nick = "".to_string();
 
         let mut ps_key_map: HashMap<String, Vec<u8>> = Default::default();
         let mut pt4token_map: HashMap<String, Vec<u8>> = Default::default();
@@ -57,11 +54,11 @@ impl TlvDecoder for Client {
         if m.contains_key(&0x186) {
             self.decode_t186(&m.remove(&0x186).unwrap())
         }
-        if m.contains_key(&0x11A) {
-            let (_nick, _age, _gender) = read_t11a(&m.remove(&0x11A).unwrap());
-            nick = _nick;
-            age = _age;
-            gender = _gender;
+        if m.contains_key(&0x11a) {
+            let (nick, age, gender) = read_t11a(&m.remove(&0x11a).unwrap());
+            self.nickname = nick;
+            self.age = age;
+            self.gender = gender;
         }
         if m.contains_key(&0x199) {
             // read_t199(t199)
@@ -84,26 +81,23 @@ impl TlvDecoder for Client {
 
         self.sig_info = LoginSigInfo {
             login_bitmap: 0,
-            srm_token: select(m.get(&0x16A), &self.sig_info.srm_token).to_vec(),
-            t133: select(m.get(&0x133), &self.sig_info.t133).to_vec(),
-            encrypted_a1: select(m.get(&0x106), &self.sig_info.encrypted_a1).to_vec(),
-            tgt: m.remove(&0x10A).unwrap(),
-            tgt_key: m.remove(&0x10D).unwrap(),
-            user_st_key: m.remove(&0x10E).unwrap(),
+            srm_token: select(m.get(&0x16a), &self.sig_info.srm_token),
+            t133: select(m.get(&0x133), &self.sig_info.t133),
+            encrypted_a1: select(m.get(&0x106), &self.sig_info.encrypted_a1),
+            tgt: m.remove(&0x10a).unwrap(),
+            tgt_key: m.remove(&0x10d).unwrap(),
+            user_st_key: m.remove(&0x10e).unwrap(),
             user_st_web_sig: m.remove(&0x103).unwrap(),
             s_key: m.remove(&0x120).unwrap(),
-            s_key_expired_time: Utc::now().timestamp_millis() + 21600,
+            s_key_expired_time: Utc::now().timestamp() + 21600,
             d2: m.remove(&0x143).unwrap(),
             d2key: m.remove(&0x305).unwrap(),
-            wt_session_ticket_key: select(m.get(&0x134), self.sig_info.wt_session_ticket_key.as_slice()).to_vec(),
-            device_token: m.remove(&0x322).unwrap(),
+            wt_session_ticket_key: select(m.get(&0x134), &self.sig_info.wt_session_ticket_key),
+            device_token: m.remove(&0x322),
 
             ps_key_map,
-            pt4token_map
+            pt4token_map,
         };
-        self.nickname = nick;
-        self.age = age;
-        self.gender = gender;
     }
 
     fn decode_t119r(&mut self, data: &[u8]) {
@@ -112,24 +106,27 @@ impl TlvDecoder for Client {
         let mut m = reader.read_tlv_map(2);
         if m.contains_key(&0x120) {
             self.sig_info.s_key = m.remove(&0x120).unwrap();
-            self.sig_info.s_key_expired_time = Utc::now().timestamp_millis() + 21600;
+            self.sig_info.s_key_expired_time = Utc::now().timestamp() + 21600;
         }
-        if m.contains_key(&0x11A) {
-            read_t11a(&m.remove(&0x11A).unwrap());
+        if m.contains_key(&0x11a) {
+            let (nick, age, gender)=read_t11a(&m.remove(&0x11a).unwrap());
+            self.nickname = nick;
+            self.age = age;
+            self.gender = gender;
         }
     }
 
     fn decode_t130(&mut self, data: &[u8]) {
         let mut reader = Bytes::from(data.to_owned());
         reader.advance(2);
-        self.time_diff = reader.get_u32() as i64 - Utc::now().timestamp_millis();
-        self.t149 = reader.read_bytes_short()
+        self.time_diff = reader.get_i32() as i64 - Utc::now().timestamp();
+        self.t149 = reader.copy_to_bytes(4).to_vec()
     }
 
     fn decode_t113(&mut self, data: &[u8]) {
         let mut reader = Bytes::from(data.to_owned());
-        let uin = reader.get_u32();
-        println!("{}", uin)
+        let uin = reader.get_i32();
+        println!("got t133 uin: {}", uin)
     }
 
     fn decode_t186(&mut self, data: &[u8]) {
@@ -182,15 +179,15 @@ fn read_t512(data: &[u8]) -> (HashMap<String, Vec<u8>>, HashMap<String, Vec<u8>>
 
     for _ in 0..length {
         let domain = reader.read_string_short();
-        let ps_key = reader.read_string_short();
-        let ps4_token = reader.read_string_short();
+        let ps_key = reader.read_bytes_short();
+        let ps4_token = reader.read_bytes_short();
 
         if ps_key.len() > 0 {
-            ps_key_map.insert(domain.clone(), ps_key.into_bytes());
+            ps_key_map.insert(domain.clone(), ps_key);
         }
 
         if ps4_token.len() > 0 {
-            pt4_token_map.insert(domain, ps4_token.into_bytes());
+            pt4_token_map.insert(domain, ps4_token);
         }
     }
 
@@ -201,26 +198,19 @@ fn read_t512(data: &[u8]) -> (HashMap<String, Vec<u8>>, HashMap<String, Vec<u8>>
 fn read_t531(data: &[u8]) -> (Vec<u8>, Vec<u8>) {
     let mut reader = Bytes::from(data.to_owned());
     let mut m = reader.read_tlv_map(2);
-    if m.contains_key(&0x103) && m.contains_key(&0x16A) && m.contains_key(&0x113) && m.contains_key(&0x10C) {
-        let a = m.remove(&0x106).unwrap();
-        let b = m.remove(&0x10C).unwrap();
-        let mut a1: Vec<u8> = Vec::new();
-        for item in a {
-            a1.push(item)
-        }
-        for item in b {
-            a1.push(item)
-        }
-
-        let no_pic_sig = m.remove(&0x16A).unwrap();
-        return (a1, no_pic_sig);
+    let mut a1=Vec::new();
+    let mut no_pic_sig =Vec::new();
+    if m.contains_key(&0x103) && m.contains_key(&0x16a) && m.contains_key(&0x113) && m.contains_key(&0x10c) {
+        a1.put_slice(&m.remove(&0x106).unwrap());
+        a1.put_slice(&m.remove(&0x10c).unwrap());
+        no_pic_sig = m.remove(&0x16a).unwrap();
     }
-    return (Vec::new(), Vec::new())
+    return (a1,no_pic_sig);
 }
 
-fn select<'a>(a: Option<&'a Vec<u8>>, b: &'a [u8]) -> &'a [u8] {
+fn select(a: Option<&Vec<u8>>, b: &[u8]) -> Vec<u8> {
     return match a {
-        None => { b }
-        Some(a) => { a }
-    }
+        None => { b.to_vec() }
+        Some(a) => { a.to_vec() }
+    };
 }
