@@ -15,19 +15,6 @@ pub enum LoginState {
     QRCodeCanceled,
 }
 
-#[derive(Debug)]
-pub enum LoginError {
-    NeedCaptcha = 1,
-    OtherLoginError = 3,
-    UnsafeDeviceError = 4,
-    SMSNeededError = 5,
-    TooManySMSRequestError = 6,
-    SMSOrVerifyNeededError = 7,
-    SliderNeededError = 8,
-    UnknownLoginError = -1,
-    Success = 0,
-}
-
 #[derive(Debug, Default)]
 pub struct QRCodeLoginInfo {
     pub tmp_pwd: Vec<u8>,
@@ -44,34 +31,36 @@ pub struct QRCodeLoginResponse {
 }
 
 #[derive(Debug)]
-pub struct LoginResponse {
-    pub success: bool,
-    pub error: LoginError,
-
-    // Captcha info
-    pub captcha_image: Vec<u8>,
-    pub captcha_sign: Vec<u8>,
-
-    // unsafe device
-    pub verify_url: String,
-
-    // SMS needed
-    pub sms_phone: String,
-
-    // other error
-    pub error_message: String,
+pub enum LoginResponse {
+    Success,
+    SliderNeededError {
+        verify_url: String,
+    },
+    NeedCaptcha {
+        captcha_sign: Vec<u8>,
+        captcha_image: Vec<u8>,
+    },
+    UnknownLoginError {
+        error_message: String,
+    },
+    SMSOrVerifyNeededError {
+        verify_url: String,
+        sms_phone: String,
+        error_message: String,
+    },
+    SMSNeededError {
+        sms_phone: String,
+        error_message: String,
+    },
+    UnsafeDeviceError {
+        verify_url: String
+    },
+    TooManySMSRequestError,
+    OtherLoginError {
+        error_message: String
+    },
 }
 
-// type LoginError = isize;
-//
-// static NEED_CAPTCHA: LoginError = 1;
-// static OTHER_LOGIN_ERROR: LoginError = 3;
-// static UNSAFE_DEVICE_ERROR: LoginError = 4;
-// static SMS_NEEDED_ERROR: LoginError = 5;
-// static TOO_MANY_SMS_REQUEST_ERROR: LoginError = 6;
-// static SMS_OR_VERIFY_NEEDED_ERROR: LoginError = 7;
-// static SLIDER_NEEDED_ERROR: LoginError = 8;
-// static UNKNOWN_LOGIN_ERROR: LoginError = -1;
 
 pub fn decode_trans_emp_response(cli: &mut Client, payload: &[u8]) -> Option<QRCodeLoginResponse> {
     if payload.len() < 48 {
@@ -189,27 +178,13 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
         }
         // TODO
         cli.decode_t119(&m.get(&0x119).unwrap(), &cli.device_info.tgtgt_key.clone());
-        return Some(LoginResponse {
-            success: true,
-            error: LoginError::Success,
-            captcha_image: vec![],
-            captcha_sign: vec![],
-            verify_url: "".to_string(),
-            sms_phone: "".to_string(),
-            error_message: "".to_string(),
-        });
+        return Some(LoginResponse::Success);
     }
     if t == 2 {
         cli.t104 = m.remove(&0x104).unwrap();
         if m.contains_key(&0x192) {
-            return Some(LoginResponse {
-                success: false,
+            return Some(LoginResponse::SliderNeededError {
                 verify_url: String::from_utf8(m.remove(&0x192).unwrap()).unwrap(),
-                sms_phone: "".to_string(),
-                error: LoginError::SliderNeededError,
-                captcha_image: vec![],
-                captcha_sign: vec![],
-                error_message: "".to_string(),
             });
         }
         if m.contains_key(&0x165) {
@@ -217,37 +192,20 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
             let sign_len = img_data.get_u16();
             img_data.get_u16();
             let sign = img_data.copy_to_bytes(sign_len as usize).to_vec();
-            return Some(LoginResponse {
-                success: false,
-                error: LoginError::NeedCaptcha,
-                captcha_image: img_data.chunk().to_vec(),
+            return Some(LoginResponse::NeedCaptcha {
                 captcha_sign: sign,
-                verify_url: "".to_string(),
-                sms_phone: "".to_string(),
-                error_message: "".to_string(),
+                captcha_image: img_data.chunk().to_vec(),
             });
         } else {
-            return Some(LoginResponse {
-                success: false,
-                error: LoginError::UnknownLoginError,
-                captcha_image: vec![],
-                captcha_sign: vec![],
-                verify_url: "".to_string(),
-                sms_phone: "".to_string(),
-                error_message: "".to_string(),
+            return Some(LoginResponse::UnknownLoginError {
+                error_message: "".to_string()
             });
         }
     } // need captcha
 
     if t == 40 {
-        return Some(LoginResponse {
-            success: false,
+        return Some(LoginResponse::UnknownLoginError {
             error_message: "账号被冻结".to_string(),
-            error: LoginError::UnknownLoginError,
-            captcha_image: vec![],
-            captcha_sign: vec![],
-            verify_url: "".to_string(),
-            sms_phone: "".to_string(),
         });
     }
 
@@ -262,63 +220,35 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
                 r.read_string_limit(len)
             };
             if m.contains_key(&0x204) {
-                return Some(LoginResponse {
-                    success: false,
-                    error: LoginError::SMSOrVerifyNeededError,
+                return Some(LoginResponse::SMSOrVerifyNeededError {
                     verify_url: String::from_utf8(m.remove(&0x204).unwrap()).unwrap(),
                     sms_phone: phone,
-                    captcha_image: vec![],
-                    captcha_sign: vec![],
                     error_message: String::from_utf8(m.remove(&0x17e).unwrap()).unwrap(),
                 });
             }
-            return Some(LoginResponse {
-                success: false,
-                error: LoginError::SMSNeededError,
+            return Some(LoginResponse::SMSNeededError {
                 sms_phone: phone,
                 error_message: String::from_utf8(m.remove(&0x17e).unwrap()).unwrap(),
-                captcha_image: vec![],
-                captcha_sign: vec![],
-                verify_url: "".to_string(),
             });
         }
 
         if m.contains_key(&0x17b) {
             cli.t104 = m.remove(&0x104).unwrap();
-            return Some(LoginResponse {
-                success: false,
-                error: LoginError::SMSNeededError,
-                captcha_image: vec![],
-                captcha_sign: vec![],
-                verify_url: "".to_string(),
+            return Some(LoginResponse::SMSNeededError {
                 sms_phone: "".to_string(),
                 error_message: "".to_string(),
             });
         }
 
         if m.contains_key(&0x204) {
-            return Some(LoginResponse {
-                success: false,
-                error: LoginError::UnsafeDeviceError,
+            return Some(LoginResponse::UnsafeDeviceError {
                 verify_url: String::from_utf8(m.remove(&0x204).unwrap()).unwrap(),
-                captcha_image: vec![],
-                captcha_sign: vec![],
-                sms_phone: "".to_string(),
-                error_message: "".to_string(),
             });
         }
     }
 
     if t == 162 {
-        return Some(LoginResponse {
-            success: false,
-            error: LoginError::TooManySMSRequestError,
-            captcha_image: vec![],
-            captcha_sign: vec![],
-            verify_url: "".to_string(),
-            sms_phone: "".to_string(),
-            error_message: "".to_string(),
-        });
+        return Some(LoginResponse::TooManySMSRequestError);
     }
 
     if t == 204 {
@@ -332,14 +262,8 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
         let mut t149r = Bytes::from(m.remove(&0x149).unwrap());
         t149r.advance(2);
         t149r.read_string_short();//title
-        return Some(LoginResponse {
-            success: false,
-            error: LoginError::OtherLoginError,
+        return Some(LoginResponse::OtherLoginError {
             error_message: t149r.read_string_short(),
-            captcha_image: vec![],
-            captcha_sign: vec![],
-            verify_url: "".to_string(),
-            sms_phone: "".to_string(),
         });
     }
 
@@ -347,14 +271,8 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
         let mut t146r = Bytes::from(m.remove(&0x146).unwrap());
         t146r.advance(4); // ver and code
         t146r.read_string_short(); // title
-        return Some(LoginResponse {
-            success: false,
-            error: LoginError::OtherLoginError,
+        return Some(LoginResponse::OtherLoginError {
             error_message: t146r.read_string_short(),
-            captcha_image: vec![],
-            captcha_sign: vec![],
-            verify_url: "".to_string(),
-            sms_phone: "".to_string(),
         });
     }
     return None;
