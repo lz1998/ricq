@@ -17,7 +17,7 @@ impl<B> BinaryReader for B
     }
 
     fn read_string_short(&mut self) -> String {
-        let len = self.get_u16() as usize - 4;
+        let len = self.get_u16() as usize;
         String::from_utf8(self.copy_to_bytes(len).to_vec()).unwrap()
     }
 
