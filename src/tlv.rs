@@ -746,7 +746,7 @@ mod tests {
     static OS_NAME: &[u8] = "android".as_bytes();
     static OS_VERSION: &[u8] = "7.1.2".as_bytes();
     static SIM_INFO: &[u8] = "T-Mobile".as_bytes();
-    static IMEI: String = "468356291846738".to_string();
+    static IMEI: &str = "468356291846738";
     static IMEI_MD5: &[u8] = "9792b1bba1867318bf782af418306ef8".as_bytes();
     static WIFI_BSSID: &[u8] = "00:50:56:C0:00:08".as_bytes();
     static WIFI_SSID: &[u8] = "<unknown ssid>".as_bytes();

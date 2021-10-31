@@ -74,6 +74,14 @@ pub struct EncryptSession {
     t133: Vec<u8>,
 }
 
+impl EncryptSession {
+    pub fn new(t133: &[u8]) -> EncryptSession {
+        EncryptSession {
+            t133: t133.to_vec()
+        }
+    }
+}
+
 impl IEncryptMethod for EncryptSession {
     fn id(&self) -> u8 {
         return 69;

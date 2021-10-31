@@ -2,6 +2,7 @@ use bytes::BufMut;
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use crate::hex::encode_hex;
+use crate::pb;
 
 //手机设备信息
 pub struct DeviceInfo {
@@ -78,6 +79,24 @@ impl DeviceInfo {
         let mut r = rand::thread_rng().gen::<[u8; 16]>().to_vec();
         r.put_slice(&self.guid);
         self.tgtgt_key = md5::compute(&r).to_vec();
+    }
+
+    pub fn gen_pb_data(&self) -> Vec<u8> {
+        let mut data = Vec::new();
+        let device_info=pb::DeviceInfo {
+            bootloader: self.bootloader.to_owned(),
+            proc_version: self.proc_version.to_owned(),
+            codename: self.version.codename.to_owned(),
+            incremental: self.version.incremental.to_owned(),
+            fingerprint: self.finger_print.to_owned(),
+            boot_id: self.boot_id.to_owned(),
+            android_id: self.android_id.to_owned(),
+            base_band: self.base_band.to_owned(),
+            inner_version: self.version.incremental.to_owned(),
+        };
+        let mut buf = Vec::new();
+        prost::Message::encode(&device_info, &mut buf).unwrap();
+        data
     }
 }
 

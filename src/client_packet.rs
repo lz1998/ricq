@@ -5,12 +5,13 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 use chrono::Utc;
 use crate::binary_reader::BinaryReader;
 use crate::client::Client;
-use crate::packet::{build_code2d_request_packet, build_login_packet, build_oicq_request_packet, build_sso_packet};
+use crate::packet::{build_code2d_request_packet, build_login_packet, build_oicq_request_packet, build_sso_packet, build_uni_packet};
 use crate::tlv::{guid_flag, t1, t100, t104, t107, t108, t10a, t116, t141, t142, t143, t144, t145, t147, t154, t16, t16a, t174, t177, t17a, t17c, t18, t187, t188, t191, t193, t194, t197, t198, t1b, t1d, t1f, t2, t202, t33, t35, t400, t401, t511, t516, t521, t525, t536, t8};
 use crate::version::{ClientProtocol, gen_version_info};
 use crate::binary_writer::BinaryWriter;
 use crate::tea::qqtea_decrypt;
 use flate2::read::ZlibDecoder;
+use crate::encrypt::EncryptSession;
 
 #[derive(Default, Debug)]
 pub struct IncomingPacket {
@@ -225,22 +226,9 @@ impl ClientPacket for Client {
             w.put_slice(&t100(self.version.sso_version, self.version.sub_app_id, self.version.main_sig_map));
             w.put_slice(&t107(0));
             w.put_slice(&t142(self.version.apk_id.as_bytes()));
-            let device_info = crate::pb::DeviceInfo {
-                bootloader: self.device_info.bootloader.clone(),
-                proc_version: self.device_info.proc_version.clone(),
-                codename: self.device_info.version.codename.clone(),
-                incremental: self.device_info.version.incremental.clone(),
-                fingerprint: self.device_info.finger_print.clone(),
-                boot_id: self.device_info.boot_id.clone(),
-                android_id: self.device_info.android_id.clone(),
-                base_band: self.device_info.base_band.clone(),
-                inner_version: self.device_info.version.incremental.clone()
-            };
-            let mut buf = Vec::new();
-            prost::Message::encode(&device_info, &mut buf).unwrap();
             w.put_slice(&t144(
                 self.device_info.imei.as_bytes(),
-                &buf,
+                &self.device_info.gen_pb_data(),
                 self.device_info.os_type.as_bytes(),
                 self.device_info.version.release.as_bytes(),
                 self.device_info.sim_info.as_bytes(),
@@ -392,7 +380,7 @@ impl ClientPacket for Client {
 
     fn build_request_tgtgt_no_pic_sig_packet(&mut self) -> (u16, Vec<u8>) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin as u32, 0x810, &self.ecdh, &self.random_key, &{
+        let req = build_oicq_request_packet(self.uin as u32, 0x810, &EncryptSession::new(&self.sig_info.t133), &self.sig_info.wt_session_ticket_key, &{
             let mut w = Vec::new();
             w.put_u16(15);
             w.put_u16(24);
@@ -400,30 +388,17 @@ impl ClientPacket for Client {
             w.put_slice(&t18(16, self.uin as u32));
             w.put_slice(&t1(self.uin as u32, &self.device_info.ip_address));
             w.put_slice(&{
-                let mut buf = Vec::new();
-                buf.put_u16(0x106);
-                buf.write_bytes_short(&self.sig_info.encrypted_a1);
-                buf
+                let mut w = Vec::new();
+                w.put_u16(0x106);
+                w.write_bytes_short(&self.sig_info.encrypted_a1);
+                w
             });
             w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
             w.put_slice(&t100(self.version.sso_version, 2, self.version.main_sig_map));
             w.put_slice(&t107(0));
-            let device_info = crate::pb::DeviceInfo {
-                bootloader: self.device_info.bootloader.clone(),
-                proc_version: self.device_info.proc_version.clone(),
-                codename: self.device_info.version.codename.clone(),
-                incremental: self.device_info.version.incremental.clone(),
-                fingerprint: self.device_info.finger_print.clone(),
-                boot_id: self.device_info.boot_id.clone(),
-                android_id: self.device_info.android_id.clone(),
-                base_band: self.device_info.base_band.clone(),
-                inner_version: self.device_info.version.incremental.clone()
-            };
-            let mut buf = Vec::new();
-            prost::Message::encode(&device_info, &mut buf).unwrap();
             w.put_slice(&t144(
                 self.device_info.android_id.as_bytes(),
-                &buf,
+                &self.device_info.gen_pb_data(),
                 self.device_info.os_type.as_bytes(),
                 self.device_info.version.release.as_bytes(),
                 self.device_info.sim_info.as_bytes(),
@@ -447,6 +422,7 @@ impl ClientPacket for Client {
             w.put_slice(&t177(self.version.build_time, &self.version.sdk_version));
             w.put_slice(&t400(&self.g, self.uin, &self.device_info.guid, &self.dpwd, 1, 16, &self.random_key));
             w.put_slice(&t187(self.device_info.mac_address.as_bytes()));
+            w.put_slice(&t188(self.device_info.android_id.as_bytes()));
             w.put_slice(&t194(&self.device_info.imsi_md5));
             w.put_slice(&t202(self.device_info.wifi_bssid.as_bytes(), self.device_info.wifi_ssid.as_bytes()));
             w.put_slice(&t516());
@@ -454,8 +430,7 @@ impl ClientPacket for Client {
             w.put_slice(&t525(&t536(&vec![0x01, 0x00])));
             w
         });
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
-        let packet = build_login_packet(self.uin as u32, 2, &vec![0; 16], &sso, &[]);
+        let packet = build_uni_packet(self.uin, seq, "wtlogin.exchange_emp", 2, &self.out_going_packet_session_id, &[], &[0; 16], &req);
         (seq, packet)
     }
 
@@ -466,27 +441,14 @@ impl ClientPacket for Client {
             w.put_u16(11);
             w.put_u16(17);
 
-            w.put_slice(&t100(self.version.sso_version, 2, self.version.main_sig_map));
+            w.put_slice(&t100(self.version.sso_version, 100, self.version.main_sig_map));
             w.put_slice(&t10a(&self.sig_info.tgt));
             w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
             w.put_slice(&t108(&self.device_info.imei));
             let h = md5::compute(&self.sig_info.d2key).to_vec();
-            let device_info = crate::pb::DeviceInfo {
-                bootloader: self.device_info.bootloader.clone(),
-                proc_version: self.device_info.proc_version.clone(),
-                codename: self.device_info.version.codename.clone(),
-                incremental: self.device_info.version.incremental.clone(),
-                fingerprint: self.device_info.finger_print.clone(),
-                boot_id: self.device_info.boot_id.clone(),
-                android_id: self.device_info.android_id.clone(),
-                base_band: self.device_info.base_band.clone(),
-                inner_version: self.device_info.version.incremental.clone()
-            };
-            let mut buf = Vec::new();
-            prost::Message::encode(&device_info, &mut buf).unwrap();
             w.put_slice(&t144(
                 self.device_info.android_id.as_bytes(),
-                &buf,
+                &self.device_info.gen_pb_data(),
                 self.device_info.os_type.as_bytes(),
                 self.device_info.version.release.as_bytes(),
                 self.device_info.sim_info.as_bytes(),
@@ -515,8 +477,8 @@ impl ClientPacket for Client {
             // w.put_slice(&t202(self.device_info.wifi_bssid.as_bytes(), self.device_info.wifi_ssid.as_bytes()));
             w
         });
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
-        let packet = build_login_packet(self.uin as u32, 2, &vec![0; 16], &sso, &[]);
+        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.exchange_emp", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
+        let packet = build_login_packet(self.uin as u32, 2, &[0; 16], &sso, &[]);
         (seq, packet)
     }
 }
