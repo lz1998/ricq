@@ -6,7 +6,7 @@ use tokio::time::{Duration, sleep};
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 use rs_qq::client::{Client, Password};
 use rs_qq::client::device::DeviceInfo;
-use rs_qq::client::income::decode_trans_emp_response;
+use rs_qq::client::income::{decode_login_response, decode_trans_emp_response, LoginState};
 use rs_qq::client::net::ClientNet;
 use rs_qq::client::outcome::OutcomePacket;
 
@@ -31,7 +31,29 @@ async fn main() -> Result<()> {
         }).await.unwrap();
         let resp = decode_trans_emp_response(&client, &resp.payload).await.unwrap();
         tokio::fs::write("qrcode.png", &resp.image_data).await;
-        println!("{:?}", resp)
+        println!("{:?}", resp);
+        let sig = resp.sig;
+        loop {
+            sleep(Duration::from_secs(1));
+            let (seq, pkt) = client.build_qrcode_result_query_request_packet(&sig).await;
+            let resp = client.send_and_wait(OutcomePacket { seq, bytes: pkt }).await.unwrap();
+            let resp = decode_trans_emp_response(&client, &resp.payload).await.unwrap();
+            println!("{:?}", &resp.state);
+            match resp.state {
+                LoginState::QRCodeImageFetch => {}
+                LoginState::QRCodeWaitingForScan => {}
+                LoginState::QRCodeWaitingForConfirm => {}
+                LoginState::QRCodeTimeout => {}
+                LoginState::QRCodeConfirmed => {
+                    let cache_info = client.cache_info.read().await;
+                    let (seq, pkt) = client.build_qrcode_login_packet(&resp.login_info.tmp_pwd, &resp.login_info.tmp_no_pic_sig, &resp.login_info.tgt_qr).await;
+                    let resp = client.send_and_wait(OutcomePacket { seq, bytes: pkt }).await.unwrap();
+                    let resp = decode_login_response(&client, &resp.payload).await.unwrap();
+                    println!("{:?}", resp);
+                }
+                LoginState::QRCodeCanceled => {}
+            }
+        }
     });
     net.await;
     sleep(Duration::from_millis(100)).await;

@@ -157,7 +157,7 @@ pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Option<Q
     return None;
 }
 
-pub async fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginResponse> {
+pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Option<LoginResponse> {
     let mut reader = Bytes::from(payload.to_owned());
     reader.get_u16(); // sub command
     let t = reader.get_u8();
