@@ -163,8 +163,7 @@ mod tests {
     use chrono::Utc;
     use rand::distributions::Alphanumeric;
     use rand::{Rng, thread_rng};
-    use crate::device::{random_imei, random_string, random_uuid};
-    use crate::tlv::{t1, t16, t1b, t1d, t1f, t33, t35};
+    use crate::client::device::{random_imei, random_string, random_uuid};
 
     #[test]
     fn test_random() {

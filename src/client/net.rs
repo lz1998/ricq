@@ -5,9 +5,9 @@ use bytes::{Bytes, BytesMut};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpSocket, TcpStream};
 use tokio::sync::mpsc;
-use crate::client::Client;
-use crate::client_packet::IncomingPacket;
+use super::Client;
 use std::io::Result as IoResult;
+use crate::client::income::IncomingPacket;
 
 
 pub type OutPktSender = mpsc::UnboundedSender<Bytes>;
@@ -19,7 +19,7 @@ pub struct ClientNet {
 }
 
 impl ClientNet {
-    pub fn new(client: Arc<super::client::Client>, receiver: OutPktReceiver) -> Self {
+    pub fn new(client: Arc<Client>, receiver: OutPktReceiver) -> Self {
         Self { client, receiver }
     }
     pub async fn connect_tcp(&self) -> TcpStream {

@@ -1,9 +1,10 @@
 use std::collections::HashMap;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use chrono::Utc;
-use crate::binary_reader::BinaryReader;
-use crate::client::{AccountInfo, CacheInfo, Client, LoginSigInfo};
-use crate::tea::qqtea_decrypt;
+use crate::binary::BinaryReader;
+use crate::client::{AccountInfo, CacheInfo};
+use crate::client::structs::LoginSigInfo;
+use crate::crypto::qqtea_decrypt;
 
 
 pub fn decode_t161(data: &[u8], cache_info: &mut CacheInfo) {

@@ -1,7 +1,7 @@
 use std::num::ParseIntError;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use chrono::Utc;
-use crate::binary_writer::BinaryWriter;
+use crate::binary::{BinaryWriter,BinaryReader};
 
 
 pub fn t1(uin: u32, ip: &Vec<u8>) -> Vec<u8> {
@@ -738,7 +738,7 @@ pub fn guid_flag() -> u32 {
 mod tests {
     use std::borrow::Borrow;
     use chrono::Utc;
-    use crate::tlv::{guid_flag, t1, t100, t104, t106, t107, t108, t109, t10a, t116, t124, t128, t141, t142, t143, t144, t145, t147, t154, t16, t166, t16a, t16e, t174, t177, t17a, t17c, t18, t187, t188, t191, t193, t194, t197, t198, t1b, t1d, t1f, t2, t202, t33, t35, t400, t401, t511, t516, t521, t525, t52d, t536, t8};
+    use crate::client::outcome::tlv::*;
 
     static GUID: [u8; 16] = [142, 27, 163, 177, 172, 31, 181, 137, 118, 115, 8, 126, 24, 49, 54, 169];
     static TGTGT_KEY: [u8; 16] = [199, 12, 183, 107, 3, 28, 81, 148, 116, 20, 229, 112, 0, 64, 152, 255];

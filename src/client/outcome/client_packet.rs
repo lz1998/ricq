@@ -5,73 +5,16 @@ use std::io::Result as IOResult;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use chrono::Utc;
-use crate::binary_reader::BinaryReader;
+use crate::binary::BinaryWriter;
 use crate::client::Client;
-use crate::packet::{build_code2d_request_packet, build_login_packet, build_oicq_request_packet, build_sso_packet, build_uni_packet};
-use crate::tlv::{guid_flag, t1, t100, t104, t107, t108, t10a, t116, t141, t142, t143, t144, t145, t147, t154, t16, t16a, t174, t177, t17a, t17c, t18, t187, t188, t191, t193, t194, t197, t198, t1b, t1d, t1f, t2, t202, t33, t35, t400, t401, t511, t516, t521, t525, t536, t8};
-use crate::version::{ClientProtocol, gen_version_info};
-use crate::binary_writer::BinaryWriter;
-use crate::tea::qqtea_decrypt;
+use crate::crypto::{qqtea_decrypt,EncryptSession};
 use flate2::read::ZlibDecoder;
-use crate::encrypt::EncryptSession;
+use crate::client::outcome::packet::{build_code2d_request_packet, build_login_packet, build_oicq_request_packet, build_sso_packet, build_uni_packet};
+use crate::client::outcome::tlv::*;
+use crate::client::version::{ClientProtocol, gen_version_info};
 
-#[derive(Default, Debug)]
-pub struct IncomingPacket {
-    pub seq_id: u16,
-    pub flag1: i32,
-    pub flag2: u8,
-    pub flag3: u8,
-    pub uin_string: String,
-    pub command_name: String,
-    pub session_id: Bytes,
-    pub payload: Bytes,
-}
 
-impl IncomingPacket {
-    fn decrypt_payload(&mut self, ecdh_share_key: &[u8], random: &[u8], session_key: &[u8]) {
-        let mut payload = Bytes::from(self.payload.to_owned());
-        if payload.get_u8() != 2 {
-            // err
-            return;
-        }
-        payload.advance(2);
-        payload.advance(2);
-        payload.get_u16();
-        payload.get_u16();
-        payload.get_i32();
-        let encrypt_type = payload.get_u16();
-        payload.get_u8();
-        if encrypt_type == 0 {
-            let len = payload.remaining() - 1;
-            let data = payload.copy_to_bytes(len);
-            self.payload = Bytes::from(qqtea_decrypt(&data, ecdh_share_key));
-        }
-        if encrypt_type == 3 {
-            let len = payload.remaining() - 1;
-            let data = payload.copy_to_bytes(len);
-            self.payload = Bytes::from(qqtea_decrypt(&data, session_key));
-        }
-        //return error
-    }
-}
-
-// #[async_trait]
-// pub trait ClientPacket {
-//     async fn build_qrcode_fetch_request_packet(&mut self) -> (u16, Bytes);
-//     async fn build_qrcode_result_query_request_packet(&mut self, sig: &[u8]) -> (u16, Bytes);
-//     async fn parse_incoming_packet(&mut self, payload: &mut [u8]) -> Option<IncomingPacket>;
-//     async fn parse_sso_frame(&mut self, pkt: &mut IncomingPacket) -> bool;
-//     async fn build_qrcode_login_packet(&mut self, t106: &[u8], t16a: &[u8], t318: &[u8]) -> (u16, Bytes);
-//     async fn build_device_lock_login_packet(&mut self) -> (u16, Bytes);
-//     async fn build_captcha_packet(&mut self, result: String, sign: &[u8]) -> (u16, Bytes);
-//     async fn build_sms_request_packet(&mut self) -> (u16, Bytes);
-//     async fn build_sms_code_submit_packet(&mut self, code: String) -> (u16, Bytes);
-//     async fn build_ticket_submit_packet(&mut self, ticket: String) -> (u16, Bytes);
-//     async fn build_request_tgtgt_no_pic_sig_packet(&mut self) -> (u16, Bytes);
-//     async fn build_request_change_sig_packet(&mut self) -> (u16, Bytes);
-// }
-
-impl super::client::Client {
+impl crate::client::Client {
     pub async fn build_qrcode_fetch_request_packet(&self) -> (u16, Bytes) {
         let watch = gen_version_info(&ClientProtocol::AndroidWatch);
         let seq = self.next_seq();
@@ -103,7 +46,7 @@ impl super::client::Client {
         return (seq, packet);
     }
 
-    pub async fn build_qrcode_result_query_request_packet(&mut self, sig: &[u8]) -> (u16, Bytes) {
+    pub async fn build_qrcode_result_query_request_packet(&self, sig: &[u8]) -> (u16, Bytes) {
         let seq = self.next_seq();
         let watch = gen_version_info(&ClientProtocol::AndroidWatch);
         let req = build_oicq_request_packet(0, 0x812, &self.ecdh, &self.random_key, &{
@@ -130,83 +73,7 @@ impl super::client::Client {
         return (seq, packet);
     }
 
-    pub async fn parse_incoming_packet(&self, payload: &mut Bytes) -> Result<IncomingPacket,String> {
-        if payload.len() < 6 {
-            return Err("invalid  incoming packet length".to_string());
-        }
-        let mut pkt = IncomingPacket::default();
-        pkt.flag1 = payload.get_i32();
-        pkt.flag2 = payload.get_u8();
-        pkt.flag3 = payload.get_u8();
-        pkt.uin_string = payload.read_string();
-        pkt.payload = match pkt.flag2 {
-            0 => Bytes::from(payload.chunk().to_owned()),
-            1 => Bytes::from(qqtea_decrypt(payload.chunk(), &self.cache_info.read().await.sig_info.d2key)),
-            2 => Bytes::from(qqtea_decrypt(payload.chunk(), &[0; 16])),
-            _ => { Bytes::new() }
-        };
-        if pkt.payload.len() == 0 {
-            return Err("payload length==0".to_string());
-        }
-        if pkt.flag1 != 0x0A && pkt.flag1 != 0x0B {
-            return Err("flag1 error".to_string());
-        }
-        self.parse_sso_frame(&mut pkt).await?;
-        if pkt.flag2 == 2 {
-            pkt.decrypt_payload(&self.ecdh.initial_share_key, &self.random_key, &self.cache_info.read().await.sig_info.wt_session_ticket_key)
-        }
-        Ok(pkt)
-    }
-
-    pub async fn parse_sso_frame(&self, pkt: &mut IncomingPacket) -> Result<(), String> {
-        let mut payload = Bytes::from(pkt.payload.to_owned());
-        let len = payload.get_i32() as usize - 4;
-        if payload.remaining() < len {
-            return Err("remaining<len".to_string());
-        }
-        pkt.seq_id = payload.get_i32() as u16;
-        let ret_code = payload.get_i32();
-        if ret_code != 0 {
-            if ret_code == -10008 {
-                return Err("ErrSessionExpired".to_string());//ErrSessionExpired
-            }
-            return Err("unsuccessful".to_string());//unsuccessful
-        }
-
-        // extra data
-        let len = payload.get_i32() as usize - 4;
-        payload.advance(len);
-
-        pkt.command_name = payload.read_string();
-
-        let len = payload.get_i32() as usize - 4;
-        pkt.session_id = payload.copy_to_bytes(len);
-        if pkt.command_name == "Heartbeat.Alive" {
-            return Ok(());
-        }
-        let compressed_flag = payload.get_i32();
-        println!("compress_flag: {}", compressed_flag);
-        let packet = match compressed_flag {
-            0 => {
-                let _ = (payload.get_i32() as u64) & 0xffffffff;
-                Bytes::from(payload.chunk().to_owned())
-            }
-            1 => {
-                payload.advance(4);
-                let mut uncompressed = Vec::new();
-                ZlibDecoder::new(payload.chunk()).read_to_end(&mut uncompressed);
-                Bytes::from(uncompressed)
-            }
-            8 => {
-                Bytes::from(payload)
-            }
-            _ => { Bytes::new() }
-        };
-        pkt.payload = packet;
-        return Ok(());
-    }
-
-    pub async fn build_qrcode_login_packet(&mut self, t106: &[u8], t16a: &[u8], t318: &[u8]) -> (u16, Bytes) {
+    pub async fn build_qrcode_login_packet(&self, t106: &[u8], t16a: &[u8], t318: &[u8]) -> (u16, Bytes) {
         let seq = self.next_seq();
         let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst) as u32, 0x0810, &self.ecdh, &self.random_key, &{
             let mut w = BytesMut::new();
@@ -282,7 +149,7 @@ impl super::client::Client {
         (seq, packet)
     }
 
-    pub async fn build_device_lock_login_packet(&mut self) -> (u16, Bytes) {
+    pub async fn build_device_lock_login_packet(&self) -> (u16, Bytes) {
         let seq = self.next_seq();
         let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst) as u32, 0x0810, &self.ecdh, &self.random_key, &{
             let mut w = Vec::new();
@@ -300,7 +167,7 @@ impl super::client::Client {
         (seq, packet)
     }
 
-    pub async fn build_captcha_packet(&mut self, result: String, sign: &[u8]) -> (u16, Bytes) {
+    pub async fn build_captcha_packet(&self, result: String, sign: &[u8]) -> (u16, Bytes) {
         let seq = self.next_seq();
         let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst) as u32, 0x810, &self.ecdh, &self.random_key, &{
             let mut w = Vec::new();
@@ -318,7 +185,7 @@ impl super::client::Client {
         (seq, packet)
     }
 
-    pub async fn build_sms_request_packet(&mut self) -> (u16, Bytes) {
+    pub async fn build_sms_request_packet(&self) -> (u16, Bytes) {
         let seq = self.next_seq();
         let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst) as u32, 0x810, &self.ecdh, &self.random_key, &{
             let mut w = Vec::new();
@@ -338,7 +205,7 @@ impl super::client::Client {
         (seq, packet)
     }
 
-    pub async fn build_sms_code_submit_packet(&mut self, code: String) -> (u16, Bytes) {
+    pub async fn build_sms_code_submit_packet(&self, code: String) -> (u16, Bytes) {
         let seq = self.next_seq();
         let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst) as u32, 0x810, &self.ecdh, &self.random_key, &{
             let mut w = Vec::new();
@@ -359,7 +226,7 @@ impl super::client::Client {
         (seq, packet)
     }
 
-    pub async fn build_ticket_submit_packet(&mut self, ticket: String) -> (u16, Bytes) {
+    pub async fn build_ticket_submit_packet(&self, ticket: String) -> (u16, Bytes) {
         let seq = self.next_seq();
         let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst) as u32, 0x810, &self.ecdh, &self.random_key, &{
             let mut w = Vec::new();
@@ -377,7 +244,7 @@ impl super::client::Client {
         (seq, packet)
     }
 
-    pub async fn build_request_tgtgt_no_pic_sig_packet(&mut self) -> (u16, Bytes) {
+    pub async fn build_request_tgtgt_no_pic_sig_packet(&self) -> (u16, Bytes) {
         let seq = self.next_seq();
         let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst) as u32, 0x810, &EncryptSession::new(&self.cache_info.read().await.sig_info.t133), &self.cache_info.read().await.sig_info.wt_session_ticket_key, &{
             let mut w = Vec::new();
@@ -433,7 +300,7 @@ impl super::client::Client {
         (seq, packet)
     }
 
-    pub async fn build_request_change_sig_packet(&mut self) -> (u16, Bytes) {
+    pub async fn build_request_change_sig_packet(&self) -> (u16, Bytes) {
         let seq = self.next_seq();
         let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst) as u32, 0x810, &self.ecdh, &self.random_key, &{
             let mut w = BytesMut::new();
@@ -488,8 +355,6 @@ mod tests {
     use chrono::Utc;
     use rand::distributions::Alphanumeric;
     use rand::{Rng, thread_rng};
-    use crate::device::{random_imei, random_string, random_uuid};
-    use crate::tlv::{t1, t16, t1b, t1d, t1f, t33, t35};
 
     #[test]
     fn test_read() {}

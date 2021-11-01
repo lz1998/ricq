@@ -3,8 +3,8 @@ use openssl::bn::{BigNum, BigNumContext};
 use openssl::ec::{EcGroup, EcPoint, EcKey, PointConversionForm};
 use openssl::nid::Nid;
 use crate::hex::decode_hex;
-use crate::tea::qqtea_encrypt;
-use crate::binary_writer::BinaryWriter;
+use crate::binary::BinaryWriter;
+use super::qqtea_encrypt;
 
 pub trait IEncryptMethod {
     fn id(&self) -> u8;
@@ -107,11 +107,9 @@ mod tests {
     use openssl::bn::{BigNum, BigNumContext};
     use openssl::ec::{EcGroup, EcPoint, EcKey, PointConversionForm};
     use openssl::nid::Nid;
-    use crate::encrypt::{EncryptECDH, IEncryptMethod};
+    use crate::crypto::{EncryptECDH, IEncryptMethod};
     use crate::hex::decode_hex;
     use md5;
-    // use p256::{EncodedPoint, PublicKey, AffinePoint};
-    // use p256::elliptic_curve::sec1::FromEncodedPoint;
 
 
     #[test]

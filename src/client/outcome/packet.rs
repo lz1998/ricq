@@ -1,7 +1,6 @@
 use bytes::{BufMut, Bytes, BytesMut};
-use crate::binary_writer::{BinaryWriter};
-use crate::encrypt::IEncryptMethod;
-use crate::version::{ClientProtocol, gen_version_info};
+use crate::binary::{BinaryWriter};
+use crate::crypto::IEncryptMethod;
 
 pub fn build_oicq_request_packet<E>(uin: u32, command_id: u16, encrypt: &E, key: &[u8], body: &[u8]) -> Bytes
     where E: IEncryptMethod

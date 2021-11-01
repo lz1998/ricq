@@ -2,12 +2,11 @@ use std::io::Read;
 use std::net::TcpStream;
 use std::sync::atomic::Ordering;
 use byteorder::{BigEndian, ReadBytesExt};
-use crate::client::Client;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
-use crate::binary_reader::BinaryReader;
-use crate::binary_writer::BinaryWriter;
-use crate::device::random_string;
-use crate::tlv_decoder::{decode_t119, decode_t119r, decode_t161};
+use crate::binary::{BinaryReader, BinaryWriter};
+use crate::client::Client;
+use super::tlv_decoder::*;
+use crate::client::device::random_string;
 
 #[derive(Debug)]
 pub enum LoginState {
@@ -156,7 +155,6 @@ pub async fn decode_trans_emp_response(cli: &mut Client, payload: &[u8]) -> Opti
 }
 
 pub async fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginResponse> {
-
     let mut reader = Bytes::from(payload.to_owned());
     reader.get_u16(); // sub command
     let t = reader.get_u8();
@@ -174,17 +172,17 @@ pub async fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<L
     }
     if t == 0 {
         let mut cache_info = cli.cache_info.write().await;
-        let mut account_info=cli.account_info.write().await;
+        let mut account_info = cli.account_info.write().await;
         if m.contains_key(&0x150) {
             cache_info.t150 = m.remove(&0x150).unwrap().into();
         }
         if m.contains_key(&0x161) {
-            decode_t161(&m.remove(&0x161).unwrap(),&mut cache_info);
+            decode_t161(&m.remove(&0x161).unwrap(), &mut cache_info);
         }
         if m.contains_key(&0x403) {
             cache_info.rand_seed = m.remove(&0x403).unwrap().into();
         }
-        decode_t119(&m.get(&0x119).unwrap(), &cli.device_info.tgtgt_key.clone(),&mut cache_info,&mut account_info);
+        decode_t119(&m.get(&0x119).unwrap(), &cli.device_info.tgtgt_key.clone(), &mut cache_info, &mut account_info);
         return Some(LoginResponse::Success);
     }
     if t == 2 {
@@ -308,7 +306,7 @@ pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> O
     }
     if cmd == 11 {
         let h = md5::compute(&cli.cache_info.read().await.sig_info.d2key).to_vec();
-        decode_t119(m.get(&0x119).unwrap(), &h,&mut cache_info,&mut account_info);
+        decode_t119(m.get(&0x119).unwrap(), &h, &mut cache_info, &mut account_info);
     }
     return None;
 }

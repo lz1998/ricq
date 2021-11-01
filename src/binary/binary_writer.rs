@@ -1,6 +1,6 @@
 use bytes::{Buf, BufMut, BytesMut};
 use crate::hex::decode_hex;
-use crate::tea::qqtea_encrypt;
+use crate::crypto::qqtea_encrypt;
 
 pub trait BinaryWriter {
     fn write_bytes_short(&mut self, data: &[u8]);

@@ -1,17 +1,7 @@
-pub mod packet;
-pub mod tlv;
-pub mod binary_writer;
-pub mod binary_reader;
-pub mod version;
-pub mod encrypt;
+pub mod binary;
+pub mod crypto;
 pub mod hex;
-pub mod tea;
 pub mod client;
-pub mod device;
-pub mod client_packet;
-pub mod decoder;
-pub mod tlv_decoder;
-pub mod net;
 
 pub mod pb{
     include!(concat!(env!("OUT_DIR"), "/pb.rs"));
@@ -29,9 +19,9 @@ mod tests {
     use std::net::TcpStream;
     use std::str::from_utf8;
     use std::time::Duration;
+
     use byteorder::{BigEndian, ReadBytesExt};
-    use crate::client::{Client, Password};
-    use crate::decoder::{decode_login_response, decode_trans_emp_response, LoginState};
+
 
     #[test]
     fn test_connect() {
