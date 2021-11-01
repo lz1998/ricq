@@ -65,7 +65,7 @@ pub enum LoginResponse {
 }
 
 
-pub async fn decode_trans_emp_response(cli: &mut Client, payload: &[u8]) -> Option<QRCodeLoginResponse> {
+pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Option<QRCodeLoginResponse> {
     if payload.len() < 48 {
         return None;
     }
@@ -139,7 +139,10 @@ pub async fn decode_trans_emp_response(cli: &mut Client, payload: &[u8]) -> Opti
         if !m.contains_key(&0x18) || !m.contains_key(&0x1e) || !m.contains_key(&0x19) {
             return None;
         }
-        cli.device_info.tgtgt_key = m.remove(&0x1e).unwrap();
+        {
+            let mut device_info = cli.device_info.write().await;
+            device_info.tgtgt_key = m.remove(&0x1e).unwrap();
+        }
         return Some(QRCodeLoginResponse {
             image_data: Bytes::new(),
             sig: Bytes::new(),
@@ -165,7 +168,7 @@ pub async fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<L
         cache_info.dpwd = random_string(16).into();
         cache_info.t402 = m.remove(&0x402).unwrap();
         let mut v = Vec::new();
-        v.put_slice(&cli.device_info.guid);
+        v.put_slice(&cli.device_info.read().await.guid);
         v.put_slice(&cache_info.dpwd);
         v.put_slice(&cache_info.t402);
         cache_info.g = md5::compute(&v).to_vec().into();
@@ -182,7 +185,7 @@ pub async fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<L
         if m.contains_key(&0x403) {
             cache_info.rand_seed = m.remove(&0x403).unwrap().into();
         }
-        decode_t119(&m.get(&0x119).unwrap(), &cli.device_info.tgtgt_key.clone(), &mut cache_info, &mut account_info);
+        decode_t119(&m.get(&0x119).unwrap(), &cli.device_info.read().await.tgtgt_key, &mut cache_info, &mut account_info);
         return Some(LoginResponse::Success);
     }
     if t == 2 {
@@ -302,7 +305,7 @@ pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> O
         return None;
     }
     if cmd == 15 {
-        decode_t119r(m.get(&0x119).unwrap(), &cli.device_info.tgtgt_key, &mut cache_info, &mut account_info);
+        decode_t119r(m.get(&0x119).unwrap(), &cli.device_info.read().await.tgtgt_key, &mut cache_info, &mut account_info);
     }
     if cmd == 11 {
         let h = md5::compute(&cli.cache_info.read().await.sig_info.d2key).to_vec();

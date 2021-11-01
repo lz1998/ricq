@@ -31,7 +31,7 @@ pub struct Client {
     //随机16位
     pub random_key: Bytes,
     pub version: VersionInfo,
-    pub device_info: DeviceInfo,
+    pub device_info: RwLock<DeviceInfo>,
     pub out_going_packet_session_id: RwLock<Bytes>,
 
     // account info

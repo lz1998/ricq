@@ -18,7 +18,10 @@ impl Client {
     pub async fn new(
         uin: i64,
         password: Password,
+        mut device_info: DeviceInfo,
     ) -> (Client, net::OutPktReceiver) {
+        device_info.gen_guid();
+        device_info.gen_tgtgt_key();
         let (out_pkt_sender, out_pkt_receiver) = tokio::sync::mpsc::unbounded_channel();
 
         let mut cli = Client {
@@ -31,12 +34,16 @@ impl Client {
             ecdh: EncryptECDH::default(),
             random_key: Bytes::from(rand::thread_rng().gen::<[u8; 16]>().to_vec()),
             version: gen_version_info(&ClientProtocol::IPad),
-            device_info: DeviceInfo::random(),
+            device_info:RwLock::new(device_info),
             out_going_packet_session_id: RwLock::new(Bytes::from_static(&[0x02, 0xb0, 0x5b, 0x8b])),
             account_info: RwLock::new(AccountInfo::default()),
             cache_info: RwLock::new(CacheInfo::default()),
         };
-        cli.cache_info.write().await.ksid = format!("|{}|A8.2.7.27f6ea96", cli.device_info.imei).into();
+        {
+            let mut cache_info = cli.cache_info.write().await;
+            cache_info.ksid = Bytes::from(format!("|{}|A8.2.7.27f6ea96", cli.device_info.read().await.imei)); // TODO before connect
+        }
+        cli.cache_info.write().await.ksid = format!("|{}|A8.2.7.27f6ea96", cli.device_info.read().await.imei).into();
         (cli, out_pkt_receiver)
     }
     pub fn next_seq(&self) -> u16 {
