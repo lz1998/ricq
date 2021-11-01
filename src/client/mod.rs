@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU16};
 
 use bytes::Bytes;
@@ -7,6 +8,8 @@ use crate::client::structs::LoginSigInfo;
 use crate::client::version::VersionInfo;
 
 use crate::crypto::EncryptECDH;
+use tokio::sync::oneshot;
+use crate::client::income::IncomePacket;
 
 mod client;
 mod structs;
@@ -24,6 +27,7 @@ pub struct Client {
     pub connected: AtomicBool,
 
     pub out_pkt_sender: net::OutPktSender,
+    pub packet_promises: RwLock<HashMap<u16, oneshot::Sender<IncomePacket>>>,
     //随机16位
     pub random_key: Bytes,
     pub version: VersionInfo,

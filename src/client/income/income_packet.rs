@@ -6,7 +6,7 @@ use bytes::{Bytes, Buf};
 use crate::binary::BinaryReader;
 
 #[derive(Default, Debug)]
-pub struct IncomingPacket {
+pub struct IncomePacket {
     pub seq_id: u16,
     pub flag1: i32,
     pub flag2: u8,
@@ -17,7 +17,7 @@ pub struct IncomingPacket {
     pub payload: Bytes,
 }
 
-impl IncomingPacket {
+impl IncomePacket {
     pub fn decrypt_payload(&mut self, ecdh_share_key: &[u8], random: &[u8], session_key: &[u8]) {
         let mut payload = Bytes::from(self.payload.to_owned());
         if payload.get_u8() != 2 {
@@ -46,11 +46,11 @@ impl IncomingPacket {
 }
 
 impl super::super::Client{
-    pub async fn parse_incoming_packet(&self, payload: &mut Bytes) -> Result<IncomingPacket,String> {
+    pub async fn parse_incoming_packet(&self, payload: &mut Bytes) -> Result<IncomePacket,String> {
         if payload.len() < 6 {
             return Err("invalid  incoming packet length".to_string());
         }
-        let mut pkt = IncomingPacket::default();
+        let mut pkt = IncomePacket::default();
         pkt.flag1 = payload.get_i32();
         pkt.flag2 = payload.get_u8();
         pkt.flag3 = payload.get_u8();
@@ -74,7 +74,7 @@ impl super::super::Client{
         Ok(pkt)
     }
 
-    pub async fn parse_sso_frame(&self, pkt: &mut IncomingPacket) -> Result<(), String> {
+    pub async fn parse_sso_frame(&self, pkt: &mut IncomePacket) -> Result<(), String> {
         let mut payload = Bytes::from(pkt.payload.to_owned());
         let len = payload.get_i32() as usize - 4;
         if payload.remaining() < len {

@@ -7,9 +7,11 @@ use tokio::sync::RwLock;
 use crate::client::device::{DeviceInfo, Version};
 use crate::crypto::EncryptECDH;
 use crate::client::{AccountInfo, CacheInfo, Client, net, Password};
-use crate::client::income::IncomingPacket;
+use crate::client::income::IncomePacket;
+use crate::client::outcome::OutcomePacket;
 use crate::client::version::{ClientProtocol, gen_version_info, VersionInfo};
-
+use tokio::sync::oneshot;
+use tokio::sync::oneshot::Sender;
 
 
 impl Client {
@@ -25,6 +27,7 @@ impl Client {
             password_md5: password.md5(),
             connected: AtomicBool::new(false),
             out_pkt_sender,
+            packet_promises: RwLock::new(HashMap::new()),
             ecdh: EncryptECDH::default(),
             random_key: Bytes::from(rand::thread_rng().gen::<[u8; 16]>().to_vec()),
             version: gen_version_info(&ClientProtocol::IPad),
@@ -40,7 +43,38 @@ impl Client {
         self.seq_id.fetch_add(1, Ordering::Relaxed)
     }
 
-    pub async fn handle_income_packet(&self, pkt: IncomingPacket) {
-        println!("{:?}", pkt)
+    pub async fn handle_income_packet(&self, pkt: IncomePacket) {
+        let sender = {
+            let mut packet_promises = self.packet_promises.write().await;
+            packet_promises.remove(&pkt.seq_id)
+        };
+        match sender {
+            Some(sender) => {
+                sender.send(pkt); // response
+            }
+            None => {
+                // other handler
+            }
+        };
+    }
+
+    pub async fn send_and_wait(&self, pkt: OutcomePacket) -> Option<IncomePacket> {
+        let (mut sender, mut receiver) = oneshot::channel();
+        {
+            let mut packet_promises = self.packet_promises.write().await;
+            packet_promises.insert(pkt.seq, sender);
+        }
+        self.out_pkt_sender.send(pkt.bytes);
+        let output = if let Ok(Ok(p)) = tokio::time::timeout(std::time::Duration::from_secs(15), receiver).await
+        {
+            Some(p)
+        } else {
+            None
+        };
+        {
+            let mut packet_promises = self.packet_promises.write().await;
+            packet_promises.remove(&pkt.seq);
+        }
+        output
     }
 }

@@ -7,7 +7,7 @@ use tokio::net::{TcpSocket, TcpStream};
 use tokio::sync::mpsc;
 use super::Client;
 use std::io::Result as IoResult;
-use crate::client::income::IncomingPacket;
+use crate::client::income::IncomePacket;
 
 
 pub type OutPktSender = mpsc::UnboundedSender<Bytes>;
@@ -51,7 +51,7 @@ impl ClientNet {
         Ok(data.freeze())
     }
 
-    pub async fn read_and_parse(&self, stream: &mut TcpStream) -> IoResult<IncomingPacket> {
+    pub async fn read_and_parse(&self, stream: &mut TcpStream) -> IoResult<IncomePacket> {
         let mut in_bytes = self.read_from_tcp_stream(stream).await?;
         match self.client.parse_incoming_packet(&mut in_bytes).await {
             Ok(pkt) => {
