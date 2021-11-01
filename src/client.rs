@@ -1,103 +1,139 @@
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicU16, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU16, Ordering};
 use std::sync::Arc;
+use bytes::Bytes;
 use rand::Rng;
+use tokio::sync::RwLock;
+use crate::client_packet::IncomingPacket;
 use crate::device::{DeviceInfo, Version};
 use crate::encrypt::EncryptECDH;
+use crate::net;
 use crate::version::{ClientProtocol, gen_version_info, VersionInfo};
 
 pub struct Client {
-    seq_id: Arc<AtomicU16>,
-    pub uin: i64,
+    seq_id: AtomicU16,
+    pub uin: AtomicI64,
+    pub password_md5: Bytes,
     pub ecdh: EncryptECDH,
+    pub connected: AtomicBool,
+
+    pub out_pkt_sender: net::OutPktSender,
     //随机16位
-    pub random_key: Vec<u8>,
+    pub random_key: Bytes,
     pub version: VersionInfo,
     pub device_info: DeviceInfo,
-    pub out_going_packet_session_id: Vec<u8>,
-    pub ksid: Vec<u8>,
+    pub out_going_packet_session_id: RwLock<Bytes>,
 
     // account info
+    pub account_info: RwLock<AccountInfo>,
+
+    pub cache_info: RwLock<CacheInfo>,
+}
+
+/// Password enum
+pub enum Password {
+    String(String),
+    /// [u8; 16]
+    Md5(Bytes),
+}
+
+impl Password {
+    /// compute password md5(do nothing if already md5)
+    pub fn md5(&self) -> Bytes {
+        match self {
+            Self::String(s) => Bytes::copy_from_slice(&md5::compute(s).0),
+            Self::Md5(m) => m.clone(),
+        }
+    }
+
+    pub fn from_str(s: &str) -> Self {
+        Self::String(s.to_owned())
+    }
+}
+
+#[derive(Default)]
+pub struct CacheInfo {
+    pub ksid: Bytes,
+    // tlv cache
+    pub t104: Bytes,
+    pub t174: Bytes,
+    pub g: Bytes,
+    pub t402: Bytes,
+    pub t150: Bytes,
+    pub t149: Bytes,
+    pub t528: Bytes,
+    pub t530: Bytes,
+    pub rand_seed: Bytes,
+    // t403
+    pub rollback_sig: Bytes,
+    // session info
+    pub sig_info: LoginSigInfo,
+    pub dpwd: Bytes,
+    pub time_diff: i64,
+    pub pwd_flag: bool,
+}
+
+#[derive(Default)]
+pub struct AccountInfo {
     pub nickname: String,
     pub age: u16,
     pub gender: u16,
-
-    // tlv cache
-    pub t104: Vec<u8>,
-    pub t174: Vec<u8>,
-    pub g: Vec<u8>,
-    pub t402: Vec<u8>,
-    pub t150: Vec<u8>,
-    pub t149: Vec<u8>,
-    pub t528: Vec<u8>,
-    pub t530: Vec<u8>,
-    pub rand_seed: Vec<u8>,
-    // t403
-    pub rollback_sig: Vec<u8>,
-
-    // session info
-    pub sig_info: LoginSigInfo,
-    pub dpwd: Vec<u8>,
-    pub time_diff: i64,
-    pub pwd_flag: bool,
-
 }
 
+
 impl Client {
-    pub fn new() -> Client {
-        Client {
-            seq_id: Arc::new(AtomicU16::new(0x3635)),
-            uin: 0,
-            ecdh: EncryptECDH::new(),
-            random_key: Vec::from(rand::thread_rng().gen::<[u8; 16]>()),
+    pub async fn new(
+        uin: i64,
+        password: Password,
+    ) -> (Client, net::OutPktReceiver) {
+        let (out_pkt_sender, out_pkt_receiver) = tokio::sync::mpsc::unbounded_channel();
+
+        let mut cli = Client {
+            seq_id: AtomicU16::new(0x3635),
+            uin: AtomicI64::new(uin),
+            password_md5: password.md5(),
+            connected: AtomicBool::new(false),
+            out_pkt_sender,
+            ecdh: EncryptECDH::default(),
+            random_key: Bytes::from(rand::thread_rng().gen::<[u8; 16]>().to_vec()),
             version: gen_version_info(&ClientProtocol::IPad),
             device_info: DeviceInfo::random(),
-            out_going_packet_session_id: vec![0x02, 0xB0, 0x5B, 0x8B],
-            ksid: vec![],
-            nickname: "".to_string(),
-            age: 0,
-            gender: 0,
-            t104: vec![],
-            t174: vec![],
-            g: vec![],
-            t402: vec![],
-            t150: vec![],
-            t149: vec![],
-            t528: vec![],
-            t530: vec![],
-            rand_seed: vec![],
-            rollback_sig: vec![],
-            sig_info: LoginSigInfo::default(),
-            dpwd: vec![],
-            time_diff: 0,
-            pwd_flag: false,
-        }
+            out_going_packet_session_id: RwLock::new(Bytes::from_static(&[0x02, 0xb0, 0x5b, 0x8b])),
+            account_info: RwLock::new(AccountInfo::default()),
+            cache_info: RwLock::new(CacheInfo::default()),
+        };
+        cli.cache_info.write().await.ksid = format!("|{}|A8.2.7.27f6ea96", cli.device_info.imei).into();
+        (cli, out_pkt_receiver)
     }
-    pub fn next_seq(&mut self) -> u16 {
+    pub fn next_seq(&self) -> u16 {
         self.seq_id.fetch_add(1, Ordering::Relaxed)
+    }
+
+    pub async fn handle_income_packet(&self, pkt: IncomingPacket) {
+        println!("{:?}", pkt)
     }
 }
 
 #[derive(Default)]
 pub struct LoginSigInfo {
     pub login_bitmap: u64,
-    pub tgt: Vec<u8>,
-    pub tgt_key: Vec<u8>,
+    pub tgt: Bytes,
+    pub tgt_key: Bytes,
     // study room manager | 0x16a
-    pub srm_token: Vec<u8>,
-    pub t133: Vec<u8>,
-    pub encrypted_a1: Vec<u8>,
-    pub user_st_key: Vec<u8>,
-    pub user_st_web_sig: Vec<u8>,
-    pub s_key: Vec<u8>,
+    pub srm_token: Bytes,
+    pub t133: Bytes,
+    pub encrypted_a1: Bytes,
+    pub user_st_key: Bytes,
+    pub user_st_web_sig: Bytes,
+    pub s_key: Bytes,
     pub s_key_expired_time: i64,
-    pub d2: Vec<u8>,
-    pub d2key: Vec<u8>,
-    pub wt_session_ticket_key: Vec<u8>,
+    pub d2: Bytes,
+    pub d2key: Bytes,
+    pub wt_session_ticket_key: Bytes,
     // TODO 是不是可能None？
-    pub device_token: Option<Vec<u8>>,
-    pub ps_key_map: HashMap<String, Vec<u8>>,
-    pub pt4token_map: HashMap<String, Vec<u8>>,
+    pub device_token: Option<Bytes>,
+    pub ps_key_map: HashMap<String, Bytes>,
+    pub pt4token_map: HashMap<String, Bytes>,
 }
 
 pub struct QiDianAccountInfo {
@@ -110,6 +146,6 @@ pub struct QiDianAccountInfo {
 }
 
 pub struct BigDataReqSessionInfo {
-    pub sig_session: Vec<u8>,
-    pub session_key: Vec<u8>,
+    pub sig_session: Bytes,
+    pub session_key: Bytes,
 }

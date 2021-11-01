@@ -1,5 +1,7 @@
 use std::borrow::Borrow;
 use std::io::Read;
+use std::sync::atomic::Ordering;
+use std::io::Result as IOResult;
 use byteorder::{ReadBytesExt, WriteBytesExt};
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use chrono::Utc;
@@ -21,8 +23,8 @@ pub struct IncomingPacket {
     pub flag3: u8,
     pub uin_string: String,
     pub command_name: String,
-    pub session_id: Vec<u8>,
-    pub payload: Vec<u8>,
+    pub session_id: Bytes,
+    pub payload: Bytes,
 }
 
 impl IncomingPacket {
@@ -42,35 +44,35 @@ impl IncomingPacket {
         if encrypt_type == 0 {
             let len = payload.remaining() - 1;
             let data = payload.copy_to_bytes(len);
-            self.payload = qqtea_decrypt(&data, ecdh_share_key);
+            self.payload = Bytes::from(qqtea_decrypt(&data, ecdh_share_key));
         }
         if encrypt_type == 3 {
             let len = payload.remaining() - 1;
             let data = payload.copy_to_bytes(len);
-            self.payload = qqtea_decrypt(&data, session_key);
+            self.payload = Bytes::from(qqtea_decrypt(&data, session_key));
         }
         //return error
     }
 }
 
+// #[async_trait]
+// pub trait ClientPacket {
+//     async fn build_qrcode_fetch_request_packet(&mut self) -> (u16, Bytes);
+//     async fn build_qrcode_result_query_request_packet(&mut self, sig: &[u8]) -> (u16, Bytes);
+//     async fn parse_incoming_packet(&mut self, payload: &mut [u8]) -> Option<IncomingPacket>;
+//     async fn parse_sso_frame(&mut self, pkt: &mut IncomingPacket) -> bool;
+//     async fn build_qrcode_login_packet(&mut self, t106: &[u8], t16a: &[u8], t318: &[u8]) -> (u16, Bytes);
+//     async fn build_device_lock_login_packet(&mut self) -> (u16, Bytes);
+//     async fn build_captcha_packet(&mut self, result: String, sign: &[u8]) -> (u16, Bytes);
+//     async fn build_sms_request_packet(&mut self) -> (u16, Bytes);
+//     async fn build_sms_code_submit_packet(&mut self, code: String) -> (u16, Bytes);
+//     async fn build_ticket_submit_packet(&mut self, ticket: String) -> (u16, Bytes);
+//     async fn build_request_tgtgt_no_pic_sig_packet(&mut self) -> (u16, Bytes);
+//     async fn build_request_change_sig_packet(&mut self) -> (u16, Bytes);
+// }
 
-pub trait ClientPacket {
-    fn build_qrcode_fetch_request_packet(&mut self) -> (u16, Vec<u8>);
-    fn build_qrcode_result_query_request_packet(&mut self, sig: &[u8]) -> (u16, Vec<u8>);
-    fn parse_incoming_packet(&mut self, payload: &mut [u8]) -> Option<IncomingPacket>;
-    fn parse_sso_frame(&mut self, pkt: &mut IncomingPacket) -> bool;
-    fn build_qrcode_login_packet(&mut self, t106: &[u8], t16a: &[u8], t318: &[u8]) -> (u16, Vec<u8>);
-    fn build_device_lock_login_packet(&mut self) -> (u16, Vec<u8>);
-    fn build_captcha_packet(&mut self, result: String, sign: &[u8]) -> (u16, Vec<u8>);
-    fn build_sms_request_packet(&mut self) -> (u16, Vec<u8>);
-    fn build_sms_code_submit_packet(&mut self, code: String) -> (u16, Vec<u8>);
-    fn build_ticket_submit_packet(&mut self, ticket: String) -> (u16, Vec<u8>);
-    fn build_request_tgtgt_no_pic_sig_packet(&mut self) -> (u16, Vec<u8>);
-    fn build_request_change_sig_packet(&mut self) -> (u16, Vec<u8>);
-}
-
-impl ClientPacket for Client {
-    fn build_qrcode_fetch_request_packet(&mut self) -> (u16, Vec<u8>) {
+impl super::client::Client {
+    pub async fn build_qrcode_fetch_request_packet(&self) -> (u16, Bytes) {
         let watch = gen_version_info(&ClientProtocol::AndroidWatch);
         let seq = self.next_seq();
         let req = build_oicq_request_packet(0, 0x812, &self.ecdh, &self.random_key, &{
@@ -96,12 +98,12 @@ impl ClientPacket for Client {
             }));
             w
         });
-        let sso = build_sso_packet(seq, watch.app_id, self.version.sub_app_id, "wtlogin.trans_emp", &self.device_info.imei, &vec![], &self.out_going_packet_session_id, &req, &self.ksid);
+        let sso = build_sso_packet(seq, watch.app_id, self.version.sub_app_id, "wtlogin.trans_emp", &self.device_info.imei, &vec![], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
         let packet = build_login_packet(0, 2, &vec![0; 16], &sso, &vec![]);
         return (seq, packet);
     }
 
-    fn build_qrcode_result_query_request_packet(&mut self, sig: &[u8]) -> (u16, Vec<u8>) {
+    pub async fn build_qrcode_result_query_request_packet(&mut self, sig: &[u8]) -> (u16, Bytes) {
         let seq = self.next_seq();
         let watch = gen_version_info(&ClientProtocol::AndroidWatch);
         let req = build_oicq_request_packet(0, 0x812, &self.ecdh, &self.random_key, &{
@@ -123,55 +125,52 @@ impl ClientPacket for Client {
             }));
             w
         });
-        let sso = build_sso_packet(seq, watch.app_id, self.version.sub_app_id, "wtlogin.trans_emp", &self.device_info.imei, &vec![], &self.out_going_packet_session_id, &req, &self.ksid);
+        let sso = build_sso_packet(seq, watch.app_id, self.version.sub_app_id, "wtlogin.trans_emp", &self.device_info.imei, &vec![], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
         let packet = build_login_packet(0, 2, &vec![0; 16], &sso, &vec![]);
         return (seq, packet);
     }
 
-    fn parse_incoming_packet(&mut self, payload: &mut [u8]) -> Option<IncomingPacket> {
+    pub async fn parse_incoming_packet(&self, payload: &mut Bytes) -> Result<IncomingPacket,String> {
         if payload.len() < 6 {
-            return None;
+            return Err("invalid  incoming packet length".to_string());
         }
         let mut pkt = IncomingPacket::default();
-        let mut payload = Bytes::from(payload.to_owned());
         pkt.flag1 = payload.get_i32();
         pkt.flag2 = payload.get_u8();
         pkt.flag3 = payload.get_u8();
         pkt.uin_string = payload.read_string();
         pkt.payload = match pkt.flag2 {
-            0 => payload.chunk().to_vec(),
-            1 => qqtea_decrypt(payload.chunk(), &self.sig_info.d2key),
-            2 => qqtea_decrypt(payload.chunk(), &[0; 16]),
-            _ => { vec![] }
+            0 => Bytes::from(payload.chunk().to_owned()),
+            1 => Bytes::from(qqtea_decrypt(payload.chunk(), &self.cache_info.read().await.sig_info.d2key)),
+            2 => Bytes::from(qqtea_decrypt(payload.chunk(), &[0; 16])),
+            _ => { Bytes::new() }
         };
         if pkt.payload.len() == 0 {
-            return None;
+            return Err("payload length==0".to_string());
         }
         if pkt.flag1 != 0x0A && pkt.flag1 != 0x0B {
-            return None;
+            return Err("flag1 error".to_string());
         }
-        if !self.parse_sso_frame(&mut pkt) {
-            return None;
-        }
+        self.parse_sso_frame(&mut pkt).await?;
         if pkt.flag2 == 2 {
-            pkt.decrypt_payload(&self.ecdh.initial_share_key, &self.random_key, &self.sig_info.wt_session_ticket_key)
+            pkt.decrypt_payload(&self.ecdh.initial_share_key, &self.random_key, &self.cache_info.read().await.sig_info.wt_session_ticket_key)
         }
-        Some(pkt)
+        Ok(pkt)
     }
 
-    fn parse_sso_frame(&mut self, pkt: &mut IncomingPacket) -> bool {
+    pub async fn parse_sso_frame(&self, pkt: &mut IncomingPacket) -> Result<(), String> {
         let mut payload = Bytes::from(pkt.payload.to_owned());
         let len = payload.get_i32() as usize - 4;
         if payload.remaining() < len {
-            return false;
+            return Err("remaining<len".to_string());
         }
         pkt.seq_id = payload.get_i32() as u16;
         let ret_code = payload.get_i32();
         if ret_code != 0 {
             if ret_code == -10008 {
-                return false;//ErrSessionExpired
+                return Err("ErrSessionExpired".to_string());//ErrSessionExpired
             }
-            return false;//unsuccessful
+            return Err("unsuccessful".to_string());//unsuccessful
         }
 
         // extra data
@@ -181,41 +180,41 @@ impl ClientPacket for Client {
         pkt.command_name = payload.read_string();
 
         let len = payload.get_i32() as usize - 4;
-        pkt.session_id = payload.copy_to_bytes(len).to_vec();
+        pkt.session_id = payload.copy_to_bytes(len);
         if pkt.command_name == "Heartbeat.Alive" {
-            return true;
+            return Ok(());
         }
         let compressed_flag = payload.get_i32();
         println!("compress_flag: {}", compressed_flag);
         let packet = match compressed_flag {
             0 => {
                 let _ = (payload.get_i32() as u64) & 0xffffffff;
-                payload.chunk().to_vec()
+                Bytes::from(payload.chunk().to_owned())
             }
             1 => {
                 payload.advance(4);
                 let mut uncompressed = Vec::new();
                 ZlibDecoder::new(payload.chunk()).read_to_end(&mut uncompressed);
-                uncompressed
+                Bytes::from(uncompressed)
             }
             8 => {
-                payload.to_vec()
+                Bytes::from(payload)
             }
-            _ => { vec![] }
+            _ => { Bytes::new() }
         };
         pkt.payload = packet;
-        true
+        return Ok(());
     }
 
-    fn build_qrcode_login_packet(&mut self, t106: &[u8], t16a: &[u8], t318: &[u8]) -> (u16, Vec<u8>) {
+    pub async fn build_qrcode_login_packet(&mut self, t106: &[u8], t16a: &[u8], t318: &[u8]) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin as u32, 0x0810, &self.ecdh, &self.random_key, &{
-            let mut w: Vec<u8> = Vec::new();
+        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst) as u32, 0x0810, &self.ecdh, &self.random_key, &{
+            let mut w = BytesMut::new();
             w.put_u16(9);
             w.put_u16(24);
 
-            w.put_slice(&t18(16, self.uin as u32));
-            w.put_slice(&t1(self.uin as u32, &self.device_info.ip_address));
+            w.put_slice(&t18(16, self.uin.load(Ordering::SeqCst) as u32));
+            w.put_slice(&t1(self.uin.load(Ordering::SeqCst) as u32, &self.device_info.ip_address));
             w.put_slice(&{
                 let mut w = Vec::new();
                 w.put_u16(0x106);
@@ -278,119 +277,119 @@ impl ClientPacket for Client {
             });
             w
         });
-        let sso: Vec<u8> = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
-        let packet: Vec<u8> = build_login_packet(self.uin as u32, 2, &vec![0; 16], &sso, &[]);
+        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
+        let packet = build_login_packet(self.uin.load(Ordering::SeqCst) as u32, 2, &[0; 16], &sso, &[]);
         (seq, packet)
     }
 
-    fn build_device_lock_login_packet(&mut self) -> (u16, Vec<u8>) {
+    pub async fn build_device_lock_login_packet(&mut self) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin as u32, 0x0810, &self.ecdh, &self.random_key, &{
+        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst) as u32, 0x0810, &self.ecdh, &self.random_key, &{
             let mut w = Vec::new();
             w.put_u16(20);
             w.put_u16(4);
 
             w.put_slice(&t8(2052));
-            w.put_slice(&t104(&self.t104));
+            w.put_slice(&t104(&self.cache_info.read().await.t104));
             w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
-            w.put_slice(&t401(&self.g));
+            w.put_slice(&t401(&self.cache_info.read().await.g));
             w
         });
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
-        let packet = build_login_packet(self.uin as u32, 2, &vec![0; 16], &sso, &[]);
+        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
+        let packet = build_login_packet(self.uin.load(Ordering::SeqCst) as u32, 2, &vec![0; 16], &sso, &[]);
         (seq, packet)
     }
 
-    fn build_captcha_packet(&mut self, result: String, sign: &[u8]) -> (u16, Vec<u8>) {
+    pub async fn build_captcha_packet(&mut self, result: String, sign: &[u8]) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin as u32, 0x810, &self.ecdh, &self.random_key, &{
+        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst) as u32, 0x810, &self.ecdh, &self.random_key, &{
             let mut w = Vec::new();
             w.put_u16(2); // sub command
             w.put_u16(4);
 
             w.put_slice(&t2(result, sign));
             w.put_slice(&t8(2052));
-            w.put_slice(&t104(&self.t104));
+            w.put_slice(&t104(&self.cache_info.read().await.t104));
             w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
             w
         });
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
-        let packet = build_login_packet(self.uin as u32, 2, &vec![0; 16], &sso, &[]);
+        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
+        let packet = build_login_packet(self.uin.load(Ordering::SeqCst) as u32, 2, &vec![0; 16], &sso, &[]);
         (seq, packet)
     }
 
-    fn build_sms_request_packet(&mut self) -> (u16, Vec<u8>) {
+    pub async fn build_sms_request_packet(&mut self) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin as u32, 0x810, &self.ecdh, &self.random_key, &{
+        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst) as u32, 0x810, &self.ecdh, &self.random_key, &{
             let mut w = Vec::new();
             w.put_u16(8);
             w.put_u16(6);
 
             w.put_slice(&t8(2052));
-            w.put_slice(&t104(&self.t104));
+            w.put_slice(&t104(&self.cache_info.read().await.t104));
             w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
-            w.put_slice(&t174(&self.t174));
+            w.put_slice(&t174(&self.cache_info.read().await.t174));
             w.put_slice(&t17a(9));
             w.put_slice(&t197());
             w
         });
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
-        let packet = build_login_packet(self.uin as u32, 2, &vec![0; 16], &sso, &[]);
+        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
+        let packet = build_login_packet(self.uin.load(Ordering::SeqCst) as u32, 2, &vec![0; 16], &sso, &[]);
         (seq, packet)
     }
 
-    fn build_sms_code_submit_packet(&mut self, code: String) -> (u16, Vec<u8>) {
+    pub async fn build_sms_code_submit_packet(&mut self, code: String) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin as u32, 0x810, &self.ecdh, &self.random_key, &{
+        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst) as u32, 0x810, &self.ecdh, &self.random_key, &{
             let mut w = Vec::new();
             w.put_u16(7);
             w.put_u16(7);
 
             w.put_slice(&t8(2052));
-            w.put_slice(&t104(&self.t104));
+            w.put_slice(&t104(&self.cache_info.read().await.t104));
             w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
-            w.put_slice(&t174(&self.t174));
+            w.put_slice(&t174(&self.cache_info.read().await.t174));
             w.put_slice(&t17c(code));
-            w.put_slice(&t401(&self.g));
+            w.put_slice(&t401(&self.cache_info.read().await.g));
             w.put_slice(&t198());
             w
         });
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
-        let packet = build_login_packet(self.uin as u32, 2, &vec![0; 16], &sso, &[]);
+        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
+        let packet = build_login_packet(self.uin.load(Ordering::SeqCst) as u32, 2, &[0; 16], &sso, &[]);
         (seq, packet)
     }
 
-    fn build_ticket_submit_packet(&mut self, ticket: String) -> (u16, Vec<u8>) {
+    pub async fn build_ticket_submit_packet(&mut self, ticket: String) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin as u32, 0x810, &self.ecdh, &self.random_key, &{
+        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst) as u32, 0x810, &self.ecdh, &self.random_key, &{
             let mut w = Vec::new();
             w.put_u16(2);
             w.put_u16(4);
 
             w.put_slice(&t193(ticket));
             w.put_slice(&t8(2052));
-            w.put_slice(&t104(&self.t104));
+            w.put_slice(&t104(&self.cache_info.read().await.t104));
             w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
             w
         });
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
-        let packet = build_login_packet(self.uin as u32, 2, &vec![0; 16], &sso, &[]);
+        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.imei, &[], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
+        let packet = build_login_packet(self.uin.load(Ordering::SeqCst) as u32, 2, &[0; 16], &sso, &[]);
         (seq, packet)
     }
 
-    fn build_request_tgtgt_no_pic_sig_packet(&mut self) -> (u16, Vec<u8>) {
+    pub async fn build_request_tgtgt_no_pic_sig_packet(&mut self) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin as u32, 0x810, &EncryptSession::new(&self.sig_info.t133), &self.sig_info.wt_session_ticket_key, &{
+        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst) as u32, 0x810, &EncryptSession::new(&self.cache_info.read().await.sig_info.t133), &self.cache_info.read().await.sig_info.wt_session_ticket_key, &{
             let mut w = Vec::new();
             w.put_u16(15);
             w.put_u16(24);
 
-            w.put_slice(&t18(16, self.uin as u32));
-            w.put_slice(&t1(self.uin as u32, &self.device_info.ip_address));
+            w.put_slice(&t18(16, self.uin.load(Ordering::SeqCst) as u32));
+            w.put_slice(&t1(self.uin.load(Ordering::SeqCst) as u32, &self.device_info.ip_address));
             w.put_slice(&{
                 let mut w = Vec::new();
                 w.put_u16(0x106);
-                w.write_bytes_short(&self.sig_info.encrypted_a1);
+                w.write_bytes_short(&self.cache_info.read().await.sig_info.encrypted_a1);
                 w
             });
             w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
@@ -411,7 +410,7 @@ impl ClientPacket for Client {
             ));
             w.put_slice(&t142(self.version.apk_id.as_bytes()));
             w.put_slice(&t145(&self.device_info.guid));
-            w.put_slice(&t16a(&self.sig_info.srm_token));
+            w.put_slice(&t16a(&self.cache_info.read().await.sig_info.srm_token));
             w.put_slice(&t141(self.device_info.sim_info.as_bytes(), self.device_info.apn.as_bytes()));
             w.put_slice(&t8(2052));
             w.put_slice(&t511(vec!["tenpay.com", "openmobile.qq.com", "docs.qq.com", "connect.qq.com",
@@ -420,7 +419,7 @@ impl ClientPacket for Client {
             ));
             w.put_slice(&t147(16, self.version.sort_version_name.as_bytes(), &self.version.apk_sign));
             w.put_slice(&t177(self.version.build_time, &self.version.sdk_version));
-            w.put_slice(&t400(&self.g, self.uin, &self.device_info.guid, &self.dpwd, 1, 16, &self.random_key));
+            w.put_slice(&t400(&self.cache_info.read().await.g, self.uin.load(Ordering::SeqCst), &self.device_info.guid, &self.cache_info.read().await.dpwd, 1, 16, &self.random_key));
             w.put_slice(&t187(self.device_info.mac_address.as_bytes()));
             w.put_slice(&t188(self.device_info.android_id.as_bytes()));
             w.put_slice(&t194(&self.device_info.imsi_md5));
@@ -430,22 +429,22 @@ impl ClientPacket for Client {
             w.put_slice(&t525(&t536(&vec![0x01, 0x00])));
             w
         });
-        let packet = build_uni_packet(self.uin, seq, "wtlogin.exchange_emp", 2, &self.out_going_packet_session_id, &[], &[0; 16], &req);
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "wtlogin.exchange_emp", 2, &self.out_going_packet_session_id.read().await, &[], &[0; 16], &req);
         (seq, packet)
     }
 
-    fn build_request_change_sig_packet(&mut self) -> (u16, Vec<u8>) {
+    pub async fn build_request_change_sig_packet(&mut self) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin as u32, 0x810, &self.ecdh, &self.random_key, &{
-            let mut w = Vec::new();
+        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst) as u32, 0x810, &self.ecdh, &self.random_key, &{
+            let mut w = BytesMut::new();
             w.put_u16(11);
             w.put_u16(17);
 
             w.put_slice(&t100(self.version.sso_version, 100, self.version.main_sig_map));
-            w.put_slice(&t10a(&self.sig_info.tgt));
+            w.put_slice(&t10a(&self.cache_info.read().await.sig_info.tgt));
             w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
             w.put_slice(&t108(&self.device_info.imei));
-            let h = md5::compute(&self.sig_info.d2key).to_vec();
+            let h = md5::compute(&self.cache_info.read().await.sig_info.d2key).to_vec();
             w.put_slice(&t144(
                 self.device_info.android_id.as_bytes(),
                 &self.device_info.gen_pb_data(),
@@ -459,10 +458,10 @@ impl ClientPacket for Client {
                 self.device_info.brand.as_bytes(),
                 &h,
             ));
-            w.put_slice(&t143(&self.sig_info.d2));
+            w.put_slice(&t143(&self.cache_info.read().await.sig_info.d2));
             w.put_slice(&t142(self.version.apk_id.as_bytes()));
             w.put_slice(&t154(seq));
-            w.put_slice(&t18(16, self.uin as u32));
+            w.put_slice(&t18(16, self.uin.load(Ordering::SeqCst) as u32));
             w.put_slice(&t141(self.device_info.sim_info.as_bytes(), self.device_info.apn.as_bytes()));
             w.put_slice(&t8(2052));
             w.put_slice(&t147(16, self.version.sort_version_name.as_bytes(), &self.version.apk_sign));
@@ -477,8 +476,8 @@ impl ClientPacket for Client {
             // w.put_slice(&t202(self.device_info.wifi_bssid.as_bytes(), self.device_info.wifi_ssid.as_bytes()));
             w
         });
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.exchange_emp", &self.device_info.imei, &[], &self.out_going_packet_session_id, &req, &self.ksid);
-        let packet = build_login_packet(self.uin as u32, 2, &[0; 16], &sso, &[]);
+        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.exchange_emp", &self.device_info.imei, &[], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
+        let packet = build_login_packet(self.uin.load(Ordering::SeqCst) as u32, 2, &[0; 16], &sso, &[]);
         (seq, packet)
     }
 }

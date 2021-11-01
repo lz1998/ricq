@@ -1,3 +1,4 @@
+#[derive(Debug)]
 pub enum ClientProtocol {
     AndroidPhone,
     IPad,
@@ -6,6 +7,7 @@ pub enum ClientProtocol {
     QiDian,
 }
 
+#[derive(Default,Debug)]
 pub struct VersionInfo {
     pub apk_sign: Vec<u8>,
     pub apk_id: String,
@@ -19,6 +21,11 @@ pub struct VersionInfo {
     pub sub_sig_map: u32,
     pub main_sig_map: u32,
     pub protocol: ClientProtocol,
+}
+impl Default for ClientProtocol{
+    fn default() -> Self {
+        return ClientProtocol::IPad
+    }
 }
 
 pub fn gen_version_info(p: &ClientProtocol) -> VersionInfo {

@@ -113,6 +113,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "00b0228411908ca8685dba7fc2cdd70ec9990a6e753e89b6ac91a84c40fbaf4b"
 
 [[package]]
+name = "futures-core"
+version = "0.3.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "88d1c26957f23603395cd326b0ffe64124b818f4449552f960d815cfba83a53d"
+
+[[package]]
+name = "futures-sink"
+version = "0.3.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "36ea153c13024fe480590b3e3d4cad89a0cfacecc24577b68f86c6ced9c2bc11"
+
+[[package]]
 name = "generic-array"
 version = "0.14.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -149,6 +161,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "hermit-abi"
+version = "0.1.19"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62b467343b94ba476dcb2500d242dadbb39557df889310ac77c5d99100aaac33"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "indexmap"
 version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -156,6 +177,15 @@ checksum = "bc633605454125dec4b66843673f01c7df2b89479b32e0ed634e43a91cff62a5"
 dependencies = [
  "autocfg",
  "hashbrown",
+]
+
+[[package]]
+name = "instant"
+version = "0.1.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a5bbe824c507c5da5956355e86a746d82e0e1464f65d862cc5e71da70e94b2c"
+dependencies = [
+ "cfg-if",
 ]
 
 [[package]]
@@ -191,6 +221,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "lock_api"
+version = "0.4.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "712a4d093c9976e24e7dbca41db895dabcbac38eb5f4045393d17a95bdfb1109"
+dependencies = [
+ "scopeguard",
+]
+
+[[package]]
 name = "log"
 version = "0.4.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -206,6 +245,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "490cc448043f947bae3cbee9c203358d62dbee0db12107a74be5c30ccfd09771"
 
 [[package]]
+name = "memchr"
+version = "2.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "308cc39be01b73d0d18f82a0e7b2a3df85245f84af96fdddc5d202d27e47b86a"
+
+[[package]]
 name = "miniz_oxide"
 version = "0.4.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -216,10 +261,41 @@ dependencies = [
 ]
 
 [[package]]
+name = "mio"
+version = "0.7.14"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8067b404fe97c70829f082dec8bcf4f71225d7eaea1d8645349cb76fa06205cc"
+dependencies = [
+ "libc",
+ "log",
+ "miow",
+ "ntapi",
+ "winapi",
+]
+
+[[package]]
+name = "miow"
+version = "0.3.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b9f1c5b025cda876f66ef43a113f91ebc9f4ccef34843000e0adf6ebbab84e21"
+dependencies = [
+ "winapi",
+]
+
+[[package]]
 name = "multimap"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e5ce46fe64a9d73be07dcbe690a38ce1b293be448fd8ce1e6c1b8062c9f72c6a"
+
+[[package]]
+name = "ntapi"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3f6bb902e437b6d86e03cce10a7e2af662292c5dfef23b65899ea3ac9354ad44"
+dependencies = [
+ "winapi",
+]
 
 [[package]]
 name = "num-integer"
@@ -238,6 +314,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9a64b1ec5cda2586e284722486d802acf1f7dbdc623e2bfc57e65ca1cd099290"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "num_cpus"
+version = "1.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "05499f3756671c15885fee9034446956fff3f243d6077b91e5767df161f766b3"
+dependencies = [
+ "hermit-abi",
+ "libc",
 ]
 
 [[package]]
@@ -274,6 +360,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "parking_lot"
+version = "0.11.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7d17b78036a60663b797adeaee46f5c9dfebb86948d1255007a1d6be0271ff99"
+dependencies = [
+ "instant",
+ "lock_api",
+ "parking_lot_core",
+]
+
+[[package]]
+name = "parking_lot_core"
+version = "0.8.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d76e8e1493bcac0d2766c42737f34458f1c8c50c0d23bcb24ea953affb273216"
+dependencies = [
+ "cfg-if",
+ "instant",
+ "libc",
+ "redox_syscall",
+ "smallvec",
+ "winapi",
+]
+
+[[package]]
 name = "petgraph"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -282,6 +393,12 @@ dependencies = [
  "fixedbitset",
  "indexmap",
 ]
+
+[[package]]
+name = "pin-project-lite"
+version = "0.2.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8d31d11c69a6b52a174b42bdc0c30e5e11670f90788b2c471c31c1d17d449443"
 
 [[package]]
 name = "pkg-config"
@@ -426,6 +543,7 @@ dependencies = [
 name = "rs-qq"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
  "byteorder",
  "bytes",
  "chrono",
@@ -437,7 +555,30 @@ dependencies = [
  "prost-build",
  "prost-types",
  "rand",
+ "tokio",
+ "tokio-util",
 ]
+
+[[package]]
+name = "scopeguard"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d29ab0c6d3fc0ee92fe66e2d99f700eab17a8d57d1c1d3b748380fb20baa78cd"
+
+[[package]]
+name = "signal-hook-registry"
+version = "1.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e51e73328dc4ac0c7ccbda3a494dfa03df1de2f46018127f60c693f2648455b0"
+dependencies = [
+ "libc",
+]
+
+[[package]]
+name = "smallvec"
+version = "1.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1ecab6c735a6bb4139c0caafd0cc3635748bbb3acf4550e8138122099251f309"
 
 [[package]]
 name = "syn"
@@ -472,6 +613,51 @@ checksum = "ca8a50ef2360fbd1eeb0ecd46795a87a19024eb4b53c5dc916ca1fd95fe62438"
 dependencies = [
  "libc",
  "winapi",
+]
+
+[[package]]
+name = "tokio"
+version = "1.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "588b2d10a336da58d877567cd8fb8a14b463e2104910f8132cd054b4b96e29ee"
+dependencies = [
+ "autocfg",
+ "bytes",
+ "libc",
+ "memchr",
+ "mio",
+ "num_cpus",
+ "once_cell",
+ "parking_lot",
+ "pin-project-lite",
+ "signal-hook-registry",
+ "tokio-macros",
+ "winapi",
+]
+
+[[package]]
+name = "tokio-macros"
+version = "1.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "114383b041aa6212c579467afa0075fbbdd0718de036100bc0ba7961d8cb9095"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "tokio-util"
+version = "0.6.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9e99e1983e5d376cd8eb4b66604d2e99e79f5bd988c3055891dcd8c9e2604cc0"
+dependencies = [
+ "bytes",
+ "futures-core",
+ "futures-sink",
+ "log",
+ "pin-project-lite",
+ "tokio",
 ]
 
 [[package]]

@@ -1,4 +1,4 @@
-use bytes::{Buf, BufMut};
+use bytes::{Buf, BufMut, BytesMut};
 use crate::hex::decode_hex;
 use crate::tea::qqtea_encrypt;
 
@@ -41,7 +41,7 @@ impl<B> BinaryWriter for B
     }
 
     fn write_uni_packet(&mut self, command_name: &str, session_id: &[u8], extra_data: &[u8], body: &[u8]) {
-        let mut w1 = Vec::new();
+        let mut w1 = BytesMut::new();
         {
             w1.write_string(command_name);
             w1.put_u32(8);
@@ -54,7 +54,7 @@ impl<B> BinaryWriter for B
             }
         }
 
-        let mut w = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u32((w1.len() + 4) as u32);
         w.put_slice(&w1);
         w.put_u32((body.len() + 4) as u32);

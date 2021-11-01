@@ -1,10 +1,11 @@
-use bytes::BufMut;
+use bytes::{BufMut, Bytes};
 use rand::distributions::Alphanumeric;
 use rand::Rng;
 use crate::hex::encode_hex;
 use crate::pb;
 
 //手机设备信息
+#[derive(Default)]
 pub struct DeviceInfo {
     pub display: String,
     pub product: String,
@@ -31,9 +32,9 @@ pub struct DeviceInfo {
     pub vendor_name: String,
     pub vendor_os_name: String,
     // generate
-    pub guid: Vec<u8>,
+    pub guid: Bytes,
     // generate
-    pub tgtgt_key: Vec<u8>,
+    pub tgtgt_key: Bytes,
 }
 
 impl DeviceInfo {
@@ -53,7 +54,7 @@ impl DeviceInfo {
             brand: "Xiaomi".to_string(),
             bootloader: "U-boot".to_string(),
             base_band: "".to_string(),
-            version: Version::new(),
+            version: Version::default(),
             sim_info: "T-Mobile".to_string(),
             os_type: "android".to_string(),
             mac_address: "00:50:56:C0:00:08".to_string(),
@@ -65,25 +66,25 @@ impl DeviceInfo {
             apn: "wifi".to_string(),
             vendor_name: "MIUI".to_string(),
             vendor_os_name: "gmc".to_string(),
-            guid: vec![], // md5(android_id + mac_address)
-            tgtgt_key: vec![],// random bytes
+            guid: Bytes::new(), // md5(android_id + mac_address)
+            tgtgt_key: Bytes::new(),// random bytes
         }
     }
 
     pub fn gen_guid(&mut self) {
-        self.guid = md5::compute(self.android_id.to_owned() + &self.mac_address).to_vec();
+        self.guid = Bytes::from(md5::compute(self.android_id.to_owned() + &self.mac_address).to_vec());
     }
 
     pub fn gen_tgtgt_key(&mut self) {
         // TODO 这里可能可以用随机bytes代替
         let mut r = rand::thread_rng().gen::<[u8; 16]>().to_vec();
         r.put_slice(&self.guid);
-        self.tgtgt_key = md5::compute(&r).to_vec();
+        self.tgtgt_key = Bytes::from(md5::compute(&r).to_vec());
     }
 
     pub fn gen_pb_data(&self) -> Vec<u8> {
         let mut data = Vec::new();
-        let device_info=pb::DeviceInfo {
+        let device_info = pb::DeviceInfo {
             bootloader: self.bootloader.to_owned(),
             proc_version: self.proc_version.to_owned(),
             codename: self.version.codename.to_owned(),
@@ -108,8 +109,8 @@ pub struct Version {
     pub sdk: u32,
 }
 
-impl Version {
-    pub fn new() -> Version {
+impl Default for Version {
+    fn default() -> Self {
         Version {
             incremental: "5891938".to_string(),
             release: "10".to_string(),

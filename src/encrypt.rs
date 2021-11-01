@@ -18,8 +18,8 @@ pub struct EncryptECDH {
     public_key_ver: u16,
 }
 
-impl EncryptECDH {
-    pub fn new() -> EncryptECDH {
+impl Default for EncryptECDH {
+    fn default() -> Self {
         let mut ecdh = EncryptECDH {
             initial_share_key: vec![],
             public_key: vec![],
@@ -28,6 +28,9 @@ impl EncryptECDH {
         ecdh.generate_key("04EBCA94D733E399B2DB96EACDD3F69A8BB0F74224E2B44E3357812211D2E62EFBC91BB553098E25E33A799ADC7F76FEB208DA7C6522CDB0719A305180CC54A82E");
         ecdh
     }
+}
+
+impl EncryptECDH {
     pub fn generate_key(&mut self, s_pub_key: &str) {
         let group = EcGroup::from_curve_name(Nid::X9_62_PRIME256V1).unwrap();
         let mut ctx = BigNumContext::new().unwrap();
@@ -113,7 +116,7 @@ mod tests {
 
     #[test]
     fn test_ecdh_generate_key() {
-        let mut e = EncryptECDH::new();
+        let mut e = EncryptECDH::default();
         e.generate_key("04EBCA94D733E399B2DB96EACDD3F69A8BB0F74224E2B44E3357812211D2E62EFBC91BB553098E25E33A799ADC7F76FEB208DA7C6522CDB0719A305180CC54A82E");
         println!("{:?}", e.initial_share_key);
         println!("{:?}", e.public_key);

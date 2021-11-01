@@ -1,13 +1,13 @@
-use std::io::{Read, Write};
+use std::io::Read;
 use std::net::TcpStream;
+use std::sync::atomic::Ordering;
 use byteorder::{BigEndian, ReadBytesExt};
 use crate::client::Client;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use crate::binary_reader::BinaryReader;
 use crate::binary_writer::BinaryWriter;
-use crate::client_packet::ClientPacket;
 use crate::device::random_string;
-use crate::tlv_decoder::TlvDecoder;
+use crate::tlv_decoder::{decode_t119, decode_t119r, decode_t161};
 
 #[derive(Debug)]
 pub enum LoginState {
@@ -21,15 +21,15 @@ pub enum LoginState {
 
 #[derive(Debug, Default)]
 pub struct QRCodeLoginInfo {
-    pub tmp_pwd: Vec<u8>,
-    pub tmp_no_pic_sig: Vec<u8>,
-    pub tgt_qr: Vec<u8>,
+    pub tmp_pwd: Bytes,
+    pub tmp_no_pic_sig: Bytes,
+    pub tgt_qr: Bytes,
 }
 
 #[derive(Debug)]
 pub struct QRCodeLoginResponse {
-    pub image_data: Vec<u8>,
-    pub sig: Vec<u8>,
+    pub image_data: Bytes,
+    pub sig: Bytes,
     pub state: LoginState,
     pub login_info: QRCodeLoginInfo,
 }
@@ -41,8 +41,8 @@ pub enum LoginResponse {
         verify_url: String,
     },
     NeedCaptcha {
-        captcha_sign: Vec<u8>,
-        captcha_image: Vec<u8>,
+        captcha_sign: Bytes,
+        captcha_image: Bytes,
     },
     UnknownLoginError {
         error_message: String,
@@ -66,7 +66,7 @@ pub enum LoginResponse {
 }
 
 
-pub fn decode_trans_emp_response(cli: &mut Client, payload: &[u8]) -> Option<QRCodeLoginResponse> {
+pub async fn decode_trans_emp_response(cli: &mut Client, payload: &[u8]) -> Option<QRCodeLoginResponse> {
     if payload.len() < 48 {
         return None;
     }
@@ -119,21 +119,21 @@ pub fn decode_trans_emp_response(cli: &mut Client, payload: &[u8]) -> Option<QRC
         if code != 0 {
             match code {
                 0x30 => {
-                    return Some(QRCodeLoginResponse { image_data: vec![], sig: vec![], state: LoginState::QRCodeWaitingForScan, login_info: Default::default() });
+                    return Some(QRCodeLoginResponse { image_data: Bytes::new(), sig: Bytes::new(), state: LoginState::QRCodeWaitingForScan, login_info: Default::default() });
                 }
                 0x35 => {
-                    return Some(QRCodeLoginResponse { image_data: vec![], sig: vec![], state: LoginState::QRCodeWaitingForConfirm, login_info: Default::default() });
+                    return Some(QRCodeLoginResponse { image_data: Bytes::new(), sig: Bytes::new(), state: LoginState::QRCodeWaitingForConfirm, login_info: Default::default() });
                 }
                 0x36 => {
-                    return Some(QRCodeLoginResponse { image_data: vec![], sig: vec![], state: LoginState::QRCodeCanceled, login_info: Default::default() });
+                    return Some(QRCodeLoginResponse { image_data: Bytes::new(), sig: Bytes::new(), state: LoginState::QRCodeCanceled, login_info: Default::default() });
                 }
                 0x11 => {
-                    return Some(QRCodeLoginResponse { image_data: vec![], sig: vec![], state: LoginState::QRCodeTimeout, login_info: Default::default() });
+                    return Some(QRCodeLoginResponse { image_data: Bytes::new(), sig: Bytes::new(), state: LoginState::QRCodeTimeout, login_info: Default::default() });
                 }
                 _ => { return None; }
             }
         }
-        cli.uin = body.get_i64();
+        cli.uin.store(body.get_i64(), Ordering::SeqCst);
         body.get_i32(); // sig create time
         body.get_u16();
         let mut m = body.read_tlv_map(2);
@@ -142,8 +142,8 @@ pub fn decode_trans_emp_response(cli: &mut Client, payload: &[u8]) -> Option<QRC
         }
         cli.device_info.tgtgt_key = m.remove(&0x1e).unwrap();
         return Some(QRCodeLoginResponse {
-            image_data: vec![],
-            sig: vec![],
+            image_data: Bytes::new(),
+            sig: Bytes::new(),
             state: LoginState::QRCodeConfirmed,
             login_info: QRCodeLoginInfo {
                 tmp_pwd: m.remove(&0x18).unwrap(),
@@ -155,49 +155,54 @@ pub fn decode_trans_emp_response(cli: &mut Client, payload: &[u8]) -> Option<QRC
     return None;
 }
 
-pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginResponse> {
+pub async fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginResponse> {
+
     let mut reader = Bytes::from(payload.to_owned());
     reader.get_u16(); // sub command
     let t = reader.get_u8();
     reader.get_u16();
     let mut m = reader.read_tlv_map(2);
     if m.contains_key(&0x402) {
-        cli.dpwd = random_string(16).into_bytes();
-        cli.t402 = m.remove(&0x402).unwrap();
-        let mut v: Vec<u8> = Vec::new();
+        let mut cache_info = cli.cache_info.write().await;
+        cache_info.dpwd = random_string(16).into();
+        cache_info.t402 = m.remove(&0x402).unwrap();
+        let mut v = Vec::new();
         v.put_slice(&cli.device_info.guid);
-        v.put_slice(&cli.dpwd);
-        v.put_slice(&cli.t402);
-        cli.g = md5::compute(&v).to_vec();
+        v.put_slice(&cache_info.dpwd);
+        v.put_slice(&cache_info.t402);
+        cache_info.g = md5::compute(&v).to_vec().into();
     }
     if t == 0 {
+        let mut cache_info = cli.cache_info.write().await;
+        let mut account_info=cli.account_info.write().await;
         if m.contains_key(&0x150) {
-            cli.t150 = m.remove(&0x150).unwrap();
+            cache_info.t150 = m.remove(&0x150).unwrap().into();
         }
         if m.contains_key(&0x161) {
-            cli.decode_t161(&m.remove(&0x161).unwrap())
+            decode_t161(&m.remove(&0x161).unwrap(),&mut cache_info);
         }
         if m.contains_key(&0x403) {
-            cli.rand_seed = m.remove(&0x403).unwrap();
+            cache_info.rand_seed = m.remove(&0x403).unwrap().into();
         }
-        cli.decode_t119(&m.get(&0x119).unwrap(), &cli.device_info.tgtgt_key.clone());
+        decode_t119(&m.get(&0x119).unwrap(), &cli.device_info.tgtgt_key.clone(),&mut cache_info,&mut account_info);
         return Some(LoginResponse::Success);
     }
     if t == 2 {
-        cli.t104 = m.remove(&0x104).unwrap();
+        let mut cache_info = cli.cache_info.write().await;
+        cache_info.t104 = m.remove(&0x104).unwrap();
         if m.contains_key(&0x192) {
             return Some(LoginResponse::SliderNeededError {
-                verify_url: String::from_utf8(m.remove(&0x192).unwrap()).unwrap(),
+                verify_url: String::from_utf8(m.remove(&0x192).unwrap().to_vec()).unwrap(),
             });
         }
         if m.contains_key(&0x165) {
             let mut img_data = Bytes::from(m.remove(&0x105).unwrap());
             let sign_len = img_data.get_u16();
             img_data.get_u16();
-            let sign = img_data.copy_to_bytes(sign_len as usize).to_vec();
+            let sign = img_data.copy_to_bytes(sign_len as usize);
             return Some(LoginResponse::NeedCaptcha {
                 captcha_sign: sign,
-                captcha_image: img_data.chunk().to_vec(),
+                captcha_image: img_data,
             });
         } else {
             return Some(LoginResponse::UnknownLoginError {
@@ -213,10 +218,11 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
     }
 
     if t == 160 || t == 239 {
+        let mut cache_info = cli.cache_info.write().await;
         if m.contains_key(&0x174) {
-            cli.t174 = m.remove(&0x147).unwrap();
-            cli.t104 = m.remove(&0x104).unwrap();
-            cli.rand_seed = m.remove(&0x403).unwrap();
+            cache_info.t174 = m.remove(&0x147).unwrap();
+            cache_info.t104 = m.remove(&0x104).unwrap();
+            cache_info.rand_seed = m.remove(&0x403).unwrap();
             let phone = {
                 let mut r = Bytes::from(m.remove(&0x178).unwrap());
                 let len = r.get_i32() as usize;
@@ -224,19 +230,19 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
             };
             if m.contains_key(&0x204) {
                 return Some(LoginResponse::SMSOrVerifyNeededError {
-                    verify_url: String::from_utf8(m.remove(&0x204).unwrap()).unwrap(),
+                    verify_url: String::from_utf8(m.remove(&0x204).unwrap().to_vec()).unwrap(),
                     sms_phone: phone,
-                    error_message: String::from_utf8(m.remove(&0x17e).unwrap()).unwrap(),
+                    error_message: String::from_utf8(m.remove(&0x17e).unwrap().to_vec()).unwrap(),
                 });
             }
             return Some(LoginResponse::SMSNeededError {
                 sms_phone: phone,
-                error_message: String::from_utf8(m.remove(&0x17e).unwrap()).unwrap(),
+                error_message: String::from_utf8(m.remove(&0x17e).unwrap().to_vec()).unwrap(),
             });
         }
 
         if m.contains_key(&0x17b) {
-            cli.t104 = m.remove(&0x104).unwrap();
+            cache_info.t104 = m.remove(&0x104).unwrap();
             return Some(LoginResponse::SMSNeededError {
                 sms_phone: "".to_string(),
                 error_message: "".to_string(),
@@ -245,7 +251,7 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
 
         if m.contains_key(&0x204) {
             return Some(LoginResponse::UnsafeDeviceError {
-                verify_url: String::from_utf8(m.remove(&0x204).unwrap()).unwrap(),
+                verify_url: String::from_utf8(m.remove(&0x204).unwrap().to_vec()).unwrap(),
             });
         }
     }
@@ -255,10 +261,13 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
     }
 
     if t == 204 {
-        cli.t104 = m.remove(&0x104).unwrap();
-        cli.rand_seed = m.remove(&0x403).unwrap();
+        {
+            let mut cache_info = cli.cache_info.write().await;
+            cache_info.t104 = m.remove(&0x104).unwrap();
+            cache_info.rand_seed = m.remove(&0x403).unwrap();
+        }
         // TODO c.sendAndWait(c.buildDeviceLockLoginPacket())
-        let (num, vec) = cli.build_device_lock_login_packet();
+        let (num, vec) = cli.build_device_lock_login_packet().await;
         println!("{} - {:?}", num, vec);
         return None;
     } // drive lock
@@ -283,7 +292,9 @@ pub fn decode_login_response(cli: &mut Client, payload: &[u8]) -> Option<LoginRe
     return None;
 }
 
-pub fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> Option<QRCodeLoginResponse> {
+pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> Option<QRCodeLoginResponse> {
+    let mut cache_info = cli.cache_info.write().await;
+    let mut account_info = cli.account_info.write().await;
     let mut payload = Bytes::from(payload.to_owned());
     let cmd = payload.get_u16();
     let t = payload.get_u8();
@@ -293,11 +304,11 @@ pub fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> Option<
         return None;
     }
     if cmd == 15 {
-        cli.decode_t119r(m.get(&0x119).unwrap())
+        decode_t119r(m.get(&0x119).unwrap(), &cli.device_info.tgtgt_key, &mut cache_info, &mut account_info);
     }
     if cmd == 11 {
-        let h = md5::compute(&cli.sig_info.d2key).to_vec();
-        cli.decode_t119(m.get(&0x119).unwrap(), &h)
+        let h = md5::compute(&cli.cache_info.read().await.sig_info.d2key).to_vec();
+        decode_t119(m.get(&0x119).unwrap(), &h,&mut cache_info,&mut account_info);
     }
     return None;
 }

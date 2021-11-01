@@ -17,6 +17,9 @@ flate2 = { version = "1.0.17", features = ["zlib"], default-features = false }
 prost = "0.8"
 # Only necessary if using Protobuf well-known types:
 prost-types = "0.8"
+tokio = { version = "1", features = ["full"] }
+tokio-util = { version = "0.6", features = ["codec"] }
+anyhow = "1"
 
 [build-dependencies]
 prost-build = { version = "0.8.0" }

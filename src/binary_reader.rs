@@ -1,11 +1,11 @@
 use std::collections::HashMap;
-use bytes::Buf;
+use bytes::{Buf, Bytes};
 
 pub trait BinaryReader {
     fn read_string(&mut self) -> String;
     fn read_string_short(&mut self) -> String;
-    fn read_bytes_short(&mut self) -> Vec<u8>;
-    fn read_tlv_map(&mut self, tag_size: usize) -> HashMap<u16, Vec<u8>>;
+    fn read_bytes_short(&mut self) -> Bytes;
+    fn read_tlv_map(&mut self, tag_size: usize) -> HashMap<u16, Bytes>;
     fn read_string_limit(&mut self, limit: usize) -> String;
 }
 
@@ -21,12 +21,12 @@ impl<B> BinaryReader for B
         String::from_utf8(self.copy_to_bytes(len).to_vec()).unwrap()
     }
 
-    fn read_bytes_short(&mut self) -> Vec<u8> {
+    fn read_bytes_short(&mut self) -> Bytes {
         let len = self.get_u16() as usize;
-        return self.copy_to_bytes(len).to_vec();
+        return self.copy_to_bytes(len);
     }
 
-    fn read_tlv_map(&mut self, tag_size: usize) -> HashMap<u16, Vec<u8>> {
+    fn read_tlv_map(&mut self, tag_size: usize) -> HashMap<u16, Bytes> {
         let mut m = HashMap::new();
         loop {
             if self.remaining() < tag_size {
@@ -44,7 +44,7 @@ impl<B> BinaryReader for B
                 return m;
             }
             let len = self.get_u16() as usize;
-            m.insert(k, self.copy_to_bytes(len).to_vec());
+            m.insert(k, self.copy_to_bytes(len));
         }
     }
 
