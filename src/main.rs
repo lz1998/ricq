@@ -6,6 +6,7 @@ use tokio::time::{Duration, sleep};
 use tokio_util::codec::{Framed, LengthDelimitedCodec};
 use rs_qq::client::{Client, Password};
 use rs_qq::client::net::ClientNet;
+use rs_qq::client::outcome::OutcomePacket;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -18,8 +19,16 @@ async fn main() -> Result<()> {
     let client_net = ClientNet::new(client.clone(), receiver);
     let stream = client_net.connect_tcp().await;
     let net = tokio::spawn(client_net.net_loop(stream));
+    tokio::spawn(async move {
+        let client=client.clone();
+        let (seq, pkt) = client.build_qrcode_fetch_request_packet().await;
+        let resp = client.send_and_wait(OutcomePacket {
+            seq,
+            bytes: pkt,
+        }).await;
+        println!("{:?}", resp)
+    });
     net.await;
-    let (seq, pkt) = client.build_qrcode_fetch_request_packet().await;
     sleep(Duration::from_millis(100)).await;
     Ok(())
     // client.login().await;

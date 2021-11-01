@@ -11,10 +11,10 @@ use crate::crypto::EncryptECDH;
 use tokio::sync::oneshot;
 use crate::client::income::IncomePacket;
 
-mod client;
-mod structs;
-mod income;
-mod outcome;
+pub mod client;
+pub mod structs;
+pub mod income;
+pub mod outcome;
 pub mod net;
 pub mod version;
 pub mod device;
