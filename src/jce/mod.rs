@@ -52,7 +52,7 @@ JceStruct!(RequestDataVersion3 {
 // }
 
 JceStruct!(RequestDataVersion2 {
-    0 => map: HashMap<String,Bytes>,
+    0 => map: HashMap<String,HashMap<String,Bytes>>,
 });
 
 // Recursive expansion of JceStruct! macro

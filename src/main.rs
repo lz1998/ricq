@@ -39,7 +39,9 @@ async fn main() -> Result<()> {
                         println!("{:?}", resp);
                         println!("{}", client.uin.load(Ordering::SeqCst));
                         let resp = client.register_client().await.unwrap();
-                        println!("{:?}", resp);
+                        println!("result: {:?}", &resp.result);
+                        println!("code: {:?}", &resp.reply_code);
+                        println!("uin: {:?}", &resp.uin);
                         // let pkt = client.send_and_wait(client.build_friend_group_list_request_packet(0, 150, 0, 0).await.into()).await;
                         // println!("{:?}",pkt);
 

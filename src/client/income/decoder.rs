@@ -1,9 +1,11 @@
 use std::sync::atomic::Ordering;
 use bytes::{Buf, BufMut, Bytes};
+use jce_struct::Jce;
 use crate::binary::BinaryReader;
 use crate::client::Client;
 use super::tlv_decoder::*;
 use crate::client::device::random_string;
+use crate::jce::*;
 
 #[derive(Debug)]
 pub enum QRCodeState {
@@ -287,4 +289,14 @@ pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> O
         decode_t119(m.get(&0x119).unwrap(), &h, &mut cache_info, &mut account_info).await;
     }
     return None;
+}
+
+pub fn decode_client_register_response(payload: &[u8]) -> SvcRespRegister {
+    let mut payload = Bytes::from(payload.to_owned());
+    let mut request: RequestPacket = Jce::read_from_bytes(&mut payload);
+    let mut data: RequestDataVersion2 = Jce::read_from_bytes(&mut request.s_buffer);
+    let mut a = data.map.remove("SvcRespRegister").unwrap();
+    let mut b = a.remove("QQService.SvcRespRegister").unwrap();
+    b.advance(1);
+    Jce::read_from_bytes(&mut b)
 }

@@ -1,6 +1,9 @@
 use std::sync::atomic::Ordering;
-use crate::client::income::{decode_login_response, decode_trans_emp_response, LoginResponse, QRCodeState};
+use jce_struct::Jce;
+use crate::client::income::{decode_client_register_response, decode_login_response, decode_trans_emp_response, LoginResponse, QRCodeState};
 use crate::client::outcome::OutcomePacket;
+use crate::jce::{RequestDataVersion2, RequestPacket, SvcRespRegister};
+use bytes::{Buf, Bytes};
 
 impl super::Client {
     pub async fn fetch_qrcode(&self) -> Option<QRCodeState> {
@@ -27,12 +30,17 @@ impl super::Client {
         decode_login_response(self, &resp.payload).await
     }
 
-    pub async fn register_client(&self) -> Option<()> {
-        let resp = self.send_and_wait(self.build_client_register_packet().await.into()).await?;
+    pub async fn register_client(&self) -> Option<SvcRespRegister> {
+        let mut resp = self.send_and_wait(self.build_client_register_packet().await.into()).await?;
         if &resp.command_name != "StatSvc.register" {
             return None;
         }
+        let resp = decode_client_register_response(&resp.payload);
+        // println!("{:?}",svc_rsp.result);
+        if resp.result != "" || resp.reply_code != 0 {
+            return None;
+        }
         self.online.store(true, Ordering::SeqCst);
-        Some(())
+        Some(resp)
     }
 }
