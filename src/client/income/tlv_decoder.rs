@@ -16,7 +16,7 @@ pub fn decode_t161(data: &[u8], cache_info: &mut CacheInfo) {
     }
 }
 
-pub fn decode_t119(data: &[u8], ek: &[u8], cache_info: &mut CacheInfo, account_info: &mut AccountInfo) {
+pub async fn decode_t119(data: &[u8], ek: &[u8], cache_info: &mut CacheInfo, account_info: &mut AccountInfo) {
     let mut reader = Bytes::from(qqtea_decrypt(data, ek).to_owned());
     reader.advance(2);
     let mut m = reader.read_tlv_map(2);
@@ -44,7 +44,7 @@ pub fn decode_t119(data: &[u8], ek: &[u8], cache_info: &mut CacheInfo, account_i
         // read_t125(t125)
     }
     if m.contains_key(&0x186) {
-        decode_t186(&m.remove(&0x186).unwrap(), cache_info);
+        decode_t186(&m.remove(&0x186).unwrap(), cache_info).await;
     }
     if m.contains_key(&0x11a) {
         let (nick, age, gender) = read_t11a(&m.remove(&0x11a).unwrap());

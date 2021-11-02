@@ -1,17 +1,15 @@
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU16, Ordering};
-use std::sync::Arc;
 use bytes::Bytes;
 use rand::Rng;
 use tokio::sync::RwLock;
-use crate::client::device::{DeviceInfo, Version};
+use crate::client::device::{DeviceInfo};
 use crate::crypto::EncryptECDH;
 use crate::client::{AccountInfo, CacheInfo, Client, net, Password};
 use crate::client::income::IncomePacket;
 use crate::client::outcome::OutcomePacket;
-use crate::client::version::{ClientProtocol, gen_version_info, VersionInfo};
+use crate::client::version::{ClientProtocol, gen_version_info};
 use tokio::sync::oneshot;
-use tokio::sync::oneshot::Sender;
 
 
 impl Client {
@@ -24,11 +22,12 @@ impl Client {
         device_info.gen_tgtgt_key();
         let (out_pkt_sender, out_pkt_receiver) = tokio::sync::mpsc::unbounded_channel();
 
-        let mut cli = Client {
+        let cli = Client {
             seq_id: AtomicU16::new(0x3635),
             uin: AtomicI64::new(uin),
             password_md5: password.md5(),
             connected: AtomicBool::new(false),
+            online: AtomicBool::new(false),
             out_pkt_sender,
             packet_promises: RwLock::new(HashMap::new()),
             ecdh: EncryptECDH::default(),
@@ -66,7 +65,7 @@ impl Client {
     }
 
     pub async fn send_and_wait(&self, pkt: OutcomePacket) -> Option<IncomePacket> {
-        let (mut sender, mut receiver) = oneshot::channel();
+        let (sender, receiver) = oneshot::channel();
         {
             let mut packet_promises = self.packet_promises.write().await;
             packet_promises.insert(pkt.seq, sender);

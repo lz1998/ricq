@@ -1,7 +1,6 @@
 use std::io::Read;
 use crate::crypto::qqtea_decrypt;
 use flate2::read::ZlibDecoder;
-use crate::crypto::EncryptSession;
 use bytes::{Bytes, Buf};
 use crate::binary::BinaryReader;
 
@@ -18,7 +17,7 @@ pub struct IncomePacket {
 }
 
 impl IncomePacket {
-    pub fn decrypt_payload(&mut self, ecdh_share_key: &[u8], random: &[u8], session_key: &[u8]) {
+    pub fn decrypt_payload(&mut self, ecdh_share_key: &[u8], _random: &[u8], session_key: &[u8]) {
         let mut payload = Bytes::from(self.payload.to_owned());
         if payload.get_u8() != 2 {
             // err

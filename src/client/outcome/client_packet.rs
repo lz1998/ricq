@@ -1,14 +1,8 @@
-use std::borrow::Borrow;
-use std::io::Read;
 use std::sync::atomic::Ordering;
-use std::io::Result as IOResult;
-use byteorder::{ReadBytesExt, WriteBytesExt};
-use bytes::{Buf, BufMut, Bytes, BytesMut};
+use bytes::{BufMut, Bytes, BytesMut};
 use chrono::Utc;
 use crate::binary::BinaryWriter;
-use crate::client::Client;
-use crate::crypto::{qqtea_decrypt,EncryptSession};
-use flate2::read::ZlibDecoder;
+use crate::crypto::EncryptSession;
 use crate::client::outcome::packet::{build_code2d_request_packet, build_login_packet, build_oicq_request_packet, build_sso_packet, build_uni_packet};
 use crate::client::outcome::tlv::*;
 use crate::client::version::{ClientProtocol, gen_version_info};

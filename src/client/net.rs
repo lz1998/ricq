@@ -7,7 +7,6 @@ use tokio::net::{TcpSocket, TcpStream};
 use tokio::sync::mpsc;
 use super::Client;
 use std::io::Result as IoResult;
-use crate::client::income::IncomePacket;
 
 
 pub type OutPktSender = mpsc::UnboundedSender<Bytes>;

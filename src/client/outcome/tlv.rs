@@ -1,7 +1,6 @@
-use std::num::ParseIntError;
-use bytes::{Buf, BufMut, Bytes, BytesMut};
+use bytes::BufMut;
 use chrono::Utc;
-use crate::binary::{BinaryWriter,BinaryReader};
+use crate::binary::BinaryWriter;
 
 
 pub fn t1(uin: u32, ip: &Vec<u8>) -> Vec<u8> {

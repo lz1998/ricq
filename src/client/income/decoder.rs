@@ -1,37 +1,27 @@
-use std::io::Read;
-use std::net::TcpStream;
 use std::sync::atomic::Ordering;
-use byteorder::{BigEndian, ReadBytesExt};
-use bytes::{Buf, BufMut, Bytes, BytesMut};
-use crate::binary::{BinaryReader, BinaryWriter};
+use bytes::{Buf, BufMut, Bytes};
+use crate::binary::BinaryReader;
 use crate::client::Client;
 use super::tlv_decoder::*;
 use crate::client::device::random_string;
 
 #[derive(Debug)]
-pub enum LoginState {
-    QRCodeImageFetch,
+pub enum QRCodeState {
+    QRCodeImageFetch {
+        image_data: Bytes,
+        sig: Bytes,
+    },
     QRCodeWaitingForScan,
     QRCodeWaitingForConfirm,
     QRCodeTimeout,
-    QRCodeConfirmed,
+    QRCodeConfirmed {
+        tmp_pwd: Bytes,
+        tmp_no_pic_sig: Bytes,
+        tgt_qr: Bytes,
+    },
     QRCodeCanceled,
 }
 
-#[derive(Debug, Default)]
-pub struct QRCodeLoginInfo {
-    pub tmp_pwd: Bytes,
-    pub tmp_no_pic_sig: Bytes,
-    pub tgt_qr: Bytes,
-}
-
-#[derive(Debug)]
-pub struct QRCodeLoginResponse {
-    pub image_data: Bytes,
-    pub sig: Bytes,
-    pub state: LoginState,
-    pub login_info: QRCodeLoginInfo,
-}
 
 #[derive(Debug)]
 pub enum LoginResponse {
@@ -65,7 +55,7 @@ pub enum LoginResponse {
 }
 
 
-pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Option<QRCodeLoginResponse> {
+pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Option<QRCodeState> {
     if payload.len() < 48 {
         return None;
     }
@@ -93,11 +83,9 @@ pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Option<Q
         body.get_u16();
         let mut m = body.read_tlv_map(2);
         if m.contains_key(&0x17) {
-            return Some(QRCodeLoginResponse {
+            return Some(QRCodeState::QRCodeImageFetch {
                 image_data: m.remove(&0x17).unwrap(),
                 sig,
-                state: LoginState::QRCodeImageFetch,
-                login_info: QRCodeLoginInfo::default(),
             });
         }
     }
@@ -116,21 +104,13 @@ pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Option<Q
         body.get_i32();
         let code = body.get_u8();
         if code != 0 {
-            match code {
-                0x30 => {
-                    return Some(QRCodeLoginResponse { image_data: Bytes::new(), sig: Bytes::new(), state: LoginState::QRCodeWaitingForScan, login_info: Default::default() });
-                }
-                0x35 => {
-                    return Some(QRCodeLoginResponse { image_data: Bytes::new(), sig: Bytes::new(), state: LoginState::QRCodeWaitingForConfirm, login_info: Default::default() });
-                }
-                0x36 => {
-                    return Some(QRCodeLoginResponse { image_data: Bytes::new(), sig: Bytes::new(), state: LoginState::QRCodeCanceled, login_info: Default::default() });
-                }
-                0x11 => {
-                    return Some(QRCodeLoginResponse { image_data: Bytes::new(), sig: Bytes::new(), state: LoginState::QRCodeTimeout, login_info: Default::default() });
-                }
-                _ => { return None; }
-            }
+            return match code {
+                0x30 => Some(QRCodeState::QRCodeWaitingForScan),
+                0x35 => Some(QRCodeState::QRCodeWaitingForConfirm),
+                0x36 => Some(QRCodeState::QRCodeCanceled),
+                0x11 => Some(QRCodeState::QRCodeTimeout),
+                _ => None
+            };
         }
         cli.uin.store(body.get_i64(), Ordering::SeqCst);
         body.get_i32(); // sig create time
@@ -143,15 +123,10 @@ pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Option<Q
             let mut device_info = cli.device_info.write().await;
             device_info.tgtgt_key = m.remove(&0x1e).unwrap();
         }
-        return Some(QRCodeLoginResponse {
-            image_data: Bytes::new(),
-            sig: Bytes::new(),
-            state: LoginState::QRCodeConfirmed,
-            login_info: QRCodeLoginInfo {
-                tmp_pwd: m.remove(&0x18).unwrap(),
-                tmp_no_pic_sig: m.remove(&0x19).unwrap(),
-                tgt_qr: m.remove(&0x65).unwrap(),
-            },
+        return Some(QRCodeState::QRCodeConfirmed {
+            tmp_pwd: m.remove(&0x18).unwrap(),
+            tmp_no_pic_sig: m.remove(&0x19).unwrap(),
+            tgt_qr: m.remove(&0x65).unwrap(),
         });
     }
     return None;
@@ -185,7 +160,7 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Option<Login
         if m.contains_key(&0x403) {
             cache_info.rand_seed = m.remove(&0x403).unwrap().into();
         }
-        decode_t119(&m.get(&0x119).unwrap(), &cli.device_info.read().await.tgtgt_key, &mut cache_info, &mut account_info);
+        decode_t119(&m.get(&0x119).unwrap(), &cli.device_info.read().await.tgtgt_key, &mut cache_info, &mut account_info).await;
         return Some(LoginResponse::Success);
     }
     if t == 2 {
@@ -293,7 +268,7 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Option<Login
     return None;
 }
 
-pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> Option<QRCodeLoginResponse> {
+pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> Option<()> {
     let mut cache_info = cli.cache_info.write().await;
     let mut account_info = cli.account_info.write().await;
     let mut payload = Bytes::from(payload.to_owned());
@@ -309,7 +284,7 @@ pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> O
     }
     if cmd == 11 {
         let h = md5::compute(&cli.cache_info.read().await.sig_info.d2key).to_vec();
-        decode_t119(m.get(&0x119).unwrap(), &h, &mut cache_info, &mut account_info);
+        decode_t119(m.get(&0x119).unwrap(), &h, &mut cache_info, &mut account_info).await;
     }
     return None;
 }

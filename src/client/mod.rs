@@ -18,6 +18,7 @@ pub mod outcome;
 pub mod net;
 pub mod version;
 pub mod device;
+pub mod api;
 
 pub struct Client {
     seq_id: AtomicU16,
@@ -25,6 +26,7 @@ pub struct Client {
     pub password_md5: Bytes,
     pub ecdh: EncryptECDH,
     pub connected: AtomicBool,
+    pub online: AtomicBool,
 
     pub out_pkt_sender: net::OutPktSender,
     pub packet_promises: RwLock<HashMap<u16, oneshot::Sender<IncomePacket>>>,

@@ -30,7 +30,7 @@ impl<B> BinaryWriter for B
     }
 
     fn write_int_lv_packet(&mut self, offset: usize, data: &[u8]) {
-        self.put_u32(((data.len() + offset) as u32));
+        self.put_u32((data.len() + offset) as u32);
         self.put_slice(&data);
     }
 

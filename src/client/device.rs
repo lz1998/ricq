@@ -83,7 +83,6 @@ impl DeviceInfo {
     }
 
     pub fn gen_pb_data(&self) -> Vec<u8> {
-        let mut data = Vec::new();
         let device_info = pb::DeviceInfo {
             bootloader: self.bootloader.to_owned(),
             proc_version: self.proc_version.to_owned(),
@@ -97,7 +96,7 @@ impl DeviceInfo {
         };
         let mut buf = Vec::new();
         prost::Message::encode(&device_info, &mut buf).unwrap();
-        data
+        buf
     }
 }
 

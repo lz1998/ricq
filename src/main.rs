@@ -1,14 +1,10 @@
 use std::sync::Arc;
 use anyhow::Result;
-use bytes::Bytes;
-use tokio::net::TcpStream;
 use tokio::time::{Duration, sleep};
-use tokio_util::codec::{Framed, LengthDelimitedCodec};
 use rs_qq::client::{Client, Password};
 use rs_qq::client::device::DeviceInfo;
-use rs_qq::client::income::{decode_login_response, decode_trans_emp_response, LoginState};
+use rs_qq::client::income::QRCodeState;
 use rs_qq::client::net::ClientNet;
-use rs_qq::client::outcome::OutcomePacket;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -24,34 +20,26 @@ async fn main() -> Result<()> {
     let net = tokio::spawn(client_net.net_loop(stream));
     tokio::spawn(async move {
         let client = client.clone();
-        let (seq, pkt) = client.build_qrcode_fetch_request_packet().await;
-        let resp = client.send_and_wait(OutcomePacket {
-            seq,
-            bytes: pkt,
-        }).await.unwrap();
-        let resp = decode_trans_emp_response(&client, &resp.payload).await.unwrap();
-        tokio::fs::write("qrcode.png", &resp.image_data).await;
-        println!("{:?}", resp);
-        let sig = resp.sig;
-        loop {
-            sleep(Duration::from_secs(5)).await;
-            let (seq, pkt) = client.build_qrcode_result_query_request_packet(&sig).await;
-            let resp = client.send_and_wait(OutcomePacket { seq, bytes: pkt }).await.unwrap();
-            let resp = decode_trans_emp_response(&client, &resp.payload).await.unwrap();
-            println!("{:?}", &resp.state);
-            match resp.state {
-                LoginState::QRCodeImageFetch => {}
-                LoginState::QRCodeWaitingForScan => {}
-                LoginState::QRCodeWaitingForConfirm => {}
-                LoginState::QRCodeTimeout => {}
-                LoginState::QRCodeConfirmed => {
-                    let (seq, pkt) = client.build_qrcode_login_packet(&resp.login_info.tmp_pwd, &resp.login_info.tmp_no_pic_sig, &resp.login_info.tgt_qr).await;
-                    let resp = client.send_and_wait(OutcomePacket { seq, bytes: pkt }).await.unwrap();
-                    let resp = decode_login_response(&client, &resp.payload).await.unwrap();
-                    println!("{:?}", resp);
-                    break
+        let resp = client.fetch_qrcode().await.unwrap();
+        if let QRCodeState::QRCodeImageFetch { ref image_data, ref sig } = resp {
+            tokio::fs::write("qrcode.png", &image_data).await;
+            println!("{:?}", &resp);
+            loop {
+                sleep(Duration::from_secs(5)).await;
+                let resp = client.query_qrcode_result(&sig).await.unwrap();
+                println!("{:?}", &resp);
+                match resp {
+                    QRCodeState::QRCodeImageFetch { .. } => {}
+                    QRCodeState::QRCodeWaitingForScan => {}
+                    QRCodeState::QRCodeWaitingForConfirm => {}
+                    QRCodeState::QRCodeTimeout => {}
+                    QRCodeState::QRCodeConfirmed { tmp_pwd, tmp_no_pic_sig, tgt_qr } => {
+                        let resp = client.qrcode_login(&tmp_pwd, &tmp_no_pic_sig, &tgt_qr).await.unwrap();
+                        println!("{:?}", resp);
+                        break;
+                    }
+                    QRCodeState::QRCodeCanceled => {}
                 }
-                LoginState::QRCodeCanceled => {}
             }
         }
     });
