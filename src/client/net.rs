@@ -43,7 +43,7 @@ impl ClientNet {
         Ok(())
     }
 
-    pub async fn read_from_tcp_stream(&self, stream: &mut TcpStream) -> IoResult<Bytes> {
+    pub async fn read_from_tcp_stream(stream: &mut TcpStream) -> IoResult<Bytes> {
         stream.readable().await?;
         let len = stream.read_i32().await?;
         let mut data = BytesMut::with_capacity(len as usize - 4);
@@ -51,23 +51,17 @@ impl ClientNet {
         Ok(data.freeze())
     }
 
-    pub async fn read_and_parse(&self, stream: &mut TcpStream) -> IoResult<IncomePacket> {
-        let mut in_bytes = self.read_from_tcp_stream(stream).await?;
-        match self.client.parse_incoming_packet(&mut in_bytes).await {
-            Ok(pkt) => {
-                Ok(pkt)
-            }
-            Err(err) => {
-                panic!(err)
-            }
-        }
-    }
     pub async fn net_loop(mut self, mut stream: TcpStream) -> IoResult<()> {
         loop {
             tokio::select! {
-                _ = stream.readable() => {
-                    let pkt = self.read_and_parse(&mut stream).await?;
-                    self.client.handle_income_packet(pkt).await;
+                bytes_result = Self::read_from_tcp_stream(&mut stream) => {
+                    match bytes_result {
+                        Ok(mut b)=>{
+                            let pkt=self.client.parse_incoming_packet(&mut b).await.unwrap();
+                            self.client.handle_income_packet(pkt).await;
+                        }
+                        Err(_)=>{}
+                    };
                 }
                 bytes_option = self.receiver.recv() => {
                     if let Some(bytes) = bytes_option {

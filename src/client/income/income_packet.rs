@@ -101,7 +101,6 @@ impl super::super::Client{
             return Ok(());
         }
         let compressed_flag = payload.get_i32();
-        println!("compress_flag: {}", compressed_flag);
         let packet = match compressed_flag {
             0 => {
                 let _ = (payload.get_i32() as u64) & 0xffffffff;

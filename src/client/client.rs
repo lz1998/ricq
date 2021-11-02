@@ -34,7 +34,7 @@ impl Client {
             ecdh: EncryptECDH::default(),
             random_key: Bytes::from(rand::thread_rng().gen::<[u8; 16]>().to_vec()),
             version: gen_version_info(&ClientProtocol::IPad),
-            device_info:RwLock::new(device_info),
+            device_info: RwLock::new(device_info),
             out_going_packet_session_id: RwLock::new(Bytes::from_static(&[0x02, 0xb0, 0x5b, 0x8b])),
             account_info: RwLock::new(AccountInfo::default()),
             cache_info: RwLock::new(CacheInfo::default()),
