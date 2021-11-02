@@ -9,7 +9,15 @@ use crate::client::outcome::tlv::*;
 use crate::client::version::{ClientProtocol, gen_version_info};
 use crate::jce::*;
 use jce_struct::*;
+use crate::pb;
 
+fn pack_uni_request_data(data: &[u8]) -> Bytes {
+    let mut r = BytesMut::new();
+    r.put_slice(&[0x0A]);
+    r.put_slice(data);
+    r.put_slice(&[0x0B]);
+    Bytes::from(r)
+}
 
 impl crate::client::Client {
     pub async fn build_qrcode_fetch_request_packet(&self) -> (u16, Bytes) {
@@ -416,7 +424,69 @@ impl crate::client::Client {
 
         return (seq, packet);
     }
+
+    pub async fn build_friend_group_list_request_packet(&self, friend_start_index: i16, friend_list_count: i16, group_start_index: i16, group_list_count: i16) -> (u16, Bytes) {
+        let seq = self.next_seq();
+        let mut d50 = BytesMut::new();
+        prost::Message::encode(&pb::D50ReqBody {
+            appid: 1002,
+            req_music_switch: 1,
+            req_mutualmark_alienation: 1,
+            req_ksing_switch: 1,
+            req_mutualmark_lbsshare: 1,
+            // empty
+            max_pkg_size: 0,
+            start_time: 0,
+            start_index: 0,
+            req_num: 0,
+            uin_list: vec![],
+            req_mutualmark_score: 0,
+        }, &mut d50).unwrap();
+
+        let req = FriendListRequest {
+            reqtype: 3,
+            if_reflush: if friend_start_index <= 0 { 0 } else { 1 },
+            uin: self.uin.load(Ordering::SeqCst),
+            start_index: friend_start_index,
+            friend_count: friend_list_count,
+            group_id: 0,
+            if_get_group_info: if group_list_count <= 0 { 0 } else { 1 },
+            group_start_index: group_start_index as u8,
+            group_count: group_list_count as u8,
+            if_get_msf_group: 0,
+            if_show_term_type: 1,
+            version: 27,
+            uin_list: vec![],
+            app_type: 0,
+            if_get_dov_id: 0,
+            if_get_both_flag: 0,
+            d50: Bytes::from(d50),
+            d6b: Bytes::new(),
+            sns_type_list: vec![13580, 13581, 13582],
+        };
+        let buf = RequestDataVersion3 {
+            map: HashMap::from([
+                ("FL".to_string(), pack_uni_request_data(&req.build()))
+            ])
+        };
+        let pkt = RequestPacket {
+            i_version: 3,
+            c_packet_type: 0x003,
+            i_request_id: 1921334514,
+            s_servant_name: "mqq.IMService.FriendListServiceServantObj".to_string(),
+            s_func_name: "GetFriendListReq".to_string(),
+            s_buffer: buf.build(),
+            context: Default::default(),
+            status: Default::default(),
+            // empty
+            i_message_type: 0,
+            i_timeout: 0,
+        };
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "friendlist.getFriendGroupList", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        (seq, packet)
+    }
 }
+
 
 #[cfg(test)]
 mod tests {

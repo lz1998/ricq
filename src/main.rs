@@ -37,9 +37,11 @@ async fn main() -> Result<()> {
                     QRCodeState::QRCodeConfirmed { tmp_pwd, tmp_no_pic_sig, tgt_qr } => {
                         let resp = client.qrcode_login(&tmp_pwd, &tmp_no_pic_sig, &tgt_qr).await.unwrap();
                         println!("{:?}", resp);
-                        println!("{}",client.uin.load(Ordering::SeqCst));
-                        let resp=client.register_client().await.unwrap();
+                        println!("{}", client.uin.load(Ordering::SeqCst));
+                        let resp = client.register_client().await.unwrap();
                         println!("{:?}", resp);
+                        // let pkt = client.send_and_wait(client.build_friend_group_list_request_packet(0, 150, 0, 0).await.into()).await;
+                        // println!("{:?}",pkt);
 
                         break;
                     }

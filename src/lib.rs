@@ -4,8 +4,12 @@ pub mod hex;
 pub mod client;
 pub mod jce;
 
-pub mod pb{
+pub mod pb {
     include!(concat!(env!("OUT_DIR"), "/pb.rs"));
+
+    pub mod structmsg { include!(concat!(env!("OUT_DIR"), "/structmsg.rs")); }
+
+    pub mod msg { include!(concat!(env!("OUT_DIR"), "/msg.rs")); }
 }
 
 pub mod protocol {
@@ -34,7 +38,7 @@ mod tests {
         // let mut cli = Client::new(0,Password::String("".to_string()));
         // cli.device_info.gen_guid();
         // cli.device_info.gen_tgtgt_key();
-         // TODO before connect
+        // TODO before connect
         // match TcpStream::connect("42.81.172.81:80") {
         //     Ok(mut stream) => {
         //         println!("Successfully connected to server");
