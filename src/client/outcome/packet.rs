@@ -2,7 +2,7 @@ use bytes::{BufMut, Bytes, BytesMut};
 use crate::binary::{BinaryWriter};
 use crate::crypto::IEncryptMethod;
 
-pub fn build_oicq_request_packet<E>(uin: u32, command_id: u16, encrypt: &E, key: &[u8], body: &[u8]) -> Bytes
+pub fn build_oicq_request_packet<E>(uin: i64, command_id: u16, encrypt: &E, key: &[u8], body: &[u8]) -> Bytes
     where E: IEncryptMethod
 {
     let body = encrypt.do_encrypt(body, key);
@@ -13,7 +13,7 @@ pub fn build_oicq_request_packet<E>(uin: u32, command_id: u16, encrypt: &E, key:
         p.put_u16(8001);
         p.put_u16(command_id);
         p.put_u16(1);
-        p.put_u32(uin);
+        p.put_u32(uin as u32);
         p.put_u8(3);
         p.put_u8(encrypt.id());
         p.put_u8(0);
@@ -80,7 +80,7 @@ pub fn build_code2d_request_packet(seq: u32, j: u64, cmd: u16, body: &[u8]) -> B
     w.into()
 }
 
-pub fn build_login_packet(uin: u32, body_type: u8, key: &[u8], body: &[u8], extra_data: &[u8]) -> Bytes {
+pub fn build_login_packet(uin: i64, body_type: u8, key: &[u8], body: &[u8], extra_data: &[u8]) -> Bytes {
     let mut w = BytesMut::new();
 
     w.write_int_lv_packet(4, &{

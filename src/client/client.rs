@@ -50,18 +50,12 @@ impl Client {
     }
 
     pub async fn handle_income_packet(&self, pkt: IncomePacket) {
-        let sender = {
+        if let Some(sender) = {
             let mut packet_promises = self.packet_promises.write().await;
             packet_promises.remove(&pkt.seq_id)
-        };
-        match sender {
-            Some(sender) => {
-                sender.send(pkt); // response
-            }
-            None => {
-                // other handler
-            }
-        };
+        } {
+            sender.send(pkt); // response
+        }
     }
 
     pub async fn send_and_wait(&self, pkt: OutcomePacket) -> Option<IncomePacket> {

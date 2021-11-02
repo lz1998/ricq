@@ -198,6 +198,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "jce_derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "jce_struct"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "jce_derive",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -549,6 +566,7 @@ dependencies = [
  "chrono",
  "flate2",
  "generic-array",
+ "jce_struct",
  "md5",
  "openssl",
  "prost",

@@ -2,6 +2,7 @@ pub mod binary;
 pub mod crypto;
 pub mod hex;
 pub mod client;
+pub mod jce;
 
 pub mod pb{
     include!(concat!(env!("OUT_DIR"), "/pb.rs"));
