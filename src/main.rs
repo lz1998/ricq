@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use anyhow::Result;
@@ -9,10 +10,21 @@ use rs_qq::client::net::ClientNet;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let mut device_info = match Path::new("device.json").exists() {
+        true => {
+            DeviceInfo::from_json(&tokio::fs::read_to_string("device.json").await.unwrap()).unwrap()
+        }
+        false => {
+            DeviceInfo::random()
+        }
+    };
+    tokio::fs::write("device.json", device_info.to_json()).await;
+
+    println!("{:?}", device_info.to_json());
     let (cli, receiver) = Client::new(
         0,
         Password::from_str(""),
-        DeviceInfo::random(),
+        device_info,
     ).await;
 
     let client = Arc::new(cli);

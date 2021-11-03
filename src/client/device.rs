@@ -4,9 +4,11 @@ use rand::Rng;
 use crate::client::outcome::PbToBytes;
 use crate::hex::encode_hex;
 use crate::pb;
+use serde_json::{Error, json};
+use serde::{Deserialize, Serialize};
 
 //手机设备信息
-#[derive(Default)]
+#[derive(Default, Serialize, Deserialize, Debug)]
 pub struct DeviceInfo {
     pub display: String,
     pub product: String,
@@ -33,8 +35,10 @@ pub struct DeviceInfo {
     pub vendor_name: String,
     pub vendor_os_name: String,
     // generate
+    #[serde(skip)]
     pub guid: Bytes,
     // generate
+    #[serde(skip)]
     pub tgtgt_key: Bytes,
 }
 
@@ -96,9 +100,18 @@ impl DeviceInfo {
             inner_version: self.version.incremental.to_owned(),
         }.to_bytes()
     }
+
+    pub fn to_json(&self) -> String {
+        serde_json::to_string(&self).unwrap()
+    }
+
+    pub fn from_json(s: &str) -> Result<Self, serde_json::Error> {
+        serde_json::from_str(s)
+    }
 }
 
 //系统版本
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Version {
     pub incremental: String,
     pub release: String,
