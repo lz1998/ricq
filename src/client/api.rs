@@ -1,6 +1,6 @@
 use std::sync::atomic::Ordering;
 use jce_struct::Jce;
-use crate::client::income::{decode_client_register_response, decode_login_response, decode_system_msg_group_packet, decode_trans_emp_response, GroupSystemMessages, LoginResponse, QRCodeState};
+use crate::client::income::{decode_client_register_response, decode_friend_group_list_response, decode_login_response, decode_system_msg_group_packet, decode_trans_emp_response, FriendListResponse, GroupSystemMessages, LoginResponse, QRCodeState};
 use crate::client::outcome::OutcomePacket;
 use crate::jce::{RequestDataVersion2, RequestPacket, SvcRespRegister};
 use bytes::{Buf, Bytes};
@@ -50,6 +50,16 @@ impl super::Client {
             return None;
         }
         let resp = decode_system_msg_group_packet(&resp.payload)?;
+        Some(resp)
+    }
+
+    // 第一个参数offset，从0开始；第二个参数count，150，另外两个都是0
+    pub async fn friend_group_list(&self, friend_start_index: i16, friend_list_count: i16, group_start_index: i16, group_list_count: i16) -> Option<FriendListResponse> {
+        let mut resp = self.send_and_wait(self.build_friend_group_list_request_packet(friend_start_index, friend_list_count, group_start_index, group_list_count).await.into()).await?;
+        if &resp.command_name != "friendlist.getFriendGroupList" {
+            return None;
+        }
+        let resp = decode_friend_group_list_response(&resp.payload)?;
         Some(resp)
     }
 }

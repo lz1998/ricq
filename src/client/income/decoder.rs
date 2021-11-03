@@ -8,7 +8,8 @@ use super::tlv_decoder::*;
 use crate::client::device::random_string;
 use crate::client::outcome::PbToBytes;
 use crate::jce::*;
-use crate::pb::structmsg::RspSystemMsgNew;
+use crate::jce;
+use crate::pb::structmsg;
 
 #[derive(Debug)]
 pub enum QRCodeState {
@@ -304,7 +305,7 @@ pub fn decode_client_register_response(payload: &[u8]) -> SvcRespRegister {
     Jce::read_from_bytes(&mut b)
 }
 
-#[derive(Debug,Default)]
+#[derive(Debug, Default)]
 pub struct GroupSystemMessages {
     pub self_invited: Vec<SelfInvited>,
     pub user_apply: Vec<UserApply>,
@@ -312,7 +313,7 @@ pub struct GroupSystemMessages {
 }
 
 // 自己被邀请
-#[derive(Debug,Default)]
+#[derive(Debug, Default)]
 pub struct SelfInvited {
     request_id: i64,
     invitor_uin: i64,
@@ -325,7 +326,7 @@ pub struct SelfInvited {
 }
 
 // 用户申请进群
-#[derive(Debug,Default)]
+#[derive(Debug, Default)]
 pub struct UserApply {
     request_id: i64,
     message: String,
@@ -340,7 +341,7 @@ pub struct UserApply {
 }
 
 // 用户被邀请进群
-#[derive(Debug,Default)]
+#[derive(Debug, Default)]
 pub struct UserInvited {
     request_id: i64,
     message: String,
@@ -356,7 +357,7 @@ pub struct UserInvited {
 }
 
 pub fn decode_system_msg_group_packet(payload: &[u8]) -> Option<GroupSystemMessages> {
-    let rsp = RspSystemMsgNew::from_bytes(payload);
+    let rsp = structmsg::RspSystemMsgNew::from_bytes(payload);
     let mut user_apply = Vec::new();
     let mut self_invited = Vec::new();
     let mut user_invited = Vec::new();
@@ -429,4 +430,38 @@ pub fn decode_system_msg_group_packet(payload: &[u8]) -> Option<GroupSystemMessa
         }
         Err(_) => { None }
     }
+}
+
+#[derive(Debug, Default)]
+pub struct FriendListResponse {
+    list: Vec<FriendInfo>,
+    total_count: i16,
+}
+
+#[derive(Debug, Default)]
+pub struct FriendInfo {
+    uin: i64,
+    nick: String,
+    remark: String,
+    face_id: i16,
+}
+
+pub fn decode_friend_group_list_response(payload: &[u8]) -> Option<FriendListResponse> {
+    let mut payload = Bytes::from(payload.to_owned());
+    let mut request: RequestPacket = Jce::read_from_bytes(&mut payload);
+    let mut data: RequestDataVersion3 = Jce::read_from_bytes(&mut request.s_buffer);
+    let mut fl_resp = data.map.remove("FLRESP")?;
+    fl_resp.advance(1);
+    let mut r = Jce::new(&mut fl_resp);
+    let total_friend_count: i16 = r.get_by_tag(5);
+    let friends: Vec<jce::FriendInfo> = r.get_by_tag(7); // FIXME jce bug
+    Some(FriendListResponse {
+        total_count: total_friend_count,
+        list: friends.iter().map(|f| FriendInfo {
+            uin: f.friend_uin,
+            nick: f.nick.to_owned(),
+            remark: f.remark.to_owned(),
+            face_id: f.face_id,
+        }).collect(),
+    })
 }

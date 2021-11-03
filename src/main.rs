@@ -42,10 +42,14 @@ async fn main() -> Result<()> {
                         println!("result: {:?}", &resp.result);
                         println!("code: {:?}", &resp.reply_code);
                         println!("uin: {:?}", &resp.uin);
-                        let rsp=client.get_group_system_messages(true).await;
+                        // 获取 入群申请、邀请
+                        let rsp = client.get_group_system_messages(true).await;
                         println!("group_system_messages(true): {:?}", rsp);
-                        let rsp=client.get_group_system_messages(false).await;
+                        let rsp = client.get_group_system_messages(false).await;
                         println!("group_system_messages(false): {:?}", rsp);
+                        // 获取好友列表
+                        let rsp = client.friend_group_list(0, 150, 0, 0).await;
+                        println!("rsp: {:?}", rsp);
                         // let pkt = client.send_and_wait(client.build_friend_group_list_request_packet(0, 150, 0, 0).await.into()).await;
                         // println!("{:?}",pkt);
 
