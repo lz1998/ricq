@@ -1,10 +1,11 @@
-use bytes::BufMut;
-use openssl::bn::{BigNum, BigNumContext};
-use openssl::ec::{EcGroup, EcPoint, EcKey, PointConversionForm};
-use openssl::nid::Nid;
+use bytes::{BufMut, Bytes};
+// use openssl::bn::{BigNum, BigNumContext};
+// use openssl::ec::{EcGroup, EcPoint, EcKey, PointConversionForm};
+// use openssl::nid::Nid;
 use crate::hex::decode_hex;
 use crate::binary::BinaryWriter;
 use super::qqtea_encrypt;
+use p256::{ecdh::EphemeralSecret, EncodedPoint, PublicKey};
 
 pub trait IEncryptMethod {
     fn id(&self) -> u8;
@@ -13,16 +14,16 @@ pub trait IEncryptMethod {
 
 #[derive(Debug)]
 pub struct EncryptECDH {
-    pub initial_share_key: Vec<u8>,
-    pub public_key: Vec<u8>,
+    pub initial_share_key: Bytes,
+    pub public_key: Bytes,
     public_key_ver: u16,
 }
 
 impl Default for EncryptECDH {
     fn default() -> Self {
         let mut ecdh = EncryptECDH {
-            initial_share_key: vec![],
-            public_key: vec![],
+            initial_share_key: Bytes::new(),
+            public_key: Bytes::new(),
             public_key_ver: 1,
         };
         ecdh.generate_key("04EBCA94D733E399B2DB96EACDD3F69A8BB0F74224E2B44E3357812211D2E62EFBC91BB553098E25E33A799ADC7F76FEB208DA7C6522CDB0719A305180CC54A82E");
@@ -32,25 +33,17 @@ impl Default for EncryptECDH {
 
 impl EncryptECDH {
     pub fn generate_key(&mut self, s_pub_key: &str) {
-        let group = EcGroup::from_curve_name(Nid::X9_62_PRIME256V1).unwrap();
-        let mut ctx = BigNumContext::new().unwrap();
+        let s_pub_key = decode_hex(s_pub_key).unwrap(); // decode pub key
+        let secret = EphemeralSecret::random(rand::thread_rng()); // gen private key
+        let pub_key = PublicKey::from_sec1_bytes(&s_pub_key).unwrap(); // gen public key
 
-        let server_public_key = decode_hex(s_pub_key).unwrap();
-        let server_public_key = EcPoint::from_bytes(&group, &server_public_key, &mut ctx).unwrap();
+        let share = secret.diffie_hellman(&pub_key); // count public share
+        let share_x = &share.as_bytes()[0..16];
+        self.initial_share_key = Bytes::copy_from_slice(&md5::compute(share_x).0);
 
-        let client_key = EcKey::generate(&group).unwrap();
-        let client_public_key = client_key.public_key().to_bytes(&group, PointConversionForm::UNCOMPRESSED, &mut ctx).unwrap();
-
-
-        let mut shared_key = EcPoint::new(&group).unwrap();
-        shared_key.mul(&group, &server_public_key, client_key.private_key(), &mut ctx).unwrap();
-        let mut x = BigNum::new().unwrap();
-        let mut y = BigNum::new().unwrap();
-        shared_key.affine_coordinates(&group, &mut x, &mut y, &mut ctx).unwrap();
-
-        self.initial_share_key = md5::compute(&x.to_vec()[0..16]).to_vec();
-        self.public_key = client_public_key;
-        self.public_key_ver = 1;
+        let self_public_key = secret.public_key();
+        let point = EncodedPoint::from(self_public_key);
+        self.public_key = Bytes::copy_from_slice(point.as_bytes());
     }
 }
 
