@@ -9,7 +9,9 @@ use crate::client::outcome::tlv::*;
 use crate::client::version::{ClientProtocol, gen_version_info};
 use crate::jce::*;
 use jce_struct::*;
+use crate::client::outcome::PbToBytes;
 use crate::pb;
+use crate::pb::structmsg::{FlagInfo, ReqSystemMsgNew};
 
 fn pack_uni_request_data(data: &[u8]) -> Bytes {
     let mut r = BytesMut::new();
@@ -483,6 +485,46 @@ impl crate::client::Client {
             i_timeout: 0,
         };
         let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "friendlist.getFriendGroupList", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        (seq, packet)
+    }
+
+    pub async fn build_system_msg_new_group_packet(&self, suspicious: bool) -> (u16, Bytes) {
+        let seq = self.next_seq();
+        let req = ReqSystemMsgNew {
+            msg_num: 100,
+            version: 1000,
+            checktype: 3,
+            flag: Some(FlagInfo {
+                grp_msg_kick_admin: 1,
+                grp_msg_hidden_grp: 1,
+                grp_msg_wording_down: 1,
+                grp_msg_get_official_account: 1,
+                grp_msg_get_pay_in_group: 1,
+                frd_msg_discuss2_many_chat: 1,
+                grp_msg_not_allow_join_grp_invite_not_frd: 1,
+                frd_msg_need_waiting_msg: 1,
+                frd_msg_uint32_need_all_unread_msg: 1,
+                grp_msg_need_auto_admin_wording: 1,
+                grp_msg_get_transfer_group_msg_flag: 1,
+                grp_msg_get_quit_pay_group_msg_flag: 1,
+                grp_msg_support_invite_auto_join: 1,
+                grp_msg_mask_invite_auto_join: 1,
+                grp_msg_get_disbanded_by_admin: 1,
+                grp_msg_get_c2c_invite_join_group: 1,
+                //empty
+                frd_msg_get_busi_card: 0,
+            }),
+            friend_msg_type_flag: 1,
+            req_msg_type: if suspicious { 2 } else { 1 },
+            // empty
+            language: 0,
+            latest_friend_seq: 0,
+            latest_group_seq: 0,
+            is_get_frd_ribbon: false,
+            is_get_grp_ribbon: false,
+        };
+        let payload = req.to_bytes();
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "ProfileService.Pb.ReqSystemMsgNew.Group", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &payload);
         (seq, packet)
     }
 }

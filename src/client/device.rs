@@ -1,6 +1,7 @@
 use bytes::{BufMut, Bytes};
 use rand::distributions::Alphanumeric;
 use rand::Rng;
+use crate::client::outcome::PbToBytes;
 use crate::hex::encode_hex;
 use crate::pb;
 
@@ -82,9 +83,8 @@ impl DeviceInfo {
         self.tgtgt_key = Bytes::from(md5::compute(&r).to_vec());
     }
 
-    pub fn gen_pb_data(&self) -> Vec<u8> {
-        let mut buf = Vec::new();
-        prost::Message::encode(&pb::DeviceInfo {
+    pub fn gen_pb_data(&self) -> Bytes {
+        pb::DeviceInfo {
             bootloader: self.bootloader.to_owned(),
             proc_version: self.proc_version.to_owned(),
             codename: self.version.codename.to_owned(),
@@ -94,8 +94,7 @@ impl DeviceInfo {
             android_id: self.android_id.to_owned(),
             base_band: self.base_band.to_owned(),
             inner_version: self.version.incremental.to_owned(),
-        }, &mut buf).unwrap();
-        buf
+        }.to_bytes()
     }
 }
 
