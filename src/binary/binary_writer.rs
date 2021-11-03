@@ -54,11 +54,10 @@ impl<B> BinaryWriter for B
             }
         }
 
-        let mut w = BytesMut::new();
-        w.put_u32((w1.len() + 4) as u32);
-        w.put_slice(&w1);
-        w.put_u32((body.len() + 4) as u32);
-        w.put_slice(body);
+        self.put_u32((w1.len() + 4) as u32);
+        self.put_slice(&w1);
+        self.put_u32((body.len() + 4) as u32);
+        self.put_slice(body);
     }
 
     fn write_tlv_limited_size(&mut self, data: &[u8], limit: isize) {

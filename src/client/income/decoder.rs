@@ -304,6 +304,7 @@ pub fn decode_client_register_response(payload: &[u8]) -> SvcRespRegister {
     Jce::read_from_bytes(&mut b)
 }
 
+#[derive(Debug,Default)]
 pub struct GroupSystemMessages {
     pub self_invited: Vec<SelfInvited>,
     pub user_apply: Vec<UserApply>,
@@ -311,6 +312,7 @@ pub struct GroupSystemMessages {
 }
 
 // 自己被邀请
+#[derive(Debug,Default)]
 pub struct SelfInvited {
     request_id: i64,
     invitor_uin: i64,
@@ -323,6 +325,7 @@ pub struct SelfInvited {
 }
 
 // 用户申请进群
+#[derive(Debug,Default)]
 pub struct UserApply {
     request_id: i64,
     message: String,
@@ -337,6 +340,7 @@ pub struct UserApply {
 }
 
 // 用户被邀请进群
+#[derive(Debug,Default)]
 pub struct UserInvited {
     request_id: i64,
     message: String,

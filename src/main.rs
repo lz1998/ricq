@@ -42,8 +42,10 @@ async fn main() -> Result<()> {
                         println!("result: {:?}", &resp.result);
                         println!("code: {:?}", &resp.reply_code);
                         println!("uin: {:?}", &resp.uin);
-                        let rsp=client.send_and_wait(client.build_system_msg_new_group_packet(false).await.into()).await;
-                        println!("uin: {:?}", &rsp);
+                        let rsp=client.get_group_system_messages(true).await;
+                        println!("group_system_messages(true): {:?}", rsp);
+                        let rsp=client.get_group_system_messages(false).await;
+                        println!("group_system_messages(false): {:?}", rsp);
                         // let pkt = client.send_and_wait(client.build_friend_group_list_request_packet(0, 150, 0, 0).await.into()).await;
                         // println!("{:?}",pkt);
 

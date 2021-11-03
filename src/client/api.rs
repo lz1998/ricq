@@ -1,6 +1,6 @@
 use std::sync::atomic::Ordering;
 use jce_struct::Jce;
-use crate::client::income::{decode_client_register_response, decode_login_response, decode_trans_emp_response, LoginResponse, QRCodeState};
+use crate::client::income::{decode_client_register_response, decode_login_response, decode_system_msg_group_packet, decode_trans_emp_response, GroupSystemMessages, LoginResponse, QRCodeState};
 use crate::client::outcome::OutcomePacket;
 use crate::jce::{RequestDataVersion2, RequestPacket, SvcRespRegister};
 use bytes::{Buf, Bytes};
@@ -41,6 +41,15 @@ impl super::Client {
             return None;
         }
         self.online.store(true, Ordering::SeqCst);
+        Some(resp)
+    }
+
+    pub async fn get_group_system_messages(&self, suspicious: bool) -> Option<GroupSystemMessages> {
+        let mut resp = self.send_and_wait(self.build_system_msg_new_group_packet(suspicious).await.into()).await?;
+        if &resp.command_name != "ProfileService.Pb.ReqSystemMsgNew.Group" {
+            return None;
+        }
+        let resp = decode_system_msg_group_packet(&resp.payload)?;
         Some(resp)
     }
 }

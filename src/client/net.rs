@@ -45,9 +45,9 @@ impl ClientNet {
     pub async fn read_from_tcp_stream(stream: &mut TcpStream) -> IoResult<Bytes> {
         stream.readable().await?;
         let len = stream.read_i32().await?;
-        let mut data = BytesMut::with_capacity(len as usize - 4);
-        stream.read_buf(&mut data).await?;
-        Ok(data.freeze())
+        let mut data = vec![0; len as usize - 4];
+        stream.read_exact(&mut data).await?;
+        Ok(Bytes::from(data))
     }
 
     pub async fn net_loop(mut self, mut stream: TcpStream) -> IoResult<()> {
