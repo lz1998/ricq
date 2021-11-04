@@ -38,10 +38,10 @@ impl crate::client::Client {
                 w.write_bytes_short(&vec![]);
 
                 w.put_u16(6);
-                w.put_slice(&t16(watch.sso_version, 16, watch.app_id, &self.device_info.read().await.guid, watch.apk_id.as_bytes(), watch.sort_version_name.as_bytes(), &watch.apk_sign));
+                w.put_slice(&t16(watch.sso_version, 16, watch.app_id, &self.device_info.read().await.guid, &watch.apk_id, &watch.sort_version_name, &watch.apk_sign));
                 w.put_slice(&t1b(0, 0, 3, 4, 72, 2, 2));
                 w.put_slice(&t1d(watch.misc_bitmap));
-                w.put_slice(&t1f(false, self.device_info.read().await.os_type.as_bytes(), "7.1.2".as_bytes(), "China Mobile GSM".as_bytes(), self.device_info.read().await.apn.as_bytes(), 2));
+                w.put_slice(&t1f(false, &self.device_info.read().await.os_type, "7.1.2", "China Mobile GSM", &self.device_info.read().await.apn, 2));
                 w.put_slice(&t33(&self.device_info.read().await.guid));
                 w.put_slice(&t35(8));
                 w
@@ -98,24 +98,24 @@ impl crate::client::Client {
             w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
             w.put_slice(&t100(self.version.sso_version, self.version.sub_app_id, self.version.main_sig_map));
             w.put_slice(&t107(0));
-            w.put_slice(&t142(self.version.apk_id.as_bytes()));
+            w.put_slice(&t142(&self.version.apk_id));
             w.put_slice(&t144(
-                self.device_info.read().await.imei.as_bytes(),
+                &self.device_info.read().await.imei,
                 &self.device_info.read().await.gen_pb_data(),
-                self.device_info.read().await.os_type.as_bytes(),
-                self.device_info.read().await.version.release.as_bytes(),
-                self.device_info.read().await.sim_info.as_bytes(),
-                self.device_info.read().await.apn.as_bytes(),
+                &self.device_info.read().await.os_type,
+                &self.device_info.read().await.version.release,
+                &self.device_info.read().await.sim_info,
+                &self.device_info.read().await.apn,
                 false, true, false, guid_flag(),
-                self.device_info.read().await.model.as_bytes(),
+                &self.device_info.read().await.model,
                 &self.device_info.read().await.guid,
-                self.device_info.read().await.brand.as_bytes(),
+                &self.device_info.read().await.brand,
                 &self.device_info.read().await.tgtgt_key,
             ));
 
             w.put_slice(&t145(&self.device_info.read().await.guid));
             w.put_slice(&t147(16,
-                              self.version.sort_version_name.as_bytes(),
+                              &self.version.sort_version_name,
                               &self.version.apk_sign));
             w.put_slice(&{
                 let mut w = Vec::new();
@@ -124,19 +124,19 @@ impl crate::client::Client {
                 w
             });
             w.put_slice(&t154(seq));
-            w.put_slice(&t141(self.device_info.read().await.sim_info.as_bytes(), self.device_info.read().await.apn.as_bytes()));
+            w.put_slice(&t141(&self.device_info.read().await.sim_info, &self.device_info.read().await.apn));
             w.put_slice(&t8(2052));
             w.put_slice(&t511(vec!["tenpay.com", "openmobile.qq.com", "docs.qq.com", "connect.qq.com",
                                    "qzone.qq.com", "vip.qq.com", "gamecenter.qq.com", "qun.qq.com", "game.qq.com",
                                    "qqweb.qq.com", "office.qq.com", "ti.qq.com", "mail.qq.com", "mma.qq.com"]));
-            w.put_slice(&t187(self.device_info.read().await.mac_address.as_bytes()));
-            w.put_slice(&t188(self.device_info.read().await.android_id.as_bytes()));
+            w.put_slice(&t187(&self.device_info.read().await.mac_address));
+            w.put_slice(&t188(&self.device_info.read().await.android_id));
             if self.device_info.read().await.imsi_md5.len() != 0 {
                 w.put_slice(&t194(self.device_info.read().await.imsi_md5.as_slice()))
             }
             w.put_slice(&t191(0x00));
             if self.device_info.read().await.wifi_bssid.len() != 0 && self.device_info.read().await.wifi_ssid.len() != 0 {
-                w.put_slice(&t202(self.device_info.read().await.wifi_bssid.as_bytes(), self.device_info.read().await.wifi_ssid.as_bytes()));
+                w.put_slice(&t202(&self.device_info.read().await.wifi_bssid, &self.device_info.read().await.wifi_ssid));
             }
             w.put_slice(&t177(self.version.build_time, self.version.sdk_version.as_str()));
             w.put_slice(&t516());
@@ -270,34 +270,34 @@ impl crate::client::Client {
             w.put_slice(&t100(self.version.sso_version, 2, self.version.main_sig_map));
             w.put_slice(&t107(0));
             w.put_slice(&t144(
-                self.device_info.read().await.android_id.as_bytes(),
+                &self.device_info.read().await.android_id,
                 &self.device_info.read().await.gen_pb_data(),
-                self.device_info.read().await.os_type.as_bytes(),
-                self.device_info.read().await.version.release.as_bytes(),
-                self.device_info.read().await.sim_info.as_bytes(),
-                self.device_info.read().await.apn.as_bytes(),
+                &self.device_info.read().await.os_type,
+                &self.device_info.read().await.version.release,
+                &self.device_info.read().await.sim_info,
+                &self.device_info.read().await.apn,
                 false, true, false, guid_flag(),
-                self.device_info.read().await.model.as_bytes(),
+                &self.device_info.read().await.model,
                 &self.device_info.read().await.guid,
-                self.device_info.read().await.brand.as_bytes(),
+                &self.device_info.read().await.brand,
                 &self.device_info.read().await.tgtgt_key,
             ));
-            w.put_slice(&t142(self.version.apk_id.as_bytes()));
+            w.put_slice(&t142(&self.version.apk_id));
             w.put_slice(&t145(&self.device_info.read().await.guid));
             w.put_slice(&t16a(&self.cache_info.read().await.sig_info.srm_token));
-            w.put_slice(&t141(self.device_info.read().await.sim_info.as_bytes(), self.device_info.read().await.apn.as_bytes()));
+            w.put_slice(&t141(&self.device_info.read().await.sim_info, &self.device_info.read().await.apn));
             w.put_slice(&t8(2052));
             w.put_slice(&t511(vec!["tenpay.com", "openmobile.qq.com", "docs.qq.com", "connect.qq.com",
                                    "qzone.qq.com", "vip.qq.com", "gamecenter.qq.com", "qun.qq.com", "game.qq.com",
                                    "qqweb.qq.com", "office.qq.com", "ti.qq.com", "mail.qq.com", "mma.qq.com"]
             ));
-            w.put_slice(&t147(16, self.version.sort_version_name.as_bytes(), &self.version.apk_sign));
+            w.put_slice(&t147(16, &self.version.sort_version_name, &self.version.apk_sign));
             w.put_slice(&t177(self.version.build_time, &self.version.sdk_version));
             w.put_slice(&t400(&self.cache_info.read().await.g, self.uin.load(Ordering::SeqCst), &self.device_info.read().await.guid, &self.cache_info.read().await.dpwd, 1, 16, &self.random_key));
-            w.put_slice(&t187(self.device_info.read().await.mac_address.as_bytes()));
-            w.put_slice(&t188(self.device_info.read().await.android_id.as_bytes()));
+            w.put_slice(&t187(&self.device_info.read().await.mac_address));
+            w.put_slice(&t188(&self.device_info.read().await.android_id));
             w.put_slice(&t194(&self.device_info.read().await.imsi_md5));
-            w.put_slice(&t202(self.device_info.read().await.wifi_bssid.as_bytes(), self.device_info.read().await.wifi_ssid.as_bytes()));
+            w.put_slice(&t202(&self.device_info.read().await.wifi_bssid, &self.device_info.read().await.wifi_ssid));
             w.put_slice(&t516());
             w.put_slice(&t521(0));
             w.put_slice(&t525(&t536(&vec![0x01, 0x00])));
@@ -320,28 +320,28 @@ impl crate::client::Client {
             w.put_slice(&t108(&self.device_info.read().await.imei));
             let h = md5::compute(&self.cache_info.read().await.sig_info.d2key).to_vec();
             w.put_slice(&t144(
-                self.device_info.read().await.android_id.as_bytes(),
+                &self.device_info.read().await.android_id,
                 &self.device_info.read().await.gen_pb_data(),
-                self.device_info.read().await.os_type.as_bytes(),
-                self.device_info.read().await.version.release.as_bytes(),
-                self.device_info.read().await.sim_info.as_bytes(),
-                self.device_info.read().await.apn.as_bytes(),
+                &self.device_info.read().await.os_type,
+                &self.device_info.read().await.version.release,
+                &self.device_info.read().await.sim_info,
+                &self.device_info.read().await.apn,
                 false, true, false, guid_flag(),
-                self.device_info.read().await.model.as_bytes(),
+                &self.device_info.read().await.model,
                 &self.device_info.read().await.guid,
-                self.device_info.read().await.brand.as_bytes(),
+                &self.device_info.read().await.brand,
                 &h,
             ));
             w.put_slice(&t143(&self.cache_info.read().await.sig_info.d2));
-            w.put_slice(&t142(self.version.apk_id.as_bytes()));
+            w.put_slice(&t142(&self.version.apk_id));
             w.put_slice(&t154(seq));
             w.put_slice(&t18(16, self.uin.load(Ordering::SeqCst) as u32));
-            w.put_slice(&t141(self.device_info.read().await.sim_info.as_bytes(), self.device_info.read().await.apn.as_bytes()));
+            w.put_slice(&t141(&self.device_info.read().await.sim_info, &self.device_info.read().await.apn));
             w.put_slice(&t8(2052));
-            w.put_slice(&t147(16, self.version.sort_version_name.as_bytes(), &self.version.apk_sign));
+            w.put_slice(&t147(16, &self.version.sort_version_name, &self.version.apk_sign));
             w.put_slice(&t177(self.version.build_time, &self.version.sdk_version));
-            w.put_slice(&t187(self.device_info.read().await.mac_address.as_bytes()));
-            w.put_slice(&t188(self.device_info.read().await.android_id.as_bytes()));
+            w.put_slice(&t187(&self.device_info.read().await.mac_address));
+            w.put_slice(&t188(&self.device_info.read().await.android_id));
             w.put_slice(&t194(&self.device_info.read().await.imsi_md5));
             w.put_slice(&t511(vec!["tenpay.com", "openmobile.qq.com", "docs.qq.com", "connect.qq.com",
                                    "qzone.qq.com", "vip.qq.com", "gamecenter.qq.com", "qun.qq.com", "game.qq.com",

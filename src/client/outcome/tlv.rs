@@ -1,4 +1,4 @@
-use bytes::BufMut;
+use bytes::{BufMut, Bytes, BytesMut};
 use chrono::Utc;
 use crate::binary::BinaryWriter;
 
@@ -55,18 +55,18 @@ pub fn t1d(misc_bitmap: u32) -> Vec<u8> {
     return buf;
 }
 
-pub fn t1f(is_root: bool, os_name: &[u8], os_version: &[u8], sim_operator_name: &[u8], apn: &[u8], network_type: u16) -> Vec<u8> {
+pub fn t1f(is_root: bool, os_name: &str, os_version: &str, sim_operator_name: &str, apn: &str, network_type: u16) -> Vec<u8> {
     let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x1f);
     buf.write_bytes_short(&{
         let mut w: Vec<u8> = Vec::new();
         w.put_u8(if is_root { 1 } else { 0 });
-        w.write_bytes_short(os_name);
-        w.write_bytes_short(os_version);
+        w.write_bytes_short(os_name.as_bytes());
+        w.write_bytes_short(os_version.as_bytes());
         w.put_u16(network_type);
-        w.write_bytes_short(sim_operator_name);
-        w.write_bytes_short(&vec![]);
-        w.write_bytes_short(apn);
+        w.write_bytes_short(sim_operator_name.as_bytes());
+        w.write_bytes_short(&[]);
+        w.write_bytes_short(apn.as_bytes());
         w
     });
     return buf;
@@ -105,7 +105,7 @@ pub fn t10a(arr: &[u8]) -> Vec<u8> {
     return buf;
 }
 
-pub fn t16(sso_version: u32, app_id: u32, sub_app_id: u32, guid: &[u8], apk_id: &[u8], apk_version_name: &[u8], apk_sign: &[u8]) -> Vec<u8> {
+pub fn t16(sso_version: u32, app_id: u32, sub_app_id: u32, guid: &[u8], apk_id: &str, apk_version_name: &str, apk_sign: &[u8]) -> Vec<u8> {
     let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x16);
     buf.write_bytes_short(&{
@@ -114,8 +114,8 @@ pub fn t16(sso_version: u32, app_id: u32, sub_app_id: u32, guid: &[u8], apk_id: 
         w.put_u32(app_id);
         w.put_u32(sub_app_id);
         w.put_slice(guid);
-        w.write_bytes_short(apk_id);
-        w.write_bytes_short(apk_version_name);
+        w.write_bytes_short(apk_id.as_bytes());
+        w.write_bytes_short(apk_version_name.as_bytes());
         w.write_bytes_short(apk_sign);
         w
     });
@@ -231,7 +231,7 @@ pub fn t104(data: &[u8]) -> Vec<u8> {
     buf
 }
 
-pub fn t106(uin: u32, salt: u32, app_id: u32, sso_ver: u32, password_md5: [u8; 16], guid_available: bool, guid: &[u8], tgtgt_key: &[u8], wtf: u32) -> Vec<u8> {
+pub fn t106(uin: u32, salt: u32, app_id: u32, sso_ver: u32, password_md5: &[u8], guid_available: bool, guid: &[u8], tgtgt_key: &[u8], wtf: u32) -> Vec<u8> {
     let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x106);
     let body: &Vec<u8> = &{
@@ -283,7 +283,7 @@ pub fn t106(uin: u32, salt: u32, app_id: u32, sso_ver: u32, password_md5: [u8; 1
         }
         let mut v: Vec<u8> = Vec::new();
         for i in password_md5 {
-            v.push(i)
+            v.push(*i)
         }
         for i in 0..4 {
             v.push(0x00)
@@ -318,16 +318,12 @@ pub fn t108(imei: &str) -> Vec<u8> {
     buf
 }
 
-pub fn t109(android_id: &[u8]) -> Vec<u8> {
+pub fn t109(android_id: &str) -> Vec<u8> {
     let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x109);
     buf.write_bytes_short(&{
         let mut w: Vec<u8> = Vec::new();
-        let mut v: Vec<u8> = Vec::new();
-        for i in android_id {
-            v.push(*i)
-        }
-        w.put_slice(md5::compute(&v).as_ref());
+        w.put_slice(md5::compute(android_id.as_bytes()).as_ref());
         w
     });
     buf
@@ -348,24 +344,23 @@ pub fn t116(misc_bitmap: u32, sub_sig_map: u32) -> Vec<u8> {
     buf
 }
 
-pub fn t124(os_type: &[u8], os_version: &[u8], sim_info: &[u8], apn: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t124(os_type: &str, os_version: &str, sim_info: &str, apn: &str) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x124);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
-        w.write_tlv_limited_size(os_type, 16);
-        w.write_tlv_limited_size(os_version, 16);
+        let mut w = BytesMut::new();
+        w.write_tlv_limited_size(os_type.as_bytes(), 16);
+        w.write_tlv_limited_size(os_version.as_bytes(), 16);
         w.put_u16(2);
-        w.write_tlv_limited_size(sim_info, 16);
-        let b: Vec<u8> = Vec::new();
-        w.write_tlv_limited_size(&b, 16);
-        w.write_tlv_limited_size(apn, 16);
-        w
+        w.write_tlv_limited_size(sim_info.as_bytes(), 16);
+        w.write_tlv_limited_size(&[], 16);
+        w.write_tlv_limited_size(apn.as_bytes(), 16);
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t128(is_guid_from_file_null: bool, is_guid_available: bool, is_guid_changed: bool, guid_flag: u32, build_model: &[u8], guid: &[u8], build_brand: &[u8]) -> Vec<u8> {
+pub fn t128(is_guid_from_file_null: bool, is_guid_available: bool, is_guid_changed: bool, guid_flag: u32, build_model: &str, guid: &[u8], build_brand: &str) -> Vec<u8> {
     let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x128);
     buf.write_bytes_short(&{
@@ -375,94 +370,94 @@ pub fn t128(is_guid_from_file_null: bool, is_guid_available: bool, is_guid_chang
         w.put_u8(if is_guid_available { 1 } else { 0 });
         w.put_u8(if is_guid_changed { 1 } else { 0 });
         w.put_u32(guid_flag);
-        w.write_tlv_limited_size(build_model, 32);
+        w.write_tlv_limited_size(build_model.as_bytes(), 32);
         w.write_tlv_limited_size(guid, 16);
-        w.write_tlv_limited_size(build_brand, 16);  // app id list
+        w.write_tlv_limited_size(build_brand.as_bytes(), 16);  // app id list
         w
     });
     buf
 }
 
-pub fn t141(sim_info: &[u8], apn: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
-    buf.put_u16(0x141);
-    buf.write_bytes_short(&{
+pub fn t141(sim_info: &str, apn: &str) -> Bytes {
+    let mut w = BytesMut::new();
+    w.put_u16(0x141);
+    w.write_bytes_short(&{
         let mut w: Vec<u8> = Vec::new();
         w.put_u16(1);
-        w.write_bytes_short(sim_info);
+        w.write_bytes_short(sim_info.as_bytes());
         w.put_u16(2);
-        w.write_bytes_short(apn);
+        w.write_bytes_short(apn.as_bytes());
         w
     });
-    buf
+    w.freeze()
 }
 
-pub fn t142(apk_id: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t142(apk_id: &str) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x142);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u16(0);
-        w.write_tlv_limited_size(apk_id, 32);
-        w
+        w.write_tlv_limited_size(apk_id.as_bytes(), 32);
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t143(arr: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t143(arr: &[u8]) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x143);
     buf.write_bytes_short(arr);
-    buf
+    buf.freeze()
 }
 
-pub fn t144(imei: &[u8], dev_info: &[u8], os_type: &[u8], os_version: &[u8], sim_info: &[u8], apn: &[u8],
+pub fn t144(imei: &str, dev_info: &[u8], os_type: &str, os_version: &str, sim_info: &str, apn: &str,
             is_guid_from_file_null: bool, is_guid_available: bool, is_guid_changed: bool,
             guid_flag: u32,
-            build_model: &[u8], guid: &[u8], build_brand: &[u8], tgtgt_key: &[u8],
-) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
-    buf.put_u16(0x144);
-    buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+            build_model: &str, guid: &[u8], build_brand: &str, tgtgt_key: &[u8],
+) -> Bytes {
+    let mut w = BytesMut::new();
+    w.put_u16(0x144);
+    w.write_bytes_short(&{
+        let mut w = BytesMut::new();
         w.encrypt_and_write(tgtgt_key, &{
-            let mut ww = Vec::new();
-            ww.put_u16(5);
-            ww.put_slice(&t109(imei));
-            ww.put_slice(&t52d(dev_info));
-            ww.put_slice(&t124(os_type, os_version, sim_info, apn));
-            ww.put_slice(&t128(is_guid_from_file_null, is_guid_available, is_guid_changed, guid_flag, build_model, guid, build_brand));
-            ww.put_slice(&t16e(build_model));
-            ww
+            let mut w = BytesMut::new();
+            w.put_u16(5);
+            w.put_slice(&t109(imei));
+            w.put_slice(&t52d(dev_info));
+            w.put_slice(&t124(os_type, os_version, sim_info, apn));
+            w.put_slice(&t128(is_guid_from_file_null, is_guid_available, is_guid_changed, guid_flag, build_model, guid, build_brand));
+            w.put_slice(&t16e(build_model.as_bytes()));
+            w.freeze()
         });
-        w
+        w.freeze()
     });
-    buf
+    w.freeze()
 }
 
 
-pub fn t145(guid: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t145(guid: &[u8]) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x145);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_slice(&guid);
-        w
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t147(app_id: u32, apk_version_name: &[u8], apk_signature_md5: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
-    buf.put_u16(0x147);
-    buf.write_bytes_short(&{
+pub fn t147(app_id: u32, apk_version_name: &str, apk_signature_md5: &[u8]) -> Bytes {
+    let mut w = BytesMut::new();
+    w.put_u16(0x147);
+    w.write_bytes_short(&{
         let mut w: Vec<u8> = Vec::new();
         w.put_u32(app_id);
-        w.write_tlv_limited_size(apk_version_name, 32);
+        w.write_tlv_limited_size(apk_version_name.as_bytes(), 32);
         w.write_tlv_limited_size(apk_signature_md5, 32);
         w
     });
-    buf
+    w.freeze()
 }
 
 pub fn t154(seq: u16) -> Vec<u8> {
@@ -507,27 +502,23 @@ pub fn t177(build_time: u32, sdk_version: &str) -> Vec<u8> {
     buf
 }
 
-pub fn t187(mac_address: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t187(mac_address: &str) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x187);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
-        w.put_slice(md5::compute(&mac_address).as_ref());
-        w
+        let mut w = BytesMut::new();
+        w.put_slice(md5::compute(mac_address.as_bytes()).as_ref());
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t188(android_id: &[u8]) -> Vec<u8> {
+pub fn t188(android_id: &str) -> Vec<u8> {
     let mut buf: Vec<u8> = Vec::new();
     buf.put_u16(0x188);
     buf.write_bytes_short(&{
         let mut w: Vec<u8> = Vec::new();
-        let mut v: Vec<u8> = Vec::new();
-        for i in android_id {
-            v.push(*i)
-        }
-        w.put_slice(md5::compute(&v).as_ref());
+        w.put_slice(md5::compute(android_id.as_bytes()).as_ref());
         w
     });
     buf
@@ -582,16 +573,16 @@ pub fn t198() -> Vec<u8> {
     buf
 }
 
-pub fn t202(wifi_bssid: &[u8], wifi_ssid: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t202(wifi_bssid: &str, wifi_ssid: &str) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x202);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
-        w.write_tlv_limited_size(wifi_bssid, 16);
-        w.write_tlv_limited_size(wifi_ssid, 32);
-        w
+        let mut w = BytesMut::new();
+        w.write_tlv_limited_size(wifi_bssid.as_bytes(), 16);
+        w.write_tlv_limited_size(wifi_ssid.as_bytes(), 32);
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
 pub fn t400(g: &[u8], uin: i64, guid: &[u8], dpwd: &[u8], j2: i64, j3: i64, rand_seed: &[u8]) -> Vec<u8> {
@@ -742,16 +733,16 @@ mod tests {
     static GUID: [u8; 16] = [142, 27, 163, 177, 172, 31, 181, 137, 118, 115, 8, 126, 24, 49, 54, 169];
     static TGTGT_KEY: [u8; 16] = [199, 12, 183, 107, 3, 28, 81, 148, 116, 20, 229, 112, 0, 64, 152, 255];
     static UIN: u32 = 349195854;
-    static OS_NAME: &[u8] = "android".as_bytes();
-    static OS_VERSION: &[u8] = "7.1.2".as_bytes();
-    static SIM_INFO: &[u8] = "T-Mobile".as_bytes();
-    static IMEI: &str = "468356291846738";
+    static OS_NAME: String = "android".to_string();
+    static OS_VERSION: String = "7.1.2".to_string();
+    static SIM_INFO: String = "T-Mobile".to_string();
+    static IMEI: String = "468356291846738".to_string();
     static IMEI_MD5: &[u8] = "9792b1bba1867318bf782af418306ef8".as_bytes();
-    static WIFI_BSSID: &[u8] = "00:50:56:C0:00:08".as_bytes();
-    static WIFI_SSID: &[u8] = "<unknown ssid>".as_bytes();
-    static APN: &[u8] = "wifi".as_bytes();
+    static WIFI_BSSID: String = "00:50:56:C0:00:08".to_string();
+    static WIFI_SSID: String = "<unknown ssid>".to_string();
+    static APN: String = "wifi".to_string();
     static APK_SIGN: [u8; 16] = [0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E, 0xB6, 0x8D];
-    static APK_ID: &[u8] = "com.tencent.mobileqq".as_bytes();
+    static APK_ID: String = "com.tencent.mobileqq".to_string();
     static APP_ID: u32 = 537066738;
     static SUB_APP_ID: u32 = 537066738;
     static SSO_VERSION: u32 = 15;
@@ -759,14 +750,14 @@ mod tests {
     static MISC_BITMAP: u32 = 184024956;
     static SUB_SIG_MAP: u32 = 0x10400;
     static MAIN_SIG_MAP: u32 = 34869472;
-    static MAC_ADDRESS: &[u8] = "00:50:56:C0:00:08".as_bytes();
+    static MAC_ADDRESS: String = "00:50:56:C0:00:08".to_string();
     static IS_ROOT: bool = false;
-    static ANDROID_ID: &[u8] = "QKQ1.191117.002".as_bytes();
-    static APK_VERSION_NAME: &[u8] = "2.0.5".as_bytes();
+    static ANDROID_ID: String = "QKQ1.191117.002".to_string();
+    static APK_VERSION_NAME: String = "2.0.5".to_string();
     static DEV_INFO: &[u8] = "dev_info_dev_info_dev_info_dev_info_dev_info_".as_bytes();
-    static BUILD_MODEL: &[u8] = "mirai".as_bytes();
-    static BUILD_BRAND: &[u8] = "mamoe".as_bytes();
-    static OS_TYPE: &[u8] = "android".as_bytes();
+    static BUILD_MODEL: String = "mirai".to_string();
+    static BUILD_BRAND: String = "mamoe".to_string()();
+    static OS_TYPE: String = "android".to_string();
 
     #[test]
     fn test_param() {
@@ -797,7 +788,7 @@ mod tests {
 
     #[test]
     fn test_t1f() {
-        let result = t1f(IS_ROOT, OS_NAME, OS_VERSION, "China Mobile GSM".as_bytes(), APN, 2);
+        let result = t1f(IS_ROOT, &OS_NAME, &OS_VERSION, "China Mobile GSM", &APN, 2);
         println!("{}", result.len());
         println!("{:?}", result)
     }
@@ -825,7 +816,7 @@ mod tests {
 
     #[test]
     fn test_t16() {
-        let result = t16(SSO_VERSION, APP_ID, SUB_APP_ID, &GUID, APK_ID, APK_VERSION_NAME, &APK_SIGN);
+        let result = t16(SSO_VERSION, APP_ID, SUB_APP_ID, &GUID, &APK_ID, &APK_VERSION_NAME, &APK_SIGN);
         println!("{}", result.len());
         println!("{:?}", result)
     }
@@ -883,7 +874,7 @@ mod tests {
 
     #[test]
     fn test_t52d() {
-        let result = t52d(&DEV_INFO);
+        let result = t52d(DEV_INFO);
         println!("{}", result.len());
         println!("{:?}", result)
     }
@@ -904,7 +895,7 @@ mod tests {
 
     #[test]
     fn test_t106() {
-        let result = t106(UIN, 0, APP_ID, SSO_VERSION, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], true, &GUID, &TGTGT_KEY, 0);
+        let result = t106(UIN, 0, APP_ID, SSO_VERSION, &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], true, &GUID, &TGTGT_KEY, 0);
         println!("{}", result.len());
         println!("{:?}", result)
     }
@@ -925,7 +916,7 @@ mod tests {
 
     #[test]
     fn test_t109() {
-        let result = t109(ANDROID_ID);
+        let result = t109(&ANDROID_ID);
         println!("{}", result.len());
         println!("{:?}", result);
     }
@@ -953,30 +944,30 @@ mod tests {
 
     #[test]
     fn test_t141() {
-        let result = t141(SIM_INFO, APN);
+        let result = t141(&SIM_INFO, &APN);
         println!("{}", result.len());
         println!("{:?}", result);
     }
 
     #[test]
     fn test_t142() {
-        let result = t142(APK_ID);
+        let result = t142(&APK_ID);
         println!("{}", result.len());
         println!("{:?}", result);
     }
 
     #[test]
     fn test_t143() {
-        let result = t143(APK_ID);
+        let result = t143(&[1, 2, 3]);
         println!("{}", result.len());
         println!("{:?}", result);
     }
 
     #[test]
     fn test_t144() {
-        let result = t144(IMEI.as_bytes(), DEV_INFO, OS_TYPE, OS_VERSION,
-                          SIM_INFO, APN, false, true, false, 16,
-                          BUILD_MODEL, &GUID, BUILD_BRAND, &TGTGT_KEY);
+        let result = t144(&IMEI, DEV_INFO, &OS_TYPE, &OS_VERSION,
+                          &SIM_INFO, &APN, false, true, false, 16,
+                          &BUILD_MODEL, &GUID, &BUILD_BRAND, &TGTGT_KEY);
         println!("{}", result.len());
         println!("{:?}", result);
     }
@@ -990,7 +981,7 @@ mod tests {
 
     #[test]
     fn test_t147() {
-        let result = t147(16, APK_VERSION_NAME, &APK_SIGN);
+        let result = t147(16, &APK_VERSION_NAME, &APK_SIGN);
         println!("{}", result.len());
         println!("{:?}", result);
     }
@@ -1027,14 +1018,14 @@ mod tests {
 
     #[test]
     fn test_t187() {
-        let result = t187(MAC_ADDRESS);
+        let result = t187(&MAC_ADDRESS);
         println!("{}", result.len());
         println!("{:?}", result);
     }
 
     #[test]
     fn test_t188() {
-        let result = t188(ANDROID_ID);
+        let result = t188(&ANDROID_ID);
         println!("{}", result.len());
         println!("{:?}", result);
     }
@@ -1076,7 +1067,7 @@ mod tests {
 
     #[test]
     fn test_t202() {
-        let result = t202(WIFI_BSSID, WIFI_SSID);
+        let result = t202(&WIFI_BSSID, &WIFI_SSID);
         println!("{}", result.len());
         println!("{:?}", result);
     }
