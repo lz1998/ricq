@@ -5,7 +5,7 @@ use bytes::Bytes;
 use crate::Jce;
 use crate::JceGet;
 
-pub type JceMap = HashMap<String, JceObject>;
+pub type JceMap = HashMap<JceMapKey, JceObject>;
 pub type JceList = Vec<JceObject>;
 pub type JceStruct = BTreeMap<u8, JceObject>;
 
@@ -27,6 +27,16 @@ pub enum JceObject {
     Bytes(Bytes),        // 13
 }
 
+#[derive(Debug, Hash, PartialEq, Eq, Clone)]
+pub enum JceMapKey {
+    U8(u8),
+    I16(i16),
+    I32(i32),
+    I64(i64),
+    ShortString(String),
+    LongString(String),
+}
+
 impl JceGet for JceObject {
     fn empty() -> Self {
         Self::Empty
@@ -42,12 +52,30 @@ impl JceGet for JceObject {
             5 => Self::F64(f64::read(jce)),
             6 => Self::ShortString(String::read(jce)),
             7 => Self::LongString(String::read(jce)),
-            8 => Self::Map(HashMap::<String, Self>::read(jce)),
+            8 => Self::Map(HashMap::<JceMapKey, Self>::read(jce)),
             9 => Self::List(Vec::<Self>::read(jce)),
             10 => Self::Struct(JceStruct::read(jce)),
             12 => Self::empty(),
             13 => Self::Bytes(Bytes::read(jce)),
             _ => panic!("unkouwn type {}", jce.t),
+        }
+    }
+}
+
+impl JceGet for JceMapKey {
+    fn empty() -> Self {
+        panic!()
+    }
+
+    fn read(jce: &mut Jce) -> Self {
+        match jce.t {
+            0 => Self::U8(u8::read(jce)),
+            1 => Self::I16(i16::read(jce)),
+            2 => Self::I32(i32::read(jce)),
+            3 => Self::I64(i64::read(jce)),
+            6 => Self::ShortString(String::read(jce)),
+            7 => Self::LongString(String::read(jce)),
+            _ => panic!("error key type {}", jce.t),
         }
     }
 }
@@ -67,6 +95,7 @@ impl JceGet for BTreeMap<u8, JceObject> {
                 break; // end of struct
             }
         }
+        println!("{:?}", jce_struct);
         jce_struct
     }
 }
@@ -163,7 +192,7 @@ impl FromJceObject for String {
     }
 }
 
-impl<V> FromJceObject for HashMap<String, V>
+impl<V> FromJceObject for HashMap<JceMapKey, V>
 where
     V: FromJceObject,
 {

@@ -88,6 +88,7 @@ impl<'a> Jce<'a> {
         };
         self.t = t;
         self.tag = tag;
+        println!("{}-{}-{:x}", self.tag, self.t, self.b);
     }
 
     /// go to the JceObject with givven tag(skip obj if need)
@@ -289,6 +290,7 @@ where
             let k = jce.get_by_tag(0);
             let v = jce.get_by_tag(1);
             map.insert(k, v);
+            jce.new = true;
         }
         map
     }
