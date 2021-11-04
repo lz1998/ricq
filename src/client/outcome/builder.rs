@@ -527,6 +527,70 @@ impl crate::client::Client {
         let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "ProfileService.Pb.ReqSystemMsgNew.Group", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &payload);
         (seq, packet)
     }
+
+    pub async fn build_login_packet(&self, allow_slider: bool) -> (u16, Bytes) {
+        let seq = self.next_seq();
+        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst), 0x0810, &self.ecdh, &self.random_key, &{
+            let mut w = BytesMut::new();
+            w.put_u16(9);
+
+            w.put_u16(if allow_slider { 0x17 } else { 0x16 });
+
+            w.put_slice(&t18(16, self.uin.load(Ordering::SeqCst) as u32));
+            w.put_slice(&t1(self.uin.load(Ordering::SeqCst) as u32, &self.device_info.read().await.ip_address));
+            w.put_slice(&t106(self.uin.load(Ordering::SeqCst) as u32, 0, self.version.app_id, self.version.sso_version, &self.password_md5, true, &self.device_info.read().await.guid, &self.device_info.read().await.tgtgt_key, 0));
+            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+            w.put_slice(&t100(self.version.sso_version, self.version.sub_app_id, self.version.main_sig_map));
+            w.put_slice(&t107(0));
+            w.put_slice(&t142(&self.version.apk_id));
+            w.put_slice(&t144(
+                &self.device_info.read().await.imei,
+                &self.device_info.read().await.gen_pb_data(),
+                &self.device_info.read().await.os_type,
+                &self.device_info.read().await.version.release,
+                &self.device_info.read().await.sim_info,
+                &self.device_info.read().await.apn,
+                false, true, false, guid_flag(),
+                &self.device_info.read().await.model,
+                &self.device_info.read().await.guid,
+                &self.device_info.read().await.brand,
+                &self.device_info.read().await.tgtgt_key,
+            ));
+            w.put_slice(&t145(&self.device_info.read().await.guid));
+            w.put_slice(&t147(16, &self.version.sort_version_name, &self.version.apk_sign));
+            w.put_slice(&t154(seq));
+            w.put_slice(&t141(&self.device_info.read().await.sim_info, &self.device_info.read().await.apn));
+            w.put_slice(&t8(2052));
+            w.put_slice(&t511(vec![
+                "tenpay.com", "openmobile.qq.com", "docs.qq.com", "connect.qq.com",
+                "qzone.qq.com", "vip.qq.com", "gamecenter.qq.com", "qun.qq.com", "game.qq.com",
+                "qqweb.qq.com", "office.qq.com", "ti.qq.com", "mail.qq.com", "mma.qq.com",
+            ]));
+
+            w.put_slice(&t187(&self.device_info.read().await.mac_address));
+            w.put_slice(&t188(&self.device_info.read().await.android_id));
+
+            if self.device_info.read().await.imsi_md5.len() != 0 {
+                w.put_slice(&t194(&self.device_info.read().await.imsi_md5))
+            }
+
+            if allow_slider {
+                w.put_slice(&t191(0x82));
+            }
+            if self.device_info.read().await.wifi_bssid.len() != 0 && self.device_info.read().await.wifi_ssid.len() != 0 {
+                w.put_slice(&t202(&self.device_info.read().await.wifi_bssid, &self.device_info.read().await.wifi_ssid));
+            }
+            w.put_slice(&t177(self.version.build_time, &self.version.sdk_version));
+            w.put_slice(&t516());
+            w.put_slice(&t521(0));
+            w.put_slice(&t525(&t536(&[0x01, 0x00])));
+
+            w.freeze()
+        });
+        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.read().await.imei, &[], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
+        let packet = build_login_packet(self.uin.load(Ordering::SeqCst), 2, &[0; 16], &sso, &[]);
+        (seq, packet)
+    }
 }
 
 
