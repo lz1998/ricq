@@ -208,11 +208,11 @@ impl crate::client::Client {
             w
         });
         let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.read().await.imei, &[], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
-        let packet = build_login_packet(self.uin.load(Ordering::SeqCst), 2, &vec![0; 16], &sso, &[]);
+        let packet = build_login_packet(self.uin.load(Ordering::SeqCst), 2, &[0; 16], &sso, &[]);
         (seq, packet)
     }
 
-    pub async fn build_sms_code_submit_packet(&self, code: String) -> (u16, Bytes) {
+    pub async fn build_sms_code_submit_packet(&self, code: &str) -> (u16, Bytes) {
         let seq = self.next_seq();
         let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst), 0x810, &self.ecdh, &self.random_key, &{
             let mut w = Vec::new();
@@ -233,7 +233,7 @@ impl crate::client::Client {
         (seq, packet)
     }
 
-    pub async fn build_ticket_submit_packet(&self, ticket: String) -> (u16, Bytes) {
+    pub async fn build_ticket_submit_packet(&self, ticket: &str) -> (u16, Bytes) {
         let seq = self.next_seq();
         let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst), 0x810, &self.ecdh, &self.random_key, &{
             let mut w = Vec::new();

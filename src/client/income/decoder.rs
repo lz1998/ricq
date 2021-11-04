@@ -58,6 +58,7 @@ pub enum LoginResponse {
     OtherLoginError {
         error_message: String
     },
+    NeedDeviceLockLogin
 }
 
 
@@ -202,7 +203,7 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Option<Login
     if t == 160 || t == 239 {
         let mut cache_info = cli.cache_info.write().await;
         if m.contains_key(&0x174) {
-            cache_info.t174 = m.remove(&0x147).unwrap();
+            cache_info.t174 = m.remove(&0x174).unwrap();
             cache_info.t104 = m.remove(&0x104).unwrap();
             cache_info.rand_seed = m.remove(&0x403).unwrap();
             let phone = {
@@ -248,10 +249,7 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Option<Login
             cache_info.t104 = m.remove(&0x104).unwrap();
             cache_info.rand_seed = m.remove(&0x403).unwrap();
         }
-        // TODO c.sendAndWait(c.buildDeviceLockLoginPacket())
-        let (num, vec) = cli.build_device_lock_login_packet().await;
-        println!("{} - {:?}", num, vec);
-        return None;
+        return Some(LoginResponse::NeedDeviceLockLogin)
     } // drive lock
 
     if m.contains_key(&0x149) {

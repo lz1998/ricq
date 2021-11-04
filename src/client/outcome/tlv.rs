@@ -3,30 +3,30 @@ use chrono::Utc;
 use crate::binary::BinaryWriter;
 
 
-pub fn t1(uin: u32, ip: &Vec<u8>) -> Vec<u8> {
+pub fn t1(uin: u32, ip: &[u8]) -> Bytes {
     if ip.len() != 4 {
         panic!("invalid ip")
     }
-    let mut buf: Vec<u8> = Vec::new();
+    let mut buf = BytesMut::new();
     buf.put_u16(0x01);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u16(1);
         w.put_u32(rand::random());
         w.put_u32(uin);
         w.put_u32(Utc::now().timestamp_millis() as u32);
         w.put_slice(&ip);
         w.put_u16(0);
-        w
+        w.freeze()
     });
-    return buf;
+    buf.freeze()
 }
 
-pub fn t1b(micro: u32, version: u32, size: u32, margin: u32, dpi: u32, ec_level: u32, hint: u32) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t1b(micro: u32, version: u32, size: u32, margin: u32, dpi: u32, ec_level: u32, hint: u32) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x1b);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u32(micro);
         w.put_u32(version);
         w.put_u32(size);
@@ -35,31 +35,31 @@ pub fn t1b(micro: u32, version: u32, size: u32, margin: u32, dpi: u32, ec_level:
         w.put_u32(ec_level);
         w.put_u32(hint);
         w.put_u16(0);
-        w
+        w.freeze()
     });
-    return buf;
+    buf.freeze()
 }
 
-pub fn t1d(misc_bitmap: u32) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t1d(misc_bitmap: u32) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x1d);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u8(1);
         w.put_u32(misc_bitmap);
         w.put_u32(0);
         w.put_u8(0);
         w.put_u32(0);
-        w
+        w.freeze()
     });
-    return buf;
+    buf.freeze()
 }
 
-pub fn t1f(is_root: bool, os_name: &str, os_version: &str, sim_operator_name: &str, apn: &str, network_type: u16) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t1f(is_root: bool, os_name: &str, os_version: &str, sim_operator_name: &str, apn: &str, network_type: u16) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x1f);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u8(if is_root { 1 } else { 0 });
         w.write_bytes_short(os_name.as_bytes());
         w.write_bytes_short(os_version.as_bytes());
@@ -67,49 +67,49 @@ pub fn t1f(is_root: bool, os_name: &str, os_version: &str, sim_operator_name: &s
         w.write_bytes_short(sim_operator_name.as_bytes());
         w.write_bytes_short(&[]);
         w.write_bytes_short(apn.as_bytes());
-        w
+        w.freeze()
     });
-    return buf;
+    buf.freeze()
 }
 
-pub fn t2(result: String, sign: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t2(result: String, sign: &[u8]) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x02);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u16(0);
         w.write_bytes_short(&result.as_bytes());
         w.write_bytes_short(sign);
-        w
+        w.freeze()
     });
-    return buf;
+    buf.freeze()
 }
 
-pub fn t8(local_id: u32) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t8(local_id: u32) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x8);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u16(0);
         w.put_u32(local_id);
         w.put_u16(0);
-        w
+        w.freeze()
     });
-    return buf;
+    buf.freeze()
 }
 
-pub fn t10a(arr: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t10a(arr: &[u8]) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x10A);
     buf.write_bytes_short(arr);
-    return buf;
+    buf.freeze()
 }
 
-pub fn t16(sso_version: u32, app_id: u32, sub_app_id: u32, guid: &[u8], apk_id: &str, apk_version_name: &str, apk_sign: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t16(sso_version: u32, app_id: u32, sub_app_id: u32, guid: &[u8], apk_id: &str, apk_version_name: &str, apk_sign: &[u8]) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x16);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u32(sso_version);
         w.put_u32(app_id);
         w.put_u32(sub_app_id);
@@ -117,56 +117,56 @@ pub fn t16(sso_version: u32, app_id: u32, sub_app_id: u32, guid: &[u8], apk_id: 
         w.write_bytes_short(apk_id.as_bytes());
         w.write_bytes_short(apk_version_name.as_bytes());
         w.write_bytes_short(apk_sign);
-        w
+        w.freeze()
     });
-    return buf;
+    buf.freeze()
 }
 
-pub fn t16a(arr: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t16a(arr: &[u8]) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x16A);
     buf.write_bytes_short(arr);
-    return buf;
+    buf.freeze()
 }
 
-pub fn t16e(build_model: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t16e(build_model: &[u8]) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x16E);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_slice(&build_model);
-        w
+        w.freeze()
     });
-    return buf;
+    buf.freeze()
 }
 
-pub fn t17a(value: i32) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t17a(value: i32) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x17a);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u32(value as u32);
-        w
+        w.freeze()
     });
-    return buf;
+    buf.freeze()
 }
 
-pub fn t17c(code: String) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t17c(code: &str) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x17c);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
-        w.write_bytes_short(&code.as_bytes());
-        w
+        let mut w = BytesMut::new();
+        w.write_bytes_short(code.as_bytes());
+        w.freeze()
     });
-    return buf;
+    buf.freeze()
 }
 
-pub fn t18(app_id: u32, uin: u32) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t18(app_id: u32, uin: u32) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x18);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u16(1);
         w.put_u32(1536);
         w.put_u32(app_id);
@@ -174,68 +174,68 @@ pub fn t18(app_id: u32, uin: u32) -> Vec<u8> {
         w.put_u32(uin);
         w.put_u16(0);
         w.put_u16(0);
-        w
+        w.freeze()
     });
-    return buf;
+    buf.freeze()
 }
 
-pub fn t33(guid: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t33(guid: &[u8]) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x33);
     buf.write_bytes_short(guid);
-    return buf;
+    buf.freeze()
 }
 
-pub fn t35(product_type: u32) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t35(product_type: u32) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x35);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u32(product_type);
-        w
+        w.freeze()
     });
-    return buf;
+    buf.freeze()
 }
 
-pub fn t52d(dev_info: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t52d(dev_info: &[u8]) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x52d);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_slice(&dev_info);
-        w
+        w.freeze()
     });
-    return buf;
+    buf.freeze()
 }
 
-pub fn t100(sso_version: u32, protocol: u32, main_sig_map: u32) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t100(sso_version: u32, protocol: u32, main_sig_map: u32) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x100);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u16(1);
         w.put_u32(sso_version);
         w.put_u32(16);
         w.put_u32(protocol);
         w.put_u32(0);             // App client version
         w.put_u32(main_sig_map);  // 34869472
-        w
+        w.freeze()
     });
-    return buf;
+    buf.freeze()
 }
 
-pub fn t104(data: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t104(data: &[u8]) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x104);
     buf.write_bytes_short(&data);
-    buf
+    buf.freeze()
 }
 
-pub fn t106(uin: u32, salt: u32, app_id: u32, sso_ver: u32, password_md5: &[u8], guid_available: bool, guid: &[u8], tgtgt_key: &[u8], wtf: u32) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t106(uin: u32, salt: u32, app_id: u32, sso_ver: u32, password_md5: &[u8], guid_available: bool, guid: &[u8], tgtgt_key: &[u8], wtf: u32) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x106);
-    let body: &Vec<u8> = &{
-        let mut w: Vec<u8> = Vec::new();
+    let body = &{
+        let mut w = BytesMut::new();
         w.put_u16(4);
         w.put_u32(rand::random::<u32>());
         w.put_u32(sso_ver);
@@ -247,9 +247,9 @@ pub fn t106(uin: u32, salt: u32, app_id: u32, sso_ver: u32, password_md5: &[u8],
             w.put_u64(uin as u64)
         }
         w.put_u32(Utc::now().timestamp_millis() as u32);
-        w.put_slice(&vec![0x00, 0x00, 0x00, 0x00]); // fake ip
-        w.push(0x01);
-        w.put_slice(password_md5.as_ref());
+        w.put_slice(&[0x00, 0x00, 0x00, 0x00]); // fake ip
+        w.put_u8(0x01);
+        w.put_slice(password_md5);
         w.put_slice(tgtgt_key);
         w.put_u32(wtf);
         w.put_u8(if guid_available { 1 } else { 0 });
@@ -264,84 +264,73 @@ pub fn t106(uin: u32, salt: u32, app_id: u32, sso_ver: u32, password_md5: &[u8],
         w.put_u32(1); // password login
         w.write_bytes_short((uin as i64).to_string().as_bytes());
         w.put_u16(0);
-        w
+        w.freeze()
     };
 
     buf.write_bytes_short(&{
-        fn put_u32(b: &mut [u8], v: u32) {
-            b[0] = (v >> 24 as u8) as u8;
-            b[1] = (v >> 16 as u8) as u8;
-            b[2] = (v >> 8 as u8) as u8;
-            b[3] = (v as u8);
-        }
-        let mut w: Vec<u8> = Vec::new();
-        let mut b: Vec<u8> = vec![0; 4];
+        let mut w = BytesMut::new();
+        let mut b = BytesMut::new();
         if salt != 0 {
-            put_u32(&mut b, salt)
+            b.put_u32(salt);
         } else {
-            put_u32(&mut b, uin)
+            b.put_u32(uin);
         }
-        let mut v: Vec<u8> = Vec::new();
-        for i in password_md5 {
-            v.push(*i)
-        }
-        for i in 0..4 {
-            v.push(0x00)
-        }
-        for i in b {
-            v.push(i)
-        }
-        w.encrypt_and_write(md5::compute(&v).as_ref(), body);
-        w
+        let mut v = BytesMut::new();
+        v.put_slice(password_md5);
+        v.put_slice(&[0; 4]);
+        v.put_slice(&b);
+        let key = md5::compute(&v).to_vec();
+        w.encrypt_and_write(&key, body);
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t107(pic_type: u16) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t107(pic_type: u16) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x107);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u16(pic_type);
-        w.push(0x00);
+        w.put_u8(0x00);
         w.put_u16(0);
-        w.push(0x01);
-        w
+        w.put_u8(0x01);
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t108(imei: &str) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t108(imei: &str) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x108);
     buf.write_bytes_short(&imei.as_bytes().to_vec());
-    buf
+    buf.freeze()
 }
 
-pub fn t109(android_id: &str) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t109(android_id: &str) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x109);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_slice(md5::compute(android_id.as_bytes()).as_ref());
-        w
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t116(misc_bitmap: u32, sub_sig_map: u32) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t116(misc_bitmap: u32, sub_sig_map: u32) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x116);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
-        w.push(0x00);
+        let mut w = BytesMut::new();
+        w.put_u8(0x00);
         w.put_u32(misc_bitmap);
         w.put_u32(sub_sig_map);
-        w.push(0x01);
+        w.put_u8(0x01);
         w.put_u32(1600000226);  // app id list
-        w
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
 pub fn t124(os_type: &str, os_version: &str, sim_info: &str, apn: &str) -> Bytes {
@@ -360,11 +349,11 @@ pub fn t124(os_type: &str, os_version: &str, sim_info: &str, apn: &str) -> Bytes
     buf.freeze()
 }
 
-pub fn t128(is_guid_from_file_null: bool, is_guid_available: bool, is_guid_changed: bool, guid_flag: u32, build_model: &str, guid: &[u8], build_brand: &str) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t128(is_guid_from_file_null: bool, is_guid_available: bool, is_guid_changed: bool, guid_flag: u32, build_model: &str, guid: &[u8], build_brand: &str) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x128);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u16(0);
         w.put_u8(if is_guid_from_file_null { 1 } else { 0 });
         w.put_u8(if is_guid_available { 1 } else { 0 });
@@ -373,21 +362,21 @@ pub fn t128(is_guid_from_file_null: bool, is_guid_available: bool, is_guid_chang
         w.write_tlv_limited_size(build_model.as_bytes(), 32);
         w.write_tlv_limited_size(guid, 16);
         w.write_tlv_limited_size(build_brand.as_bytes(), 16);  // app id list
-        w
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
 pub fn t141(sim_info: &str, apn: &str) -> Bytes {
     let mut w = BytesMut::new();
     w.put_u16(0x141);
     w.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u16(1);
         w.write_bytes_short(sim_info.as_bytes());
         w.put_u16(2);
         w.write_bytes_short(apn.as_bytes());
-        w
+        w.freeze()
     });
     w.freeze()
 }
@@ -451,55 +440,55 @@ pub fn t147(app_id: u32, apk_version_name: &str, apk_signature_md5: &[u8]) -> By
     let mut w = BytesMut::new();
     w.put_u16(0x147);
     w.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u32(app_id);
         w.write_tlv_limited_size(apk_version_name.as_bytes(), 32);
         w.write_tlv_limited_size(apk_signature_md5, 32);
-        w
+        w.freeze()
     });
     w.freeze()
 }
 
-pub fn t154(seq: u16) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t154(seq: u16) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x154);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u32(seq as u32);
-        w
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t166(image_type: u8) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t166(image_type: u8) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x166);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u8(image_type);
-        w
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t174(data: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t174(data: &[u8]) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x174);
     buf.write_bytes_short(&data);
-    buf
+    buf.freeze()
 }
 
-pub fn t177(build_time: u32, sdk_version: &str) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t177(build_time: u32, sdk_version: &str) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x177);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u8(0x01);
         w.put_u32(build_time);
         w.write_bytes_short(sdk_version.as_bytes());
-        w
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
 pub fn t187(mac_address: &str) -> Bytes {
@@ -513,64 +502,64 @@ pub fn t187(mac_address: &str) -> Bytes {
     buf.freeze()
 }
 
-pub fn t188(android_id: &str) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t188(android_id: &str) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x188);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_slice(md5::compute(android_id.as_bytes()).as_ref());
-        w
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t191(k: u8) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t191(k: u8) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x191);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u8(k);
-        w
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t193(ticket: String) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t193(ticket: &str) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x193);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_slice(ticket.as_bytes());
-        w
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t194(imsi_md5: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t194(imsi_md5: &[u8]) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x194);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_slice(imsi_md5);
-        w
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t197() -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t197() -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x197);
     let v: [u8; 1] = [0];
     buf.write_bytes_short(&v);
-    buf
+    buf.freeze()
 }
 
-pub fn t198() -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t198() -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x198);
     let v: [u8; 1] = [0];
     buf.write_bytes_short(&v);
-    buf
+    buf.freeze()
 }
 
 pub fn t202(wifi_bssid: &str, wifi_ssid: &str) -> Bytes {
@@ -585,13 +574,13 @@ pub fn t202(wifi_bssid: &str, wifi_ssid: &str) -> Bytes {
     buf.freeze()
 }
 
-pub fn t400(g: &[u8], uin: i64, guid: &[u8], dpwd: &[u8], j2: i64, j3: i64, rand_seed: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t400(g: &[u8], uin: i64, guid: &[u8], dpwd: &[u8], j2: i64, j3: i64, rand_seed: &[u8]) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x400);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.encrypt_and_write(g, &{
-            let mut ww = Vec::new();
+            let mut ww = BytesMut::new();
             ww.put_u16(1);
             ww.put_u64(uin as u64);
             ww.put_slice(guid);
@@ -600,31 +589,31 @@ pub fn t400(g: &[u8], uin: i64, guid: &[u8], dpwd: &[u8], j2: i64, j3: i64, rand
             ww.put_u32(j3 as u32);
             ww.put_u32(Utc::now().timestamp_millis() as u32);
             ww.put_slice(rand_seed);
-            ww
+            ww.freeze()
         });
-        w
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t401(d: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t401(d: &[u8]) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x401);
     buf.write_bytes_short(&d);
-    buf
+    buf.freeze()
 }
 
-pub fn t511(domains: Vec<&str>) -> Vec<u8> {
+pub fn t511(domains: Vec<&str>) -> Bytes {
     let mut arr2 = Vec::new();
     for d in domains {
         if d != "" {
             arr2.push(d)
         }
     }
-    let mut buf: Vec<u8> = Vec::new();
+    let mut buf = BytesMut::new();
     buf.put_u16(0x511);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u16(arr2.len() as u16);
         for d in arr2 {
             let index_of: isize;
@@ -666,55 +655,55 @@ pub fn t511(domains: Vec<&str>) -> Vec<u8> {
                 }
             }
         }
-        w
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t516() -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t516() -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x516);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u32(0);
-        w
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t521(i: u32) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t521(i: u32) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x521);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u32(i);
         w.put_u16(0);
-        w
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t525(t536: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t525(t536: &[u8]) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x525);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_u16(1);
         w.put_slice(&t536);
-        w
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
-pub fn t536(login_extra_data: &[u8]) -> Vec<u8> {
-    let mut buf: Vec<u8> = Vec::new();
+pub fn t536(login_extra_data: &[u8]) -> Bytes {
+    let mut buf = BytesMut::new();
     buf.put_u16(0x536);
     buf.write_bytes_short(&{
-        let mut w: Vec<u8> = Vec::new();
+        let mut w = BytesMut::new();
         w.put_slice(&login_extra_data);
-        w
+        w.freeze()
     });
-    buf
+    buf.freeze()
 }
 
 pub fn guid_flag() -> u32 {
@@ -845,7 +834,7 @@ mod tests {
 
     #[test]
     fn test_t17c() {
-        let result = t17c(IMEI.to_string());
+        let result = t17c(&IMEI);
         println!("{}", result.len());
         println!("{:?}", result)
     }
@@ -1039,7 +1028,7 @@ mod tests {
 
     #[test]
     fn test_t193() {
-        let result = t193("some ticket".to_string());
+        let result = t193("some ticket");
         println!("{}", result.len());
         println!("{:?}", result);
     }
