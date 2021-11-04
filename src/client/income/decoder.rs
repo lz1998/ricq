@@ -451,7 +451,6 @@ pub fn decode_friend_group_list_response(payload: &[u8]) -> Option<FriendListRes
     let mut request: RequestPacket = Jce::read_from_bytes(&mut payload);
     let mut data: RequestDataVersion3 = Jce::read_from_bytes(&mut request.s_buffer);
     let mut fl_resp = data.map.remove("FLRESP")?;
-    fl_resp.advance(1);
     let mut r = Jce::new(&mut fl_resp);
     let total_friend_count: i16 = r.get_by_tag(5);
     let friends: Vec<jce::FriendInfo> = r.get_by_tag(7); // FIXME jce bug

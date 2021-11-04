@@ -207,265 +207,265 @@ JceStruct!(SvcRespRegister {
 // 下面是生成的
 //
 // JceStruct!(RequestPacket {
-// 		1 => IVersion : i16
-// 		2 => CPacketType : u8
-// 		3 => IMessageType : i32
-// 		4 => IRequestId : i32
-// 		5 => SServantName : String
-// 		6 => SFuncName : String
-// 		7 => SBuffer : Bytes
-// 		8 => ITimeout : i32
-// 		9 => Context : map[String]String
-// 		10 => Status : map[String]String
+// 		1 => i_version : i16
+// 		2 => c_packet_type : u8
+// 		3 => i_message_type : i32
+// 		4 => i_request_id : i32
+// 		5 => s_servant_name : String
+// 		6 => s_func_name : String
+// 		7 => s_buffer : Bytes
+// 		8 => i_timeout : i32
+// 		9 => context : map[String]String
+// 		10 => status : map[String]String
 // 	});
 //
 // JceStruct!(RequestDataVersion3 {
-// 		0 => Map : map[String]Bytes
+// 		0 => map : map[String]Bytes
 // 	});
 //
 // JceStruct!(RequestDataVersion2 {
-// 		0 => Map : map[String]map[String]Bytes
+// 		0 => map : map[String]map[String]Bytes
 // 	});
 //
 // JceStruct!(SsoServerInfo {
-// 		1 => Server : String
-// 		2 => Port : i32
-// 		8 => Location : String
+// 		1 => server : String
+// 		2 => port : i32
+// 		8 => location : String
 // 	});
 //
 // JceStruct!(FileStoragePushFSSvcList {
-// 		0 => UploadList : []FileStorageServerInfo
-// 		1 => PicDownloadList : []FileStorageServerInfo
-// 		2 => GPicDownloadList : []FileStorageServerInfo
-// 		3 => QZoneProxyServiceList : []FileStorageServerInfo
-// 		4 => UrlEncodeServiceList : []FileStorageServerInfo
-// 		5 => BigDataChannel : BigDataChannel
-// 		6 => VipEmotionList : []FileStorageServerInfo
-// 		7 => C2CPicDownList : []FileStorageServerInfo
-// 		10 => PttList : Bytes
+// 		0 => upload_list : []FileStorageServerInfo
+// 		1 => pic_download_list : []FileStorageServerInfo
+// 		2 => g_pic_download_list : []FileStorageServerInfo
+// 		3 => q_zone_proxy_service_list : []FileStorageServerInfo
+// 		4 => url_encode_service_list : []FileStorageServerInfo
+// 		5 => big_data_channel : BigDataChannel
+// 		6 => vip_emotion_list : []FileStorageServerInfo
+// 		7 => c2CPicDownList : []FileStorageServerInfo
+// 		10 => ptt_list : Bytes
 // 	});
 //
 // JceStruct!(FileStorageServerInfo {
-// 		1 => Server : String
-// 		2 => Port : i32
+// 		1 => server : String
+// 		2 => port : i32
 // 	});
 //
 // JceStruct!(BigDataChannel {
-// 		0 => IPLists : []BigDataIPList
-// 		1 => SigSession : Bytes
-// 		2 => KeySession : Bytes
-// 		3 => SigUin : i64
-// 		4 => ConnectFlag : i32
-// 		5 => PbBuf : Bytes
+// 		0 => i_p_lists : []BigDataIPList
+// 		1 => sig_session : Bytes
+// 		2 => key_session : Bytes
+// 		3 => sig_uin : i64
+// 		4 => connect_flag : i32
+// 		5 => pb_buf : Bytes
 // 	});
 //
 // JceStruct!(BigDataIPList {
-// 		0 => ServiceType : i64
-// 		1 => IPList : []BigDataIPInfo
-// 		3 => FragmentSize : i64
+// 		0 => service_type : i64
+// 		1 => i_p_list : []BigDataIPInfo
+// 		3 => fragment_size : i64
 // 	});
 //
 // JceStruct!(BigDataIPInfo {
-// 		0 => Type : i64
-// 		1 => Server : String
-// 		2 => Port : i64
+// 		0 => type : i64
+// 		1 => server : String
+// 		2 => port : i64
 // 	});
 //
 // JceStruct!(SvcReqRegister {
 //
-// 		0 => Uin : i64
-// 		1 => Bid : i64
-// 		2 => ConnType : u8
-// 		3 => Other : String
-// 		4 => Status : i32
-// 		5 => OnlinePush : u8
-// 		6 => IsOnline : u8
-// 		7 => IsShowOnline : u8
-// 		8 => KickPC : u8
-// 		9 => KickWeak : u8
-// 		10 => Timestamp : i64
-// 		11 => IOSVersion : i64
-// 		12 => NetType : u8
-// 		13 => BuildVer : String
-// 		14 => RegType : u8
-// 		15 => DevParam : Bytes
-// 		16 => Guid : Bytes
-// 		17 => LocaleId : i32
-// 		18 => SilentPush : u8
-// 		19 => DevName : String
-// 		20 => DevType : String
-// 		21 => OSVer : String
-// 		22 => OpenPush : u8
-// 		23 => LargeSeq : i64
-// 		24 => LastWatchStartTime : i64
-// 		26 => OldSSOIp : i64
-// 		27 => NewSSOIp : i64
-// 		28 => ChannelNo : String
-// 		29 => CPID : i64
-// 		30 => VendorName : String
-// 		31 => VendorOSName : String
-// 		32 => IOSIdfa : String
-// 		33 => B769 : Bytes
-// 		34 => IsSetStatus : u8
-// 		35 => ServerBuf : Bytes
-// 		36 => SetMute : u8
-// 		38 => ExtOnlineStatus : i64
-// 		39 => BatteryStatus : i32
+// 		0 => uin : i64
+// 		1 => bid : i64
+// 		2 => conn_type : u8
+// 		3 => other : String
+// 		4 => status : i32
+// 		5 => online_push : u8
+// 		6 => is_online : u8
+// 		7 => is_show_online : u8
+// 		8 => kick_p_c : u8
+// 		9 => kick_weak : u8
+// 		10 => timestamp : i64
+// 		11 => i_o_s_version : i64
+// 		12 => net_type : u8
+// 		13 => build_ver : String
+// 		14 => reg_type : u8
+// 		15 => dev_param : Bytes
+// 		16 => guid : Bytes
+// 		17 => locale_id : i32
+// 		18 => silent_push : u8
+// 		19 => dev_name : String
+// 		20 => dev_type : String
+// 		21 => o_s_ver : String
+// 		22 => open_push : u8
+// 		23 => large_seq : i64
+// 		24 => last_watch_start_time : i64
+// 		26 => old_s_s_o_ip : i64
+// 		27 => new_s_s_o_ip : i64
+// 		28 => channel_no : String
+// 		29 => c_p_i_d : i64
+// 		30 => vendor_name : String
+// 		31 => vendor_o_s_name : String
+// 		32 => i_o_s_idfa : String
+// 		33 => b769 : Bytes
+// 		34 => is_set_status : u8
+// 		35 => server_buf : Bytes
+// 		36 => set_mute : u8
+// 		38 => ext_online_status : i64
+// 		39 => battery_status : i32
 // 	});
 //
 // JceStruct!(SvcRespRegister {
-// 		0 => Uin : i64
-// 		1 => Bid : i64
-// 		2 => ReplyCode : u8
-// 		3 => Result : String
-// 		4 => ServerTime : i64
-// 		5 => LogQQ : u8
-// 		6 => NeedKik : u8
-// 		7 => UpdateFlag : u8
-// 		8 => Timestamp : i64
-// 		9 => CrashFlag : u8
-// 		10 => ClientIp : String
-// 		11 => ClientPort : i32
-// 		12 => HelloInterval : i32
-// 		13 => LargeSeq : i32
-// 		14 => LargeSeqUpdate : u8
-// 		15 => D769RspBody : Bytes
-// 		16 => Status : i32
-// 		17 => ExtOnlineStatus : i64
-// 		18 => ClientBatteryGetInterval : i64
-// 		19 => ClientAutoStatusInterval : i64
+// 		0 => uin : i64
+// 		1 => bid : i64
+// 		2 => reply_code : u8
+// 		3 => result : String
+// 		4 => server_time : i64
+// 		5 => log_q_q : u8
+// 		6 => need_kik : u8
+// 		7 => update_flag : u8
+// 		8 => timestamp : i64
+// 		9 => crash_flag : u8
+// 		10 => client_ip : String
+// 		11 => client_port : i32
+// 		12 => hello_interval : i32
+// 		13 => large_seq : i32
+// 		14 => large_seq_update : u8
+// 		15 => d769RspBody : Bytes
+// 		16 => status : i32
+// 		17 => ext_online_status : i64
+// 		18 => client_battery_get_interval : i64
+// 		19 => client_auto_status_interval : i64
 // 	});
 //
 // JceStruct!(SvcReqRegisterNew {
 //
-// 		0 => RequestOptional : i64
-// 		1 => C2CMsg :  // SvcReqGetMsgV2
-// 		2 => GroupMsg :  // SvcReqPullGroupMsgSeq
-// 		14 => DisGroupMsgFilter : u8
-// 		15 => GroupMask : u8
-// 		16 => EndSeq : i64
-// 		20 => O769Body : Bytes
+// 		0 => request_optional : i64
+// 		1 => c2CMsg :  // SvcReqGetMsgV2
+// 		2 => group_msg :  // SvcReqPullGroupMsgSeq
+// 		14 => dis_group_msg_filter : u8
+// 		15 => group_mask : u8
+// 		16 => end_seq : i64
+// 		20 => o769Body : Bytes
 // 	});
 //
 // JceStruct!(SvcReqGetMsgV2 {
 //
-// 		0 => Uin : i64
-// 		1 => DateTime : i32
-// 		4 => RecivePic : u8
-// 		6 => Ability : i16
-// 		9 => Channel : u8
-// 		16 => Inst : u8
-// 		17 => ChannelEx : u8
-// 		18 => SyncCookie : Bytes
-// 		19 => SyncFlag : int
-// 		20 => RambleFlag : u8
-// 		26 => GeneralAbi : i64
-// 		27 => PubAccountCookie : Bytes
+// 		0 => uin : i64
+// 		1 => date_time : i32
+// 		4 => recive_pic : u8
+// 		6 => ability : i16
+// 		9 => channel : u8
+// 		16 => inst : u8
+// 		17 => channel_ex : u8
+// 		18 => sync_cookie : Bytes
+// 		19 => sync_flag : int
+// 		20 => ramble_flag : u8
+// 		26 => general_abi : i64
+// 		27 => pub_account_cookie : Bytes
 // 	});
 //
 // JceStruct!(SvcReqPullGroupMsgSeq {
 //
-// 		0 => GroupInfo : [] // PullGroupSeqParam
-// 		1 => VerifyType : u8
-// 		2 => Filter : i32
+// 		0 => group_info : [] // PullGroupSeqParam
+// 		1 => verify_type : u8
+// 		2 => filter : i32
 // 	});
 //
 // JceStruct!(PullGroupSeqParam {
 //
-// 		0 => GroupCode : i64
-// 		1 => LastSeqId : i64
+// 		0 => group_code : i64
+// 		1 => last_seq_id : i64
 // 	});
 //
 // JceStruct!(SvcRespParam {
-// 		0 => PCStat : i32
-// 		1 => IsSupportC2CRoamMsg : i32
-// 		2 => IsSupportDataLine : i32
-// 		3 => IsSupportPrintable : i32
-// 		4 => IsSupportViewPCFile : i32
-// 		5 => PcVersion : i32
-// 		6 => RoamFlag : i64
-// 		7 => OnlineInfos : []OnlineInfo
-// 		8 => PCClientType : i32
+// 		0 => p_c_stat : i32
+// 		1 => is_support_c2CRoamMsg : i32
+// 		2 => is_support_data_line : i32
+// 		3 => is_support_printable : i32
+// 		4 => is_support_view_p_c_file : i32
+// 		5 => pc_version : i32
+// 		6 => roam_flag : i64
+// 		7 => online_infos : []OnlineInfo
+// 		8 => p_c_client_type : i32
 // 	});
 //
 // JceStruct!(RequestPushNotify {
-// 		0 => Uin : i64
-// 		1 => Type : u8
-// 		2 => Service : String
-// 		3 => Cmd : String
-// 		4 => NotifyCookie : Bytes
-// 		5 => MsgType : i32
-// 		6 => UserActive : i32
-// 		7 => GeneralFlag : i32
-// 		8 => BindedUin : i64
+// 		0 => uin : i64
+// 		1 => type : u8
+// 		2 => service : String
+// 		3 => cmd : String
+// 		4 => notify_cookie : Bytes
+// 		5 => msg_type : i32
+// 		6 => user_active : i32
+// 		7 => general_flag : i32
+// 		8 => binded_uin : i64
 // 	});
 //
 // JceStruct!(OnlineInfo {
-// 		0 => InstanceId : i32
-// 		1 => ClientType : i32
-// 		2 => OnlineStatus : i32
-// 		3 => PlatformId : i32
-// 		4 => SubPlatform : String
-// 		5 => UClientType : i64
+// 		0 => instance_id : i32
+// 		1 => client_type : i32
+// 		2 => online_status : i32
+// 		3 => platform_id : i32
+// 		4 => sub_platform : String
+// 		5 => u_client_type : i64
 // 	});
 //
 // JceStruct!(SvcReqMSFLoginNotify {
-// 		0 => AppId : i64
-// 		1 => Status : u8
-// 		2 => Tablet : u8
-// 		3 => Platform : i64
-// 		4 => Title : String
-// 		5 => Info : String
-// 		6 => ProductType : i64
-// 		7 => ClientType : i64
-// 		8 => InstanceList : []InstanceInfo
+// 		0 => app_id : i64
+// 		1 => status : u8
+// 		2 => tablet : u8
+// 		3 => platform : i64
+// 		4 => title : String
+// 		5 => info : String
+// 		6 => product_type : i64
+// 		7 => client_type : i64
+// 		8 => instance_list : []InstanceInfo
 // 	});
 //
 // JceStruct!(InstanceInfo {
-// 		0 => AppId : i32
-// 		1 => Tablet : u8
-// 		2 => Platform : i64
-// 		3 => ProductType : i64
-// 		4 => ClientType : i64
+// 		0 => app_id : i32
+// 		1 => tablet : u8
+// 		2 => platform : i64
+// 		3 => product_type : i64
+// 		4 => client_type : i64
 // 	});
 //
 // JceStruct!(PushMessageInfo {
-// 		0 => FromUin : i64
-// 		1 => MsgTime : i64
-// 		2 => MsgType : i16
-// 		3 => MsgSeq : i16
-// 		4 => Msg : String
-// 		5 => RealMsgTime : i32
-// 		6 => VMsg : Bytes
-// 		7 => AppShareID : i64
-// 		8 => MsgCookies : Bytes
-// 		9 => AppShareCookie : Bytes
-// 		10 => MsgUid : i64
-// 		11 => LastChangeTime : i64
-// 		14 => FromInstId : i64
-// 		15 => RemarkOfSender : Bytes
-// 		16 => FromMobile : String
-// 		17 => FromName : String
+// 		0 => from_uin : i64
+// 		1 => msg_time : i64
+// 		2 => msg_type : i16
+// 		3 => msg_seq : i16
+// 		4 => msg : String
+// 		5 => real_msg_time : i32
+// 		6 => v_msg : Bytes
+// 		7 => app_share_i_d : i64
+// 		8 => msg_cookies : Bytes
+// 		9 => app_share_cookie : Bytes
+// 		10 => msg_uid : i64
+// 		11 => last_change_time : i64
+// 		14 => from_inst_id : i64
+// 		15 => remark_of_sender : Bytes
+// 		16 => from_mobile : String
+// 		17 => from_name : String
 // 	});
 //
 // JceStruct!(SvcRespPushMsg {
 //
-// 		0 => Uin : i64
-// 		1 => DelInfos : []
-// 		2 => Svrip : i32
-// 		3 => PushToken : Bytes
-// 		4 => ServiceType : i32
+// 		0 => uin : i64
+// 		1 => del_infos : []
+// 		2 => svrip : i32
+// 		3 => push_token : Bytes
+// 		4 => service_type : i32
 // 	});
 //
 // JceStruct!(SvcReqGetDevLoginInfo {
 //
-// 		0 => Guid : Bytes
-// 		1 => AppName : String
-// 		2 => LoginType : i64
-// 		3 => Timestamp : i64
-// 		4 => NextItemIndex : i64
-// 		5 => RequireMax : i64
-// 		6 => GetDevListType : i64 // 1: getLoginDevList 2: getRecentLoginDevList 4: getAuthLoginDevList
+// 		0 => guid : Bytes
+// 		1 => app_name : String
+// 		2 => login_type : i64
+// 		3 => timestamp : i64
+// 		4 => next_item_index : i64
+// 		5 => require_max : i64
+// 		6 => get_dev_list_type : i64 // 1: getLoginDevList 2: getRecentLoginDevList 4: getAuthLoginDevList
 // 	});
 //
 // JceStruct!(SvcDevLoginInfo {
@@ -483,17 +483,17 @@ JceStruct!(SvcRespRegister {
 //
 // JceStruct!(DelMsgInfo {
 //
-// 		0 => FromUin : i64
-// 		1 => MsgTime : i64
-// 		2 => MsgSeq : i16
-// 		3 => MsgCookies : Bytes
-// 		4 => Cmd : i16
-// 		5 => MsgType : i64
-// 		6 => AppId : i64
-// 		7 => SendTime : i64
-// 		8 => SsoSeq : i32
-// 		9 => SsoIp : i32
-// 		10 => ClientIp : i32
+// 		0 => from_uin : i64
+// 		1 => msg_time : i64
+// 		2 => msg_seq : i16
+// 		3 => msg_cookies : Bytes
+// 		4 => cmd : i16
+// 		5 => msg_type : i64
+// 		6 => app_id : i64
+// 		7 => send_time : i64
+// 		8 => sso_seq : i32
+// 		9 => sso_ip : i32
+// 		10 => client_ip : i32
 // 	});
 //
 JceStruct!(FriendListRequest {
@@ -579,156 +579,156 @@ JceStruct!(FriendInfo {
 //
 // JceStruct!(TroopListRequest {
 //
-// 		0 => Uin : i64
-// 		1 => GetMSFMsgFlag : u8
-// 		2 => Cookies : Bytes
-// 		3 => GroupInfo : []i64
-// 		4 => GroupFlagExt : u8
-// 		5 => Version : i32
-// 		6 => CompanyId : i64
-// 		7 => VersionNum : i64
-// 		8 => GetLongGroupName : u8
+// 		0 => uin : i64
+// 		1 => get_m_s_f_msg_flag : u8
+// 		2 => cookies : Bytes
+// 		3 => group_info : []i64
+// 		4 => group_flag_ext : u8
+// 		5 => version : i32
+// 		6 => company_id : i64
+// 		7 => version_num : i64
+// 		8 => get_long_group_name : u8
 // 	});
 //
 // JceStruct!(TroopNumber {
-// 		0 => GroupUin : i64
-// 		1 => GroupCode : i64
-// 		2 => Flag : u8
-// 		3 => GroupInfoSeq : i64
-// 		4 => GroupName : String
-// 		5 => GroupMemo : String
-// 		6 => GroupFlagExt : i64
-// 		7 => GroupRankSeq : i64
-// 		8 => CertificationType : i64
-// 		9 => ShutUpTimestamp : i64
-// 		10 => MyShutUpTimestamp : i64
-// 		11 => CmdUinUinFlag : i64
-// 		12 => AdditionalFlag : i64
-// 		13 => GroupTypeFlag : i64
-// 		14 => GroupSecType : i64
-// 		15 => GroupSecTypeInfo : i64
-// 		16 => GroupClassExt : i64
-// 		17 => AppPrivilegeFlag : i64
-// 		18 => SubscriptionUin : i64
-// 		19 => MemberNum : i64
-// 		20 => MemberNumSeq : i64
-// 		21 => MemberCardSeq : i64
-// 		22 => GroupFlagExt3 : i64
-// 		23 => GroupOwnerUin : i64
-// 		24 => IsConfGroup : u8
-// 		25 => IsModifyConfGroupFace : u8
-// 		26 => IsModifyConfGroupName : u8
-// 		27 => CmdUinJoinTime : i64
-// 		28 => CompanyId : i64
-// 		29 => MaxGroupMemberNum : i64
-// 		30 => CmdUinGroupMask : i64
-// 		31 => GuildAppId : i64
-// 		32 => GuildSubType : i64
-// 		33 => CmdUinRingtoneID : i64
-// 		34 => CmdUinFlagEx2 : i64
+// 		0 => group_uin : i64
+// 		1 => group_code : i64
+// 		2 => flag : u8
+// 		3 => group_info_seq : i64
+// 		4 => group_name : String
+// 		5 => group_memo : String
+// 		6 => group_flag_ext : i64
+// 		7 => group_rank_seq : i64
+// 		8 => certification_type : i64
+// 		9 => shut_up_timestamp : i64
+// 		10 => my_shut_up_timestamp : i64
+// 		11 => cmd_uin_uin_flag : i64
+// 		12 => additional_flag : i64
+// 		13 => group_type_flag : i64
+// 		14 => group_sec_type : i64
+// 		15 => group_sec_type_info : i64
+// 		16 => group_class_ext : i64
+// 		17 => app_privilege_flag : i64
+// 		18 => subscription_uin : i64
+// 		19 => member_num : i64
+// 		20 => member_num_seq : i64
+// 		21 => member_card_seq : i64
+// 		22 => group_flag_ext3 : i64
+// 		23 => group_owner_uin : i64
+// 		24 => is_conf_group : u8
+// 		25 => is_modify_conf_group_face : u8
+// 		26 => is_modify_conf_group_name : u8
+// 		27 => cmd_uin_join_time : i64
+// 		28 => company_id : i64
+// 		29 => max_group_member_num : i64
+// 		30 => cmd_uin_group_mask : i64
+// 		31 => guild_app_id : i64
+// 		32 => guild_sub_type : i64
+// 		33 => cmd_uin_ringtone_i_d : i64
+// 		34 => cmd_uin_flag_ex2 : i64
 // 	});
 //
 // JceStruct!(TroopMemberListRequest {
 //
-// 		0 => Uin : i64
-// 		1 => GroupCode : i64
-// 		2 => NextUin : i64
-// 		3 => GroupUin : i64
-// 		4 => Version : i64
-// 		5 => ReqType : i64
-// 		6 => GetListAppointTime : i64
-// 		7 => RichCardNameVer : u8
+// 		0 => uin : i64
+// 		1 => group_code : i64
+// 		2 => next_uin : i64
+// 		3 => group_uin : i64
+// 		4 => version : i64
+// 		5 => req_type : i64
+// 		6 => get_list_appoint_time : i64
+// 		7 => rich_card_name_ver : u8
 // 	});
 //
 // JceStruct!(TroopMemberInfo {
-// 		0 => MemberUin : i64
-// 		1 => FaceId : i16
-// 		2 => Age : u8
-// 		3 => Gender : u8
-// 		4 => Nick : String
-// 		5 => Status : u8
-// 		6 => ShowName : String
-// 		8 => Name : String
-// 		12 => Memo : String
-// 		13 => AutoRemark : String
-// 		14 => MemberLevel : i64
-// 		15 => JoinTime : i64
-// 		16 => LastSpeakTime : i64
-// 		17 => CreditLevel : i64
-// 		18 => Flag : i64
-// 		19 => FlagExt : i64
-// 		20 => Point : i64
-// 		21 => Concerned : u8
-// 		22 => Shielded : u8
-// 		23 => SpecialTitle : String
-// 		24 => SpecialTitleExpireTime : i64
-// 		25 => Job : String
-// 		26 => ApolloFlag : u8
-// 		27 => ApolloTimestamp : i64
-// 		28 => GlobalGroupLevel : i64
-// 		29 => TitleId : i64
-// 		30 => ShutUpTimestap : i64
-// 		31 => GlobalGroupPoint : i64
-// 		33 => RichCardNameVer : u8
-// 		34 => VipType : i64
-// 		35 => VipLevel : i64
-// 		36 => BigClubLevel : i64
-// 		37 => BigClubFlag : i64
-// 		38 => Nameplate : i64
-// 		39 => GroupHonor : Bytes
+// 		0 => member_uin : i64
+// 		1 => face_id : i16
+// 		2 => age : u8
+// 		3 => gender : u8
+// 		4 => nick : String
+// 		5 => status : u8
+// 		6 => show_name : String
+// 		8 => name : String
+// 		12 => memo : String
+// 		13 => auto_remark : String
+// 		14 => member_level : i64
+// 		15 => join_time : i64
+// 		16 => last_speak_time : i64
+// 		17 => credit_level : i64
+// 		18 => flag : i64
+// 		19 => flag_ext : i64
+// 		20 => point : i64
+// 		21 => concerned : u8
+// 		22 => shielded : u8
+// 		23 => special_title : String
+// 		24 => special_title_expire_time : i64
+// 		25 => job : String
+// 		26 => apollo_flag : u8
+// 		27 => apollo_timestamp : i64
+// 		28 => global_group_level : i64
+// 		29 => title_id : i64
+// 		30 => shut_up_timestap : i64
+// 		31 => global_group_point : i64
+// 		33 => rich_card_name_ver : u8
+// 		34 => vip_type : i64
+// 		35 => vip_level : i64
+// 		36 => big_club_level : i64
+// 		37 => big_club_flag : i64
+// 		38 => nameplate : i64
+// 		39 => group_honor : Bytes
 // 	});
 //
 // JceStruct!(ModifyGroupCardRequest {
 //
-// 		0 => Zero : i64
-// 		1 => GroupCode : i64
-// 		2 => NewSeq : i64
-// 		3 => UinInfo : []
+// 		0 => zero : i64
+// 		1 => group_code : i64
+// 		2 => new_seq : i64
+// 		3 => uin_info : []
 // 	});
 //
 // JceStruct!(UinInfo {
 //
-// 		0 => Uin : i64
-// 		1 => Flag : i64
-// 		2 => Name : String
-// 		3 => Gender : u8
-// 		4 => Phone : String
-// 		5 => Email : String
-// 		6 => Remark : String
+// 		0 => uin : i64
+// 		1 => flag : i64
+// 		2 => name : String
+// 		3 => gender : u8
+// 		4 => phone : String
+// 		5 => email : String
+// 		6 => remark : String
 // 	});
 //
 // JceStruct!(SummaryCardReq {
 //
-// 		0 => Uin : i64
-// 		1 => ComeFrom : i32
-// 		2 => QzoneFeedTimestamp : i64
-// 		3 => IsFriend : u8
-// 		4 => GroupCode : i64
-// 		5 => GroupUin : i64
-// 		8 => GetControl : i64
-// 		9 => AddFriendSource : i32
-// 		10 => SecureSig : Bytes
-// 		14 => ReqServices : []Bytes
-// 		15 => TinyId : i64
-// 		16 => LikeSource : i64
-// 		18 => ReqMedalWallInfo : u8
-// 		19 => Req0x5ebFieldId : []i64
-// 		20 => ReqNearbyGodInfo : u8
-// 		22 => ReqExtendCard : u8
+// 		0 => uin : i64
+// 		1 => come_from : i32
+// 		2 => qzone_feed_timestamp : i64
+// 		3 => is_friend : u8
+// 		4 => group_code : i64
+// 		5 => group_uin : i64
+// 		8 => get_control : i64
+// 		9 => add_friend_source : i32
+// 		10 => secure_sig : Bytes
+// 		14 => req_services : []Bytes
+// 		15 => tiny_id : i64
+// 		16 => like_source : i64
+// 		18 => req_medal_wall_info : u8
+// 		19 => req0x5ebFieldId : []i64
+// 		20 => req_nearby_god_info : u8
+// 		22 => req_extend_card : u8
 // 	});
 //
 // JceStruct!(SummaryCardReqSearch {
 //
-// 		0 => Keyword : String
-// 		1 => CountryCode : String
-// 		2 => Version : i32
-// 		3 => ReqServices : []Bytes // busi
+// 		0 => keyword : String
+// 		1 => country_code : String
+// 		2 => version : i32
+// 		3 => req_services : []Bytes // busi
 // 	});
 //
 // JceStruct!(DelFriendReq {
 //
-// 		0 => Uin : i64
-// 		1 => DelUin : i64
-// 		2 => DelType : u8
-// 		3 => Version : i32
+// 		0 => uin : i64
+// 		1 => del_uin : i64
+// 		2 => del_type : u8
+// 		3 => version : i32
 // 	});
