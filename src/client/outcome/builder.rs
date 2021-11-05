@@ -591,6 +591,40 @@ impl crate::client::Client {
         let packet = build_login_packet(self.uin.load(Ordering::SeqCst), 2, &[0; 16], &sso, &[]);
         (seq, packet)
     }
+
+    pub async fn build_group_list_request_packet(&self, vec_cookie: Bytes) -> (u16, Bytes) {
+        let seq = self.next_seq();
+        let req = TroopListRequest {
+            uin: self.uin.load(Ordering::SeqCst),
+            get_m_s_f_msg_flag: 1,
+            cookies: vec_cookie,
+            group_info: vec![],
+            group_flag_ext: 1,
+            version: 7,
+            company_id: 0,
+            version_num: 1,
+            get_long_group_name: 1
+        };
+        let buf = RequestDataVersion3 {
+            map: HashMap::from([
+                ("GetTroopListReqV2Simplify".to_string(), pack_uni_request_data(&req.build()))
+            ])
+        };
+        let pkt = RequestPacket {
+            i_version: 3,
+            c_packet_type: 0x00,
+            i_message_type: 0,
+            i_request_id: self.next_packet_seq(),
+            s_servant_name: "mqq.IMService.FriendListServiceServantObj".to_string(),
+            s_func_name: "GetTroopListReqV2Simplify".to_string(),
+            s_buffer: buf.build(),
+            i_timeout: 0,
+            context: Default::default(),
+            status: Default::default()
+        };
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "friendlist.GetTroopListReqV2", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        (seq, packet)
+    }
 }
 
 
