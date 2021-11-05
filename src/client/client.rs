@@ -56,11 +56,10 @@ impl Client {
     }
 
     pub async fn handle_income_packet(&self, pkt: IncomePacket) {
-        if let Some(sender) = {
-            let mut packet_promises = self.packet_promises.write().await;
-            packet_promises.remove(&pkt.seq_id)
-        } {
+        if let Some(sender) = self.packet_promises.write().await.remove(&pkt.seq_id) {
             sender.send(pkt); // response
+        } else {
+            println!("unhandled pkt: {}", &pkt.command_name);
         }
     }
 

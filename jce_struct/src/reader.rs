@@ -95,7 +95,6 @@ impl JceGet for BTreeMap<u8, JceObject> {
                 break; // end of struct
             }
         }
-        println!("{:?}", jce_struct);
         jce_struct
     }
 }

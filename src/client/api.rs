@@ -1,9 +1,9 @@
 use std::sync::atomic::Ordering;
 use jce_struct::Jce;
-use crate::client::income::{decode_client_register_response, decode_friend_group_list_response, decode_group_list_response, decode_login_response, decode_system_msg_group_packet, decode_trans_emp_response, FriendListResponse, GroupListResponse, GroupSystemMessages, LoginResponse, QRCodeState};
 use crate::client::outcome::OutcomePacket;
 use crate::jce::{RequestDataVersion2, RequestPacket, SvcRespRegister};
 use bytes::{Buf, Bytes};
+use crate::client::income::decoder::{friendlist::*, profile_service::*, stat_svc::*, wtlogin::*};
 
 /// 登录相关
 impl super::Client {
@@ -88,7 +88,6 @@ impl super::Client {
             return None;
         }
         let resp = decode_client_register_response(&resp.payload);
-        // println!("{:?}",svc_rsp.result);
         if resp.result != "" || resp.reply_code != 0 {
             return None;
         }
