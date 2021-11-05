@@ -3,7 +3,8 @@ use prost::DecodeError;
 use crate::client::income::decoder::online_push::OnlinePushTrans::{MemberKicked, MemberLeave, MemberPermissionChanged};
 use crate::client::outcome::PbToBytes;
 use crate::client::structs::{GroupMemberPermission};
-use crate::pb::msg::TransMsgInfo;
+use crate::pb::msg;
+use crate::pb::msg::{PushMessagePacket, TransMsgInfo};
 
 pub enum OnlinePushTrans {
     MemberLeave {
@@ -28,6 +29,7 @@ pub enum OnlinePushTrans {
     },
 }
 
+// TODO 还没测试
 pub fn decode_online_push_trans_packet(payload: &[u8]) -> Option<OnlinePushTrans> {
     let trans_msg_info = TransMsgInfo::from_bytes(payload);
     if trans_msg_info.is_err() {
@@ -85,4 +87,45 @@ pub fn decode_online_push_trans_packet(payload: &[u8]) -> Option<OnlinePushTrans
         _ => {}
     }
     None
+}
+
+#[derive(Debug)]
+pub struct GroupMessagePart {
+    seq: i32,
+    rand: i32,
+    group_code: i64,
+    from_uin: i64,
+    elems: Vec<msg::Elem>,
+    time: i32,
+    // 语音消息
+    ptt: Option<msg::Ptt>,
+
+    // 整个message有多少个part，大于elem.len()时，应等待下一个片段到达后合并
+    pkg_num: i32,
+    // 分片的第几段
+    pkg_index: i32,
+    // 分片id，相同id的应该合并，且根据pkg_index排序
+    div_seq: i32,
+}
+
+// 解析群消息分片 TODO 长消息需要合并
+pub fn decode_group_message_packet(payload: &[u8]) -> Option<GroupMessagePart> {
+    let pkt = PushMessagePacket::from_bytes(payload);
+    if pkt.is_err() {
+        return None;
+    }
+    let mut message = pkt.unwrap().message.unwrap();
+
+    return Some(GroupMessagePart {
+        seq: message.head.as_ref().unwrap().msg_seq.unwrap(),
+        rand: message.body.as_ref().unwrap().rich_text.as_ref().unwrap().attr.as_ref().unwrap().random.unwrap(),
+        group_code: message.head.as_ref().unwrap().group_info.as_ref().unwrap().group_code.unwrap(),
+        from_uin: message.head.as_ref().unwrap().from_uin.unwrap(),
+        elems: message.body.as_ref().unwrap().rich_text.as_ref().unwrap().elems.clone(),
+        time: message.head.as_ref().unwrap().msg_time.unwrap(),
+        pkg_num: message.content.as_ref().unwrap().pkg_num.unwrap(),
+        pkg_index: message.content.as_ref().unwrap().pkg_index.unwrap(),
+        div_seq: message.content.as_ref().unwrap().div_seq.unwrap(),
+        ptt: message.body.as_ref().unwrap().rich_text.as_ref().unwrap().ptt.clone(),
+    });
 }
