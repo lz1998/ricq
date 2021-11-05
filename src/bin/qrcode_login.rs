@@ -7,7 +7,7 @@ use tokio::io::AsyncReadExt;
 use tokio::time::{Duration, sleep};
 use tokio_util::codec::{FramedRead, LinesCodec};
 use rs_qq::client::{Client, Password};
-use rs_qq::client::income::{decode_login_response, LoginResponse, QRCodeState};
+use rs_qq::client::income::decoder::wtlogin::{LoginResponse, QRCodeState};
 use rs_qq::client::net::ClientNet;
 
 #[tokio::main]
@@ -66,6 +66,11 @@ async fn main() -> Result<()> {
                     QRCodeState::QRCodeCanceled => {}
                 }
             }
+            client.register_client().await;
+            let rsp = client.group_list(&[]).await;
+            println!("{:?}", rsp);
+            let rsp = client.friend_group_list(0, 150, 0, 0).await;
+            println!("{:?}", rsp);
         } else {
             panic!("error")
         }
