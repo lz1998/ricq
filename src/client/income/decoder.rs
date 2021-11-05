@@ -58,7 +58,7 @@ pub enum LoginResponse {
     OtherLoginError {
         error_message: String
     },
-    NeedDeviceLockLogin
+    NeedDeviceLockLogin,
 }
 
 pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Option<QRCodeState> {
@@ -248,7 +248,7 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Option<Login
             cache_info.t104 = m.remove(&0x104).unwrap();
             cache_info.rand_seed = m.remove(&0x403).unwrap();
         }
-        return Some(LoginResponse::NeedDeviceLockLogin)
+        return Some(LoginResponse::NeedDeviceLockLogin);
     } // drive lock
 
     if m.contains_key(&0x149) {
@@ -476,13 +476,11 @@ pub struct GroupInfo {
     members: Vec<GroupMemberInfo>,
     // 最后一条信息的SEQ,只有通过 GetGroupInfo 函数获取的 GroupInfo 才会有
     last_msg_seq: i64,
-    client: *Client,
     // lock: RWMutex todo
 }
 
 #[derive(Debug, Default)]
 pub struct GroupMemberInfo {
-    group: *GroupInfo,
     uin: i64,
     gender: u8,
     nickname: String,
@@ -503,14 +501,26 @@ pub enum MemberPermission {
     Member = 3,
 }
 
-pub fn decode_group_list_response(c: *Client, payload: &[u8]) -> Option<Vec<GroupInfo>> {
+impl Default for MemberPermission {
+    fn default() -> Self {
+        Self::Member
+    }
+}
+
+#[derive(Debug)]
+pub struct GroupListResponse {
+    pub groups: Vec<GroupInfo>,
+    pub vec_cookie: Bytes,
+}
+
+pub fn decode_group_list_response(payload: &[u8]) -> Option<GroupListResponse> {
     let mut payload = Bytes::from(payload.to_owned());
     let mut request: RequestPacket = Jce::read_from_bytes(&mut payload);
     let mut data: RequestDataVersion3 = Jce::read_from_bytes(&mut request.s_buffer);
     let mut fl_resp = data.map.remove("GetTroopListRespV2")?;
     let mut r = Jce::new(&mut fl_resp);
     let vec_cookie: Bytes = r.get_by_tag(4);
-    let groups: Vec<TroopNumber> = r.get_by_tag(4);
+    let groups: Vec<TroopNumber> = r.get_by_tag(5);
     let mut l: Vec<GroupInfo> = Vec::new();
     for g in groups {
         l.push(GroupInfo {
@@ -519,18 +529,16 @@ pub fn decode_group_list_response(c: *Client, payload: &[u8]) -> Option<Vec<Grou
             name: g.group_name,
             memo: g.group_memo,
             owner_uin: g.group_owner_uin,
-            group_create_time: 0,
-            group_level: 0,
             member_count: g.member_num as u16,
             max_member_count: g.max_group_member_num as u16,
+            group_create_time: 0,
+            group_level: 0,
             members: vec![],
             last_msg_seq: 0,
-            client: c
         })
     }
-    if vec_cookie.len() > 0 {
-        let resp = c.send_and_wait(c.build_group_list_request_packet(vec_cookie).await.into()).await.unwrap();
-        l.push(resp.payload)
-    }
-    Some(l)
+    Some(GroupListResponse {
+        groups: l,
+        vec_cookie,
+    })
 }

@@ -41,8 +41,8 @@ impl<'a> Jce<'a> {
     ///
     /// type should be declera when use this method
     pub fn get<T>(&mut self) -> T
-    where
-        T: JceGet,
+        where
+            T: JceGet,
     {
         if self.t != 12 {
             T::read(self)
@@ -53,8 +53,8 @@ impl<'a> Jce<'a> {
 
     /// build a Jce from the bytes and read to a obj(impl JceGet)
     pub fn read_from_bytes<T>(bytes: &'a mut Bytes) -> T
-    where
-        T: JceGet,
+        where
+            T: JceGet,
     {
         let mut jce = Self::new(bytes);
         jce.get()
@@ -64,8 +64,8 @@ impl<'a> Jce<'a> {
     ///
     /// usually use to impl JceGet
     pub fn get_by_tag<T>(&mut self, tag: u8) -> T
-    where
-        T: JceGet,
+        where
+            T: JceGet,
     {
         if self.new {
             self.read_head();
@@ -88,7 +88,6 @@ impl<'a> Jce<'a> {
         };
         self.t = t;
         self.tag = tag;
-        println!("{}-{}-{:x}", self.tag, self.t, self.b);
     }
 
     /// go to the JceObject with givven tag(skip obj if need)
@@ -276,9 +275,9 @@ impl JceGet for String {
 }
 
 impl<K, V> JceGet for std::collections::HashMap<K, V>
-where
-    K: JceGet + Eq + Hash,
-    V: JceGet,
+    where
+        K: JceGet + Eq + Hash,
+        V: JceGet,
 {
     // 8
     fn read(jce: &mut Jce) -> Self {
@@ -301,8 +300,8 @@ where
 }
 
 impl<V> JceGet for Vec<V>
-where
-    V: JceGet,
+    where
+        V: JceGet,
 {
     // 9
     fn read(jce: &mut Jce) -> Self {

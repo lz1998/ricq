@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU16};
+use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, AtomicU16};
 
 use bytes::Bytes;
 use tokio::sync::RwLock;
@@ -22,6 +22,8 @@ pub mod api;
 
 pub struct Client {
     seq_id: AtomicU16,
+    request_packet_request_id: AtomicI32,
+
     pub uin: AtomicI64,
     pub password_md5: Bytes,
     pub ecdh: EncryptECDH,

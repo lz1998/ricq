@@ -6,7 +6,7 @@ use futures::StreamExt;
 use tokio::io::AsyncReadExt;
 use tokio_util::codec::{FramedRead, LinesCodec};
 use rs_qq::client::{Client, Password};
-use rs_qq::client::income::{decode_login_response, LoginResponse};
+use rs_qq::client::income::LoginResponse;
 use rs_qq::client::net::ClientNet;
 
 #[tokio::main]
@@ -73,6 +73,9 @@ async fn main() -> Result<()> {
             }
         }
         println!("{:?}", resp);
+        client.register_client().await;
+        let rsp = client.group_list(&[]).await;
+        println!("{:?}", rsp);
     });
     net.await;
 

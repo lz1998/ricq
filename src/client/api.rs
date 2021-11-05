@@ -1,6 +1,6 @@
 use std::sync::atomic::Ordering;
 use jce_struct::Jce;
-use crate::client::income::{decode_client_register_response, decode_friend_group_list_response, decode_login_response, decode_system_msg_group_packet, decode_trans_emp_response, FriendListResponse, GroupSystemMessages, LoginResponse, QRCodeState};
+use crate::client::income::{decode_client_register_response, decode_friend_group_list_response, decode_group_list_response, decode_login_response, decode_system_msg_group_packet, decode_trans_emp_response, FriendListResponse, GroupListResponse, GroupSystemMessages, LoginResponse, QRCodeState};
 use crate::client::outcome::OutcomePacket;
 use crate::jce::{RequestDataVersion2, RequestPacket, SvcRespRegister};
 use bytes::{Buf, Bytes};
@@ -111,5 +111,13 @@ impl super::Client {
             return None;
         }
         decode_friend_group_list_response(&resp.payload)
+    }
+    // 第一个参数offset，从0开始；第二个参数count，150，另外两个都是0
+    pub async fn group_list(&self, vec_cookie: &[u8]) -> Option<GroupListResponse> {
+        let mut resp = self.send_and_wait(self.build_group_list_request_packet(vec_cookie).await.into()).await?;
+        if &resp.command_name != "friendlist.GetTroopListReqV2" {
+            return None;
+        }
+        decode_group_list_response(&resp.payload)
     }
 }

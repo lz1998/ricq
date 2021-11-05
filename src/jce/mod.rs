@@ -213,7 +213,7 @@ JceStruct!(SvcReqGetMsgV2 {
     16 => inst: u8,
     17 => channel_ex: u8,
     18 => sync_cookie: Bytes,
-    19 => sync_flag: int,
+    19 => sync_flag: i32,
     20 => ramble_flag: u8,
     26 => general_abi: i64,
     27 => pub_account_cookie: Bytes,
@@ -238,7 +238,7 @@ JceStruct!(SvcRespParam {
 
 JceStruct!(RequestPushNotify {
     0 => uin: i64,
-    1 => type: u8,
+    1 => r#type: u8,
     2 => service: String,
     3 => cmd: String,
     4 => notify_cookie: Bytes,
@@ -708,7 +708,7 @@ JceStruct!(FriendInfo {
 
 JceStruct!(TroopListRequest {
 		0 => uin: i64,
-		1 => get_m_s_f_msg_flag: u8,
+		1 => get_msf_msg_flag: u8,
 		2 => cookies: Bytes,
 		3 => group_info: Vec<i64>,
 		4 => group_flag_ext: u8,

@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU16, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, AtomicU16, Ordering};
 use bytes::Bytes;
 use rand::Rng;
 use tokio::sync::RwLock;
@@ -24,6 +24,7 @@ impl Client {
 
         let cli = Client {
             seq_id: AtomicU16::new(0x3635),
+            request_packet_request_id: AtomicI32::new(1921334513),
             uin: AtomicI64::new(uin),
             password_md5: password.md5(),
             connected: AtomicBool::new(false),
@@ -45,8 +46,13 @@ impl Client {
         cli.cache_info.write().await.ksid = format!("|{}|A8.2.7.27f6ea96", cli.device_info.read().await.imei).into();
         (cli, out_pkt_receiver)
     }
+
     pub fn next_seq(&self) -> u16 {
         self.seq_id.fetch_add(1, Ordering::Relaxed)
+    }
+
+    pub fn next_packet_seq(&self) -> i32 {
+        self.request_packet_request_id.fetch_add(1, Ordering::Relaxed)
     }
 
     pub async fn handle_income_packet(&self, pkt: IncomePacket) {
