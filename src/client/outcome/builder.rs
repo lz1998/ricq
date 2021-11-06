@@ -11,6 +11,7 @@ use crate::jce::*;
 use jce_struct::*;
 use crate::client::outcome::PbToBytes;
 use crate::pb;
+use crate::pb::msg;
 use crate::pb::structmsg::{FlagInfo, ReqSystemMsgNew};
 
 fn pack_uni_request_data(data: &[u8]) -> Bytes {
@@ -624,6 +625,43 @@ impl crate::client::Client {
             i_timeout: 0,
         };
         let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "friendlist.GetTroopListReqV2", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        (seq, packet)
+    }
+
+    pub async fn build_group_sending_packet(&self, group_code: i64, r: i32, pkg_num: i32, pkg_index: i32, pkg_div: i32, forward: bool, mut elems: Vec<msg::Elem>) -> (u16, Bytes) {
+        let seq = self.next_seq();
+        let req = msg::SendMessageRequest {
+            routing_head: Some(msg::RoutingHead {
+                c2c: None,
+                grp: Some(msg::Grp { group_code: Some(group_code) }),
+                grp_tmp: None,
+                wpa_tmp: None,
+            }),
+            content_head: Some(msg::ContentHead {
+                pkg_num: Some(pkg_num),
+                pkg_index: Some(pkg_index),
+                div_seq: Some(pkg_div),
+                auto_reply: None,
+            }),
+            msg_body: Some(msg::MessageBody {
+                rich_text: Some(msg::RichText {
+                    elems,
+                    attr: None,
+                    not_online_file: None,
+                    ptt: None,
+                }),
+                msg_content: None,
+                msg_encrypt_content: None,
+            }),
+            msg_seq: Some(self.next_group_seq()),
+            msg_rand: Some(r),
+            sync_cookie: Some(Vec::new()),
+            msg_via: Some(1),
+            msg_ctrl: if forward { Some(msg::MsgCtrl { msg_flag: Some(4) }) } else { None },
+            data_statist: None,
+            multi_send_seq: None,
+        };
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "MessageSvc.PbSendMsg", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &req.to_bytes());
         (seq, packet)
     }
 }

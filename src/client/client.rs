@@ -26,6 +26,7 @@ impl Client {
         let cli = Client {
             seq_id: AtomicU16::new(0x3635),
             request_packet_request_id: AtomicI32::new(1921334513),
+            group_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),
             uin: AtomicI64::new(uin),
             password_md5: password.md5(),
             connected: AtomicBool::new(false),
@@ -53,7 +54,11 @@ impl Client {
     }
 
     pub fn next_packet_seq(&self) -> i32 {
-        self.request_packet_request_id.fetch_add(1, Ordering::Relaxed)
+        self.request_packet_request_id.fetch_add(2, Ordering::Relaxed)
+    }
+
+    pub fn next_group_seq(&self) -> i32 {
+        self.group_seq.fetch_add(2, Ordering::Relaxed)
     }
 
     pub async fn handle_income_packet(&self, pkt: IncomePacket) {
