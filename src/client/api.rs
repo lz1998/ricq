@@ -3,7 +3,7 @@ use jce_struct::Jce;
 use crate::client::outcome::OutcomePacket;
 use crate::jce::{RequestDataVersion2, RequestPacket, SvcRespRegister};
 use bytes::{Buf, Bytes};
-use crate::client::income::decoder::{friendlist::*, profile_service::*, stat_svc::*, wtlogin::*};
+use crate::client::income::decoder::{friend_list::*, profile_service::*, stat_svc::*, wtlogin::*};
 
 /// 登录相关
 impl super::Client {
