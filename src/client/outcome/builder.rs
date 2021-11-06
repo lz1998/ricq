@@ -645,6 +645,37 @@ impl crate::client::Client {
         let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "group_member_card.get_group_member_card_info", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &payload.to_bytes());
         (seq, packet)
     }
+
+    pub async fn build_group_member_list_request_packet(&self, group_uin: i64, group_code: i64, next_uin: i64) -> (u16, Bytes) {
+        let seq = self.next_seq();
+        let payload = TroopMemberListRequest {
+            uin: self.uin.load(Ordering::SeqCst),
+            group_code,
+            next_uin,
+            group_uin,
+            version: 2,
+            ..Default::default()
+        };
+        let mut b = BytesMut::new();
+        b.put_slice(&[0x0A]);
+        b.put_slice(&payload.build());
+        b.put_slice(&[0x0B]);
+        let buf = RequestDataVersion3 {
+            map: HashMap::from([
+                ("GTML".to_string(), b.into())
+            ])
+        };
+        let pkt = RequestPacket {
+            i_version: 3,
+            i_request_id: self.next_packet_seq(),
+            s_servant_name: "mqq.IMService.FriendListServiceServantObj".to_string(),
+            s_func_name: "GetTroopMemberListReq".to_string(),
+            s_buffer: buf.build(),
+            ..Default::default()
+        };
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "friendlist.GetTroopMemberListReq", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        return (seq, packet);
+    }
 }
 
 
