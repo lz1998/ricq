@@ -385,20 +385,7 @@ impl crate::client::Client {
             vendor_os_name: self.device_info.read().await.vendor_os_name.to_owned(),
             b769: Bytes::from_static(&[0x0A, 0x04, 0x08, 0x2E, 0x10, 0x00, 0x0A, 0x05, 0x08, 0x9B, 0x02, 0x10, 0x00]),
             set_mute: 0,
-            // empty
-            other: "".to_string(),
-            online_push: 0,
-            is_online: 0,
-            is_show_online: 0,
-            timestamp: 0,
-            build_ver: "".to_string(),
-            dev_param: Default::default(),
-            silent_push: 0,
-            last_watch_start_time: 0,
-            ios_idfa: "".to_string(),
-            ext_online_status: 0,
-            server_buf: Default::default(),
-            battery_status: 0,
+            ..Default::default()
         };
         let mut b = BytesMut::new();
         b.put_slice(&[0x0A]);
@@ -416,11 +403,7 @@ impl crate::client::Client {
             s_buffer: buf.build(),
             context: Default::default(),
             status: Default::default(),
-            // empty
-            c_packet_type: 0,
-            i_message_type: 0,
-            i_request_id: 0,
-            i_timeout: 0,
+            ..Default::default()
         };
         let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "StatSvc.register", &self.device_info.read().await.imei, &self.cache_info.read().await.sig_info.tgt, &self.out_going_packet_session_id.read().await, &pkt.build(), &self.cache_info.read().await.ksid);
         let packet = build_login_packet(self.uin.load(Ordering::SeqCst), 1, &self.cache_info.read().await.sig_info.d2key, &sso, &self.cache_info.read().await.sig_info.d2);
@@ -437,13 +420,7 @@ impl crate::client::Client {
             req_mutualmark_alienation: 1,
             req_ksing_switch: 1,
             req_mutualmark_lbsshare: 1,
-            // empty
-            max_pkg_size: 0,
-            start_time: 0,
-            start_index: 0,
-            req_num: 0,
-            uin_list: vec![],
-            req_mutualmark_score: 0,
+            ..Default::default()
         }, &mut d50).unwrap();
 
         let req = FriendListRequest {
@@ -481,9 +458,7 @@ impl crate::client::Client {
             s_buffer: buf.build(),
             context: Default::default(),
             status: Default::default(),
-            // empty
-            i_message_type: 0,
-            i_timeout: 0,
+            ..Default::default()
         };
         let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "friendlist.getFriendGroupList", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
         (seq, packet)
@@ -512,17 +487,11 @@ impl crate::client::Client {
                 grp_msg_mask_invite_auto_join: 1,
                 grp_msg_get_disbanded_by_admin: 1,
                 grp_msg_get_c2c_invite_join_group: 1,
-                //empty
-                frd_msg_get_busi_card: 0,
+                ..Default::default()
             }),
             friend_msg_type_flag: 1,
             req_msg_type: if suspicious { 2 } else { 1 },
-            // empty
-            language: 0,
-            latest_friend_seq: 0,
-            latest_group_seq: 0,
-            is_get_frd_ribbon: false,
-            is_get_grp_ribbon: false,
+            ..Default::default()
         };
         let payload = req.to_bytes();
         let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "ProfileService.Pb.ReqSystemMsgNew.Group", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &payload);
@@ -621,8 +590,7 @@ impl crate::client::Client {
             s_buffer: buf.build(),
             context: Default::default(),
             status: Default::default(),
-            // empty
-            i_timeout: 0,
+            ..Default::default()
         };
         let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "friendlist.GetTroopListReqV2", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
         (seq, packet)
