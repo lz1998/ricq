@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
+use bytes::Bytes;
 use crate::jce::SvcRespRegister;
 use crate::client::income::decoder::{friendlist::*, profile_service::*, stat_svc::*, wtlogin::*};
 use crate::client::income::decoder::group_member_card::decode_group_member_info_response;
@@ -108,7 +109,7 @@ impl super::Client {
 
     /// 获取好友列表
     /// 第一个参数offset，从0开始；第二个参数count，150，另外两个都是0
-    pub async fn friend_group_list(&self, friend_start_index: i16, friend_list_count: i16, group_start_index: i16, group_list_count: i16) -> Option<FriendListResponse> {
+    pub async fn get_friend_list(&self, friend_start_index: i16, friend_list_count: i16, group_start_index: i16, group_list_count: i16) -> Option<FriendListResponse> {
         let resp = self.send_and_wait(self.build_friend_group_list_request_packet(friend_start_index, friend_list_count, group_start_index, group_list_count).await.into()).await?;
         if &resp.command_name != "friendlist.getFriendGroupList" {
             return None;
@@ -118,7 +119,7 @@ impl super::Client {
 
     /// 获取群列表
     /// 第一个参数offset，从0开始；第二个参数count，150，另外两个都是0
-    pub async fn group_list(&self, vec_cookie: &[u8]) -> Option<GroupListResponse> {
+    pub async fn get_group_list(&self, vec_cookie: &[u8]) -> Option<GroupListResponse> {
         let resp = self.send_and_wait(self.build_group_list_request_packet(vec_cookie).await.into()).await?;
         if &resp.command_name != "friendlist.GetTroopListReqV2" {
             return None;
@@ -163,5 +164,45 @@ impl super::Client {
             }
         }
         None
+    }
+
+    /// 刷新群列表 TODO 获取群成员列表
+    pub async fn reload_group_list(&self) -> Option<()> {
+        let mut vec_cookie = Bytes::new();
+        let mut groups = Vec::new();
+        loop {
+            let resp = self.get_group_list(&vec_cookie).await?;
+            vec_cookie = resp.vec_cookie;
+            for g in resp.groups {
+                groups.push(Arc::new(g));
+            }
+            if vec_cookie.is_empty() {
+                break;
+            }
+        }
+        let mut group_list = self.group_list.write().await;
+        group_list.clear();
+        group_list.append(&mut groups); // TODO 不知道会不会复制大量内存
+        Some(())
+    }
+
+    /// 刷新好友列表
+    pub async fn reload_friend_list(&self) -> Option<()> {
+        let mut cur_friend_count = 0;
+        let mut friends = Vec::new();
+        loop {
+            let resp = self.get_friend_list(cur_friend_count, 150, 0, 0).await?;
+            cur_friend_count += resp.list.len() as i16;
+            for f in resp.list {
+                friends.push(Arc::new(f));
+            }
+            if cur_friend_count >= resp.total_count {
+                break;
+            }
+        }
+        let mut friend_list=self.friend_list.write().await;
+        friend_list.clear();
+        friend_list.append(&mut friends);
+        Some(())
     }
 }

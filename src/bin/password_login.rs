@@ -75,10 +75,12 @@ async fn main() -> Result<()> {
         }
         println!("{:?}", resp);
         client.register_client().await;
-        let rsp = client.group_list(&[]).await;
-        println!("{:?}", rsp);
-        let rsp = client.friend_group_list(0, 150, 0, 0).await;
-        println!("{:?}", rsp);
+        {
+            client.reload_friend_list().await;
+            println!("{:?}", client.friend_list.read().await);
+            client.reload_group_list().await;
+            println!("{:?}", client.group_list.read().await);
+        }
         // client.send_group_message(335783090, vec![
         //     Msg::At { target: 875543533, display: "@lz1998".to_string() },
         //     Msg::Text { content: "xxx".to_string() },

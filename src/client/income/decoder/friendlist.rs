@@ -5,8 +5,8 @@ use crate::jce;
 
 #[derive(Debug, Default)]
 pub struct FriendListResponse {
-    list: Vec<FriendInfo>,
-    total_count: i16,
+    pub list: Vec<FriendInfo>,
+    pub total_count: i16,
 }
 
 pub fn decode_friend_group_list_response(payload: &[u8]) -> Option<FriendListResponse> {
