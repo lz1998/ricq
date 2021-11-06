@@ -11,6 +11,7 @@ use crate::jce::*;
 use jce_struct::*;
 use crate::client::outcome::PbToBytes;
 use crate::pb;
+use crate::pb::GroupMemberReqBody;
 use crate::pb::structmsg::{FlagInfo, ReqSystemMsgNew};
 
 fn pack_uni_request_data(data: &[u8]) -> Bytes {
@@ -358,7 +359,7 @@ impl crate::client::Client {
     pub async fn build_client_register_packet(&self) -> (u16, Bytes) {
         let seq = self.next_seq();
 
-        let mut svc = SvcReqRegister {
+        let svc = SvcReqRegister {
             uin: self.uin.load(Ordering::SeqCst),
             bid: 1 | 2 | 4,
             conn_type: 0,

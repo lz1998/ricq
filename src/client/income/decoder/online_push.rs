@@ -114,7 +114,7 @@ pub fn decode_group_message_packet(payload: &[u8]) -> Option<GroupMessagePart> {
     if pkt.is_err() {
         return None;
     }
-    let mut message = pkt.unwrap().message.unwrap();
+    let message = pkt.unwrap().message.unwrap();
 
     return Some(GroupMessagePart {
         seq: message.head.as_ref().unwrap().msg_seq.unwrap(),

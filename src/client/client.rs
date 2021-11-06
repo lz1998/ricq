@@ -5,7 +5,7 @@ use rand::Rng;
 use tokio::sync::RwLock;
 use crate::client::device::{DeviceInfo};
 use crate::crypto::EncryptECDH;
-use crate::client::{AccountInfo, CacheInfo, Client, net, Password};
+use crate::client::{AccountInfo, AddressInfo, CacheInfo, Client, MessageStateInfo, net, Password};
 use crate::client::income::IncomePacket;
 use crate::client::outcome::OutcomePacket;
 use crate::client::version::{ClientProtocol, gen_version_info};
