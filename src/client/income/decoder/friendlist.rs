@@ -2,6 +2,7 @@ use bytes::{Bytes};
 use jce_struct::Jce;
 use crate::client::structs::*;
 use crate::jce;
+use crate::jce::TroopMemberInfo;
 
 #[derive(Debug, Default)]
 pub struct FriendListResponse {
@@ -63,5 +64,46 @@ pub fn decode_group_list_response(payload: &[u8]) -> Option<GroupListResponse> {
     Some(GroupListResponse {
         groups: l,
         vec_cookie,
+    })
+}
+
+
+#[derive(Debug)]
+pub struct GroupMemberListResponse {
+    pub next_uin: i64,
+    pub list: Vec<GroupMemberInfo>,
+}
+
+pub fn decode_group_member_list_response(payload: &[u8]) -> Option<GroupMemberListResponse> {
+    let mut payload = Bytes::from(payload.to_owned());
+    let mut request: jce::RequestPacket = Jce::read_from_bytes(&mut payload);
+    let mut data: jce::RequestDataVersion3 = Jce::read_from_bytes(&mut request.s_buffer);
+    let mut fl_resp = data.map.remove("GTMLRESP")?;
+    let mut r = Jce::new(&mut fl_resp);
+    let members: Vec<TroopMemberInfo> = r.get_by_tag(3);
+    let next_uin = r.get_by_tag(4);
+    let mut l: Vec<GroupMemberInfo> = Vec::new();
+    for m in members {
+        l.push(GroupMemberInfo {
+            group_code: 0,
+            uin: m.member_uin,
+            gender: m.gender,
+            nickname: m.nick,
+            card_name: m.name,
+            level: m.member_level as u16,
+            join_time: m.join_time,
+            last_speak_time: m.last_speak_time,
+            special_title: m.special_title,
+            special_title_expire_time: m.special_title_expire_time,
+            shut_up_timestamp: m.shut_up_timestap,
+            permission: match m.flag {
+                1 => GroupMemberPermission::Administrator,
+                _ => GroupMemberPermission::Member,
+            },
+        })
+    }
+    Some(GroupMemberListResponse {
+        next_uin,
+        list: l,
     })
 }
