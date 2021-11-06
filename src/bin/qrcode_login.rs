@@ -67,9 +67,9 @@ async fn main() -> Result<()> {
                 }
             }
             client.register_client().await;
-            let rsp = client.group_list(&[]).await;
+            let rsp = client.group_list.read().await;
             println!("{:?}", rsp);
-            let rsp = client.friend_group_list(0, 150, 0, 0).await;
+            let rsp = client.friend_list.read().await;
             println!("{:?}", rsp);
         } else {
             panic!("error")
