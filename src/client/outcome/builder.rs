@@ -627,6 +627,19 @@ impl crate::client::Client {
         let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "friendlist.GetTroopListReqV2", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
         (seq, packet)
     }
+
+    pub async fn build_group_member_info_request_packet(&self, group_code: i64, uin: i64) -> (u16, Bytes) {
+        let seq = self.next_seq();
+        let payload = GroupMemberReqBody {
+            group_code,
+            uin,
+            new_client: true,
+            client_type: 1,
+            rich_card_name_ver: 1
+        };
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "group_member_card.get_group_member_card_info", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &payload.to_bytes());
+        (seq, packet)
+    }
 }
 
 
