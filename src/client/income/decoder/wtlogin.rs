@@ -173,19 +173,19 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Option<Login
                 verify_url: String::from_utf8(m.remove(&0x192).unwrap().to_vec()).unwrap(),
             });
         }
-        if m.contains_key(&0x165) {
+        return if m.contains_key(&0x165) {
             let mut img_data = Bytes::from(m.remove(&0x105).unwrap());
             let sign_len = img_data.get_u16();
             img_data.get_u16();
             let sign = img_data.copy_to_bytes(sign_len as usize);
-            return Some(LoginResponse::NeedCaptcha {
+            Some(LoginResponse::NeedCaptcha {
                 captcha_sign: sign,
                 captcha_image: img_data,
-            });
+            })
         } else {
-            return Some(LoginResponse::UnknownLoginError {
+            Some(LoginResponse::UnknownLoginError {
                 error_message: "".to_string()
-            });
+            })
         }
     } // need captcha
 
