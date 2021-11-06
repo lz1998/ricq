@@ -11,7 +11,7 @@ use crate::jce::*;
 use jce_struct::*;
 use crate::client::outcome::PbToBytes;
 use crate::pb;
-use crate::pb::msg;
+use crate::pb::{GroupMemberReqBody, msg};
 use crate::pb::structmsg::{FlagInfo, ReqSystemMsgNew};
 
 fn pack_uni_request_data(data: &[u8]) -> Bytes {
@@ -359,7 +359,7 @@ impl crate::client::Client {
     pub async fn build_client_register_packet(&self) -> (u16, Bytes) {
         let seq = self.next_seq();
 
-        let mut svc = SvcReqRegister {
+        let svc = SvcReqRegister {
             uin: self.uin.load(Ordering::SeqCst),
             bid: 1 | 2 | 4,
             conn_type: 0,
@@ -628,7 +628,7 @@ impl crate::client::Client {
         (seq, packet)
     }
 
-    pub async fn build_group_sending_packet(&self, group_code: i64, r: i32, pkg_num: i32, pkg_index: i32, pkg_div: i32, forward: bool, mut elems: Vec<msg::Elem>) -> (u16, Bytes) {
+    pub async fn build_group_sending_packet(&self, group_code: i64, r: i32, pkg_num: i32, pkg_index: i32, pkg_div: i32, forward: bool, elems: Vec<msg::Elem>) -> (u16, Bytes) {
         let seq = self.next_seq();
         let req = msg::SendMessageRequest {
             routing_head: Some(msg::RoutingHead {
@@ -662,6 +662,19 @@ impl crate::client::Client {
             multi_send_seq: None,
         };
         let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "MessageSvc.PbSendMsg", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &req.to_bytes());
+        (seq, packet)
+    }
+
+    pub async fn build_group_member_info_request_packet(&self, group_code: i64, uin: i64) -> (u16, Bytes) {
+        let seq = self.next_seq();
+        let payload = GroupMemberReqBody {
+            group_code,
+            uin,
+            new_client: true,
+            client_type: 1,
+            rich_card_name_ver: 1,
+        };
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "group_member_card.get_group_member_card_info", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &payload.to_bytes());
         (seq, packet)
     }
 }

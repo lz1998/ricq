@@ -1,19 +1,19 @@
-use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, AtomicU16, Ordering};
 use bytes::Bytes;
 use rand::Rng;
 use tokio::sync::RwLock;
 use crate::client::device::{DeviceInfo};
-use crate::crypto::EncryptECDH;
-use crate::client::{AccountInfo, CacheInfo, Client, net, Password};
 use crate::client::income::IncomePacket;
 use crate::client::outcome::OutcomePacket;
 use crate::client::version::{ClientProtocol, gen_version_info};
 use tokio::sync::oneshot;
+use super::Client;
 use crate::client::income::decoder::online_push::decode_group_message_packet;
+use crate::client::Password;
+use super::net;
 
 
-impl Client {
+impl super::Client {
     pub async fn new(
         uin: i64,
         password: Password,
@@ -27,19 +27,26 @@ impl Client {
             seq_id: AtomicU16::new(0x3635),
             request_packet_request_id: AtomicI32::new(1921334513),
             group_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),
+            friend_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),
+            group_data_trans_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),
+            highway_apply_up_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),
             uin: AtomicI64::new(uin),
             password_md5: password.md5(),
             connected: AtomicBool::new(false),
             online: AtomicBool::new(false),
             out_pkt_sender,
-            packet_promises: RwLock::new(HashMap::new()),
-            ecdh: EncryptECDH::default(),
             random_key: Bytes::from(rand::thread_rng().gen::<[u8; 16]>().to_vec()),
             version: gen_version_info(&ClientProtocol::IPad),
             device_info: RwLock::new(device_info),
             out_going_packet_session_id: RwLock::new(Bytes::from_static(&[0x02, 0xb0, 0x5b, 0x8b])),
-            account_info: RwLock::new(AccountInfo::default()),
-            cache_info: RwLock::new(CacheInfo::default()),
+            packet_promises: Default::default(),
+            ecdh: Default::default(),
+            account_info: Default::default(),
+            cache_info: Default::default(),
+            address: Default::default(),
+            friend_list: Default::default(),
+            group_list: Default::default(),
+            online_clients: Default::default(),
         };
         {
             let mut cache_info = cli.cache_info.write().await;
@@ -60,6 +67,14 @@ impl Client {
     pub fn next_group_seq(&self) -> i32 {
         self.group_seq.fetch_add(2, Ordering::Relaxed)
     }
+
+    pub fn next_friend_seq(&self) -> i32 {
+        self.friend_seq.fetch_add(2, Ordering::Relaxed)
+    }
+
+    pub fn next_group_data_trans_seq(&self) -> i32 { self.group_data_trans_seq.fetch_add(2, Ordering::Relaxed) }
+
+    pub fn next_highway_apply_seq(&self) -> i32 { self.highway_apply_up_seq.fetch_add(2, Ordering::Relaxed) }
 
     pub async fn handle_income_packet(&self, pkt: IncomePacket) {
         // response

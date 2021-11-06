@@ -13,6 +13,7 @@ macro_rules! JceStruct {
     ($struct_name: ident {
         $($tag:expr=>$item_name: ident: $item_type: ty,)*
     }) => {
+        #[derive(Default, Debug)]
         pub struct $struct_name {
             $(pub $item_name: $item_type,)*
         }

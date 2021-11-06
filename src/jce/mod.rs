@@ -226,7 +226,7 @@ JceStruct!(PullGroupSeqParam {
 
 JceStruct!(SvcRespParam {
     0 => p_c_stat: i32,
-    1 => is_support_c2CRoamMsg: i32,
+    1 => is_support_c2c_roam_msg: i32,
     2 => is_support_data_line: i32,
     3 => is_support_printable: i32,
     4 => is_support_view_p_c_file: i32,
@@ -837,7 +837,7 @@ JceStruct!(SummaryCardReq {
     15 => tiny_id: i64,
     16 => like_source: i64,
     18 => req_medal_wall_info: u8,
-    19 => req0x5ebFieldId: Vec<i64>,
+    19 => req_0x5eb_field_id: Vec<i64>,
     20 => req_nearby_god_info: u8,
     22 => req_extend_card: u8,
 });

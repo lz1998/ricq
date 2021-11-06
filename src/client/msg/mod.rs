@@ -2,7 +2,6 @@ use bytes::BufMut;
 use crate::pb;
 
 use crate::client::outcome::PbToBytes;
-use crate::pb::msg::Elem;
 
 
 pub enum Msg {
