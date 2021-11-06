@@ -1,5 +1,5 @@
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use rs_qq::client::device::DeviceInfo;
 use anyhow::Result;
 use futures::StreamExt;
@@ -8,7 +8,10 @@ use tokio_util::codec::{FramedRead, LinesCodec};
 use rs_qq::client::{Client, Password};
 use rs_qq::client::income::decoder::wtlogin::LoginResponse;
 use rs_qq::client::net::ClientNet;
-use rs_qq::pb::msg;
+use rs_qq::client::version::ClientProtocol;
+use rs_qq::client::msg;
+use rs_qq::client::msg::Msg;
+use rs_qq::pb;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -79,35 +82,15 @@ async fn main() -> Result<()> {
         println!("{:?}", rsp);
         let rsp = client.friend_group_list(0, 150, 0, 0).await;
         println!("{:?}", rsp);
-        let (seq, pkt) = client.build_group_sending_packet(335783090, 383, 1, 0, 0, false, vec![msg::Elem {
-            text: Some(msg::Text {
-                str: Some("1".to_string()),
-                link: None,
-                attr6_buf: None,
-                attr7_buf: None,
-                buf: None,
-                pb_reserve: None,
-            }),
-            face: None,
-            online_image: None,
-            not_online_image: None,
-            trans_elem_info: None,
-            market_face: None,
-            custom_face: None,
-            elem_flags2: None,
-            rich_msg: None,
-            group_file: None,
-            extra_info: None,
-            video_file: None,
-            anon_group_msg: None,
-            qq_wallet_msg: None,
-            custom_elem: None,
-            general_flags: None,
-            src_msg: None,
-            light_app: None,
-            common_elem: None,
-        }]).await;
-        client.out_pkt_sender.send(pkt);
+        // let sending_message: Vec<Box<dyn RichMessageElement>> = vec![
+        //     Box::new(msg::Text { content: "123".to_string() }),
+        //     Box::new(msg::At { target: 875543533, display: "@lz1998".to_string() }),
+        //     Box::new(msg::Face::new(1)),
+        // ];
+        client.send_group_message(335783090, vec![
+            Msg::At { target: 875543533, display: "@lz1998".to_string() },
+            Msg::Text { content: "xxx".to_string() },
+        ]).await;
     });
     net.await;
 

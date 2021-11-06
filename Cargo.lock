@@ -782,6 +782,7 @@ dependencies = [
  "futures",
  "generic-array",
  "jce_struct",
+ "lazy_static",
  "md5",
  "p256",
  "prost",

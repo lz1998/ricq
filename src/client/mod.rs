@@ -19,6 +19,7 @@ pub mod net;
 pub mod version;
 pub mod device;
 pub mod api;
+pub mod msg;
 
 pub struct Client {
     seq_id: AtomicU16,

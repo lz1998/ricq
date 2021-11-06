@@ -1,9 +1,11 @@
+use std::sync::{Arc, Mutex};
 use std::sync::atomic::Ordering;
 use jce_struct::Jce;
 use crate::client::outcome::OutcomePacket;
 use crate::jce::{RequestDataVersion2, RequestPacket, SvcRespRegister};
 use bytes::{Buf, Bytes};
 use crate::client::income::decoder::{friendlist::*, profile_service::*, stat_svc::*, wtlogin::*};
+use crate::client::msg::Msg;
 
 /// 登录相关
 impl super::Client {
@@ -118,5 +120,15 @@ impl super::Client {
             return None;
         }
         decode_group_list_response(&resp.payload)
+    }
+
+    // TODO 切片, At预处理Display
+    pub async fn send_group_message(&self, group_code: i64, message_chain: Vec<Msg>) {
+        let mut elems = Vec::new();
+        for message in message_chain.iter() {
+            elems.append(&mut message.pack());
+        }
+        let (seq, packet) = self.build_group_sending_packet(group_code, 383, 1, 0, 0, false, elems).await;
+        self.out_pkt_sender.send(packet);
     }
 }
