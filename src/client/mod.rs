@@ -25,6 +25,10 @@ pub mod api;
 pub struct Client {
     seq_id: AtomicU16,
     request_packet_request_id: AtomicI32,
+    group_seq: AtomicI32,
+    friend_seq: AtomicI32,
+    group_data_trans_seq: AtomicI32,
+    highway_apply_up_seq: AtomicI32,
 
     pub uin: AtomicI64,
     pub password_md5: Bytes,
@@ -47,9 +51,6 @@ pub struct Client {
 
     // address
     pub address: RwLock<AddressInfo>,
-
-    // message state
-    pub message_state: RwLock<MessageStateInfo>,
 
 }
 
@@ -145,21 +146,3 @@ impl Default for AddressInfo {
     }
 }
 
-#[derive(Default)]
-pub struct MessageStateInfo {
-    pub last_message_seq: i32,
-    // pub msg_svc_cache: *utils.Cache,
-    pub last_c2c_msg_time: i64,
-    // pub trans_cache: *utils.Cache,
-    pub last_lost_msg: String,
-    pub group_sys_msg_cache: GroupSystemMessages,
-    // pub groupMsgBuilders       :sync.Map,
-    // pub online_push_cache:*utils.Cache,
-    pub request_packet_request_id: i32,
-    pub group_seq: i32,
-    pub friend_seq: i32,
-    pub heartbeat_enabled: bool,
-    pub group_data_trans_seq: i32,
-    pub highway_apply_up_seq: i32,
-    // pub event_handlers: *eventHandlers,
-}

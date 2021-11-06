@@ -8,6 +8,7 @@ use tokio_util::codec::{FramedRead, LinesCodec};
 use rs_qq::client::{Client, Password};
 use rs_qq::client::income::decoder::wtlogin::LoginResponse;
 use rs_qq::client::net::ClientNet;
+use rs_qq::pb::msg;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -78,6 +79,35 @@ async fn main() -> Result<()> {
         println!("{:?}", rsp);
         let rsp = client.friend_group_list(0, 150, 0, 0).await;
         println!("{:?}", rsp);
+        let (seq, pkt) = client.build_group_sending_packet(335783090, 383, 1, 0, 0, false, vec![msg::Elem {
+            text: Some(msg::Text {
+                str: Some("1".to_string()),
+                link: None,
+                attr6_buf: None,
+                attr7_buf: None,
+                buf: None,
+                pb_reserve: None,
+            }),
+            face: None,
+            online_image: None,
+            not_online_image: None,
+            trans_elem_info: None,
+            market_face: None,
+            custom_face: None,
+            elem_flags2: None,
+            rich_msg: None,
+            group_file: None,
+            extra_info: None,
+            video_file: None,
+            anon_group_msg: None,
+            qq_wallet_msg: None,
+            custom_elem: None,
+            general_flags: None,
+            src_msg: None,
+            light_app: None,
+            common_elem: None,
+        }]).await;
+        client.out_pkt_sender.send(pkt);
     });
     net.await;
 

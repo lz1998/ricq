@@ -6,7 +6,7 @@ use rand::Rng;
 use tokio::sync::RwLock;
 use crate::client::device::{DeviceInfo};
 use crate::crypto::EncryptECDH;
-use crate::client::{AccountInfo, AddressInfo, CacheInfo, Client, MessageStateInfo, net, Password};
+use crate::client::{AccountInfo, AddressInfo, CacheInfo, Client, net, Password};
 use crate::client::income::IncomePacket;
 use crate::client::outcome::OutcomePacket;
 use crate::client::version::{ClientProtocol, gen_version_info};
@@ -28,6 +28,10 @@ impl Client {
         let cli = Client {
             seq_id: AtomicU16::new(0x3635),
             request_packet_request_id: AtomicI32::new(1921334513),
+            group_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),
+            friend_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),
+            group_data_trans_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),
+            highway_apply_up_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),
             uin: AtomicI64::new(uin),
             password_md5: password.md5(),
             connected: AtomicBool::new(false),
@@ -42,7 +46,6 @@ impl Client {
             account_info: RwLock::new(AccountInfo::default()),
             cache_info: RwLock::new(CacheInfo::default()),
             address: RwLock::new(AddressInfo::default()),
-            message_state: RwLock::new(MessageStateInfo::default()),
         };
         {
             let mut cache_info = cli.cache_info.write().await;
@@ -57,23 +60,23 @@ impl Client {
     }
 
     pub fn next_packet_seq(&self) -> i32 {
-        self.request_packet_request_id.fetch_add(1, Ordering::Relaxed)
+        self.request_packet_request_id.fetch_add(2, Ordering::Relaxed)
     }
 
-    pub async fn next_group_seq(&self) -> i32 {
-        self.message_state.read().await.group_seq + 2
+    pub fn next_group_seq(&self) -> i32 {
+        self.group_seq.fetch_add(2, Ordering::Relaxed)
     }
 
-    pub async fn next_friend_seq(&self) -> i32 {
-        self.message_state.read().await.friend_seq + 1
+    pub fn next_friend_seq(&self) -> i32 {
+        self.friend_seq.fetch_add(2, Ordering::Relaxed)
     }
 
-    pub async fn next_group_data_trans_seq(&self) -> i32 {
-        self.message_state.read().await.group_data_trans_seq + 2
+    pub fn next_group_data_trans_seq(&self) -> i32 {
+        self.group_data_trans_seq.fetch_add(2, Ordering::Relaxed)
     }
 
-    pub async fn next_highway_apply_seq(&self) -> i32 {
-        self.message_state.read().await.highway_apply_up_seq + 2
+    pub fn next_highway_apply_seq(&self) -> i32 {
+        self.highway_apply_up_seq.fetch_add(2, Ordering::Relaxed)
     }
 
     pub async fn find_group(&self, code: i64) -> Option<GroupInfo> {
