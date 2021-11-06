@@ -39,6 +39,8 @@ impl Client {
             out_going_packet_session_id: RwLock::new(Bytes::from_static(&[0x02, 0xb0, 0x5b, 0x8b])),
             account_info: RwLock::new(AccountInfo::default()),
             cache_info: RwLock::new(CacheInfo::default()),
+            address: RwLock::new(AddressInfo::default()),
+            message_state: RwLock::new(MessageStateInfo::default()),
         };
         {
             let mut cache_info = cli.cache_info.write().await;

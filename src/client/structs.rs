@@ -91,3 +91,10 @@ pub struct FriendInfo {
     pub remark: String,
     pub face_id: i16,
 }
+
+#[derive(Debug, Default)]
+pub struct OtherClientInfo {
+    pub app_id: i64,
+    pub device_name: String,
+    pub device_kind: String,
+}
