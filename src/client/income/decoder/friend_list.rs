@@ -1,7 +1,10 @@
 use bytes::{Bytes};
 use jce_struct::Jce;
+use crate::client::Client;
+use crate::client::outcome::PbToBytes;
 use crate::client::structs::*;
 use crate::jce;
+use crate::pb::GroupMemberRspBody;
 
 #[derive(Debug, Default)]
 pub struct FriendListResponse {
@@ -63,5 +66,33 @@ pub fn decode_group_list_response(payload: &[u8]) -> Option<GroupListResponse> {
     Some(GroupListResponse {
         groups: l,
         vec_cookie,
+    })
+}
+
+pub async fn decode_group_member_info_response(cli: Client, payload: &[u8]) -> Option<GroupMemberInfo> {
+    let resp = GroupMemberRspBody::from_bytes(payload).unwrap();
+    if resp.mem_info.is_none() || (resp.mem_info.unwrap().age == 0) { // todo go => rsp.MemInfo.Nick == nil && rsp.MemInfo.Age == 0
+        return None
+    }
+    fn get_permission(payload: &[u8], group: GroupInfo) -> GroupMemberPermission {
+        let uin = GroupMemberRspBody::from_bytes(payload).unwrap().mem_info.unwrap().uin;
+        let role = GroupMemberRspBody::from_bytes(payload).unwrap().mem_info.unwrap().role;
+        return if uin == group.owner_uin { GroupMemberPermission::Owner }
+        else if role == 2 { GroupMemberPermission::Administrator }
+        else { GroupMemberPermission::Member }
+    }
+    Some(GroupMemberInfo {
+        group: cli.find_group(GroupMemberRspBody::from_bytes(payload).unwrap().group_code).await.unwrap(),
+        uin: GroupMemberRspBody::from_bytes(payload).unwrap().mem_info.unwrap().uin,
+        gender: GroupMemberRspBody::from_bytes(payload).unwrap().mem_info.as_ref()?.sex as u8,
+        nickname: String::from_utf8(GroupMemberRspBody::from_bytes(payload).unwrap().mem_info.as_ref()?.nick.to_vec()).unwrap(),
+        card_name: String::from_utf8(GroupMemberRspBody::from_bytes(payload).unwrap().mem_info?.card).unwrap(),
+        level: GroupMemberRspBody::from_bytes(payload).unwrap().mem_info.as_ref()?.level as u16,
+        join_time: GroupMemberRspBody::from_bytes(payload).unwrap().mem_info.as_ref()?.join,
+        last_speak_time: GroupMemberRspBody::from_bytes(payload).unwrap().mem_info.as_ref()?.last_speak,
+        special_title: String::from_utf8(GroupMemberRspBody::from_bytes(payload).unwrap().mem_info.as_ref()?.special_title.clone()).unwrap(),
+        special_title_expire_time: GroupMemberRspBody::from_bytes(payload).unwrap().mem_info.as_ref()?.special_title_expire_time as i64,
+        shut_up_timestamp: 0,
+        permission: get_permission(payload, cli.find_group(resp.group_code).await.unwrap())
     })
 }

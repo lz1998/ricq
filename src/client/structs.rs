@@ -38,7 +38,7 @@ pub struct BigDataReqSessionInfo {
 }
 
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct GroupInfo {
     pub uin: i64,
     pub code: i64,
@@ -55,8 +55,9 @@ pub struct GroupInfo {
     // lock: RWMutex todo
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct GroupMemberInfo {
+    pub group: GroupInfo,
     pub uin: i64,
     pub gender: u8,
     pub nickname: String,
@@ -70,7 +71,7 @@ pub struct GroupMemberInfo {
     pub permission: GroupMemberPermission,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum GroupMemberPermission {
     Owner = 1,
     Administrator = 2,

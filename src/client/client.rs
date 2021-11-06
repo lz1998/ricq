@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, AtomicU16, Ordering};
 use bytes::Bytes;
+use chrono::Utc;
 use rand::Rng;
 use tokio::sync::RwLock;
 use crate::client::device::{DeviceInfo};
@@ -11,6 +12,7 @@ use crate::client::outcome::OutcomePacket;
 use crate::client::version::{ClientProtocol, gen_version_info};
 use tokio::sync::oneshot;
 use crate::client::income::decoder::online_push::decode_group_message_packet;
+use crate::client::structs::GroupInfo;
 
 
 impl Client {
@@ -56,6 +58,56 @@ impl Client {
 
     pub fn next_packet_seq(&self) -> i32 {
         self.request_packet_request_id.fetch_add(1, Ordering::Relaxed)
+    }
+
+    pub async fn next_group_seq(&self) -> i32 {
+        self.message_state.read().await.group_seq + 2
+    }
+
+    pub async fn next_friend_seq(&self) -> i32 {
+        self.message_state.read().await.friend_seq + 1
+    }
+
+    pub async fn next_group_data_trans_seq(&self) -> i32 {
+        self.message_state.read().await.group_data_trans_seq + 2
+    }
+
+    pub async fn next_highway_apply_seq(&self) -> i32 {
+        self.message_state.read().await.highway_apply_up_seq + 2
+    }
+
+    pub async fn find_group(&self, code: i64) -> Option<GroupInfo> {
+        for g in &self.account_info.read().await.group_list {
+            if g.code == code {
+                return Some(g.clone())
+            }
+        }
+        None
+    }
+
+    pub async fn find_group_by_uin(&self, uin: i64) -> Option<GroupInfo> {
+        for g in &self.account_info.read().await.group_list {
+            if g.uin == uin {
+                return Some(g.clone())
+            }
+        }
+        None
+    }
+
+    pub async fn get_s_key(&self) -> String {
+        if self.cache_info.read().await.sig_info.s_key_expired_time < Utc::now().timestamp() && self.cache_info.read().await.g.len() > 0 {
+            println!("skey expired. refresh...");
+            self.send_and_wait(self.build_request_tgtgt_no_pic_sig_packet().await.into());
+        }
+        String::from_utf8(self.cache_info.read().await.sig_info.s_key.to_vec()).unwrap()
+    }
+
+    pub async fn get_csrf_token(&self) -> isize {
+        let mut accu = 5381;
+        for b in self.get_s_key().await.bytes() {
+            accu = accu + (accu << 5) + b as isize
+        }
+        2147483647 & accu
     }
 
     pub async fn handle_income_packet(&self, pkt: IncomePacket) {
