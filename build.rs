@@ -1,4 +1,5 @@
 use std::io::Result;
+
 fn main() -> Result<()> {
     prost_build::compile_protos(&[
         "src/pb/data.proto",
@@ -7,6 +8,8 @@ fn main() -> Result<()> {
         "src/pb/msg/objmsg.proto",
         "src/pb/msg/report.proto",
         "src/pb/structmsg/structmsg.proto",
+        "src/pb/cmd0x6ff/smbcmd0x519.proto",
+        "src/pb/cmd0x6ff/subcmd0x501.proto",
     ], &["src/pb"])?;
     Ok(())
 }

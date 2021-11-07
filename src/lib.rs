@@ -10,6 +10,8 @@ pub mod pb {
     pub mod structmsg { include!(concat!(env!("OUT_DIR"), "/structmsg.rs")); }
 
     pub mod msg { include!(concat!(env!("OUT_DIR"), "/msg.rs")); }
+
+    pub mod cmd0x6ff { include!(concat!(env!("OUT_DIR"), "/cmd0x6ff.rs")); }
 }
 
 pub mod protocol {
