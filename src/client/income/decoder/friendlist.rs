@@ -30,7 +30,6 @@ pub fn decode_friend_group_list_response(payload: &[u8]) -> Option<FriendListRes
 }
 
 
-
 #[derive(Debug)]
 pub struct GroupListResponse {
     pub groups: Vec<GroupInfo>,
@@ -85,7 +84,6 @@ pub fn decode_group_member_list_response(payload: &[u8]) -> Option<GroupMemberLi
     let mut l: Vec<GroupMemberInfo> = Vec::new();
     for m in members {
         l.push(GroupMemberInfo {
-            group_code: 0,
             uin: m.member_uin,
             gender: m.gender,
             nickname: m.nick,
@@ -100,6 +98,7 @@ pub fn decode_group_member_list_response(payload: &[u8]) -> Option<GroupMemberLi
                 1 => GroupMemberPermission::Administrator,
                 _ => GroupMemberPermission::Member,
             },
+            ..Default::default()
         })
     }
     Some(GroupMemberListResponse {

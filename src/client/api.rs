@@ -200,9 +200,40 @@ impl super::Client {
                 break;
             }
         }
-        let mut friend_list=self.friend_list.write().await;
+        let mut friend_list = self.friend_list.write().await;
         friend_list.clear();
         friend_list.append(&mut friends);
         Some(())
+    }
+
+    /// 获取群成员列表 (low level api)
+    async fn _get_group_member_list(&self, group_uin: i64, group_code: i64, next_uin: i64) -> Option<GroupMemberListResponse> {
+        let resp = self.send_and_wait(self.build_group_member_list_request_packet(group_uin, group_code, next_uin).await.into()).await?;
+        if resp.command_name != "friendlist.GetTroopMemberListReq" {
+            return None;
+        }
+        decode_group_member_list_response(&resp.payload)
+    }
+
+    /// 获取群成员列表
+    pub async fn get_group_member_list(&self, group_code: i64) -> Option<Vec<GroupMemberInfo>> {
+        let group_uin = self.find_group(group_code).await?.uin;
+        let mut next_uin = 0;
+        let mut list = Vec::new();
+        loop {
+            let mut resp = self._get_group_member_list(group_uin, group_code, next_uin).await?;
+            if resp.list.is_empty() {
+                return None;
+            }
+            for m in resp.list.iter_mut() {
+                m.group_code = group_code;
+            }
+            list.append(&mut resp.list);
+            next_uin = resp.next_uin;
+            if next_uin == 0 {
+                break;
+            }
+        }
+        Some(list)
     }
 }

@@ -87,6 +87,8 @@ async fn main() -> Result<()> {
         // ]).await;
         let mem_info = client.get_group_member_info(335783090, 875543543).await;
         println!("{:?}", mem_info);
+        let mem_list = client.get_group_member_list(335783090).await;
+        println!("{:?}", mem_list);
     });
     net.await;
 
