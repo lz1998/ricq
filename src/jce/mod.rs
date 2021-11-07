@@ -296,6 +296,14 @@ JceStruct!(PushMessageInfo {
     17 => from_name: String,
 });
 
+JceStruct!(SvcRespPushMsg {
+    0 => uin: i64,
+    1 => del_infos: Vec<DelMsgInfo>,
+    2 => svrip: i32,
+    3 => push_token: Bytes,
+    4 => service_type: i32,
+});
+
 JceStruct!(SvcReqGetDevLoginInfo {
     0 => guid: Bytes,
     1 => app_name: String,
