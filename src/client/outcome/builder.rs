@@ -411,6 +411,14 @@ impl crate::client::Client {
         return (seq, packet);
     }
 
+    // TODO 还没测试
+    pub async fn build_heartbeat_packet(&self) -> (u16, Bytes) {
+        let seq = self.next_seq();
+        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "Heartbeat.Alive", &self.device_info.read().await.imei, &[], &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.ksid);
+        let packet = build_login_packet(self.uin.load(Ordering::SeqCst), 0, &[], &sso, &[]);
+        (seq, packet)
+    }
+
     pub async fn build_friend_group_list_request_packet(&self, friend_start_index: i16, friend_list_count: i16, group_start_index: i16, group_list_count: i16) -> (u16, Bytes) {
         let seq = self.next_seq();
         let mut d50 = BytesMut::new();
