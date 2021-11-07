@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use bytes::Bytes;
+use tokio::sync::RwLock;
 
 #[derive(Default, Debug)]
 pub struct LoginSigInfo {
@@ -38,7 +39,7 @@ pub struct BigDataReqSessionInfo {
 }
 
 
-#[derive(Debug, Default, Clone)]
+#[derive(Debug, Default)]
 pub struct GroupInfo {
     pub uin: i64,
     pub code: i64,
@@ -49,7 +50,7 @@ pub struct GroupInfo {
     pub group_level: u32,
     pub member_count: u16,
     pub max_member_count: u16,
-    pub members: Vec<GroupMemberInfo>,
+    pub members: RwLock<Vec<GroupMemberInfo>>,
     // 最后一条信息的SEQ,只有通过 GetGroupInfo 函数获取的 GroupInfo 才会有
     pub last_msg_seq: i64,
     // lock: RWMutex todo

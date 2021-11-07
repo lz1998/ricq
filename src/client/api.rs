@@ -167,7 +167,8 @@ impl super::Client {
     }
 
     /// 刷新群列表 TODO 获取群成员列表
-    pub async fn reload_group_list(&self) -> Option<()> {
+    pub async fn reload_group_list(self: &Arc<Self>) -> Option<()> {
+        // 获取群列表
         let mut vec_cookie = Bytes::new();
         let mut groups = Vec::new();
         loop {
@@ -180,6 +181,27 @@ impl super::Client {
                 break;
             }
         }
+
+        // 对于每个群，获取群成员列表（最多10个群并发执行）
+        let semaphore = Arc::new(tokio::sync::Semaphore::new(10));
+        let mut handles = Vec::new();
+
+        for g in groups.iter_mut() {
+            let cli = self.clone();
+            let group = g.clone();
+            let permit = semaphore.clone().acquire_owned().await.unwrap();
+            handles.push(tokio::spawn(async move {
+                let mut mem_list = cli.get_group_member_list(group.code, group.uin).await?;
+                let mut members = group.members.write().await;
+                members.append(&mut mem_list);
+                drop(permit);
+                Some(())
+            }));
+        }
+        for h in handles {
+            h.await;
+        }
+
         let mut group_list = self.group_list.write().await;
         group_list.clear();
         group_list.append(&mut groups); // TODO 不知道会不会复制大量内存
@@ -216,8 +238,7 @@ impl super::Client {
     }
 
     /// 获取群成员列表
-    pub async fn get_group_member_list(&self, group_code: i64) -> Option<Vec<GroupMemberInfo>> {
-        let group_uin = self.find_group(group_code).await?.uin;
+    pub async fn get_group_member_list(&self, group_code: i64, group_uin: i64) -> Option<Vec<GroupMemberInfo>> {
         let mut next_uin = 0;
         let mut list = Vec::new();
         loop {

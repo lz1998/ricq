@@ -202,9 +202,10 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Option<Login
             cache_info.t104 = m.remove(&0x104).unwrap();
             cache_info.rand_seed = m.remove(&0x403).unwrap();
             let phone = {
-                let mut r = Bytes::from(m.remove(&0x178).unwrap());
-                let len = r.get_i32() as usize;
-                r.read_string_limit(len)
+                // let mut r = Bytes::from(m.remove(&0x178).unwrap());
+                // let len = r.get_i32() as usize;
+                // r.read_string_limit(len)
+                "phone_num".to_string()// 这里有问题
             };
             if m.contains_key(&0x204) {
                 return Some(LoginResponse::SMSOrVerifyNeededError {

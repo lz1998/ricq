@@ -40,6 +40,7 @@ async fn main() -> Result<()> {
                 LoginResponse::Success => { break; }
                 LoginResponse::SMSOrVerifyNeededError { ref verify_url, ref sms_phone, ref error_message } => {
                     println!("{}", error_message);
+                    println!("{}", sms_phone);
                     println!("手机打开url，处理完成后重启程序");
                     println!("{}", verify_url);
                     std::process::exit(0);
@@ -47,13 +48,16 @@ async fn main() -> Result<()> {
                     // 也可以走短信验证
                     // resp = client.request_sms().await.unwrap();
                 }
-                LoginResponse::SliderNeededError { .. } => {
+                LoginResponse::SliderNeededError { ref verify_url } => {
+                    println!("滑块URL: {}", verify_url);
                     println!("请输入ticket:");
                     let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
                     let ticket = reader.next().await.transpose().unwrap().unwrap();
                     resp = client.submit_ticket(&ticket).await.unwrap();
                 }
-                LoginResponse::SMSNeededError { .. } => {
+                LoginResponse::SMSNeededError { ref sms_phone, ref error_message } => {
+                    println!("{}", sms_phone);
+                    println!("{}", error_message);
                     println!("请输入短信验证码:");
                     let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
                     let sms_code = reader.next().await.transpose().unwrap().unwrap();
@@ -79,16 +83,20 @@ async fn main() -> Result<()> {
             client.reload_friend_list().await;
             println!("{:?}", client.friend_list.read().await);
             client.reload_group_list().await;
-            println!("{:?}", client.group_list.read().await);
+            let group_list = client.group_list.read().await;
+            for g in group_list.iter() {
+                println!("{:?}", g.members.read().await);
+            }
+            // println!("{:?}", group_list);
         }
         // client.send_group_message(335783090, vec![
         //     Msg::At { target: 875543533, display: "@lz1998".to_string() },
         //     Msg::Text { content: "xxx".to_string() },
         // ]).await;
-        let mem_info = client.get_group_member_info(335783090, 875543543).await;
-        println!("{:?}", mem_info);
-        let mem_list = client.get_group_member_list(335783090).await;
-        println!("{:?}", mem_list);
+        // let mem_info = client.get_group_member_info(335783090, 875543543).await;
+        // println!("{:?}", mem_info);
+        // let mem_list = client.get_group_member_list(335783090).await;
+        // println!("{:?}", mem_list);
     });
     net.await;
 

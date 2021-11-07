@@ -54,10 +54,7 @@ pub fn decode_group_list_response(payload: &[u8]) -> Option<GroupListResponse> {
             owner_uin: g.group_owner_uin,
             member_count: g.member_num as u16,
             max_member_count: g.max_group_member_num as u16,
-            group_create_time: 0,
-            group_level: 0,
-            members: vec![],
-            last_msg_seq: 0,
+            ..Default::default()
         })
     }
     Some(GroupListResponse {
