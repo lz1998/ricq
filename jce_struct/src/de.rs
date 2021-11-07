@@ -266,7 +266,7 @@ impl JceGet for String {
             jce.b.get_i32()
         };
         let bytes = jce.b.copy_to_bytes(len as usize);
-        String::from_utf8(bytes.to_vec()).unwrap()
+        String::from_utf8_lossy(&bytes).to_string()
     }
 
     fn empty() -> Self {
