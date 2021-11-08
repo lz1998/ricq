@@ -2,6 +2,7 @@ use bytes::{Buf, Bytes};
 use crate::client::income::decoder::online_push::OnlinePushTrans::{MemberKicked, MemberLeave, MemberPermissionChanged};
 use crate::client::outcome::PbToBytes;
 use crate::client::structs::{GroupMemberPermission};
+use crate::pb;
 use crate::pb::msg;
 use crate::pb::msg::{PushMessagePacket, TransMsgInfo};
 
@@ -127,4 +128,25 @@ pub fn decode_group_message_packet(payload: &[u8]) -> Option<GroupMessagePart> {
         div_seq: message.content.as_ref().unwrap().div_seq.unwrap(),
         ptt: message.body.as_ref().unwrap().rich_text.as_ref().unwrap().ptt.clone(),
     });
+}
+
+struct FriendMessageRecalledEvent {
+    friend_uin: i64,
+    message_id: i32,
+    time: i64,
+}
+
+fn msg_type_0x210_sub8a_decoder(uin: i64, protobuf: &[u8]) -> Option<Vec<FriendMessageRecalledEvent>> {
+    let s8a = pb::Sub8A::from_bytes(protobuf).unwrap();
+    let mut buf = Vec::new();
+    for m in s8a.msg_info {
+        if m.to_uin == uin {
+            buf.push(FriendMessageRecalledEvent {
+                friend_uin: m.from_uin,
+                message_id: m.msg_seq,
+                time: m.msg_time
+            })
+        }
+    }
+    return if buf.len() > 0 { Some(buf) } else { None }
 }
