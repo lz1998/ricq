@@ -1,7 +1,7 @@
 use bytes::{Buf, Bytes};
 use crate::client::income::decoder::online_push::OnlinePushTrans::{MemberKicked, MemberLeave, MemberPermissionChanged};
 use crate::client::outcome::PbToBytes;
-use crate::client::structs::{GroupMemberPermission};
+use crate::client::structs::{FriendInfo, GroupMemberPermission};
 use crate::pb;
 use crate::pb::msg;
 use crate::pb::msg::{PushMessagePacket, TransMsgInfo};
@@ -130,14 +130,18 @@ pub fn decode_group_message_packet(payload: &[u8]) -> Option<GroupMessagePart> {
     });
 }
 
-struct FriendMessageRecalledEvent {
+pub struct FriendMessageRecalledEvent {
     friend_uin: i64,
     message_id: i32,
     time: i64,
 }
 
-fn msg_type_0x210_sub8a_decoder(uin: i64, protobuf: &[u8]) -> Option<Vec<FriendMessageRecalledEvent>> {
-    let s8a = pb::Sub8A::from_bytes(protobuf).unwrap();
+pub fn msg_type_0x210_sub8a_decoder(uin: i64, protobuf: &[u8]) -> Option<Vec<FriendMessageRecalledEvent>> {
+    let s8a = pb::Sub8A::from_bytes(protobuf);
+    if s8a.is_err() {
+        return None
+    }
+    let s8a = s8a.unwrap();
     let mut buf = Vec::new();
     for m in s8a.msg_info {
         if m.to_uin == uin {
@@ -149,4 +153,24 @@ fn msg_type_0x210_sub8a_decoder(uin: i64, protobuf: &[u8]) -> Option<Vec<FriendM
         }
     }
     return if buf.len() > 0 { Some(buf) } else { None }
+}
+
+pub struct NewFriendEvent {
+    friend: FriendInfo,
+}
+
+pub fn msg_type_0x210_subb3_decoder(protobuf: &[u8]) -> Option<NewFriendEvent> {
+    let b3 = pb::SubB3::from_bytes(protobuf);
+    if b3.is_err() {
+        return None
+    }
+    let b3 = b3.unwrap();
+    let friend = FriendInfo {
+        uin: b3.msg_add_frd_notify.as_ref().unwrap().uin,
+        nick: b3.msg_add_frd_notify.unwrap().nick,
+        ..Default::default()
+    };
+    Some(NewFriendEvent {
+        friend
+    })
 }
