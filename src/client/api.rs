@@ -183,7 +183,7 @@ impl super::Client {
         }
 
         // 对于每个群，获取群成员列表（最多10个群并发执行）
-        let semaphore = Arc::new(tokio::sync::Semaphore::new(10));
+        let semaphore = Arc::new(tokio::sync::Semaphore::new(50));
         let mut handles = Vec::new();
 
         for g in groups.iter_mut() {

@@ -22,7 +22,7 @@ impl ClientNet {
         Self { client, receiver }
     }
     pub async fn connect_tcp(&self) -> TcpStream {
-        match connect("42.81.172.81:80".parse().unwrap()).await {
+        match connect("42.81.176.211:443".parse().unwrap()).await {
             Ok(stream) => {
                 self.client.connected.swap(true, Ordering::SeqCst);
                 stream
@@ -32,45 +32,26 @@ impl ClientNet {
             }
         }
     }
-    pub async fn send_bytes_to_tcp_stream(
-        &mut self,
-        stream: &mut TcpStream,
-        bytes: Bytes,
-    ) -> IoResult<()> {
-        stream.writable().await?;
-        stream.write(&bytes).await?;
-        Ok(())
-    }
-
-    pub async fn read_from_tcp_stream(stream: &mut TcpStream) -> IoResult<Bytes> {
-        stream.readable().await?;
-        let len = stream.read_i32().await?;
-        if len - 4 < 0 {
-            panic!("packet len < 0 ({})", len)
-        }
-        let mut data = vec![0; len as usize - 4];
-        stream.read_exact(&mut data).await?;
-        Ok(Bytes::from(data))
-    }
 
     pub async fn net_loop(mut self, mut stream: TcpStream) -> IoResult<()> {
-        loop {
-            tokio::select! {
-                bytes_result = Self::read_from_tcp_stream(&mut stream) => {
-                    match bytes_result {
-                        Ok(mut b)=>{
-                            let pkt=self.client.parse_incoming_packet(&mut b).await.unwrap();
-                            self.client.handle_income_packet(pkt).await;
-                        }
-                        Err(_)=>{}
-                    };
+        let (mut read_half, mut write_half) = stream.into_split();
+        let cli = self.client.clone();
+        let a = tokio::spawn(async move {
+            loop {
+                let len = read_half.read_i32().await.unwrap();
+                if len - 4 < 0 {
+                    panic!("invalid packet length: {}", len);
                 }
-                bytes_option = self.receiver.recv() => {
-                    if let Some(bytes) = bytes_option {
-                        self.send_bytes_to_tcp_stream(&mut stream, bytes).await?;
-                    }
-                }
+                let mut data = vec![0; len as usize - 4];
+                read_half.read_exact(&mut data).await.unwrap();
+                let mut data = Bytes::from(data);
+                let pkt = cli.parse_incoming_packet(&mut data).await.unwrap();
+                cli.handle_income_packet(pkt).await;
             }
+        });
+        loop {
+            let sending = self.receiver.recv().await.unwrap();
+            write_half.write_all(&sending).await;
         }
     }
 }
