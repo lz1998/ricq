@@ -2,8 +2,8 @@ use crate::client::income::decoder::config_push_svc::decode_push_req_packet;
 use crate::client::income::decoder::online_push::decode_group_message_packet;
 use crate::client::income::IncomePacket;
 
-pub mod group;
-pub mod config;
+pub mod online_push;
+pub mod config_push_svc;
 
 impl super::Client{
     pub async fn process_income_packet(&self, pkt: IncomePacket) {

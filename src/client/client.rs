@@ -7,6 +7,7 @@ use crate::client::income::IncomePacket;
 use crate::client::outcome::OutcomePacket;
 use crate::client::version::{ClientProtocol, gen_version_info};
 use tokio::sync::oneshot;
+use tokio::time::{Duration, sleep};
 use super::Client;
 use crate::client::Password;
 use super::net;
@@ -32,6 +33,7 @@ impl super::Client {
             uin: AtomicI64::new(uin),
             password_md5: password.md5(),
             connected: AtomicBool::new(false),
+            heartbeat_enabled: AtomicBool::new(false),
             online: AtomicBool::new(false),
             out_pkt_sender,
             random_key: Bytes::from(rand::thread_rng().gen::<[u8; 16]>().to_vec()),
@@ -97,5 +99,26 @@ impl super::Client {
             packet_promises.remove(&pkt.seq);
         }
         output
+    }
+
+    pub async fn do_heartbeat(&self) {
+        self.heartbeat_enabled.store(true, Ordering::SeqCst);
+        let mut times = 0;
+        while self.online.load(Ordering::SeqCst) {
+            sleep(Duration::from_secs(30)).await;
+            match self.send_and_wait(self.build_heartbeat_packet().await.into()).await {
+                None => {
+                    continue;
+                }
+                Some(_) => {
+                    times += 1;
+                    if times >= 7 {
+                        self.register_client().await;
+                        times = 0;
+                    }
+                }
+            }
+        }
+        self.heartbeat_enabled.store(false, Ordering::SeqCst);
     }
 }

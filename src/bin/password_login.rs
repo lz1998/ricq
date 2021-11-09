@@ -78,6 +78,10 @@ async fn main() -> Result<()> {
         }
         println!("{:?}", resp);
         client.register_client().await;
+        let c=client.clone();
+        tokio::spawn(async move {
+            c.do_heartbeat().await;
+        });
         {
             client.reload_friend_list().await;
             println!("{:?}", client.friend_list.read().await);

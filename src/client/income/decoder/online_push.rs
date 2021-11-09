@@ -1,11 +1,107 @@
 use bytes::{Buf, Bytes};
+use jce_struct::Jce;
 use crate::client::income::decoder::online_push::OnlinePushTrans::{MemberKicked, MemberLeave, MemberPermissionChanged};
 use crate::client::outcome::PbToBytes;
-use crate::client::structs::{FriendInfo,  GroupMemberPermission};
+use crate::client::structs::{FriendInfo, GroupMemberPermission};
+use crate::jce;
 use crate::pb;
 use crate::pb::msg;
 use crate::pb::msg::{PushMessagePacket, TransMsgInfo};
 use crate::pb::notify::GeneralGrayTipInfo;
+
+#[derive(Debug, Default)]
+pub struct ReqPush {
+    resp: ReqPushResp,
+    push_infos: Vec<PushInfo>,
+}
+
+#[derive(Debug, Default)]
+pub struct ReqPushResp {
+    uin: i64,
+    msg_infos: Vec<jce::PushMessageInfo>,
+}
+
+#[derive(Debug, Default)]
+pub struct PushInfo {
+    msg_seq: i16,
+    msg_time: i64,
+    msg_uid: i64,
+    push_msg: PushMsg,
+}
+
+#[derive(Debug)]
+pub enum PushMsg {
+    Unknown,
+    T0x2dc {
+        group_mute_events: Vec<GroupMuteEvent>,
+        group_recalled_events: Vec<GroupMessageRecalledEvent>,
+        group_red_bag_lucky_king_events: Vec<GroupRedBagLuckyKingNotifyEvent>,
+        group_digest_events: Vec<GroupDigestEvent>,
+    },
+    T0x210 {},
+}
+
+impl Default for PushMsg {
+    fn default() -> Self {
+        Self::Unknown
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct GroupMuteEvent {}
+
+#[derive(Debug, Default)]
+pub struct GroupMessageRecalledEvent {}
+
+#[derive(Debug, Default)]
+pub struct GroupRedBagLuckyKingNotifyEvent {}
+
+#[derive(Debug, Default)]
+pub struct GroupDigestEvent {}
+
+// todo decode_online_push_req_packet
+pub fn decode_online_push_req_packet(payload: &[u8]) -> Option<ReqPush> {
+    let mut payload = Bytes::from(payload.to_owned());
+    let mut request: jce::RequestPacket = Jce::read_from_bytes(&mut payload);
+    let mut data: jce::RequestDataVersion2 = Jce::read_from_bytes(&mut request.s_buffer);
+    let mut req = data.map.remove("req").unwrap();
+    let mut msg = req.remove("OnlinePushPack.SvcReqPushMsg").unwrap();
+    let mut jr = Jce::new(&mut msg);
+    let uin: i64 = jr.get_by_tag(0);
+    let msg_infos: Vec<jce::PushMessageInfo> = jr.get_by_tag(2);
+
+    let infos: Vec<PushInfo> = msg_infos.iter().map(|m| {
+        let mut info = PushInfo {
+            msg_seq: m.msg_seq,
+            msg_time: m.msg_time,
+            msg_uid: m.msg_uid,
+            ..Default::default()
+        };
+        match m.msg_type {
+            732 => {
+                let mut r = m.v_msg.clone();
+                let group_code = r.get_i32() as i64;
+                let i_type = r.get_u8();
+                r.get_u8();
+                match i_type {
+                    0x0c => {}
+                    0x10 | 0x11 | 0x14 | 0x15 => {}
+                    _ => {}
+                }
+            }
+            528 => {}
+            _ => {}
+        }
+        info
+    }).collect();
+    Some(ReqPush {
+        resp: ReqPushResp {
+            uin,
+            msg_infos,
+        },
+        ..Default::default()
+    })
+}
 
 pub enum OnlinePushTrans {
     MemberLeave {
