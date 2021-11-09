@@ -684,6 +684,39 @@ impl crate::client::Client {
         let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "friendlist.GetTroopMemberListReq", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
         return (seq, packet);
     }
+
+    pub async fn build_delete_online_push_packet(&self, uin: i64, svrip: i32, push_token: Bytes, seq: u16, del_msg: Vec<PushMessageInfo>) -> Bytes {
+        let mut req = SvcRespPushMsg {
+            uin,
+            svrip,
+            push_token,
+            ..Default::default()
+        };
+        for m in del_msg {
+            req.del_infos.push(DelMsgInfo {
+                from_uin: m.from_uin,
+                msg_time: m.msg_time,
+                msg_seq: m.msg_seq,
+                msg_cookies: m.msg_cookies,
+                ..Default::default()
+            })
+        }
+        let b = pack_uni_request_data(&req.build());
+        let buf = RequestDataVersion3 {
+            map: HashMap::from([
+                ("resp".to_string(), b.into())
+            ])
+        };
+        let pkt = RequestPacket {
+            i_version: 3,
+            i_request_id: seq as i32,
+            s_servant_name: "OnlinePush".to_string(),
+            s_func_name: "SvcRespPushMsg".to_string(),
+            s_buffer: buf.build(),
+            ..Default::default()
+        };
+        build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "OnlinePush.RespPush", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build())
+    }
 }
 
 

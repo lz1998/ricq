@@ -1,9 +1,12 @@
 use bytes::{Buf, Bytes};
+use crate::client::Client;
 use crate::client::income::decoder::online_push::OnlinePushTrans::{MemberKicked, MemberLeave, MemberPermissionChanged};
 use crate::client::outcome::PbToBytes;
-use crate::client::structs::{GroupMemberPermission};
+use crate::client::structs::{FriendInfo, GroupInfo, GroupMemberInfo, GroupMemberPermission};
+use crate::pb;
 use crate::pb::msg;
 use crate::pb::msg::{PushMessagePacket, TransMsgInfo};
+use crate::pb::notify::GeneralGrayTipInfo;
 
 pub enum OnlinePushTrans {
     MemberLeave {
@@ -127,4 +130,136 @@ pub fn decode_group_message_packet(payload: &[u8]) -> Option<GroupMessagePart> {
         div_seq: message.content.as_ref().unwrap().div_seq.unwrap(),
         ptt: message.body.as_ref().unwrap().rich_text.as_ref().unwrap().ptt.clone(),
     });
+}
+
+pub struct FriendMessageRecalledEvent {
+    friend_uin: i64,
+    message_id: i32,
+    time: i64,
+}
+
+pub fn msg_type_0x210_sub8a_decoder(uin: i64, protobuf: &[u8]) -> Option<Vec<FriendMessageRecalledEvent>> {
+    let s8a = pb::Sub8A::from_bytes(protobuf);
+    if s8a.is_err() {
+        return None
+    }
+    let s8a = s8a.unwrap();
+    let mut buf = Vec::new();
+    for m in s8a.msg_info {
+        if m.to_uin == uin {
+            buf.push(FriendMessageRecalledEvent {
+                friend_uin: m.from_uin,
+                message_id: m.msg_seq,
+                time: m.msg_time
+            })
+        }
+    }
+    return if buf.len() > 0 { Some(buf) } else { None }
+}
+
+pub struct NewFriendEvent {
+    friend: FriendInfo,
+}
+
+pub fn msg_type_0x210_subb3_decoder(protobuf: &[u8]) -> Option<NewFriendEvent> {
+    let b3 = pb::SubB3::from_bytes(protobuf);
+    if b3.is_err() {
+        return None
+    }
+    let b3 = b3.unwrap();
+    let friend = FriendInfo {
+        uin: b3.msg_add_frd_notify.as_ref().unwrap().uin,
+        nick: b3.msg_add_frd_notify.unwrap().nick,
+        ..Default::default()
+    };
+    Some(NewFriendEvent {
+        friend
+    })
+}
+
+pub struct GroupLeaveEvent {
+    group: GroupInfo,
+    operator: GroupMemberInfo,
+}
+
+// return group number
+pub fn msg_type_0x210_subd4_decoder(protobuf: &[u8]) -> Option<i64> {
+    let d4 = pb::SubD4::from_bytes(protobuf);
+    if d4.is_err() {
+        return None
+    }
+    let d4 = d4.unwrap();
+    Some(d4.uin)
+}
+
+// todo msg_type_0x210_sub27_decoder
+pub fn msg_type_0x210_sub27_decoder(protobuf: &[u8]) -> Option<u64> {
+    let s27 = pb::msgtype0x210::SubMsg0x27Body::from_bytes(protobuf);
+    if s27.is_err() {
+        return None
+    }
+    let s27 = s27.unwrap();
+    for m in s27.mod_infos {
+        if !m.mod_group_profile.is_none() {
+            for info in &m.mod_group_profile.as_ref().unwrap().group_profile_infos {
+                if !info.field.is_none() && info.field.unwrap() == 1 {
+                    return Some(m.mod_group_profile.unwrap().group_code.unwrap());
+                }
+            }
+        }
+        if !m.del_friend.is_none() {
+            // reload friend list
+        }
+    }
+    None
+}
+
+pub struct FriendPokeNotifyEvent {
+    sender: i64,
+    receiver: i64,
+}
+
+pub fn msg_type_0x210_sub122_decoder(protobuf: &[u8]) -> Option<FriendPokeNotifyEvent> {
+    let t = GeneralGrayTipInfo::from_bytes(protobuf);
+    if t.is_err() {
+        return None
+    }
+    let t = t.unwrap();
+    let mut sender: i64 = 0;
+    let mut receiver: i64 = 0;
+    for templ in t.msg_templ_param {
+        if templ.name == "uin_str1" {
+            sender = templ.value.parse::<i64>().unwrap()
+        } else if templ.name == "uin_str2" {
+            receiver = templ.value.parse::<i64>().unwrap()
+        }
+    }
+    return if sender == 0 {
+        None
+    } else {
+        Some(FriendPokeNotifyEvent {
+            sender,
+            receiver
+        })
+    }
+}
+
+// todo msg_type_0x210_sub44_decoder
+pub fn msg_type_0x210_sub44_decoder(protobuf: &[u8]) -> Option<()> {
+    let b44 = pb::Sub44::from_bytes(protobuf);
+    if b44.is_err() {
+        return None
+    }
+    let b44 = b44.unwrap();
+    if b44.group_sync_msg.is_none() {
+        return None
+    }
+    if b44.group_sync_msg.unwrap().grp_code != 0 {
+        eprintln!("invalid group code");
+        return None
+    }
+    if true { // if group := c.FindGroup(s44.GroupSyncMsg.GetGrpCode()); group != nil {
+
+    }
+    None
 }

@@ -10,6 +10,8 @@ fn main() -> Result<()> {
         "src/pb/structmsg/structmsg.proto",
         "src/pb/cmd0x6ff/smbcmd0x519.proto",
         "src/pb/cmd0x6ff/subcmd0x501.proto",
+        "src/pb/notify/group0x857.proto",
+        "src/pb/msgtype0x210/subMsgType0x27.proto",
     ], &["src/pb"])?;
     Ok(())
 }
