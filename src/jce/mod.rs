@@ -285,7 +285,7 @@ JceStruct!(PushMessageInfo {
     4 => msg: String,
     5 => real_msg_time: i32,
     6 => v_msg: Bytes,
-    7 => app_share_i_d: i64,
+    7 => app_share_id: i64,
     8 => msg_cookies: Bytes,
     9 => app_share_cookie: Bytes,
     10 => msg_uid: i64,

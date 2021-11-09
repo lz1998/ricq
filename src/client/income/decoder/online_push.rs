@@ -141,20 +141,20 @@ pub struct FriendMessageRecalledEvent {
 pub fn msg_type_0x210_sub8a_decoder(uin: i64, protobuf: &[u8]) -> Option<Vec<FriendMessageRecalledEvent>> {
     let s8a = pb::Sub8A::from_bytes(protobuf);
     if s8a.is_err() {
-        return None
+        return None;
     }
     let s8a = s8a.unwrap();
-    let mut buf = Vec::new();
+    let mut events = Vec::new();
     for m in s8a.msg_info {
         if m.to_uin == uin {
-            buf.push(FriendMessageRecalledEvent {
+            events.push(FriendMessageRecalledEvent {
                 friend_uin: m.from_uin,
                 message_id: m.msg_seq,
-                time: m.msg_time
+                time: m.msg_time,
             })
         }
     }
-    return if buf.len() > 0 { Some(buf) } else { None }
+    return if events.len() > 0 { Some(events) } else { None };
 }
 
 pub struct NewFriendEvent {
@@ -164,7 +164,7 @@ pub struct NewFriendEvent {
 pub fn msg_type_0x210_subb3_decoder(protobuf: &[u8]) -> Option<NewFriendEvent> {
     let b3 = pb::SubB3::from_bytes(protobuf);
     if b3.is_err() {
-        return None
+        return None;
     }
     let b3 = b3.unwrap();
     let friend = FriendInfo {
@@ -177,41 +177,64 @@ pub fn msg_type_0x210_subb3_decoder(protobuf: &[u8]) -> Option<NewFriendEvent> {
     })
 }
 
+#[derive(Debug, Default)]
 pub struct GroupLeaveEvent {
-    group: GroupInfo,
-    operator: GroupMemberInfo,
+    group_code: i64,
+    operator: i64,
 }
 
-// return group number
-pub fn msg_type_0x210_subd4_decoder(protobuf: &[u8]) -> Option<i64> {
+// return group number group leave
+pub fn msg_type_0x210_subd4_decoder(protobuf: &[u8]) -> Option<GroupLeaveEvent> {
     let d4 = pb::SubD4::from_bytes(protobuf);
     if d4.is_err() {
-        return None
+        return None;
     }
     let d4 = d4.unwrap();
-    Some(d4.uin)
+    Some(GroupLeaveEvent {
+        group_code: d4.uin,
+        ..Default::default()
+    })
 }
 
-// todo msg_type_0x210_sub27_decoder
-pub fn msg_type_0x210_sub27_decoder(protobuf: &[u8]) -> Option<u64> {
+#[derive(Debug, Default)]
+pub struct Sub0x27Event {
+    group_name_updated_events: Vec<GroupNameUpdatedEvent>,
+    del_friend_events: Vec<i64>,
+}
+
+#[derive(Debug, Default)]
+pub struct GroupNameUpdatedEvent {
+    group_code: i64,
+    new_name: String,
+    operator_uin: i64,
+}
+
+pub fn msg_type_0x210_sub27_decoder(protobuf: &[u8]) -> Option<Sub0x27Event> {
     let s27 = pb::msgtype0x210::SubMsg0x27Body::from_bytes(protobuf);
     if s27.is_err() {
-        return None
+        return None;
     }
     let s27 = s27.unwrap();
+    let mut sub_0x27_event = Sub0x27Event::default();
     for m in s27.mod_infos {
-        if !m.mod_group_profile.is_none() {
-            for info in &m.mod_group_profile.as_ref().unwrap().group_profile_infos {
-                if !info.field.is_none() && info.field.unwrap() == 1 {
-                    return Some(m.mod_group_profile.unwrap().group_code.unwrap());
+        if let Some(ref profile) = m.mod_group_profile {
+            for info in profile.group_profile_infos.iter() {
+                if let Some(field) = info.field {
+                    if field == 1 {
+                        sub_0x27_event.group_name_updated_events.push(GroupNameUpdatedEvent {
+                            group_code: profile.group_code.unwrap_or(0) as i64,
+                            new_name: String::from_utf8_lossy(&info.value.as_ref().unwrap_or(&vec![])).to_string(),
+                            operator_uin: profile.cmd_uin.unwrap_or(0) as i64,
+                        });
+                    }
                 }
             }
         }
-        if !m.del_friend.is_none() {
-            // reload friend list
+        if let Some(ref del_friend) = m.del_friend {
+            sub_0x27_event.del_friend_events.append(&mut del_friend.uins.iter().map(|uin| *uin as i64).collect())
         }
     }
-    None
+    Some(sub_0x27_event)
 }
 
 pub struct FriendPokeNotifyEvent {
@@ -222,16 +245,16 @@ pub struct FriendPokeNotifyEvent {
 pub fn msg_type_0x210_sub122_decoder(protobuf: &[u8]) -> Option<FriendPokeNotifyEvent> {
     let t = GeneralGrayTipInfo::from_bytes(protobuf);
     if t.is_err() {
-        return None
+        return None;
     }
     let t = t.unwrap();
     let mut sender: i64 = 0;
     let mut receiver: i64 = 0;
     for templ in t.msg_templ_param {
         if templ.name == "uin_str1" {
-            sender = templ.value.parse::<i64>().unwrap()
+            sender = templ.value.parse::<i64>().unwrap_or(0)
         } else if templ.name == "uin_str2" {
-            receiver = templ.value.parse::<i64>().unwrap()
+            receiver = templ.value.parse::<i64>().unwrap_or(0)
         }
     }
     return if sender == 0 {
@@ -239,27 +262,28 @@ pub fn msg_type_0x210_sub122_decoder(protobuf: &[u8]) -> Option<FriendPokeNotify
     } else {
         Some(FriendPokeNotifyEvent {
             sender,
-            receiver
+            receiver,
         })
-    }
+    };
 }
 
-// todo msg_type_0x210_sub44_decoder
-pub fn msg_type_0x210_sub44_decoder(protobuf: &[u8]) -> Option<()> {
+// 需要同步群成员
+pub struct GroupMemberNeedSync {
+    group_code: i64,
+}
+
+pub fn msg_type_0x210_sub44_decoder(protobuf: &[u8]) -> Option<GroupMemberNeedSync> {
     let b44 = pb::Sub44::from_bytes(protobuf);
     if b44.is_err() {
-        return None
+        return None;
     }
     let b44 = b44.unwrap();
     if b44.group_sync_msg.is_none() {
-        return None
+        return None;
     }
-    if b44.group_sync_msg.unwrap().grp_code != 0 {
-        eprintln!("invalid group code");
-        return None
-    }
-    if true { // if group := c.FindGroup(s44.GroupSyncMsg.GetGrpCode()); group != nil {
-
+    let group_code = b44.group_sync_msg?.grp_code;
+    if group_code != 0 {
+        return Some(GroupMemberNeedSync { group_code });
     }
     None
 }
