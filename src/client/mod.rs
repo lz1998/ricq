@@ -36,6 +36,7 @@ pub struct Client {
     pub password_md5: Bytes,
     pub ecdh: EncryptECDH,
     pub connected: AtomicBool,
+    pub heartbeat_enabled: AtomicBool,
     pub online: AtomicBool,
 
     pub out_pkt_sender: net::OutPktSender,
