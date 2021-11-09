@@ -97,9 +97,6 @@ impl IEncryptMethod for EncryptSession {
 #[cfg(test)]
 mod tests {
     use std::ops::Mul;
-    use openssl::bn::{BigNum, BigNumContext};
-    use openssl::ec::{EcGroup, EcPoint, EcKey, PointConversionForm};
-    use openssl::nid::Nid;
     use crate::crypto::{EncryptECDH, IEncryptMethod};
     use crate::hex::decode_hex;
     use md5;

@@ -87,7 +87,7 @@ impl JceMut {
     // should impl in JcePut
     // this is just a demo
 
-    puts!(put_bytes, Vec<u8>); // 13
+    puts!(put_bytes, Bytes); // 13
 }
 
 /// trait for Object can put to Jce Package

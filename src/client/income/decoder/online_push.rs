@@ -1,8 +1,7 @@
 use bytes::{Buf, Bytes};
-use crate::client::Client;
 use crate::client::income::decoder::online_push::OnlinePushTrans::{MemberKicked, MemberLeave, MemberPermissionChanged};
 use crate::client::outcome::PbToBytes;
-use crate::client::structs::{FriendInfo, GroupInfo, GroupMemberInfo, GroupMemberPermission};
+use crate::client::structs::{FriendInfo,  GroupMemberPermission};
 use crate::pb;
 use crate::pb::msg;
 use crate::pb::msg::{PushMessagePacket, TransMsgInfo};

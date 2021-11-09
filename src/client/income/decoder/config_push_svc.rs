@@ -1,15 +1,16 @@
-use bytes::{Buf, Bytes};
+use bytes::Bytes;
 use jce_struct::Jce;
-use crate::client::structs::BigDataReqSessionInfo;
 use crate::jce;
 use crate::pb;
 use crate::client::outcome::PbToBytes;
 
+#[derive(Default, Debug)]
 pub struct ConfigPushReq {
     pub resp: ConfigPushResp,
     pub body: ConfigPushBody,
 }
 
+#[derive(Debug)]
 pub enum ConfigPushBody {
     Unknown,
     SsoServers {
@@ -21,6 +22,13 @@ pub enum ConfigPushBody {
     },
 }
 
+impl Default for ConfigPushBody {
+    fn default() -> Self {
+        Self::Unknown
+    }
+}
+
+#[derive(Default, Debug)]
 pub struct ConfigPushResp {
     pub t: i32,
     pub pkt_seq: i64,

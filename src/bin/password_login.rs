@@ -7,7 +7,6 @@ use tokio_util::codec::{FramedRead, LinesCodec};
 use rs_qq::client::{Client, Password};
 use rs_qq::client::income::decoder::wtlogin::LoginResponse;
 use rs_qq::client::net::ClientNet;
-use rs_qq::client::msg::Msg;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -84,10 +83,6 @@ async fn main() -> Result<()> {
             println!("{:?}", client.friend_list.read().await);
             client.reload_group_list().await;
             let group_list = client.group_list.read().await;
-            for g in group_list.iter() {
-                println!("{:?}", g.members.read().await);
-            }
-            // println!("{:?}", group_list);
         }
         // client.send_group_message(335783090, vec![
         //     Msg::At { target: 875543533, display: "@lz1998".to_string() },

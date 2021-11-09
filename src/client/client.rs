@@ -8,7 +8,6 @@ use crate::client::outcome::OutcomePacket;
 use crate::client::version::{ClientProtocol, gen_version_info};
 use tokio::sync::oneshot;
 use super::Client;
-use crate::client::income::decoder::online_push::decode_group_message_packet;
 use crate::client::Password;
 use super::net;
 
@@ -76,19 +75,8 @@ impl super::Client {
 
     pub fn next_highway_apply_seq(&self) -> i32 { self.highway_apply_up_seq.fetch_add(2, Ordering::Relaxed) }
 
-    pub async fn handle_income_packet(&self, pkt: IncomePacket) {
-        // response
-        if let Some(sender) = self.packet_promises.write().await.remove(&pkt.seq_id) {
-            sender.send(pkt); // response
-            return;
-        }
-        // TODO decoders -> default handlers
-        if pkt.command_name == "OnlinePush.PbPushGroupMsg" {
-            let msg = decode_group_message_packet(&pkt.payload).unwrap();
-            println!("{:?}", msg);
-            return;
-        }
-        println!("unhandled pkt: {}", &pkt.command_name);
+    pub async fn send(&self, pkt: OutcomePacket) {
+        self.out_pkt_sender.send(pkt.bytes);
     }
 
     pub async fn send_and_wait(&self, pkt: OutcomePacket) -> Option<IncomePacket> {

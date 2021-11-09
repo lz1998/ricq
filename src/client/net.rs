@@ -33,7 +33,7 @@ impl ClientNet {
         }
     }
 
-    pub async fn net_loop(mut self, mut stream: TcpStream) -> IoResult<()> {
+    pub async fn net_loop(mut self, stream: TcpStream) -> IoResult<()> {
         let (mut read_half, mut write_half) = stream.into_split();
         let cli = self.client.clone();
         let a = tokio::spawn(async move {
@@ -46,13 +46,18 @@ impl ClientNet {
                 read_half.read_exact(&mut data).await.unwrap();
                 let mut data = Bytes::from(data);
                 let pkt = cli.parse_incoming_packet(&mut data).await.unwrap();
-                cli.handle_income_packet(pkt).await;
+                cli.process_income_packet(pkt).await;
             }
         });
         loop {
             let sending = self.receiver.recv().await.unwrap();
-            write_half.write_all(&sending).await;
+            if write_half.write_all(&sending).await.is_err() {
+                break;
+            }
         }
+        // TODO dispatch disconnect event
+        a.abort();
+        Ok(())
     }
 }
 

@@ -685,7 +685,7 @@ impl crate::client::Client {
         return (seq, packet);
     }
 
-    pub async fn build_delete_online_push_packet(&self, uin: i64, svrip: i32, push_token: Bytes, seq: u16, del_msg: Vec<PushMessageInfo>) -> Bytes {
+    pub async fn build_delete_online_push_packet(&self, uin: i64, svrip: i32, push_token: Bytes, seq: u16, del_msg: Vec<PushMessageInfo>) -> (u16, Bytes) {
         let mut req = SvcRespPushMsg {
             uin,
             svrip,
@@ -715,7 +715,33 @@ impl crate::client::Client {
             s_buffer: buf.build(),
             ..Default::default()
         };
-        build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "OnlinePush.RespPush", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build())
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "OnlinePush.RespPush", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        (seq, packet)
+    }
+
+    pub async fn build_conf_push_resp_packet(&self, t: i32, pkt_seq: i64, jce_buf: Bytes) -> (u16, Bytes) {
+        let seq = self.next_seq();
+        let mut req = JceMut::new();
+        req.put_i32(t, 1);
+        req.put_i64(pkt_seq, 2);
+        req.put_bytes(jce_buf, 3);
+
+        let buf = RequestDataVersion3 {
+            map: HashMap::from([
+                ("PushResp".to_string(), pack_uni_request_data(&req.freeze()))
+            ])
+        };
+        let pkt = RequestPacket {
+            i_version: 3,
+            s_servant_name: "QQService.ConfigPushSvc.MainServant".to_string(),
+            s_func_name: "PushResp".to_string(),
+            s_buffer: buf.build(),
+            context: Default::default(),
+            status: Default::default(),
+            ..Default::default()
+        };
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "ConfigPushSvc.PushResp", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        (seq, packet)
     }
 }
 

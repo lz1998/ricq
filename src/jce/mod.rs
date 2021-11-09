@@ -115,25 +115,25 @@ JceStruct!(FileStorageServerInfo {
 });
 
 JceStruct!(BigDataChannel {
-    0 => ip_list: Vec<BigDataIp>, // gocq BigDataIPList
-    1 => sig_session: Bytes,
-    2 => key_session: Bytes,
-    3 => sig_uin: i64,
-    4 => connect_flag: i32,
-    5 => pb_buf: Bytes,
-});
+	0 => ip_lists: Vec<BigDataIPList>,
+	1 => sig_session: Bytes,
+	2 => key_session: Bytes,
+	3 => sig_uin: i64,
+	4 => connect_flag: i32,
+	5 => pb_buf: Bytes,
+	});
 
-JceStruct!(BigDataIp {
-    0 => service_type: i64,
-    1 => ip_list: BigDataIpInfo,
-    2 => fragment_size: i64,
-});
+JceStruct!(BigDataIPList {
+	0 => service_type: i64,
+	1 => ip_list: Vec<BigDataIPInfo>,
+	3 => fragment_size: i64,
+	});
 
-JceStruct!(BigDataIpInfo {
-    0 => type_: i64,
-    1 => server: String,
-    2 => port: i64,
-});
+JceStruct!(BigDataIPInfo {
+	0 => r#type: i64,
+	1 => server: String,
+	2 => port: i64,
+	});
 
 JceStruct!(SvcReqRegister {
     0  => uin: i64,
