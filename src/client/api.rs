@@ -258,8 +258,8 @@ impl super::Client {
         Some(list)
     }
 
-    /// 刷新客户端状态
-    pub async fn refresh_status(&self) {
-        self.send_and_wait(self.build_get_offline_msg_request_packet()).await;
-    }
+    // /// 刷新客户端状态
+    // pub async fn refresh_status(&self) {
+    //     self.send_and_wait(self.build_get_offline_msg_request_packet()).await;
+    // }
 }
