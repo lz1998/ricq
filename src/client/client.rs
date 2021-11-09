@@ -46,6 +46,7 @@ impl super::Client {
             friend_list: Default::default(),
             group_list: Default::default(),
             online_clients: Default::default(),
+            last_message_time: Default::default(),
         };
         {
             let mut cache_info = cli.cache_info.write().await;

@@ -12,6 +12,7 @@ use jce_struct::*;
 use crate::client::outcome::PbToBytes;
 use crate::pb;
 use crate::pb::{GroupMemberReqBody, msg};
+use crate::pb::msg::GetMessageRequest;
 use crate::pb::structmsg::{FlagInfo, ReqSystemMsgNew};
 
 fn pack_uni_request_data(data: &[u8]) -> Bytes {
@@ -741,6 +742,68 @@ impl crate::client::Client {
             ..Default::default()
         };
         let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "ConfigPushSvc.PushResp", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        (seq, packet)
+    }
+
+    pub async fn build_get_offline_msg_request_packet(&self) -> (u16, Bytes) {
+        let seq = self.next_seq();
+        let reg_req = SvcReqRegisterNew {
+            request_optional: 0x101C2 | 32,
+            c2c_msg: SvcReqGetMsgV2 {
+                uin: self.uin.load(Ordering::SeqCst),
+                date_time: match self.last_message_time.load(Ordering::SeqCst) {
+                    0 => { 1 }
+                    _ => {self.last_message_time.load(Ordering::SeqCst) as i32}
+                },
+                recive_pic: 1,
+                ability: 15,
+                channel: 4,
+                inst: 1,
+                channel_ex: 1,
+                sync_cookie: Bytes::from(self.cache_info.read().await.sync_cookie.to_vec()),
+                sync_flag: 0,
+                ramble_flag: 0,
+                general_abi: 1,
+                pub_account_cookie: Bytes::from(self.cache_info.read().await.pub_account_cookie.to_vec()),
+            },
+            group_msg: SvcReqPullGroupMsgSeq {
+                verify_type: 0,
+                filter: 1,
+                ..Default::default()
+            },
+            end_seq: Utc::now().timestamp(),
+            ..Default::default()
+        };
+        let flag = 0; // flag := msg.SyncFlag_START
+        let msg_req = GetMessageRequest {
+            sync_flag: Option::from(flag),
+            sync_cookie: Option::from(self.cache_info.read().await.sync_cookie.to_vec()),
+            ramble_flag: Option::from(0),
+            latest_ramble_number: Option::from(20),
+            other_ramble_number: Option::from(3),
+            online_sync_flag: Option::from(0),
+            context_flag: Option::from(1),
+            ..Default::default()
+        }.to_bytes();
+        let mut buf = BytesMut::new();
+        buf.put_slice(&vec![0, 0, 0, 0]);
+        buf.put(msg_req);
+        let buf = buf.freeze();
+        let mut req = JceMut::new();
+        req.put_bytes(buf, 0);
+        let buf = RequestDataVersion3 {
+            map: HashMap::from([
+                ("req_PbOffMsg".to_string(), req.freeze()),
+                ("req_OffMsg".to_string(), pack_uni_request_data(&reg_req.build()))
+            ])
+        };
+        let pkt = RequestPacket {
+            i_version: 3,
+            s_servant_name: "RegPrxySvc".to_string(),
+            s_buffer: buf.build(),
+            ..Default::default()
+        };
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "RegPrxySvc.getOffMsg", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
         (seq, packet)
     }
 }

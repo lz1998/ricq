@@ -121,19 +121,25 @@ JceStruct!(BigDataChannel {
 	3 => sig_uin: i64,
 	4 => connect_flag: i32,
 	5 => pb_buf: Bytes,
-	});
+});
 
 JceStruct!(BigDataIPList {
 	0 => service_type: i64,
 	1 => ip_list: Vec<BigDataIPInfo>,
 	3 => fragment_size: i64,
-	});
+});
 
 JceStruct!(BigDataIPInfo {
 	0 => r#type: i64,
 	1 => server: String,
 	2 => port: i64,
-	});
+});
+
+JceStruct!(SvcReqPullGroupMsgSeq {
+    0 => group_info: Vec<PullGroupSeqParam>,
+    1 => verify_type: u8,
+    2 => filter: i32,
+});
 
 JceStruct!(SvcReqRegister {
     0  => uin: i64,
@@ -199,10 +205,15 @@ JceStruct!(SvcRespRegister {
     19 => client_auto_status_interval: i64,
 });
 
-// JceStruct!(SvcReqRegisterNew {
-//     0  => request_optional: i64,
-//     1  => c2c_msg:
-// });
+JceStruct!(SvcReqRegisterNew {
+    0  => request_optional: i64,
+    1  => c2c_msg: SvcReqGetMsgV2,
+    2  => group_msg: SvcReqPullGroupMsgSeq,
+    14 => dis_group_msg_filter: u8,
+    15 => group_mask: u8,
+    16 => end_seq: i64,
+    20 => _0769_body: Bytes,
+});
 
 JceStruct!(SvcReqGetMsgV2 {
     0 => uin: i64,

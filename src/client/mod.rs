@@ -57,6 +57,9 @@ pub struct Client {
     pub group_list: RwLock<Vec<Arc<GroupInfo>>>,
     pub online_clients: RwLock<Vec<OtherClientInfo>>,
 
+    // statics
+    pub last_message_time: AtomicI64,
+
 }
 
 
