@@ -326,16 +326,16 @@ JceStruct!(SvcReqGetDevLoginInfo {
 });
 
 JceStruct!(SvcDevLoginInfo {
-    0 => AppId: i64,
-    1 => Guid: Bytes,
-    2 => LoginTime: i64,
-    3 => LoginPlatform: i64,
-    4 => LoginLocation: String,
-    5 => DeviceName: String,
-    6 => DeviceTypeInfo: String,
-    8 => TerType: i64,
-    9 => ProductType: i64,
-    10 => CanBeKicked: i64,
+    0 => app_id: i64,
+    1 => guid: Bytes,
+    2 => login_time: i64,
+    3 => login_platform: i64,
+    4 => login_location: String,
+    5 => device_name: String,
+    6 => device_type_info: String,
+    8 => ter_type: i64,
+    9 => product_type: i64,
+    10 => can_be_kicked: i64,
 });
 
 JceStruct!(DelMsgInfo {

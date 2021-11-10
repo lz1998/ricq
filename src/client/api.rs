@@ -1,10 +1,12 @@
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use bytes::Bytes;
-use crate::jce::SvcRespRegister;
+use jce_struct::Jce;
+use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
 use crate::client::income::decoder::{friendlist::*, profile_service::*, stat_svc::*, wtlogin::*};
 use crate::client::income::decoder::group_member_card::decode_group_member_info_response;
 use crate::client::msg::Msg;
+use crate::client::OtherClientInfo;
 use crate::client::structs::{GroupInfo, GroupMemberInfo};
 
 /// 登录相关
@@ -277,5 +279,23 @@ impl super::Client {
         let resp = self.send_and_wait(self.build_private_msg_read_packet(uin, time).await.into()).await?;
         println!("{}", resp.command_name);// todo
         None
+    }
+
+    pub async fn get_allowed_clients(&self) -> Option<Vec<OtherClientInfo>> {
+        let resp = self.send_and_wait(self.build_device_list_request_packet().await.into()).await?;
+        if resp.command_name != "StatSvc.GetDevLoginInfo" {
+            return None;
+        }
+        let mut payload = resp.payload;
+        let list: Vec<SvcDevLoginInfo> = Jce::read_from_bytes(&mut payload);
+        let mut ret = Vec::new();
+        for l in list {
+            ret.push(OtherClientInfo {
+                app_id: l.app_id,
+                device_name: l.device_name,
+                device_kind: l.device_type_info
+            })
+        }
+        Some(ret)
     }
 }
