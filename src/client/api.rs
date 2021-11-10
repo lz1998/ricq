@@ -266,4 +266,16 @@ impl super::Client {
         }
         Some(())
     }
+
+    pub async fn mark_group_message_readed(&self, group_code: i64, seq: i64) -> Option<()> {
+        let resp = self.send_and_wait(self.build_group_msg_read_packet(group_code, seq).await.into()).await?;
+        println!("{}", resp.command_name);// todo
+        None
+    }
+
+    pub async fn mark_private_message_readed(&self, uin: i64, time: i64) -> Option<()> {
+        let resp = self.send_and_wait(self.build_private_msg_read_packet(uin, time).await.into()).await?;
+        println!("{}", resp.command_name);// todo
+        None
+    }
 }
