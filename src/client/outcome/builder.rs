@@ -779,15 +779,15 @@ impl crate::client::Client {
             sync_flag: Option::from(flag),
             sync_cookie: Option::from(self.cache_info.read().await.sync_cookie.to_vec()),
             ramble_flag: Option::from(0),
+            context_flag: Option::from(1),
+            online_sync_flag: Option::from(0),
             latest_ramble_number: Option::from(20),
             other_ramble_number: Option::from(3),
-            online_sync_flag: Option::from(0),
-            context_flag: Option::from(1),
             ..Default::default()
         }.to_bytes();
         let mut buf = BytesMut::new();
-        buf.put_slice(&vec![0, 0, 0, 0]);
-        buf.put(msg_req);
+        buf.put_slice(&[0, 0, 0, 0]);
+        buf.put_slice(&msg_req);
         let buf = buf.freeze();
         let mut req = JceMut::new();
         req.put_bytes(buf, 0);
