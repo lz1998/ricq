@@ -325,18 +325,18 @@ JceStruct!(SvcReqGetDevLoginInfo {
     6 => get_dev_list_type: i64, // 1: getLoginDevList 2: getRecentLoginDevList 4: getAuthLoginDevList
 });
 
-// JceStruct!(SvcDevLoginInfo {
-//     AppId          i64
-//     Guid           Bytes
-//     LoginTime      i64
-//     LoginPlatform  i64
-//     LoginLocation  String
-//     DeviceName     String
-//     DeviceTypeInfo String
-//     TerType        i64
-//     ProductType    i64
-//     CanBeKicked    i64
-// });
+JceStruct!(SvcDevLoginInfo {
+    0 => AppId: i64,
+    1 => Guid: Bytes,
+    2 => LoginTime: i64,
+    3 => LoginPlatform: i64,
+    4 => LoginLocation: String,
+    5 => DeviceName: String,
+    6 => DeviceTypeInfo: String,
+    8 => TerType: i64,
+    9 => ProductType: i64,
+    10 => CanBeKicked: i64,
+});
 
 JceStruct!(DelMsgInfo {
     0 => from_uin: i64,
