@@ -12,7 +12,7 @@ use jce_struct::*;
 use crate::client::outcome::PbToBytes;
 use crate::pb;
 use crate::pb::{GroupMemberReqBody, msg};
-use crate::pb::msg::GetMessageRequest;
+use crate::pb::msg::{GetMessageRequest, PbC2cReadedReportReq, PbGroupReadedReportReq, PbMsgReadedReportReq, UinPairReadInfo};
 use crate::pb::structmsg::{FlagInfo, ReqSystemMsgNew};
 
 fn pack_uni_request_data(data: &[u8]) -> Bytes {
@@ -804,6 +804,59 @@ impl crate::client::Client {
             ..Default::default()
         };
         let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "RegPrxySvc.getOffMsg", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        (seq, packet)
+    }
+
+    pub async fn build_group_msg_read_packet(&self, group_code: i64, msg_seq: i64) -> (u16, Bytes) {
+        let seq = self.next_seq();
+        let req = PbMsgReadedReportReq {
+            grp_read_report: vec![PbGroupReadedReportReq { group_code: Option::from(group_code as u64), last_read_seq: Option::from(msg_seq as u64) }],
+            ..Default::default()
+        }.to_bytes();
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "PbMessageSvc.PbMsgReadedReport", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &req.build());
+        (seq, packet)
+    }
+
+    pub async fn build_private_msg_read_packet(&self, uin: i64, time: i64) -> (u16, Bytes) {
+        let seq = self.next_seq();
+        let req = PbMsgReadedReportReq {
+            c2_c_read_report: Option::from(PbC2cReadedReportReq {
+                pair_info: vec![UinPairReadInfo {
+                    peer_uin: Option::from(uin as u64),
+                    last_read_time: Option::from(time as u32),
+                    ..Default::default()
+                }],
+                ..Default::default()
+            }),
+            ..Default::default()
+        }.to_bytes();
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "PbMessageSvc.PbMsgReadedReport", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &req.build());
+        (seq, packet)
+    }
+
+    pub async fn build_device_list_request_packet(&self) -> (u16, Bytes) {
+        let seq = self.next_seq();
+        let req = SvcReqGetDevLoginInfo {
+            guid: self.device_info.read().await.guid.to_owned(),
+            login_type: 1,
+            app_name: "com.tencent.mobileqq".to_string(),
+            require_max: 20,
+            get_dev_list_type: 20,
+            ..Default::default()
+        };
+        let buf = RequestDataVersion3 {
+            map: HashMap::from([
+                ("SvcReqGetDevLoginInfo".to_string(), pack_uni_request_data(&req.build()))
+            ])
+        };
+        let pkt = RequestPacket {
+            i_version: 3,
+            s_servant_name: "StatSvc".to_string(),
+            s_func_name: "SvcReqGetDevLoginInfo".to_string(),
+            s_buffer: buf.build(),
+            ..Default::default()
+        };
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "StatSvc.GetDevLoginInfo", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
         (seq, packet)
     }
 }
