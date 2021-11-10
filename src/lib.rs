@@ -16,6 +16,8 @@ pub mod pb {
     pub mod notify { include!(concat!(env!("OUT_DIR"), "/notify.rs")); }
 
     pub mod msgtype0x210 { include!(concat!(env!("OUT_DIR"), "/msgtype0x210.rs")); }
+
+    pub mod oidb { include!(concat!(env!("OUT_DIR"), "/oidb.rs")); }
 }
 
 pub mod protocol {

@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::sync::atomic::Ordering;
 use bytes::{BufMut, Bytes, BytesMut};
 use chrono::Utc;
+use rand::seq;
 use crate::binary::BinaryWriter;
 use crate::crypto::EncryptSession;
 use crate::client::outcome::packet::*;
@@ -13,6 +14,7 @@ use crate::client::outcome::PbToBytes;
 use crate::pb;
 use crate::pb::{GroupMemberReqBody, msg};
 use crate::pb::msg::{GetMessageRequest, PbC2cReadedReportReq, PbGroupReadedReportReq, PbMsgReadedReportReq, UinPairReadInfo};
+use crate::pb::oidb::{D769ConfigSeq, D769RspBody};
 use crate::pb::structmsg::{FlagInfo, ReqSystemMsgNew};
 
 fn pack_uni_request_data(data: &[u8]) -> Bytes {
@@ -804,6 +806,93 @@ impl crate::client::Client {
             ..Default::default()
         };
         let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "RegPrxySvc.getOffMsg", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        (seq, packet)
+    }
+
+    pub async fn build_sync_msg_request_packet(&self) -> (u16, Bytes) {
+        let seq = self.next_seq();
+        let oidb_req = D769RspBody {
+            config_list: vec![
+                D769ConfigSeq {
+                    r#type: Option::from(46),
+                    version: Option::from(0),
+                },
+                D769ConfigSeq {
+                    r#type: Option::from(283),
+                    version: Option::from(0)
+                }
+            ],
+            ..Default::default()
+        }.to_bytes();
+        let reg_req = SvcReqRegisterNew {
+            request_optional: 128 | 64 | 256 | 2 | 8192 | 16384 | 65536,
+            dis_group_msg_filter: 1,
+            c2c_msg: SvcReqGetMsgV2 {
+                uin: self.uin.load(Ordering::SeqCst),
+                date_time: match self.last_message_time.load(Ordering::SeqCst) {
+                    0 => { 1 }
+                    _ => {self.last_message_time.load(Ordering::SeqCst) as i32}
+                },
+                recive_pic: 1,
+                ability: 15,
+                channel: 4,
+                inst: 1,
+                channel_ex: 1,
+                sync_cookie: Bytes::from(self.cache_info.read().await.sync_cookie.to_vec()),
+                sync_flag: 0, // START
+                ramble_flag: 0,
+                general_abi: 1,
+                pub_account_cookie: Bytes::from(self.cache_info.read().await.pub_account_cookie.to_vec()),
+            },
+            group_mask: 2,
+            end_seq: rand::random::<u32>() as i64,
+            _0769_body: oidb_req,
+            ..Default::default()
+        };
+        let flag = 0; // flag := msg.SyncFlag_START
+        let msg_req = GetMessageRequest {
+            sync_flag: Option::from(flag),
+            sync_cookie: Option::from(self.cache_info.read().await.sync_cookie.to_vec()),
+            ramble_flag: Option::from(0),
+            context_flag: Option::from(1),
+            online_sync_flag: Option::from(0),
+            latest_ramble_number: Option::from(20),
+            other_ramble_number: Option::from(3),
+            msg_req_type: Option::from(1),
+            ..Default::default()
+        };
+        let off_msg = msg_req.to_bytes();
+        let pub_msg = GetMessageRequest {
+            sync_flag: Option::from(flag),
+            ramble_flag: Option::from(0),
+            context_flag: Option::from(1),
+            online_sync_flag: Option::from(0),
+            latest_ramble_number: Option::from(20),
+            other_ramble_number: Option::from(3),
+            msg_req_type: Option::from(2),
+            pubaccount_cookie: Option::from(self.cache_info.read().await.pub_account_cookie.to_vec()),
+            ..Default::default()
+        }.to_bytes();
+        let mut buf_off = BytesMut::new();
+        buf_off.put_slice(&vec![0, 0, 0, 0]);
+        buf_off.put(off_msg);
+        let mut buf_pub = BytesMut::new();
+        buf_pub.put_slice(&vec![0, 0, 0, 0]);
+        buf_pub.put(pub_msg);
+        let buf = RequestDataVersion3 {
+            map: HashMap::from([
+                ("req_PbOffMsg".to_string(), buf_off.freeze()),
+                ("req_PbPubMsg".to_string(), buf_pub.freeze()),
+                ("req_OffMsg".to_string(), pack_uni_request_data(&reg_req.build())),
+            ])
+        };
+        let pkt = RequestPacket {
+            i_version: 3,
+            s_servant_name: "RegPrxySvc".to_string(),
+            s_buffer: buf.build(),
+            ..Default::default()
+        };
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "RegPrxySvc.infoSync", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
         (seq, packet)
     }
 

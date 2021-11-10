@@ -12,6 +12,7 @@ fn main() -> Result<()> {
         "src/pb/cmd0x6ff/subcmd0x501.proto",
         "src/pb/notify/group0x857.proto",
         "src/pb/msgtype0x210/subMsgType0x27.proto",
+        "src/pb/oidb/oidb0x769.proto",
     ], &["src/pb"])?;
     Ok(())
 }
