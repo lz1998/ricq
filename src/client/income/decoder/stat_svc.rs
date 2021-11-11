@@ -17,7 +17,7 @@ pub fn decode_dev_list_response(payload: &[u8]) -> Option<Vec<SvcDevLoginInfo>> 
     let mut request: RequestPacket = Jce::read_from_bytes(&mut payload);
     let mut data: RequestDataVersion2 = Jce::read_from_bytes(&mut request.s_buffer);
     let mut req = data.map.remove("SvcRspGetDevLoginInfo").unwrap();
-    let mut msg = req.remove("OnlinePushPack.SvcReqPushMsg").unwrap();
+    let mut msg = req.remove("QQService.SvcRspGetDevLoginInfo").unwrap();
     let mut rsp = Jce::new(&mut msg);
     let mut d: Vec<SvcDevLoginInfo> = rsp.get_by_tag(4);
     if d.len() > 0 {

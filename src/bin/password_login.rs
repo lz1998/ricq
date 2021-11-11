@@ -91,6 +91,9 @@ async fn main() -> Result<()> {
         }
         let r=client.refresh_status().await;
         println!("{:?}",r);
+        let d=client.get_allowed_clients().await;
+        println!("{:?}",d);
+
         // client.send_group_message(335783090, vec![
         //     Msg::At { target: 875543533, display: "@lz1998".to_string() },
         //     Msg::Text { content: "xxx".to_string() },

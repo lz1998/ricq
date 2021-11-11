@@ -278,19 +278,19 @@ impl super::Client {
         Some(())
     }
 
-    pub async fn mark_private_message_readed(&self, uin: i64, time: i64) -> Option<()> {
+    /// 标记私聊消息已读 TODO 待测试
+    pub async fn mark_private_message_readed(&self, uin: i64, time: i64) -> Option<Vec<SvcDevLoginInfo>> {
         let resp = self.send_and_wait(self.build_private_msg_read_packet(uin, time).await.into()).await?;
         println!("{}", resp.command_name);// todo
         None
     }
 
+    /// 获取通过安全验证的设备
     pub async fn get_allowed_clients(&self) -> Option<Vec<SvcDevLoginInfo>> {
         let resp = self.send_and_wait(self.build_device_list_request_packet().await.into()).await?;
         if resp.command_name != "StatSvc.GetDevLoginInfo" {
             return None;
         }
-        let mut payload = resp.payload;
-        let list: Vec<SvcDevLoginInfo> = Jce::read_from_bytes(&mut payload);
-        Some(list)
+        decode_dev_list_response(&resp.payload)
     }
 }
