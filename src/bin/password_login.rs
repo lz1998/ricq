@@ -89,6 +89,8 @@ async fn main() -> Result<()> {
             client.reload_group_list().await;
             let group_list = client.group_list.read().await;
         }
+        let r=client.refresh_status().await;
+        println!("{:?}",r);
         // client.send_group_message(335783090, vec![
         //     Msg::At { target: 875543533, display: "@lz1998".to_string() },
         //     Msg::Text { content: "xxx".to_string() },

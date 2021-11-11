@@ -269,9 +269,10 @@ impl super::Client {
         Some(())
     }
 
+    // PbMessageSvc.PbMsgReadedReport decodeMsgReadedResponse
     pub async fn mark_group_message_readed(&self, group_code: i64, seq: i64) -> Option<()> {
-        let resp = self.send_and_wait(self.build_group_msg_read_packet(group_code, seq).await.into()).await?;
-        println!("{}", resp.command_name);// todo
+        let resp = self.send_and_wait(self.build_group_msg_read_packet(group_code, seq).await.into()).await;
+        println!("{:?}", resp);// todo
         None
     }
 

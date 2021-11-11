@@ -12,10 +12,6 @@ use crate::jce::*;
 use jce_struct::*;
 use crate::client::outcome::PbToBytes;
 use crate::pb;
-use crate::pb::{GroupMemberReqBody, msg};
-use crate::pb::msg::{GetMessageRequest, PbC2cReadedReportReq, PbGroupReadedReportReq, PbMsgReadedReportReq, UinPairReadInfo};
-use crate::pb::oidb::{D769ConfigSeq, D769RspBody, D88dGroupExInfoOnly, D88dGroupHeadPortrait, D88dGroupInfo, D88dReqBody, OidbssoPkg, ReqGroupInfo};
-use crate::pb::structmsg::{FlagInfo, ReqSystemMsgNew};
 
 fn pack_uni_request_data(data: &[u8]) -> Bytes {
     let mut r = BytesMut::new();
@@ -477,11 +473,11 @@ impl crate::client::Client {
 
     pub async fn build_system_msg_new_group_packet(&self, suspicious: bool) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = ReqSystemMsgNew {
+        let req = pb::structmsg::ReqSystemMsgNew {
             msg_num: 100,
             version: 1000,
             checktype: 3,
-            flag: Some(FlagInfo {
+            flag: Some(pb::structmsg::FlagInfo {
                 grp_msg_kick_admin: 1,
                 grp_msg_hidden_grp: 1,
                 grp_msg_wording_down: 1,
@@ -607,23 +603,23 @@ impl crate::client::Client {
         (seq, packet)
     }
 
-    pub async fn build_group_sending_packet(&self, group_code: i64, r: i32, pkg_num: i32, pkg_index: i32, pkg_div: i32, forward: bool, elems: Vec<msg::Elem>) -> (u16, Bytes) {
+    pub async fn build_group_sending_packet(&self, group_code: i64, r: i32, pkg_num: i32, pkg_index: i32, pkg_div: i32, forward: bool, elems: Vec<pb::msg::Elem>) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = msg::SendMessageRequest {
-            routing_head: Some(msg::RoutingHead {
+        let req = pb::msg::SendMessageRequest {
+            routing_head: Some(pb::msg::RoutingHead {
                 c2c: None,
-                grp: Some(msg::Grp { group_code: Some(group_code) }),
+                grp: Some(pb::msg::Grp { group_code: Some(group_code) }),
                 grp_tmp: None,
                 wpa_tmp: None,
             }),
-            content_head: Some(msg::ContentHead {
+            content_head: Some(pb::msg::ContentHead {
                 pkg_num: Some(pkg_num),
                 pkg_index: Some(pkg_index),
                 div_seq: Some(pkg_div),
                 auto_reply: None,
             }),
-            msg_body: Some(msg::MessageBody {
-                rich_text: Some(msg::RichText {
+            msg_body: Some(pb::msg::MessageBody {
+                rich_text: Some(pb::msg::RichText {
                     elems,
                     attr: None,
                     not_online_file: None,
@@ -636,7 +632,7 @@ impl crate::client::Client {
             msg_rand: Some(r),
             sync_cookie: Some(Vec::new()),
             msg_via: Some(1),
-            msg_ctrl: if forward { Some(msg::MsgCtrl { msg_flag: Some(4) }) } else { None },
+            msg_ctrl: if forward { Some(pb::msg::MsgCtrl { msg_flag: Some(4) }) } else { None },
             data_statist: None,
             multi_send_seq: None,
         };
@@ -646,7 +642,7 @@ impl crate::client::Client {
 
     pub async fn build_group_member_info_request_packet(&self, group_code: i64, uin: i64) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let payload = GroupMemberReqBody {
+        let payload = pb::GroupMemberReqBody {
             group_code,
             uin,
             new_client: true,
@@ -777,14 +773,14 @@ impl crate::client::Client {
             ..Default::default()
         };
         let flag = 0; // flag := msg.SyncFlag_START
-        let msg_req = GetMessageRequest {
-            sync_flag: Option::from(flag),
-            sync_cookie: Option::from(self.cache_info.read().await.sync_cookie.to_vec()),
-            ramble_flag: Option::from(0),
-            context_flag: Option::from(1),
-            online_sync_flag: Option::from(0),
-            latest_ramble_number: Option::from(20),
-            other_ramble_number: Option::from(3),
+        let msg_req = pb::msg::GetMessageRequest {
+            sync_flag: Some(flag),
+            sync_cookie: Some(self.cache_info.read().await.sync_cookie.to_vec()),
+            ramble_flag: Some(0),
+            context_flag: Some(1),
+            online_sync_flag: Some(0),
+            latest_ramble_number: Some(20),
+            other_ramble_number: Some(3),
             ..Default::default()
         }.to_bytes();
         let mut buf = BytesMut::new();
@@ -811,13 +807,13 @@ impl crate::client::Client {
 
     pub async fn build_sync_msg_request_packet(&self) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let oidb_req = D769RspBody {
+        let oidb_req = pb::oidb::D769RspBody {
             config_list: vec![
-                D769ConfigSeq {
+                pb::oidb::D769ConfigSeq {
                     r#type: Some(46),
                     version: Some(0),
                 },
-                D769ConfigSeq {
+                pb::oidb::D769ConfigSeq {
                     r#type: Some(283),
                     version: Some(0),
                 },
@@ -850,7 +846,7 @@ impl crate::client::Client {
             ..Default::default()
         };
         let flag = 0; // flag := msg.SyncFlag_START
-        let mut msg_req = GetMessageRequest {
+        let mut msg_req = pb::msg::GetMessageRequest {
             sync_flag: Some(flag),
             sync_cookie: Some(self.cache_info.read().await.sync_cookie.to_vec()),
             ramble_flag: Some(0),
@@ -903,21 +899,21 @@ impl crate::client::Client {
 
     pub async fn build_group_msg_read_packet(&self, group_code: i64, msg_seq: i64) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = PbMsgReadedReportReq {
-            grp_read_report: vec![PbGroupReadedReportReq { group_code: Some(group_code as u64), last_read_seq: Some(msg_seq as u64) }],
+        let req = pb::msg::PbMsgReadedReportReq {
+            grp_read_report: vec![pb::msg::PbGroupReadedReportReq { group_code: Some(group_code as u64), last_read_seq: Some(msg_seq as u64) }],
             ..Default::default()
         }.to_bytes();
-        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "PbMessageSvc.PbMsgReadedReport", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &req.build());
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "PbMessageSvc.PbMsgReadedReport", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &req);
         (seq, packet)
     }
 
     pub async fn build_private_msg_read_packet(&self, uin: i64, time: i64) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = PbMsgReadedReportReq {
-            c2_c_read_report: Option::from(PbC2cReadedReportReq {
-                pair_info: vec![UinPairReadInfo {
-                    peer_uin: Option::from(uin as u64),
-                    last_read_time: Option::from(time as u32),
+        let req = pb::msg::PbMsgReadedReportReq {
+            c2_c_read_report: Some(pb::msg::PbC2cReadedReportReq {
+                pair_info: vec![pb::msg::UinPairReadInfo {
+                    peer_uin: Some(uin as u64),
+                    last_read_time: Some(time as u32),
                     ..Default::default()
                 }],
                 sync_cookie: Some(self.cache_info.read().await.sync_cookie.to_vec()),
@@ -925,7 +921,7 @@ impl crate::client::Client {
             }),
             ..Default::default()
         }.to_bytes();
-        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "PbMessageSvc.PbMsgReadedReport", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &req.build());
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "PbMessageSvc.PbMsgReadedReport", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &req);
         (seq, packet)
     }
 
@@ -957,12 +953,12 @@ impl crate::client::Client {
 
     pub async fn build_group_info_request_packet(&self, group_code: i64) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let body = D88dReqBody {
+        let body = pb::oidb::D88dReqBody {
             app_id: Some(self.version.app_id),
             req_group_info: vec![
-                ReqGroupInfo {
+                pb::oidb::ReqGroupInfo {
                     group_code: Some(group_code as u64),
-                    stgroupinfo: Some(D88dGroupInfo {
+                    stgroupinfo: Some(pb::oidb::D88dGroupInfo {
                         group_owner: Some(0),
                         group_uin: Some(0),
                         group_create_time: Some(0),
@@ -982,8 +978,8 @@ impl crate::client::Client {
                         group_grade: Some(0),
                         active_member_num: Some(0),
                         head_portrait_seq: Some(0),
-                        msg_head_portrait: Some(D88dGroupHeadPortrait::default()),
-                        st_group_ex_info: Some(D88dGroupExInfoOnly::default()),
+                        msg_head_portrait: Some(pb::oidb::D88dGroupHeadPortrait::default()),
+                        st_group_ex_info: Some(pb::oidb::D88dGroupExInfoOnly::default()),
                         group_sec_level: Some(0),
                         cmduin_privilege: Some(0),
                         no_finger_open_flag: Some(0),
@@ -995,7 +991,7 @@ impl crate::client::Client {
             ],
             pc_client_version: Some(0),
         };
-        let payload = OidbssoPkg {
+        let payload = pb::oidb::OidbssoPkg {
             command: 2189,
             bodybuffer: body.to_bytes().to_vec(),
             ..Default::default()
