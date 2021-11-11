@@ -18,6 +18,8 @@ pub mod pb {
     pub mod msgtype0x210 { include!(concat!(env!("OUT_DIR"), "/msgtype0x210.rs")); }
 
     pub mod oidb { include!(concat!(env!("OUT_DIR"), "/oidb.rs")); }
+
+    pub mod msf { include!(concat!(env!("OUT_DIR"), "/msf.rs")); }
 }
 
 pub mod protocol {
