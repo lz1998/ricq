@@ -236,7 +236,7 @@ JceStruct!(PullGroupSeqParam {
 });
 
 JceStruct!(SvcRespParam {
-    0 => p_c_stat: i32,
+    0 => pc_stat: i32,
     1 => is_support_c2c_roam_msg: i32,
     2 => is_support_data_line: i32,
     3 => is_support_printable: i32,
@@ -244,7 +244,7 @@ JceStruct!(SvcRespParam {
     5 => pc_version: i32,
     6 => roam_flag: i64,
     7 => online_infos: Vec<OnlineInfo>,
-    8 => p_c_client_type: i32,
+    8 => pc_client_type: i32,
 });
 
 JceStruct!(RequestPushNotify {
