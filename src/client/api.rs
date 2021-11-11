@@ -281,21 +281,13 @@ impl super::Client {
         None
     }
 
-    pub async fn get_allowed_clients(&self) -> Option<Vec<OtherClientInfo>> {
+    pub async fn get_allowed_clients(&self) -> Option<Vec<SvcDevLoginInfo>> {
         let resp = self.send_and_wait(self.build_device_list_request_packet().await.into()).await?;
         if resp.command_name != "StatSvc.GetDevLoginInfo" {
             return None;
         }
         let mut payload = resp.payload;
         let list: Vec<SvcDevLoginInfo> = Jce::read_from_bytes(&mut payload);
-        let mut ret = Vec::new();
-        for l in list {
-            ret.push(OtherClientInfo {
-                app_id: l.app_id,
-                device_name: l.device_name,
-                device_kind: l.device_type_info
-            })
-        }
-        Some(ret)
+        Some(list)
     }
 }

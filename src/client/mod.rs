@@ -129,6 +129,7 @@ pub struct AddressInfo {
 #[derive(Debug, Default)]
 pub struct OtherClientInfo {
     pub app_id: i64,
-    pub device_name: String,
+    pub instance_id: i32,
+    pub sub_platform: String,
     pub device_kind: String,
 }

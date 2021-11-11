@@ -188,21 +188,21 @@ pub fn decode_online_push_trans_packet(payload: &[u8]) -> Option<OnlinePushTrans
 
 #[derive(Debug)]
 pub struct GroupMessagePart {
-    seq: i32,
-    rand: i32,
-    group_code: i64,
-    from_uin: i64,
-    elems: Vec<msg::Elem>,
-    time: i32,
+    pub seq: i32,
+    pub rand: i32,
+    pub group_code: i64,
+    pub from_uin: i64,
+    pub elems: Vec<msg::Elem>,
+    pub time: i32,
     // 语音消息
-    ptt: Option<msg::Ptt>,
+    pub ptt: Option<msg::Ptt>,
 
     // 整个message有多少个part，大于elem.len()时，应等待下一个片段到达后合并
-    pkg_num: i32,
+    pub pkg_num: i32,
     // 分片的第几段
-    pkg_index: i32,
+    pub pkg_index: i32,
     // 分片id，相同id的应该合并，且根据pkg_index排序
-    div_seq: i32,
+    pub div_seq: i32,
 }
 
 // 解析群消息分片 TODO 长消息需要合并

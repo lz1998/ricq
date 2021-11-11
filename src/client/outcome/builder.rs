@@ -755,7 +755,7 @@ impl crate::client::Client {
                 uin: self.uin.load(Ordering::SeqCst),
                 date_time: match self.last_message_time.load(Ordering::SeqCst) {
                     0 => { 1 }
-                    _ => {self.last_message_time.load(Ordering::SeqCst) as i32}
+                    _ => { self.last_message_time.load(Ordering::SeqCst) as i32 }
                 },
                 recive_pic: 1,
                 ability: 15,
@@ -814,13 +814,13 @@ impl crate::client::Client {
         let oidb_req = D769RspBody {
             config_list: vec![
                 D769ConfigSeq {
-                    r#type: Option::from(46),
-                    version: Option::from(0),
+                    r#type: Some(46),
+                    version: Some(0),
                 },
                 D769ConfigSeq {
-                    r#type: Option::from(283),
-                    version: Option::from(0)
-                }
+                    r#type: Some(283),
+                    version: Some(0),
+                },
             ],
             ..Default::default()
         }.to_bytes();
@@ -831,7 +831,7 @@ impl crate::client::Client {
                 uin: self.uin.load(Ordering::SeqCst),
                 date_time: match self.last_message_time.load(Ordering::SeqCst) {
                     0 => { 1 }
-                    _ => {self.last_message_time.load(Ordering::SeqCst) as i32}
+                    _ => { self.last_message_time.load(Ordering::SeqCst) as i32 }
                 },
                 recive_pic: 1,
                 ability: 15,
@@ -850,39 +850,44 @@ impl crate::client::Client {
             ..Default::default()
         };
         let flag = 0; // flag := msg.SyncFlag_START
-        let msg_req = GetMessageRequest {
-            sync_flag: Option::from(flag),
-            sync_cookie: Option::from(self.cache_info.read().await.sync_cookie.to_vec()),
-            ramble_flag: Option::from(0),
-            context_flag: Option::from(1),
-            online_sync_flag: Option::from(0),
-            latest_ramble_number: Option::from(20),
-            other_ramble_number: Option::from(3),
-            msg_req_type: Option::from(1),
+        let mut msg_req = GetMessageRequest {
+            sync_flag: Some(flag),
+            sync_cookie: Some(self.cache_info.read().await.sync_cookie.to_vec()),
+            ramble_flag: Some(0),
+            context_flag: Some(1),
+            online_sync_flag: Some(0),
+            latest_ramble_number: Some(20),
+            other_ramble_number: Some(3),
+            msg_req_type: Some(1),
             ..Default::default()
         };
         let off_msg = msg_req.to_bytes();
-        let pub_msg = GetMessageRequest {
-            sync_flag: Option::from(flag),
-            ramble_flag: Option::from(0),
-            context_flag: Option::from(1),
-            online_sync_flag: Option::from(0),
-            latest_ramble_number: Option::from(20),
-            other_ramble_number: Option::from(3),
-            msg_req_type: Option::from(2),
-            pubaccount_cookie: Option::from(self.cache_info.read().await.pub_account_cookie.to_vec()),
-            ..Default::default()
-        }.to_bytes();
-        let mut buf_off = BytesMut::new();
-        buf_off.put_slice(&vec![0, 0, 0, 0]);
-        buf_off.put(off_msg);
-        let mut buf_pub = BytesMut::new();
-        buf_pub.put_slice(&vec![0, 0, 0, 0]);
-        buf_pub.put(pub_msg);
+        msg_req.msg_req_type = Some(2);
+        msg_req.sync_cookie = None;
+        msg_req.pubaccount_cookie = Some(self.cache_info.read().await.pub_account_cookie.to_vec());
+        let pub_msg = msg_req.to_bytes();
         let buf = RequestDataVersion3 {
             map: HashMap::from([
-                ("req_PbOffMsg".to_string(), buf_off.freeze()),
-                ("req_PbPubMsg".to_string(), buf_pub.freeze()),
+                ("req_PbOffMsg".to_string(), {
+                    let mut w = JceMut::new();
+                    w.put_bytes({
+                                    let mut b = BytesMut::new();
+                                    b.put_slice(&[0; 4]);
+                                    b.put_slice(&off_msg);
+                                    b.freeze()
+                                }, 0);
+                    w.freeze()
+                }),
+                ("req_PbPubMsg".to_string(), {
+                    let mut w = JceMut::new();
+                    w.put_bytes({
+                                    let mut b = BytesMut::new();
+                                    b.put_slice(&[0; 4]);
+                                    b.put_slice(&pub_msg);
+                                    b.freeze()
+                                }, 0);
+                    w.freeze()
+                }),
                 ("req_OffMsg".to_string(), pack_uni_request_data(&reg_req.build())),
             ])
         };
@@ -899,7 +904,7 @@ impl crate::client::Client {
     pub async fn build_group_msg_read_packet(&self, group_code: i64, msg_seq: i64) -> (u16, Bytes) {
         let seq = self.next_seq();
         let req = PbMsgReadedReportReq {
-            grp_read_report: vec![PbGroupReadedReportReq { group_code: Option::from(group_code as u64), last_read_seq: Option::from(msg_seq as u64) }],
+            grp_read_report: vec![PbGroupReadedReportReq { group_code: Some(group_code as u64), last_read_seq: Some(msg_seq as u64) }],
             ..Default::default()
         }.to_bytes();
         let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "PbMessageSvc.PbMsgReadedReport", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &req.build());
@@ -915,6 +920,7 @@ impl crate::client::Client {
                     last_read_time: Option::from(time as u32),
                     ..Default::default()
                 }],
+                sync_cookie: Some(self.cache_info.read().await.sync_cookie.to_vec()),
                 ..Default::default()
             }),
             ..Default::default()
@@ -952,46 +958,46 @@ impl crate::client::Client {
     pub async fn build_group_info_request_packet(&self, group_code: i64) -> (u16, Bytes) {
         let seq = self.next_seq();
         let body = D88dReqBody {
-            app_id: Option::from(self.version.app_id),
+            app_id: Some(self.version.app_id),
             req_group_info: vec![
                 ReqGroupInfo {
-                    group_code: Option::from(group_code as u64),
-                    stgroupinfo: Option::from(D88dGroupInfo {
-                        group_owner: Option::from(0),
-                        group_uin: Option::from(0),
-                        group_create_time: Option::from(0),
-                        group_flag: Option::from(0),
-                        group_member_max_num: Option::from(0),
-                        group_member_num: Option::from(0),
-                        group_option: Option::from(0),
-                        group_level: Option::from(0),
-                        group_face: Option::from(0),
-                        group_name: Option::from(vec![]),
-                        group_memo: Option::from(vec![]),
-                        group_finger_memo: Option::from(vec![]),
-                        group_last_msg_time: Option::from(0),
-                        group_cur_msg_seq: Option::from(0),
-                        group_question: Option::from(vec![]),
-                        group_answer: Option::from(vec![]),
-                        group_grade: Option::from(0),
-                        active_member_num: Option::from(0),
-                        head_portrait_seq: Option::from(0),
-                        msg_head_portrait: Option::from(D88dGroupHeadPortrait{ ..Default::default() }),
-                        st_group_ex_info: Option::from(D88dGroupExInfoOnly{ ..Default::default() }),
-                        group_sec_level: Option::from(0),
-                        cmduin_privilege: Option::from(0),
-                        no_finger_open_flag: Option::from(0),
-                        no_code_finger_open_flag: Option::from(0),
+                    group_code: Some(group_code as u64),
+                    stgroupinfo: Some(D88dGroupInfo {
+                        group_owner: Some(0),
+                        group_uin: Some(0),
+                        group_create_time: Some(0),
+                        group_flag: Some(0),
+                        group_member_max_num: Some(0),
+                        group_member_num: Some(0),
+                        group_option: Some(0),
+                        group_level: Some(0),
+                        group_face: Some(0),
+                        group_name: Some(vec![]),
+                        group_memo: Some(vec![]),
+                        group_finger_memo: Some(vec![]),
+                        group_last_msg_time: Some(0),
+                        group_cur_msg_seq: Some(0),
+                        group_question: Some(vec![]),
+                        group_answer: Some(vec![]),
+                        group_grade: Some(0),
+                        active_member_num: Some(0),
+                        head_portrait_seq: Some(0),
+                        msg_head_portrait: Some(D88dGroupHeadPortrait::default()),
+                        st_group_ex_info: Some(D88dGroupExInfoOnly::default()),
+                        group_sec_level: Some(0),
+                        cmduin_privilege: Some(0),
+                        no_finger_open_flag: Some(0),
+                        no_code_finger_open_flag: Some(0),
                         ..Default::default()
                     }),
                     ..Default::default()
                 }
             ],
-            pc_client_version: Option::from(0),
-        }.to_bytes();
+            pc_client_version: Some(0),
+        };
         let payload = OidbssoPkg {
             command: 2189,
-            bodybuffer: body.to_vec(),
+            bodybuffer: body.to_bytes().to_vec(),
             ..Default::default()
         };
         let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "OidbSvc.0x88d_0", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &payload.to_bytes());
