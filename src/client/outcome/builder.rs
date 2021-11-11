@@ -14,7 +14,7 @@ use crate::client::outcome::PbToBytes;
 use crate::pb;
 use crate::pb::{GroupMemberReqBody, msg};
 use crate::pb::msg::{GetMessageRequest, PbC2cReadedReportReq, PbGroupReadedReportReq, PbMsgReadedReportReq, UinPairReadInfo};
-use crate::pb::oidb::{D769ConfigSeq, D769RspBody};
+use crate::pb::oidb::{D769ConfigSeq, D769RspBody, D88dGroupExInfoOnly, D88dGroupHeadPortrait, D88dGroupInfo, D88dReqBody, OidbssoPkg, ReqGroupInfo};
 use crate::pb::structmsg::{FlagInfo, ReqSystemMsgNew};
 
 fn pack_uni_request_data(data: &[u8]) -> Bytes {
@@ -946,6 +946,55 @@ impl crate::client::Client {
             ..Default::default()
         };
         let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "StatSvc.GetDevLoginInfo", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        (seq, packet)
+    }
+
+    pub async fn build_group_info_request_packet(&self, group_code: i64) -> (u16, Bytes) {
+        let seq = self.next_seq();
+        let body = D88dReqBody {
+            app_id: Option::from(self.version.app_id),
+            req_group_info: vec![
+                ReqGroupInfo {
+                    group_code: Option::from(group_code as u64),
+                    stgroupinfo: Option::from(D88dGroupInfo {
+                        group_owner: Option::from(0),
+                        group_uin: Option::from(0),
+                        group_create_time: Option::from(0),
+                        group_flag: Option::from(0),
+                        group_member_max_num: Option::from(0),
+                        group_member_num: Option::from(0),
+                        group_option: Option::from(0),
+                        group_level: Option::from(0),
+                        group_face: Option::from(0),
+                        group_name: Option::from(vec![]),
+                        group_memo: Option::from(vec![]),
+                        group_finger_memo: Option::from(vec![]),
+                        group_last_msg_time: Option::from(0),
+                        group_cur_msg_seq: Option::from(0),
+                        group_question: Option::from(vec![]),
+                        group_answer: Option::from(vec![]),
+                        group_grade: Option::from(0),
+                        active_member_num: Option::from(0),
+                        head_portrait_seq: Option::from(0),
+                        msg_head_portrait: Option::from(D88dGroupHeadPortrait{ ..Default::default() }),
+                        st_group_ex_info: Option::from(D88dGroupExInfoOnly{ ..Default::default() }),
+                        group_sec_level: Option::from(0),
+                        cmduin_privilege: Option::from(0),
+                        no_finger_open_flag: Option::from(0),
+                        no_code_finger_open_flag: Option::from(0),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }
+            ],
+            pc_client_version: Option::from(0),
+        }.to_bytes();
+        let payload = OidbssoPkg {
+            command: 2189,
+            bodybuffer: body.to_vec(),
+            ..Default::default()
+        };
+        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "OidbSvc.0x88d_0", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &payload.to_bytes());
         (seq, packet)
     }
 }
