@@ -38,6 +38,7 @@ impl ClientNet {
         let cli = self.client.clone();
         let a = tokio::spawn(async move {
             loop {
+                let cli = cli.clone();
                 let len = read_half.read_i32().await.unwrap();
                 if len - 4 < 0 {
                     panic!("invalid packet length: {}", len);

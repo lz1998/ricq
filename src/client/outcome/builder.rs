@@ -897,7 +897,7 @@ impl crate::client::Client {
         (seq, packet)
     }
 
-    pub async fn build_group_msg_read_packet(&self, group_code: i64, msg_seq: i64) -> (u16, Bytes) {
+    pub async fn build_group_msg_read_packet(&self, group_code: i64, msg_seq: i32) -> (u16, Bytes) {
         let seq = self.next_seq();
         let req = pb::msg::PbMsgReadedReportReq {
             grp_read_report: vec![pb::msg::PbGroupReadedReportReq { group_code: Some(group_code as u64), last_read_seq: Some(msg_seq as u64) }],
