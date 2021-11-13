@@ -1,6 +1,8 @@
 use crate::jce::*;
-use bytes::{Bytes,Buf};
+use bytes::{Bytes, Buf};
 use jce_struct::Jce;
+use anyhow::Result;
+use crate::client::errors::RQError;
 
 pub fn decode_client_register_response(payload: &[u8]) -> SvcRespRegister {
     let mut payload = Bytes::from(payload.to_owned());
@@ -12,7 +14,7 @@ pub fn decode_client_register_response(payload: &[u8]) -> SvcRespRegister {
     Jce::read_from_bytes(&mut b)
 }
 
-pub fn decode_dev_list_response(payload: &[u8]) -> Option<Vec<SvcDevLoginInfo>> {
+pub fn decode_dev_list_response(payload: &[u8]) -> Result<Vec<SvcDevLoginInfo>> {
     let mut payload = Bytes::from(payload.to_owned());
     let mut request: RequestPacket = Jce::read_from_bytes(&mut payload);
     let mut data: RequestDataVersion2 = Jce::read_from_bytes(&mut request.s_buffer);
@@ -21,15 +23,15 @@ pub fn decode_dev_list_response(payload: &[u8]) -> Option<Vec<SvcDevLoginInfo>> 
     let mut rsp = Jce::new(&mut msg);
     let mut d: Vec<SvcDevLoginInfo> = rsp.get_by_tag(4);
     if d.len() > 0 {
-        return Some(d)
+        return Ok(d);
     }
     let mut d: Vec<SvcDevLoginInfo> = rsp.get_by_tag(5);
     if d.len() > 0 {
-        return Some(d)
+        return Ok(d);
     }
     let mut d: Vec<SvcDevLoginInfo> = rsp.get_by_tag(6);
     if d.len() > 0 {
-        return Some(d)
+        return Ok(d);
     }
-    None
+    return Err(RQError::Decode("decode_dev_list_response unknown error".to_string()).into());
 }

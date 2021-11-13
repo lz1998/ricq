@@ -11,6 +11,9 @@ use tokio::time::{Duration, sleep};
 use super::Client;
 use crate::client::Password;
 use super::net;
+use anyhow::Result;
+use tokio::sync::mpsc::error::SendError;
+use super::errors::RQError;
 
 
 impl super::Client {
@@ -82,18 +85,22 @@ impl super::Client {
         self.out_pkt_sender.send(pkt.bytes);
     }
 
-    pub async fn send_and_wait(&self, pkt: OutcomePacket) -> Option<IncomePacket> {
+    pub async fn send_and_wait(&self, pkt: OutcomePacket) -> Result<IncomePacket> {
         let (sender, receiver) = oneshot::channel();
         {
             let mut packet_promises = self.packet_promises.write().await;
             packet_promises.insert(pkt.seq, sender);
         }
-        self.out_pkt_sender.send(pkt.bytes);
+        if let Err(_) = self.out_pkt_sender.send(pkt.bytes) {
+            let mut packet_promises = self.packet_promises.write().await;
+            packet_promises.remove(&pkt.seq);
+            return Err(RQError::Network.into());
+        }
         let output = if let Ok(Ok(p)) = tokio::time::timeout(std::time::Duration::from_secs(15), receiver).await
         {
-            Some(p)
+            Ok(p)
         } else {
-            None
+            Err(RQError::Timeout.into())
         };
         {
             let mut packet_promises = self.packet_promises.write().await;
@@ -108,10 +115,10 @@ impl super::Client {
         while self.online.load(Ordering::SeqCst) {
             sleep(Duration::from_secs(30)).await;
             match self.send_and_wait(self.build_heartbeat_packet().await.into()).await {
-                None => {
+                Err(_) => {
                     continue;
                 }
-                Some(_) => {
+                Ok(_) => {
                     times += 1;
                     if times >= 7 {
                         self.register_client().await;

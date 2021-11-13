@@ -24,6 +24,7 @@ tokio = { version = "1", features = ["full"] }
 tokio-util = { version = "0.6", features = ["codec"] }
 futures="0.3"
 anyhow = "1"
+thiserror = "1.0.30"
 tracing = "0.1"
 jce_struct = { path = "jce_struct" }
 lazy_static = "1.4.0"

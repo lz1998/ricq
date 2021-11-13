@@ -79,7 +79,7 @@ async fn main() -> Result<()> {
         println!("{:?}", resp);
         client.register_client().await;
         client.refresh_status().await;
-        let c=client.clone();
+        let c = client.clone();
         tokio::spawn(async move {
             c.do_heartbeat().await;
         });
@@ -89,10 +89,10 @@ async fn main() -> Result<()> {
             client.reload_group_list().await;
             let group_list = client.group_list.read().await;
         }
-        let r=client.refresh_status().await;
-        println!("{:?}",r);
-        let d=client.get_allowed_clients().await;
-        println!("{:?}",d);
+        let r = client.refresh_status().await;
+        println!("{:?}", r);
+        let d = client.get_allowed_clients().await;
+        println!("{:?}", d);
 
         // client.send_group_message(335783090, vec![
         //     Msg::At { target: 875543533, display: "@lz1998".to_string() },

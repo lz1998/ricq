@@ -8,6 +8,8 @@ use crate::pb;
 use crate::pb::msg;
 use crate::pb::msg::{PushMessagePacket, TransMsgInfo};
 use crate::pb::notify::GeneralGrayTipInfo;
+use anyhow::Result;
+use crate::client::errors::RQError;
 
 #[derive(Debug, Default)]
 pub struct ReqPush {
@@ -60,7 +62,7 @@ pub struct GroupRedBagLuckyKingNotifyEvent {}
 pub struct GroupDigestEvent {}
 
 // todo decode_online_push_req_packet
-pub fn decode_online_push_req_packet(payload: &[u8]) -> Option<ReqPush> {
+pub fn decode_online_push_req_packet(payload: &[u8]) -> Result<ReqPush> {
     let mut payload = Bytes::from(payload.to_owned());
     let mut request: jce::RequestPacket = Jce::read_from_bytes(&mut payload);
     let mut data: jce::RequestDataVersion2 = Jce::read_from_bytes(&mut request.s_buffer);
@@ -94,7 +96,7 @@ pub fn decode_online_push_req_packet(payload: &[u8]) -> Option<ReqPush> {
         }
         info
     }).collect();
-    Some(ReqPush {
+    Ok(ReqPush {
         resp: ReqPushResp {
             uin,
             msg_infos,
@@ -127,14 +129,14 @@ pub enum OnlinePushTrans {
 }
 
 // TODO 还没测试
-pub fn decode_online_push_trans_packet(payload: &[u8]) -> Option<OnlinePushTrans> {
+pub fn decode_online_push_trans_packet(payload: &[u8]) -> Result<OnlinePushTrans> {
     let trans_msg_info = TransMsgInfo::from_bytes(payload);
     if trans_msg_info.is_err() {
-        return None;
+        return Err(RQError::Decode("failed to decode TransMsgInfo".to_string()).into());
     }
     let info = trans_msg_info.unwrap();
     let msg_uid = info.msg_uid.unwrap_or(0);
-    let group_uin = info.from_uin?;
+    let group_uin = info.from_uin.ok_or(RQError::Decode("decode_online_push_trans_packet from_uin is 0".to_string()))?;
     let mut data = Bytes::from(info.msg_data.unwrap());
     // 去重暂时不做
     match info.msg_type {
@@ -146,14 +148,14 @@ pub fn decode_online_push_trans_packet(payload: &[u8]) -> Option<OnlinePushTrans
             let operator = data.get_i32() as i64;
             match typ {
                 0x02 | 0x82 => {
-                    return Some(MemberLeave {
+                    return Ok(MemberLeave {
                         msg_uid,
                         group_uin,
                         member_uin: target,
                     });
                 }
                 0x03 | 0x83 => {
-                    return Some(MemberKicked {
+                    return Ok(MemberKicked {
                         msg_uid,
                         group_uin,
                         member_uin: target,
@@ -173,7 +175,7 @@ pub fn decode_online_push_trans_packet(payload: &[u8]) -> Option<OnlinePushTrans
             }
             if var5 == 0 && data.len() == 1 {
                 let new_permission = if data.get_u8() == 1 { GroupMemberPermission::Administrator } else { GroupMemberPermission::Member };
-                return Some(MemberPermissionChanged {
+                return Ok(MemberPermissionChanged {
                     msg_uid,
                     group_uin,
                     member_uin: target,
@@ -183,7 +185,7 @@ pub fn decode_online_push_trans_packet(payload: &[u8]) -> Option<OnlinePushTrans
         }
         _ => {}
     }
-    None
+    Err(RQError::Decode("decode_online_push_trans_packet unknown error".to_string()).into())
 }
 
 #[derive(Debug)]
@@ -206,14 +208,14 @@ pub struct GroupMessagePart {
 }
 
 // 解析群消息分片 TODO 长消息需要合并
-pub fn decode_group_message_packet(payload: &[u8]) -> Option<GroupMessagePart> {
+pub fn decode_group_message_packet(payload: &[u8]) -> Result<GroupMessagePart> {
     let pkt = PushMessagePacket::from_bytes(payload);
     if pkt.is_err() {
-        return None;
+        return Err(RQError::Decode("failed to decode PushMessagePacket".to_string()).into());
     }
     let message = pkt.unwrap().message.unwrap();
 
-    return Some(GroupMessagePart {
+    return Ok(GroupMessagePart {
         seq: message.head.as_ref().unwrap().msg_seq.unwrap(),
         rand: message.body.as_ref().unwrap().rich_text.as_ref().unwrap().attr.as_ref().unwrap().random.unwrap(),
         group_code: message.head.as_ref().unwrap().group_info.as_ref().unwrap().group_code.unwrap(),
@@ -233,10 +235,10 @@ pub struct FriendMessageRecalledEvent {
     time: i64,
 }
 
-pub fn msg_type_0x210_sub8a_decoder(uin: i64, protobuf: &[u8]) -> Option<Vec<FriendMessageRecalledEvent>> {
+pub fn msg_type_0x210_sub8a_decoder(uin: i64, protobuf: &[u8]) -> Result<Vec<FriendMessageRecalledEvent>> {
     let s8a = pb::Sub8A::from_bytes(protobuf);
     if s8a.is_err() {
-        return None;
+        return Err(RQError::Decode("failed to decode Sub8A".to_string()).into());
     }
     let s8a = s8a.unwrap();
     let mut events = Vec::new();
@@ -249,17 +251,17 @@ pub fn msg_type_0x210_sub8a_decoder(uin: i64, protobuf: &[u8]) -> Option<Vec<Fri
             })
         }
     }
-    return if events.len() > 0 { Some(events) } else { None };
+    return if events.len() > 0 { Ok(events) } else { Err(RQError::Decode("events length is 0".to_string()).into()) };
 }
 
 pub struct NewFriendEvent {
     friend: FriendInfo,
 }
 
-pub fn msg_type_0x210_subb3_decoder(protobuf: &[u8]) -> Option<NewFriendEvent> {
+pub fn msg_type_0x210_subb3_decoder(protobuf: &[u8]) -> Result<NewFriendEvent> {
     let b3 = pb::SubB3::from_bytes(protobuf);
     if b3.is_err() {
-        return None;
+        return Err(RQError::Decode("failed to decode SubB3".to_string()).into());
     }
     let b3 = b3.unwrap();
     let friend = FriendInfo {
@@ -267,7 +269,7 @@ pub fn msg_type_0x210_subb3_decoder(protobuf: &[u8]) -> Option<NewFriendEvent> {
         nick: b3.msg_add_frd_notify.unwrap().nick,
         ..Default::default()
     };
-    Some(NewFriendEvent {
+    Ok(NewFriendEvent {
         friend
     })
 }
@@ -279,13 +281,13 @@ pub struct GroupLeaveEvent {
 }
 
 // return group number group leave
-pub fn msg_type_0x210_subd4_decoder(protobuf: &[u8]) -> Option<GroupLeaveEvent> {
+pub fn msg_type_0x210_subd4_decoder(protobuf: &[u8]) -> Result<GroupLeaveEvent> {
     let d4 = pb::SubD4::from_bytes(protobuf);
     if d4.is_err() {
-        return None;
+        return Err(RQError::Decode("failed to decode SubD4".to_string()).into());
     }
     let d4 = d4.unwrap();
-    Some(GroupLeaveEvent {
+    Ok(GroupLeaveEvent {
         group_code: d4.uin,
         ..Default::default()
     })
@@ -304,10 +306,10 @@ pub struct GroupNameUpdatedEvent {
     operator_uin: i64,
 }
 
-pub fn msg_type_0x210_sub27_decoder(protobuf: &[u8]) -> Option<Sub0x27Event> {
+pub fn msg_type_0x210_sub27_decoder(protobuf: &[u8]) -> Result<Sub0x27Event> {
     let s27 = pb::msgtype0x210::SubMsg0x27Body::from_bytes(protobuf);
     if s27.is_err() {
-        return None;
+        return Err(RQError::Decode("failed to decode SubMsg0x27Body".to_string()).into());
     }
     let s27 = s27.unwrap();
     let mut sub_0x27_event = Sub0x27Event::default();
@@ -329,7 +331,7 @@ pub fn msg_type_0x210_sub27_decoder(protobuf: &[u8]) -> Option<Sub0x27Event> {
             sub_0x27_event.del_friend_events.append(&mut del_friend.uins.iter().map(|uin| *uin as i64).collect())
         }
     }
-    Some(sub_0x27_event)
+    Ok(sub_0x27_event)
 }
 
 pub struct FriendPokeNotifyEvent {
@@ -337,10 +339,10 @@ pub struct FriendPokeNotifyEvent {
     receiver: i64,
 }
 
-pub fn msg_type_0x210_sub122_decoder(protobuf: &[u8]) -> Option<FriendPokeNotifyEvent> {
+pub fn msg_type_0x210_sub122_decoder(protobuf: &[u8]) -> Result<FriendPokeNotifyEvent> {
     let t = GeneralGrayTipInfo::from_bytes(protobuf);
     if t.is_err() {
-        return None;
+        return Err(RQError::Decode("failed to decode GeneralGrayTipInfo".to_string()).into());
     }
     let t = t.unwrap();
     let mut sender: i64 = 0;
@@ -353,9 +355,9 @@ pub fn msg_type_0x210_sub122_decoder(protobuf: &[u8]) -> Option<FriendPokeNotify
         }
     }
     return if sender == 0 {
-        None
+        Err(RQError::Decode("msg_type_0x210_sub122_decoder sender is 0".to_string()).into())
     } else {
-        Some(FriendPokeNotifyEvent {
+        Ok(FriendPokeNotifyEvent {
             sender,
             receiver,
         })
@@ -367,18 +369,18 @@ pub struct GroupMemberNeedSync {
     group_code: i64,
 }
 
-pub fn msg_type_0x210_sub44_decoder(protobuf: &[u8]) -> Option<GroupMemberNeedSync> {
+pub fn msg_type_0x210_sub44_decoder(protobuf: &[u8]) -> Result<GroupMemberNeedSync> {
     let b44 = pb::Sub44::from_bytes(protobuf);
     if b44.is_err() {
-        return None;
+        return Err(RQError::Decode("failed to decode Sub44".to_string()).into());
     }
     let b44 = b44.unwrap();
     if b44.group_sync_msg.is_none() {
-        return None;
+        return Err(RQError::Decode("group_sync_msg is none".to_string()).into());
     }
-    let group_code = b44.group_sync_msg?.grp_code;
+    let group_code = b44.group_sync_msg.ok_or(RQError::Decode("msg_type_0x210_sub44_decoder group_sync_msg is None".to_string()))?.grp_code;
     if group_code != 0 {
-        return Some(GroupMemberNeedSync { group_code });
+        return Ok(GroupMemberNeedSync { group_code });
     }
-    None
+    return Err(RQError::Decode("msg_type_0x210_sub44_decoder unknown error".to_string()).into());
 }

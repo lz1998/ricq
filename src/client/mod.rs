@@ -23,6 +23,7 @@ pub mod device;
 pub mod api;
 pub mod msg;
 pub mod processor;
+pub mod errors;
 
 pub struct Client {
     seq_id: AtomicU16,

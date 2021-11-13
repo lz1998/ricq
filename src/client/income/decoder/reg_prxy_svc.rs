@@ -3,8 +3,10 @@ use tokio::sync::RwLock;
 use jce_struct::Jce;
 use crate::client::{Client, OtherClientInfo};
 use crate::jce::{RequestDataVersion2, RequestPacket, SvcRespParam};
+use anyhow::Result;
+use crate::client::errors::RQError;
 
-pub fn decode_push_param_packet(payload: &[u8]) -> Option<Vec<OtherClientInfo>> {
+pub fn decode_push_param_packet(payload: &[u8]) -> Result<Vec<OtherClientInfo>> {
     let mut payload = Bytes::from(payload.to_owned());
     let mut request: RequestPacket = Jce::read_from_bytes(&mut payload);
     let mut data: RequestDataVersion2 = Jce::read_from_bytes(&mut request.s_buffer);
@@ -12,7 +14,7 @@ pub fn decode_push_param_packet(payload: &[u8]) -> Option<Vec<OtherClientInfo>> 
     let mut reader = req.remove("RegisterProxySvcPack.SvcRespParam").unwrap();
     reader.advance(1);
     let rsp: SvcRespParam = Jce::read_from_bytes(&mut reader);
-    Some(rsp.online_infos.iter().map(|i| OtherClientInfo {
+    Ok(rsp.online_infos.iter().map(|i| OtherClientInfo {
         app_id: i.instance_id as i64,
         instance_id: i.instance_id,
         sub_platform: String::from_utf8_lossy(&i.sub_platform).to_string(),

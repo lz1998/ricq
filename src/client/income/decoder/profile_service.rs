@@ -1,5 +1,7 @@
 use crate::client::outcome::PbToBytes;
 use crate::pb::structmsg;
+use anyhow::Result;
+use crate::client::errors::RQError;
 
 #[derive(Debug, Default)]
 pub struct GroupSystemMessages {
@@ -52,7 +54,7 @@ pub struct UserInvited {
     action_uin_nick: String,
 }
 
-pub fn decode_system_msg_group_packet(payload: &[u8]) -> Option<GroupSystemMessages> {
+pub fn decode_system_msg_group_packet(payload: &[u8]) -> Result<GroupSystemMessages> {
     let rsp = structmsg::RspSystemMsgNew::from_bytes(payload);
     let mut user_apply = Vec::new();
     let mut self_invited = Vec::new();
@@ -118,12 +120,12 @@ pub fn decode_system_msg_group_packet(payload: &[u8]) -> Option<GroupSystemMessa
                     }
                 }
             }
-            Some(GroupSystemMessages {
+            Ok(GroupSystemMessages {
                 self_invited,
                 user_apply,
                 user_invited,
             })
         }
-        Err(_) => { None }
+        Err(_) => { Err(RQError::Decode("failed to decode RspSystemMsgNew".to_string()).into()) }
     }
 }

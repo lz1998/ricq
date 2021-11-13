@@ -3,6 +3,8 @@ use jce_struct::Jce;
 use crate::jce;
 use crate::pb;
 use crate::client::outcome::PbToBytes;
+use anyhow::Result;
+use crate::client::errors::RQError;
 
 #[derive(Default, Debug)]
 pub struct ConfigPushReq {
@@ -36,7 +38,7 @@ pub struct ConfigPushResp {
 }
 
 // TODO 还没测试
-pub fn decode_push_req_packet(payload: &[u8]) -> Option<ConfigPushReq> {
+pub fn decode_push_req_packet(payload: &[u8]) -> Result<ConfigPushReq> {
     let mut payload = Bytes::from(payload.to_owned());
     let mut request: jce::RequestPacket = Jce::read_from_bytes(&mut payload);
     let mut data: jce::RequestDataVersion2 = Jce::read_from_bytes(&mut request.s_buffer);
@@ -70,7 +72,7 @@ pub fn decode_push_req_packet(payload: &[u8]) -> Option<ConfigPushReq> {
             _ => ConfigPushBody::Unknown
         }
     }
-    Some(ConfigPushReq {
+    Ok(ConfigPushReq {
         resp: ConfigPushResp {
             t,
             pkt_seq: seq,

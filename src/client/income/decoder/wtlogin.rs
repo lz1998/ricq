@@ -4,6 +4,8 @@ use crate::binary::BinaryReader;
 use crate::client::Client;
 use crate::client::device::random_string;
 use crate::client::income::decoder::tlv::*;
+use anyhow::Result;
+use crate::client::errors::RQError;
 
 
 #[derive(Debug)]
@@ -57,9 +59,9 @@ pub enum LoginResponse {
 }
 
 
-pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Option<QRCodeState> {
+pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Result<QRCodeState> {
     if payload.len() < 48 {
-        return None;
+        return Err(RQError::Decode("invalid payload length".to_string()).into());
     }
     let mut payload = Bytes::from(payload.to_owned());
     payload.advance(5);// trans req head
@@ -79,13 +81,13 @@ pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Option<Q
         body.get_i32();
         let code = body.get_u8();
         if code != 0 {
-            return None;
+            return Err(RQError::Decode("body code != 0".to_string()).into());
         }
         let sig = body.read_bytes_short();
         body.get_u16();
         let mut m = body.read_tlv_map(2);
         if m.contains_key(&0x17) {
-            return Some(QRCodeState::QRCodeImageFetch {
+            return Ok(QRCodeState::QRCodeImageFetch {
                 image_data: m.remove(&0x17).unwrap(),
                 sig,
             });
@@ -107,11 +109,11 @@ pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Option<Q
         let code = body.get_u8();
         if code != 0 {
             return match code {
-                0x30 => Some(QRCodeState::QRCodeWaitingForScan),
-                0x35 => Some(QRCodeState::QRCodeWaitingForConfirm),
-                0x36 => Some(QRCodeState::QRCodeCanceled),
-                0x11 => Some(QRCodeState::QRCodeTimeout),
-                _ => None
+                0x30 => Ok(QRCodeState::QRCodeWaitingForScan),
+                0x35 => Ok(QRCodeState::QRCodeWaitingForConfirm),
+                0x36 => Ok(QRCodeState::QRCodeCanceled),
+                0x11 => Ok(QRCodeState::QRCodeTimeout),
+                _ => Err(RQError::Decode("invalid body code".to_string()).into())
             };
         }
         cli.uin.store(body.get_i64(), Ordering::SeqCst);
@@ -119,22 +121,22 @@ pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Option<Q
         body.get_u16();
         let mut m = body.read_tlv_map(2);
         if !m.contains_key(&0x18) || !m.contains_key(&0x1e) || !m.contains_key(&0x19) {
-            return None;
+            return Err(RQError::Decode("invalid tlv map".to_string()).into());
         }
         {
             let mut device_info = cli.device_info.write().await;
             device_info.tgtgt_key = m.remove(&0x1e).unwrap();
         }
-        return Some(QRCodeState::QRCodeConfirmed {
+        return Ok(QRCodeState::QRCodeConfirmed {
             tmp_pwd: m.remove(&0x18).unwrap(),
             tmp_no_pic_sig: m.remove(&0x19).unwrap(),
             tgt_qr: m.remove(&0x65).unwrap(),
         });
     }
-    return None;
+    return Err(RQError::Decode("decode_trans_emp_response unknown error".to_string()).into());
 }
 
-pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Option<LoginResponse> {
+pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<LoginResponse> {
     let mut reader = Bytes::from(payload.to_owned());
     reader.get_u16(); // sub command
     let t = reader.get_u8();
@@ -163,13 +165,13 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Option<Login
             cache_info.rand_seed = m.remove(&0x403).unwrap().into();
         }
         decode_t119(&m.get(&0x119).unwrap(), &cli.device_info.read().await.tgtgt_key, &mut cache_info, &mut account_info).await;
-        return Some(LoginResponse::Success);
+        return Ok(LoginResponse::Success);
     }
     if t == 2 {
         let mut cache_info = cli.cache_info.write().await;
         cache_info.t104 = m.remove(&0x104).unwrap();
         if m.contains_key(&0x192) {
-            return Some(LoginResponse::SliderNeededError {
+            return Ok(LoginResponse::SliderNeededError {
                 verify_url: String::from_utf8(m.remove(&0x192).unwrap().to_vec()).unwrap(),
             });
         }
@@ -178,19 +180,19 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Option<Login
             let sign_len = img_data.get_u16();
             img_data.get_u16();
             let sign = img_data.copy_to_bytes(sign_len as usize);
-            return Some(LoginResponse::NeedCaptcha {
+            return Ok(LoginResponse::NeedCaptcha {
                 captcha_sign: sign,
                 captcha_image: img_data,
             });
         } else {
-            return Some(LoginResponse::UnknownLoginError {
+            return Ok(LoginResponse::UnknownLoginError {
                 error_message: "".to_string()
             });
         }
     } // need captcha
 
     if t == 40 {
-        return Some(LoginResponse::UnknownLoginError {
+        return Ok(LoginResponse::UnknownLoginError {
             error_message: "账号被冻结".to_string(),
         });
     }
@@ -208,13 +210,13 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Option<Login
                 "phone_num".to_string()// 这里有问题
             };
             if m.contains_key(&0x204) {
-                return Some(LoginResponse::SMSOrVerifyNeededError {
+                return Ok(LoginResponse::SMSOrVerifyNeededError {
                     verify_url: String::from_utf8(m.remove(&0x204).unwrap().to_vec()).unwrap(),
                     sms_phone: phone,
                     error_message: String::from_utf8(m.remove(&0x17e).unwrap().to_vec()).unwrap(),
                 });
             }
-            return Some(LoginResponse::SMSNeededError {
+            return Ok(LoginResponse::SMSNeededError {
                 sms_phone: phone,
                 error_message: String::from_utf8(m.remove(&0x17e).unwrap().to_vec()).unwrap(),
             });
@@ -222,21 +224,21 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Option<Login
 
         if m.contains_key(&0x17b) {
             cache_info.t104 = m.remove(&0x104).unwrap();
-            return Some(LoginResponse::SMSNeededError {
+            return Ok(LoginResponse::SMSNeededError {
                 sms_phone: "".to_string(),
                 error_message: "".to_string(),
             });
         }
 
         if m.contains_key(&0x204) {
-            return Some(LoginResponse::UnsafeDeviceError {
+            return Ok(LoginResponse::UnsafeDeviceError {
                 verify_url: String::from_utf8(m.remove(&0x204).unwrap().to_vec()).unwrap(),
             });
         }
     }
 
     if t == 162 {
-        return Some(LoginResponse::TooManySMSRequestError);
+        return Ok(LoginResponse::TooManySMSRequestError);
     }
 
     if t == 204 {
@@ -245,14 +247,14 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Option<Login
             cache_info.t104 = m.remove(&0x104).unwrap();
             cache_info.rand_seed = m.remove(&0x403).unwrap();
         }
-        return Some(LoginResponse::NeedDeviceLockLogin);
+        return Ok(LoginResponse::NeedDeviceLockLogin);
     } // drive lock
 
     if m.contains_key(&0x149) {
         let mut t149r = Bytes::from(m.remove(&0x149).unwrap());
         t149r.advance(2);
         t149r.read_string_short();//title
-        return Some(LoginResponse::OtherLoginError {
+        return Ok(LoginResponse::OtherLoginError {
             error_message: t149r.read_string_short(),
         });
     }
@@ -261,14 +263,14 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Option<Login
         let mut t146r = Bytes::from(m.remove(&0x146).unwrap());
         t146r.advance(4); // ver and code
         t146r.read_string_short(); // title
-        return Some(LoginResponse::OtherLoginError {
+        return Ok(LoginResponse::OtherLoginError {
             error_message: t146r.read_string_short(),
         });
     }
-    return None;
+    return Err(RQError::Decode("decode_login_response unknown error".to_string()).into());
 }
 
-pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> Option<()> {
+pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> Result<()> {
     let mut cache_info = cli.cache_info.write().await;
     let mut account_info = cli.account_info.write().await;
     let mut payload = Bytes::from(payload.to_owned());
@@ -277,7 +279,7 @@ pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> O
     payload.get_u16();
     let m = payload.read_tlv_map(2);
     if t != 0 {
-        return None;
+        return Err(RQError::Decode("decode_exchange_emp_response t != 0".to_string()).into());
     }
     if cmd == 15 {
         decode_t119r(m.get(&0x119).unwrap(), &cli.device_info.read().await.tgtgt_key, &mut cache_info, &mut account_info);
@@ -286,5 +288,5 @@ pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> O
         let h = md5::compute(&cli.cache_info.read().await.sig_info.d2key).to_vec();
         decode_t119(m.get(&0x119).unwrap(), &h, &mut cache_info, &mut account_info).await;
     }
-    return None;
+    return Ok(());
 }
