@@ -264,7 +264,7 @@ JceStruct!(OnlineInfo {
     1 => client_type: i32,
     2 => online_status: i32,
     3 => platform_id: i32,
-    4 => sub_platform: String,
+    4 => sub_platform: Bytes,
     5 => u_client_type: i64,
 });
 

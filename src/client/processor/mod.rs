@@ -27,9 +27,8 @@ impl super::Client {
                     self.process_config_push_req(req).await;
                 }
                 "RegPrxySvc.PushParam" => {
-                    // TODO JCE有问题？
-                    // let other_clients = decode_push_param_packet(&pkt.payload).unwrap();
-                    // self.process_push_param(other_clients);
+                    let other_clients = decode_push_param_packet(&pkt.payload).unwrap();
+                    self.process_push_param(other_clients);
                 }
                 _ => {
                     println!("unhandled pkt: {}", &pkt.command_name);
