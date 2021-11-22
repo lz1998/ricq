@@ -169,7 +169,6 @@ pub fn random_imei() -> String {
 
 #[cfg(test)]
 mod tests {
-    use chrono::Utc;
     use rand::distributions::Alphanumeric;
     use rand::{Rng, thread_rng};
     use crate::client::device::{random_imei, random_string, random_uuid};
@@ -178,7 +177,7 @@ mod tests {
     fn test_random() {
         let random_bytes = Vec::from(rand::thread_rng().gen::<[u8; 5]>());
         println!("{:?}", random_bytes);
-        let rand_string: String = thread_rng()
+        let _rand_string: String = thread_rng()
             .sample_iter(&Alphanumeric)
             .take(30)
             .map(char::from)

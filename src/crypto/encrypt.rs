@@ -2,9 +2,9 @@ use bytes::{BufMut, Bytes};
 // use openssl::bn::{BigNum, BigNumContext};
 // use openssl::ec::{EcGroup, EcPoint, EcKey, PointConversionForm};
 // use openssl::nid::Nid;
-use crate::hex::decode_hex;
-use crate::binary::BinaryWriter;
 use super::qqtea_encrypt;
+use crate::binary::BinaryWriter;
+use crate::hex::decode_hex;
 use p256::{ecdh::EphemeralSecret, EncodedPoint, PublicKey};
 
 pub trait IEncryptMethod {
@@ -73,7 +73,7 @@ pub struct EncryptSession {
 impl EncryptSession {
     pub fn new(t133: &[u8]) -> EncryptSession {
         EncryptSession {
-            t133: t133.to_vec()
+            t133: t133.to_vec(),
         }
     }
 }
@@ -93,14 +93,9 @@ impl IEncryptMethod for EncryptSession {
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use std::ops::Mul;
-    use crate::crypto::{EncryptECDH, IEncryptMethod};
-    use crate::hex::decode_hex;
-    use md5;
-
+    use crate::crypto::EncryptECDH;
 
     #[test]
     fn test_ecdh_generate_key() {

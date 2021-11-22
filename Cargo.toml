@@ -28,6 +28,7 @@ thiserror = "1.0.30"
 tracing = "0.1"
 jce_struct = { path = "jce_struct" }
 lazy_static = "1.4.0"
+async-trait = "0.1"
 
 [build-dependencies]
 prost-build = { version = "0.8.0" }

@@ -715,8 +715,6 @@ pub fn guid_flag() -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use std::borrow::Borrow;
-    use chrono::Utc;
     use crate::client::outcome::tlv::*;
     use lazy_static::*;
     lazy_static! {

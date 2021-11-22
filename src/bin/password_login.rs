@@ -1,12 +1,13 @@
-use std::path::Path;
-use std::sync::Arc;
-use rs_qq::client::device::DeviceInfo;
 use anyhow::Result;
 use futures::StreamExt;
-use tokio_util::codec::{FramedRead, LinesCodec};
-use rs_qq::client::{Client, Password};
+use rs_qq::client::device::DeviceInfo;
+use rs_qq::client::handler::DefaultHandler;
 use rs_qq::client::income::decoder::wtlogin::LoginResponse;
 use rs_qq::client::net::ClientNet;
+use rs_qq::client::{Client, Password};
+use std::path::Path;
+use std::sync::Arc;
+use tokio_util::codec::{FramedRead, LinesCodec};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -17,17 +18,17 @@ async fn main() -> Result<()> {
         true => {
             DeviceInfo::from_json(&tokio::fs::read_to_string("device.json").await.unwrap()).unwrap()
         }
-        false => {
-            DeviceInfo::random()
-        }
+        false => DeviceInfo::random(),
     };
-    tokio::fs::write("device.json", device_info.to_json()).await;
+    tokio::fs::write("device.json", device_info.to_json()).await.unwrap();
 
     let (cli, receiver) = Client::new(
         uin,
         Password::from_str(password),
         device_info,
-    ).await;
+        DefaultHandler,
+    )
+    .await;
     let client = Arc::new(cli);
     let client_net = ClientNet::new(client.clone(), receiver);
     let stream = client_net.connect_tcp().await;
@@ -36,8 +37,14 @@ async fn main() -> Result<()> {
         let mut resp = client.password_login().await.unwrap();
         loop {
             match resp {
-                LoginResponse::Success => { break; }
-                LoginResponse::SMSOrVerifyNeededError { ref verify_url, ref sms_phone, ref error_message } => {
+                LoginResponse::Success => {
+                    break;
+                }
+                LoginResponse::SMSOrVerifyNeededError {
+                    ref verify_url,
+                    ref sms_phone,
+                    ref error_message,
+                } => {
                     println!("{}", error_message);
                     println!("{}", sms_phone);
                     println!("手机打开url，处理完成后重启程序");
@@ -54,7 +61,10 @@ async fn main() -> Result<()> {
                     let ticket = reader.next().await.transpose().unwrap().unwrap();
                     resp = client.submit_ticket(&ticket).await.unwrap();
                 }
-                LoginResponse::SMSNeededError { ref sms_phone, ref error_message } => {
+                LoginResponse::SMSNeededError {
+                    ref sms_phone,
+                    ref error_message,
+                } => {
                     println!("{}", sms_phone);
                     println!("{}", error_message);
                     println!("请输入短信验证码:");

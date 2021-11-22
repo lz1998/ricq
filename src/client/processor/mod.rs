@@ -1,18 +1,18 @@
-use std::sync::Arc;
 use crate::client::income::decoder::config_push_svc::decode_push_req_packet;
 use crate::client::income::decoder::online_push::decode_group_message_packet;
 use crate::client::income::decoder::reg_prxy_svc::decode_push_param_packet;
 use crate::client::income::IncomePacket;
+use std::sync::Arc;
 
-pub mod online_push;
 pub mod config_push_svc;
+pub mod online_push;
 pub mod reg_prxy_svc;
 
 impl super::Client {
     pub async fn process_income_packet(self: Arc<Self>, pkt: IncomePacket) {
         // response
         if let Some(sender) = self.packet_promises.write().await.remove(&pkt.seq_id) {
-            sender.send(pkt); // response
+            sender.send(pkt).unwrap(); //todo response
             return;
         }
 
@@ -28,7 +28,7 @@ impl super::Client {
                 }
                 "RegPrxySvc.PushParam" => {
                     let other_clients = decode_push_param_packet(&pkt.payload).unwrap();
-                    self.process_push_param(other_clients);
+                    self.process_push_param(other_clients).await;
                 }
                 _ => {
                     println!("unhandled pkt: {}", &pkt.command_name);

@@ -31,11 +31,11 @@ pub mod protocol {
 
 #[cfg(test)]
 mod tests {
-    use std::net::TcpStream;
-    use std::str::from_utf8;
-    use std::time::Duration;
+    // use std::net::TcpStream;
+    // use std::str::from_utf8;
+    // use std::time::Duration;
 
-    use byteorder::{BigEndian, ReadBytesExt};
+    // use byteorder::{BigEndian, ReadBytesExt};
 
 
     #[test]

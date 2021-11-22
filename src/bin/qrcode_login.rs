@@ -1,14 +1,12 @@
-use std::path::Path;
-use std::sync::Arc;
-use rs_qq::client::device::DeviceInfo;
 use anyhow::Result;
-use futures::StreamExt;
-use tokio::io::AsyncReadExt;
-use tokio::time::{Duration, sleep};
-use tokio_util::codec::{FramedRead, LinesCodec};
-use rs_qq::client::{Client, Password};
+use rs_qq::client::device::DeviceInfo;
+use rs_qq::client::handler::DefaultHandler;
 use rs_qq::client::income::decoder::wtlogin::{LoginResponse, QRCodeState};
 use rs_qq::client::net::ClientNet;
+use rs_qq::client::{Client, Password};
+use std::path::Path;
+use std::sync::Arc;
+use tokio::time::{sleep, Duration};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -19,9 +17,7 @@ async fn main() -> Result<()> {
         true => {
             DeviceInfo::from_json(&tokio::fs::read_to_string("device.json").await.unwrap()).unwrap()
         }
-        false => {
-            DeviceInfo::random()
-        }
+        false => DeviceInfo::random(),
     };
     tokio::fs::write("device.json", device_info.to_json()).await;
 
@@ -29,7 +25,9 @@ async fn main() -> Result<()> {
         uin,
         Password::from_str(password),
         device_info,
-    ).await;
+        DefaultHandler,
+    )
+    .await;
     let client = Arc::new(cli);
     let client_net = ClientNet::new(client.clone(), receiver);
     let stream = client_net.connect_tcp().await;
@@ -37,7 +35,11 @@ async fn main() -> Result<()> {
     tokio::spawn(async move {
         let mut resp = client.fetch_qrcode().await.unwrap();
 
-        if let QRCodeState::QRCodeImageFetch { ref image_data, ref sig } = resp {
+        if let QRCodeState::QRCodeImageFetch {
+            ref image_data,
+            ref sig,
+        } = resp
+        {
             tokio::fs::write("qrcode.png", &image_data).await;
             println!("二维码: qrcode.png");
             loop {
@@ -54,9 +56,16 @@ async fn main() -> Result<()> {
                     QRCodeState::QRCodeTimeout => {
                         println!("二维码超时")
                     }
-                    QRCodeState::QRCodeConfirmed { ref tmp_pwd, ref tmp_no_pic_sig, ref tgt_qr } => {
+                    QRCodeState::QRCodeConfirmed {
+                        ref tmp_pwd,
+                        ref tmp_no_pic_sig,
+                        ref tgt_qr,
+                    } => {
                         println!("二维码已确认");
-                        let mut login_resp = client.qrcode_login(tmp_pwd, tmp_no_pic_sig, tgt_qr).await.unwrap();
+                        let mut login_resp = client
+                            .qrcode_login(tmp_pwd, tmp_no_pic_sig, tgt_qr)
+                            .await
+                            .unwrap();
                         if let LoginResponse::NeedDeviceLockLogin = login_resp {
                             login_resp = client.device_lock_login().await.unwrap();
                         }

@@ -1,12 +1,10 @@
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
 use bytes::Bytes;
-use jce_struct::Jce;
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
 use crate::client::income::decoder::{friendlist::*, profile_service::*, stat_svc::*, wtlogin::*};
 use crate::client::income::decoder::group_member_card::decode_group_member_info_response;
 use crate::client::msg::Msg;
-use crate::client::OtherClientInfo;
 use crate::client::structs::{GroupInfo, GroupMemberInfo};
 use anyhow::Result;
 use super::errors::RQError;
@@ -138,7 +136,7 @@ impl super::Client {
             elems.append(&mut message.pack());
         }
         let (_, packet) = self.build_group_sending_packet(group_code, 383, 1, 0, 0, false, elems).await;
-        self.out_pkt_sender.send(packet);
+        self.out_pkt_sender.send(packet).unwrap(); //todo
     }
 
     /// 获取群成员信息
@@ -203,7 +201,7 @@ impl super::Client {
             }));
         }
         for h in handles {
-            h.await;
+            h.await.unwrap(); //todo
         }
 
         let mut group_list = self.group_list.write().await;

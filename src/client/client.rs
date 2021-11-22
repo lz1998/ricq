@@ -1,32 +1,35 @@
-use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, AtomicU16, Ordering};
-use bytes::Bytes;
-use rand::Rng;
-use tokio::sync::RwLock;
-use crate::client::device::{DeviceInfo};
+use super::errors::RQError;
+use super::net;
+use super::Client;
+use crate::client::device::DeviceInfo;
 use crate::client::income::IncomePacket;
 use crate::client::outcome::OutcomePacket;
-use crate::client::version::{ClientProtocol, gen_version_info};
-use tokio::sync::oneshot;
-use tokio::time::{Duration, sleep};
-use super::Client;
+use crate::client::version::{gen_version_info, ClientProtocol};
 use crate::client::Password;
-use super::net;
 use anyhow::Result;
-use tokio::sync::mpsc::error::SendError;
-use super::errors::RQError;
-
+use bytes::Bytes;
+use rand::Rng;
+use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, AtomicU16, Ordering};
+use tokio::sync::oneshot;
+use tokio::sync::RwLock;
+use tokio::time::{sleep, Duration};
 
 impl super::Client {
-    pub async fn new(
+    pub async fn new<H>(
         uin: i64,
         password: Password,
         mut device_info: DeviceInfo,
-    ) -> (Client, net::OutPktReceiver) {
+        handler: H,
+    ) -> (Client, net::OutPktReceiver)
+    where
+        H: crate::client::handler::Handler + 'static + Sync + Send,
+    {
         device_info.gen_guid();
         device_info.gen_tgtgt_key();
         let (out_pkt_sender, out_pkt_receiver) = tokio::sync::mpsc::unbounded_channel();
 
         let cli = Client {
+            handler: Box::new(handler),
             seq_id: AtomicU16::new(0x3635),
             request_packet_request_id: AtomicI32::new(1921334513),
             group_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),
@@ -55,9 +58,13 @@ impl super::Client {
         };
         {
             let mut cache_info = cli.cache_info.write().await;
-            cache_info.ksid = Bytes::from(format!("|{}|A8.2.7.27f6ea96", cli.device_info.read().await.imei)); // TODO before connect
+            cache_info.ksid = Bytes::from(format!(
+                "|{}|A8.2.7.27f6ea96",
+                cli.device_info.read().await.imei
+            )); // TODO before connect
         }
-        cli.cache_info.write().await.ksid = format!("|{}|A8.2.7.27f6ea96", cli.device_info.read().await.imei).into();
+        cli.cache_info.write().await.ksid =
+            format!("|{}|A8.2.7.27f6ea96", cli.device_info.read().await.imei).into();
         (cli, out_pkt_receiver)
     }
 
@@ -66,7 +73,8 @@ impl super::Client {
     }
 
     pub fn next_packet_seq(&self) -> i32 {
-        self.request_packet_request_id.fetch_add(2, Ordering::Relaxed)
+        self.request_packet_request_id
+            .fetch_add(2, Ordering::Relaxed)
     }
 
     pub fn next_group_seq(&self) -> i32 {
@@ -77,12 +85,16 @@ impl super::Client {
         self.friend_seq.fetch_add(2, Ordering::Relaxed)
     }
 
-    pub fn next_group_data_trans_seq(&self) -> i32 { self.group_data_trans_seq.fetch_add(2, Ordering::Relaxed) }
+    pub fn next_group_data_trans_seq(&self) -> i32 {
+        self.group_data_trans_seq.fetch_add(2, Ordering::Relaxed)
+    }
 
-    pub fn next_highway_apply_seq(&self) -> i32 { self.highway_apply_up_seq.fetch_add(2, Ordering::Relaxed) }
+    pub fn next_highway_apply_seq(&self) -> i32 {
+        self.highway_apply_up_seq.fetch_add(2, Ordering::Relaxed)
+    }
 
     pub async fn send(&self, pkt: OutcomePacket) {
-        self.out_pkt_sender.send(pkt.bytes);
+        self.out_pkt_sender.send(pkt.bytes).unwrap(); //todo
     }
 
     pub async fn send_and_wait(&self, pkt: OutcomePacket) -> Result<IncomePacket> {
@@ -96,7 +108,8 @@ impl super::Client {
             packet_promises.remove(&pkt.seq);
             return Err(RQError::Network.into());
         }
-        let output = if let Ok(Ok(p)) = tokio::time::timeout(std::time::Duration::from_secs(15), receiver).await
+        let output = if let Ok(Ok(p)) =
+            tokio::time::timeout(std::time::Duration::from_secs(15), receiver).await
         {
             Ok(p)
         } else {
@@ -114,14 +127,17 @@ impl super::Client {
         let mut times = 0;
         while self.online.load(Ordering::SeqCst) {
             sleep(Duration::from_secs(30)).await;
-            match self.send_and_wait(self.build_heartbeat_packet().await.into()).await {
+            match self
+                .send_and_wait(self.build_heartbeat_packet().await.into())
+                .await
+            {
                 Err(_) => {
                     continue;
                 }
                 Ok(_) => {
                     times += 1;
                     if times >= 7 {
-                        self.register_client().await;
+                        self.register_client().await.unwrap(); //todo
                         times = 0;
                     }
                 }

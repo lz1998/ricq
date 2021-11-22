@@ -24,8 +24,10 @@ pub mod api;
 pub mod msg;
 pub mod processor;
 pub mod errors;
+pub mod handler;
 
 pub struct Client {
+    handler: Box<dyn handler::Handler + Sync + Send + 'static>,
     seq_id: AtomicU16,
     request_packet_request_id: AtomicI32,
     group_seq: AtomicI32,
