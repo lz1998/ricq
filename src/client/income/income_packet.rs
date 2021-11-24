@@ -1,8 +1,8 @@
-use std::io::Read;
-use crate::crypto::qqtea_decrypt;
-use flate2::read::ZlibDecoder;
-use bytes::{Bytes, Buf};
 use crate::binary::BinaryReader;
+use crate::crypto::qqtea_decrypt;
+use bytes::{Buf, Bytes};
+use flate2::read::ZlibDecoder;
+use std::io::Read;
 
 #[derive(Default, Debug)]
 pub struct IncomePacket {
@@ -44,8 +44,8 @@ impl IncomePacket {
     }
 }
 
-impl super::super::Client{
-    pub async fn parse_incoming_packet(&self, payload: &mut Bytes) -> Result<IncomePacket,String> {
+impl super::super::Client {
+    pub async fn parse_incoming_packet(&self, payload: &mut Bytes) -> Result<IncomePacket, String> {
         if payload.len() < 6 {
             return Err("invalid  incoming packet length".to_string());
         }
@@ -56,9 +56,12 @@ impl super::super::Client{
         pkt.uin_string = payload.read_string();
         pkt.payload = match pkt.flag2 {
             0 => Bytes::from(payload.chunk().to_owned()),
-            1 => Bytes::from(qqtea_decrypt(payload.chunk(), &self.cache_info.read().await.sig_info.d2key)),
+            1 => Bytes::from(qqtea_decrypt(
+                payload.chunk(),
+                &self.cache_info.read().await.sig_info.d2key,
+            )),
             2 => Bytes::from(qqtea_decrypt(payload.chunk(), &[0; 16])),
-            _ => { Bytes::new() }
+            _ => Bytes::new(),
         };
         if pkt.payload.len() == 0 {
             return Err("payload length==0".to_string());
@@ -68,7 +71,11 @@ impl super::super::Client{
         }
         self.parse_sso_frame(&mut pkt).await?;
         if pkt.flag2 == 2 {
-            pkt.decrypt_payload(&self.ecdh.initial_share_key, &self.random_key, &self.cache_info.read().await.sig_info.wt_session_ticket_key)
+            pkt.decrypt_payload(
+                &self.ecdh.initial_share_key,
+                &self.random_key,
+                &self.cache_info.read().await.sig_info.wt_session_ticket_key,
+            )
         }
         Ok(pkt)
     }
@@ -83,9 +90,9 @@ impl super::super::Client{
         let ret_code = payload.get_i32();
         if ret_code != 0 {
             if ret_code == -10008 {
-                return Err("ErrSessionExpired".to_string());//ErrSessionExpired
+                return Err("ErrSessionExpired".to_string()); //ErrSessionExpired
             }
-            return Err("unsuccessful".to_string());//unsuccessful
+            return Err("unsuccessful".to_string()); //unsuccessful
         }
 
         // extra data
@@ -108,16 +115,15 @@ impl super::super::Client{
             1 => {
                 payload.advance(4);
                 let mut uncompressed = Vec::new();
-                ZlibDecoder::new(payload.chunk()).read_to_end(&mut uncompressed);
+                ZlibDecoder::new(payload.chunk())
+                    .read_to_end(&mut uncompressed)
+                    .unwrap(); //todo
                 Bytes::from(uncompressed)
             }
-            8 => {
-                Bytes::from(payload)
-            }
-            _ => { Bytes::new() }
+            8 => Bytes::from(payload),
+            _ => Bytes::new(),
         };
         pkt.payload = packet;
         return Ok(());
     }
-
 }

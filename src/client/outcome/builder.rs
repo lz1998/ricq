@@ -2,7 +2,6 @@ use std::collections::HashMap;
 use std::sync::atomic::Ordering;
 use bytes::{BufMut, Bytes, BytesMut};
 use chrono::Utc;
-use rand::seq;
 use crate::binary::BinaryWriter;
 use crate::crypto::EncryptSession;
 use crate::client::outcome::packet::*;
@@ -1002,13 +1001,13 @@ impl crate::client::Client {
 }
 
 
-#[cfg(test)]
-mod tests {
-    use bytes::BufMut;
-    use chrono::Utc;
-    use rand::distributions::Alphanumeric;
-    use rand::{Rng, thread_rng};
+// #[cfg(test)]
+// mod tests {
+//     use bytes::BufMut;
+//     use chrono::Utc;
+//     use rand::distributions::Alphanumeric;
+//     use rand::{Rng, thread_rng};
 
-    #[test]
-    fn test_read() {}
-}
+//     #[test]
+//     fn test_read() {}
+// }

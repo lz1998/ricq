@@ -1,30 +1,31 @@
 use std::collections::HashMap;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, AtomicU16};
+use std::sync::Arc;
 
-use bytes::Bytes;
-use tokio::sync::RwLock;
 use crate::client::device::DeviceInfo;
 use crate::client::structs::{FriendInfo, GroupInfo, LoginSigInfo};
 use crate::client::version::VersionInfo;
+use bytes::Bytes;
+use tokio::sync::RwLock;
 
-use crate::crypto::EncryptECDH;
-use tokio::sync::oneshot;
 use crate::client::income::IncomePacket;
+use crate::crypto::EncryptECDH;
 use crate::jce::FileStoragePushFSSvcList;
+use tokio::sync::oneshot;
 
-pub mod client;
-pub mod structs;
-pub mod income;
-pub mod outcome;
-pub mod net;
-pub mod version;
-pub mod device;
 pub mod api;
-pub mod msg;
-pub mod processor;
+pub mod client;
+pub mod device;
 pub mod errors;
 pub mod handler;
+pub mod income;
+pub mod messages;
+pub mod msg;
+pub mod net;
+pub mod outcome;
+pub mod processor;
+pub mod structs;
+pub mod version;
 
 pub struct Client {
     handler: Box<dyn handler::Handler + Sync + Send + 'static>,
@@ -64,8 +65,9 @@ pub struct Client {
     // statics
     pub last_message_time: AtomicI64,
 
+    /// 群消息 builder 寄存
+    pub group_message_builder: RwLock<HashMap<i32, income::builder::GroupMessageBuilder>>,
 }
-
 
 /// Password enum
 pub enum Password {

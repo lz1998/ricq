@@ -13,13 +13,15 @@ async fn main() -> Result<()> {
     let uin = 0;
     let password = "";
 
-    let mut device_info = match Path::new("device.json").exists() {
+    let device_info = match Path::new("device.json").exists() {
         true => {
             DeviceInfo::from_json(&tokio::fs::read_to_string("device.json").await.unwrap()).unwrap()
         }
         false => DeviceInfo::random(),
     };
-    tokio::fs::write("device.json", device_info.to_json()).await;
+    tokio::fs::write("device.json", device_info.to_json())
+        .await
+        .unwrap(); //todo
 
     let (cli, receiver) = Client::new(
         uin,
@@ -33,14 +35,14 @@ async fn main() -> Result<()> {
     let stream = client_net.connect_tcp().await;
     let net = tokio::spawn(client_net.net_loop(stream));
     tokio::spawn(async move {
-        let mut resp = client.fetch_qrcode().await.unwrap();
+        let resp = client.fetch_qrcode().await.unwrap();
 
         if let QRCodeState::QRCodeImageFetch {
             ref image_data,
             ref sig,
         } = resp
         {
-            tokio::fs::write("qrcode.png", &image_data).await;
+            tokio::fs::write("qrcode.png", &image_data).await.unwrap(); //todo
             println!("二维码: qrcode.png");
             loop {
                 sleep(Duration::from_secs(5)).await;
@@ -75,7 +77,7 @@ async fn main() -> Result<()> {
                     QRCodeState::QRCodeCanceled => {}
                 }
             }
-            client.register_client().await;
+            client.register_client().await.unwrap(); //todo
             let rsp = client.group_list.read().await;
             println!("{:?}", rsp);
             let rsp = client.friend_list.read().await;
@@ -84,7 +86,7 @@ async fn main() -> Result<()> {
             panic!("error")
         }
     });
-    net.await;
+    net.await.unwrap().unwrap(); //todo
 
     Ok(())
 }

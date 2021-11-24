@@ -20,7 +20,9 @@ async fn main() -> Result<()> {
         }
         false => DeviceInfo::random(),
     };
-    tokio::fs::write("device.json", device_info.to_json()).await.unwrap();
+    tokio::fs::write("device.json", device_info.to_json())
+        .await
+        .unwrap();
 
     let (cli, receiver) = Client::new(
         uin,
@@ -87,17 +89,17 @@ async fn main() -> Result<()> {
             }
         }
         println!("{:?}", resp);
-        client.register_client().await;
-        client.refresh_status().await;
+        client.register_client().await.unwrap(); //todo
+        client.refresh_status().await.unwrap(); //todo
         let c = client.clone();
         tokio::spawn(async move {
             c.do_heartbeat().await;
         });
         {
-            client.reload_friend_list().await;
+            client.reload_friend_list().await.unwrap(); //todo
             println!("{:?}", client.friend_list.read().await);
-            client.reload_group_list().await;
-            let group_list = client.group_list.read().await;
+            client.reload_group_list().await.unwrap(); //todo
+            let _group_list = client.group_list.read().await;
         }
         let r = client.refresh_status().await;
         println!("{:?}", r);
@@ -113,7 +115,7 @@ async fn main() -> Result<()> {
         // let mem_list = client.get_group_member_list(335783090).await;
         // println!("{:?}", mem_list);
     });
-    net.await;
+    net.await.unwrap().unwrap(); //todo
 
     Ok(())
 }

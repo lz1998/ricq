@@ -55,6 +55,7 @@ impl super::Client {
             group_list: Default::default(),
             online_clients: Default::default(),
             last_message_time: Default::default(),
+            group_message_builder: RwLock::default(),
         };
         {
             let mut cache_info = cli.cache_info.write().await;

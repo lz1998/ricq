@@ -1,6 +1,7 @@
-use bytes::{Buf, Bytes};
-use jce_struct::Jce;
-use crate::client::income::decoder::online_push::OnlinePushTrans::{MemberKicked, MemberLeave, MemberPermissionChanged};
+use crate::client::errors::RQError;
+use crate::client::income::decoder::online_push::OnlinePushTrans::{
+    MemberKicked, MemberLeave, MemberPermissionChanged,
+};
 use crate::client::outcome::PbToBytes;
 use crate::client::structs::{FriendInfo, GroupMemberPermission};
 use crate::jce;
@@ -9,7 +10,8 @@ use crate::pb::msg;
 use crate::pb::msg::{PushMessagePacket, TransMsgInfo};
 use crate::pb::notify::GeneralGrayTipInfo;
 use anyhow::Result;
-use crate::client::errors::RQError;
+use bytes::{Buf, Bytes};
+use jce_struct::Jce;
 
 #[derive(Debug, Default)]
 pub struct ReqPush {
@@ -72,35 +74,35 @@ pub fn decode_online_push_req_packet(payload: &[u8]) -> Result<ReqPush> {
     let uin: i64 = jr.get_by_tag(0);
     let msg_infos: Vec<jce::PushMessageInfo> = jr.get_by_tag(2);
 
-    let infos: Vec<PushInfo> = msg_infos.iter().map(|m| {
-        let mut info = PushInfo {
-            msg_seq: m.msg_seq,
-            msg_time: m.msg_time,
-            msg_uid: m.msg_uid,
-            ..Default::default()
-        };
-        match m.msg_type {
-            732 => {
-                let mut r = m.v_msg.clone();
-                let group_code = r.get_i32() as i64;
-                let i_type = r.get_u8();
-                r.get_u8();
-                match i_type {
-                    0x0c => {}
-                    0x10 | 0x11 | 0x14 | 0x15 => {}
-                    _ => {}
+    let infos: Vec<PushInfo> = msg_infos
+        .iter()
+        .map(|m| {
+            let mut info = PushInfo {
+                msg_seq: m.msg_seq,
+                msg_time: m.msg_time,
+                msg_uid: m.msg_uid,
+                ..Default::default()
+            };
+            match m.msg_type {
+                732 => {
+                    let mut r = m.v_msg.clone();
+                    let group_code = r.get_i32() as i64;
+                    let i_type = r.get_u8();
+                    r.get_u8();
+                    match i_type {
+                        0x0c => {}
+                        0x10 | 0x11 | 0x14 | 0x15 => {}
+                        _ => {}
+                    }
                 }
+                528 => {}
+                _ => {}
             }
-            528 => {}
-            _ => {}
-        }
-        info
-    }).collect();
+            info
+        })
+        .collect();
     Ok(ReqPush {
-        resp: ReqPushResp {
-            uin,
-            msg_infos,
-        },
+        resp: ReqPushResp { uin, msg_infos },
         ..Default::default()
     })
 }
@@ -136,7 +138,9 @@ pub fn decode_online_push_trans_packet(payload: &[u8]) -> Result<OnlinePushTrans
     }
     let info = trans_msg_info.unwrap();
     let msg_uid = info.msg_uid.unwrap_or(0);
-    let group_uin = info.from_uin.ok_or(RQError::Decode("decode_online_push_trans_packet from_uin is 0".to_string()))?;
+    let group_uin = info.from_uin.ok_or(RQError::Decode(
+        "decode_online_push_trans_packet from_uin is 0".to_string(),
+    ))?;
     let mut data = Bytes::from(info.msg_data.unwrap());
     // 去重暂时不做
     match info.msg_type {
@@ -174,7 +178,11 @@ pub fn decode_online_push_trans_packet(payload: &[u8]) -> Result<OnlinePushTrans
                 var5 = data.get_i32() as i64;
             }
             if var5 == 0 && data.len() == 1 {
-                let new_permission = if data.get_u8() == 1 { GroupMemberPermission::Administrator } else { GroupMemberPermission::Member };
+                let new_permission = if data.get_u8() == 1 {
+                    GroupMemberPermission::Administrator
+                } else {
+                    GroupMemberPermission::Member
+                };
                 return Ok(MemberPermissionChanged {
                     msg_uid,
                     group_uin,
@@ -188,7 +196,7 @@ pub fn decode_online_push_trans_packet(payload: &[u8]) -> Result<OnlinePushTrans
     Err(RQError::Decode("decode_online_push_trans_packet unknown error".to_string()).into())
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default, Clone, PartialEq)]
 pub struct GroupMessagePart {
     pub seq: i32,
     pub rand: i32,
@@ -207,6 +215,12 @@ pub struct GroupMessagePart {
     pub div_seq: i32,
 }
 
+macro_rules! ref_unwrap {
+    ($a:tt, $($b:tt),*) => {
+        $a$(.$b.as_ref().unwrap())*
+    };
+}
+
 // 解析群消息分片 TODO 长消息需要合并
 pub fn decode_group_message_packet(payload: &[u8]) -> Result<GroupMessagePart> {
     let pkt = PushMessagePacket::from_bytes(payload);
@@ -217,15 +231,15 @@ pub fn decode_group_message_packet(payload: &[u8]) -> Result<GroupMessagePart> {
 
     return Ok(GroupMessagePart {
         seq: message.head.as_ref().unwrap().msg_seq.unwrap(),
-        rand: message.body.as_ref().unwrap().rich_text.as_ref().unwrap().attr.as_ref().unwrap().random.unwrap(),
-        group_code: message.head.as_ref().unwrap().group_info.as_ref().unwrap().group_code.unwrap(),
+        rand: ref_unwrap!(message, body, rich_text, attr).random.unwrap(),
+        group_code: ref_unwrap!(message, head, group_info).group_code.unwrap(),
         from_uin: message.head.as_ref().unwrap().from_uin.unwrap(),
-        elems: message.body.as_ref().unwrap().rich_text.as_ref().unwrap().elems.clone(),
+        elems: ref_unwrap!(message, body, rich_text).elems.clone(),
         time: message.head.as_ref().unwrap().msg_time.unwrap(),
         pkg_num: message.content.as_ref().unwrap().pkg_num.unwrap(),
         pkg_index: message.content.as_ref().unwrap().pkg_index.unwrap(),
         div_seq: message.content.as_ref().unwrap().div_seq.unwrap(),
-        ptt: message.body.as_ref().unwrap().rich_text.as_ref().unwrap().ptt.clone(),
+        ptt: ref_unwrap!(message, body, rich_text).ptt.clone(),
     });
 }
 
@@ -235,7 +249,10 @@ pub struct FriendMessageRecalledEvent {
     time: i64,
 }
 
-pub fn msg_type_0x210_sub8a_decoder(uin: i64, protobuf: &[u8]) -> Result<Vec<FriendMessageRecalledEvent>> {
+pub fn msg_type_0x210_sub8a_decoder(
+    uin: i64,
+    protobuf: &[u8],
+) -> Result<Vec<FriendMessageRecalledEvent>> {
     let s8a = pb::Sub8A::from_bytes(protobuf);
     if s8a.is_err() {
         return Err(RQError::Decode("failed to decode Sub8A".to_string()).into());
@@ -251,7 +268,11 @@ pub fn msg_type_0x210_sub8a_decoder(uin: i64, protobuf: &[u8]) -> Result<Vec<Fri
             })
         }
     }
-    return if events.len() > 0 { Ok(events) } else { Err(RQError::Decode("events length is 0".to_string()).into()) };
+    return if events.len() > 0 {
+        Ok(events)
+    } else {
+        Err(RQError::Decode("events length is 0".to_string()).into())
+    };
 }
 
 pub struct NewFriendEvent {
@@ -269,9 +290,7 @@ pub fn msg_type_0x210_subb3_decoder(protobuf: &[u8]) -> Result<NewFriendEvent> {
         nick: b3.msg_add_frd_notify.unwrap().nick,
         ..Default::default()
     };
-    Ok(NewFriendEvent {
-        friend
-    })
+    Ok(NewFriendEvent { friend })
 }
 
 #[derive(Debug, Default)]
@@ -318,17 +337,24 @@ pub fn msg_type_0x210_sub27_decoder(protobuf: &[u8]) -> Result<Sub0x27Event> {
             for info in profile.group_profile_infos.iter() {
                 if let Some(field) = info.field {
                     if field == 1 {
-                        sub_0x27_event.group_name_updated_events.push(GroupNameUpdatedEvent {
-                            group_code: profile.group_code.unwrap_or(0) as i64,
-                            new_name: String::from_utf8_lossy(&info.value.as_ref().unwrap_or(&vec![])).to_string(),
-                            operator_uin: profile.cmd_uin.unwrap_or(0) as i64,
-                        });
+                        sub_0x27_event
+                            .group_name_updated_events
+                            .push(GroupNameUpdatedEvent {
+                                group_code: profile.group_code.unwrap_or(0) as i64,
+                                new_name: String::from_utf8_lossy(
+                                    &info.value.as_ref().unwrap_or(&vec![]),
+                                )
+                                .to_string(),
+                                operator_uin: profile.cmd_uin.unwrap_or(0) as i64,
+                            });
                     }
                 }
             }
         }
         if let Some(ref del_friend) = m.del_friend {
-            sub_0x27_event.del_friend_events.append(&mut del_friend.uins.iter().map(|uin| *uin as i64).collect())
+            sub_0x27_event
+                .del_friend_events
+                .append(&mut del_friend.uins.iter().map(|uin| *uin as i64).collect())
         }
     }
     Ok(sub_0x27_event)
@@ -357,10 +383,7 @@ pub fn msg_type_0x210_sub122_decoder(protobuf: &[u8]) -> Result<FriendPokeNotify
     return if sender == 0 {
         Err(RQError::Decode("msg_type_0x210_sub122_decoder sender is 0".to_string()).into())
     } else {
-        Ok(FriendPokeNotifyEvent {
-            sender,
-            receiver,
-        })
+        Ok(FriendPokeNotifyEvent { sender, receiver })
     };
 }
 
@@ -378,7 +401,12 @@ pub fn msg_type_0x210_sub44_decoder(protobuf: &[u8]) -> Result<GroupMemberNeedSy
     if b44.group_sync_msg.is_none() {
         return Err(RQError::Decode("group_sync_msg is none".to_string()).into());
     }
-    let group_code = b44.group_sync_msg.ok_or(RQError::Decode("msg_type_0x210_sub44_decoder group_sync_msg is None".to_string()))?.grp_code;
+    let group_code = b44
+        .group_sync_msg
+        .ok_or(RQError::Decode(
+            "msg_type_0x210_sub44_decoder group_sync_msg is None".to_string(),
+        ))?
+        .grp_code;
     if group_code != 0 {
         return Ok(GroupMemberNeedSync { group_code });
     }

@@ -153,6 +153,7 @@ mod tea {
         }
     }
 
+    #[allow(dead_code)]
     pub fn tea16_encrypt(text: &mut [u8], key: &[u8]) {
         let key: &GenericArray<u8, U16> = GenericArray::from_slice(key);
 
@@ -163,6 +164,7 @@ mod tea {
         BigEndian::write_u64(text, n);
     }
 
+    #[allow(dead_code)]
     pub fn tea16_decrypt(text: &mut [u8], key: &[u8]) {
         let key: &GenericArray<u8, U16> = GenericArray::from_slice(key);
 
