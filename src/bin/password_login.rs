@@ -11,8 +11,9 @@ use tokio_util::codec::{FramedRead, LinesCodec};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let uin = 0;
-    let password = "";
+    // load uin and password from env
+    let uin: i64 = std::env::var("UIN").unwrap().parse().unwrap();
+    let password = std::env::var("PASSWORD").unwrap();
 
     let device_info = match Path::new("device.json").exists() {
         true => {
@@ -26,11 +27,11 @@ async fn main() -> Result<()> {
 
     let (cli, receiver) = Client::new(
         uin,
-        Password::from_str(password),
+        Password::from_str(&password),
         device_info,
         DefaultHandler,
     )
-    .await;
+        .await;
     let client = Arc::new(cli);
     let client_net = ClientNet::new(client.clone(), receiver);
     let stream = client_net.connect_tcp().await;
