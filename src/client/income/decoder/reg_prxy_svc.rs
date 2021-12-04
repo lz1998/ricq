@@ -3,14 +3,14 @@ use tokio::sync::RwLock;
 use jce_struct::Jce;
 use crate::client::{Client, OtherClientInfo};
 use crate::jce::{RequestDataVersion2, RequestPacket, SvcRespParam};
-use anyhow::Result;
 use crate::client::errors::RQError;
 
-pub fn decode_push_param_packet(payload: &[u8]) -> Result<Vec<OtherClientInfo>> {
+pub fn decode_push_param_packet(payload: &[u8]) -> Result<Vec<OtherClientInfo>, RQError> {
     let mut payload = Bytes::from(payload.to_owned());
     let mut request: RequestPacket = Jce::read_from_bytes(&mut payload);
     let mut data: RequestDataVersion2 = Jce::read_from_bytes(&mut request.s_buffer);
-    let mut req = data.map.remove("SvcRespParam").unwrap();
+    let mut req = data.map.remove("SvcRespParam")
+        .ok_or(RQError::Decode("SvcRespParam is none".to_string()))?;
     let mut reader = req.remove("RegisterProxySvcPack.SvcRespParam").unwrap();
     reader.advance(1);
     let rsp: SvcRespParam = Jce::read_from_bytes(&mut reader);

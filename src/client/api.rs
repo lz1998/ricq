@@ -6,13 +6,12 @@ use crate::client::income::decoder::{friendlist::*, profile_service::*, stat_svc
 use crate::client::income::decoder::group_member_card::decode_group_member_info_response;
 use crate::client::msg::Msg;
 use crate::client::structs::{GroupInfo, GroupMemberInfo};
-use anyhow::Result;
 use super::errors::RQError;
 
 /// 登录相关
 impl super::Client {
     /// 二维码登录 - 获取二维码
-    pub async fn fetch_qrcode(&self) -> Result<QRCodeState> {
+    pub async fn fetch_qrcode(&self) -> Result<QRCodeState, RQError> {
         let resp = self.send_and_wait(self.build_qrcode_fetch_request_packet().await.into()).await?;
         if &resp.command_name != "wtlogin.trans_emp" {
             return Err(RQError::CommandName(resp.command_name).into());
@@ -21,7 +20,7 @@ impl super::Client {
     }
 
     /// 二维码登录 - 查询二维码状态
-    pub async fn query_qrcode_result(&self, sig: &[u8]) -> Result<QRCodeState> {
+    pub async fn query_qrcode_result(&self, sig: &[u8]) -> Result<QRCodeState, RQError> {
         let resp = self.send_and_wait(self.build_qrcode_result_query_request_packet(sig).await.into()).await?;
         if &resp.command_name != "wtlogin.trans_emp" {
             return Err(RQError::CommandName(resp.command_name).into());
@@ -30,7 +29,7 @@ impl super::Client {
     }
 
     /// 二维码登录 - 登录 ( 可能还需要 device_lock_login )
-    pub async fn qrcode_login(&self, tmp_pwd: &[u8], tmp_no_pic_sig: &[u8], tgt_qr: &[u8]) -> Result<LoginResponse> {
+    pub async fn qrcode_login(&self, tmp_pwd: &[u8], tmp_no_pic_sig: &[u8], tgt_qr: &[u8]) -> Result<LoginResponse, RQError> {
         let resp = self.send_and_wait(self.build_qrcode_login_packet(tmp_pwd, tmp_no_pic_sig, tgt_qr).await.into()).await?;
         if &resp.command_name != "wtlogin.login" {
             return Err(RQError::CommandName(resp.command_name).into());
@@ -39,7 +38,7 @@ impl super::Client {
     }
 
     /// 密码登录 - 提交密码
-    pub async fn password_login(&self) -> Result<LoginResponse> {
+    pub async fn password_login(&self) -> Result<LoginResponse, RQError> {
         let resp = self.send_and_wait(self.build_login_packet(true).await.into()).await.unwrap();
         if &resp.command_name != "wtlogin.login" {
             return Err(RQError::CommandName(resp.command_name).into());
@@ -48,7 +47,7 @@ impl super::Client {
     }
 
     /// 密码登录 - 请求短信验证码
-    pub async fn request_sms(&self) -> Result<LoginResponse> {
+    pub async fn request_sms(&self) -> Result<LoginResponse, RQError> {
         let resp = self.send_and_wait(self.build_sms_request_packet().await.into()).await.unwrap();
         if &resp.command_name != "wtlogin.login" {
             return Err(RQError::CommandName(resp.command_name).into());
@@ -57,7 +56,7 @@ impl super::Client {
     }
 
     /// 密码登录 - 提交短信验证码
-    pub async fn submit_sms_code(&self, code: &str) -> Result<LoginResponse> {
+    pub async fn submit_sms_code(&self, code: &str) -> Result<LoginResponse, RQError> {
         let resp = self.send_and_wait(self.build_sms_code_submit_packet(code.trim()).await.into()).await.unwrap();
         if &resp.command_name != "wtlogin.login" {
             return Err(RQError::CommandName(resp.command_name).into());
@@ -66,7 +65,7 @@ impl super::Client {
     }
 
     /// 密码登录 - 提交滑块ticket
-    pub async fn submit_ticket(&self, ticket: &str) -> Result<LoginResponse> {
+    pub async fn submit_ticket(&self, ticket: &str) -> Result<LoginResponse, RQError> {
         let resp = self.send_and_wait(self.build_ticket_submit_packet(ticket).await.into()).await.unwrap();
         if &resp.command_name != "wtlogin.login" {
             return Err(RQError::CommandName(resp.command_name).into());
@@ -75,7 +74,7 @@ impl super::Client {
     }
 
     /// 设备锁登录 - 二维码、密码登录都需要
-    pub async fn device_lock_login(&self) -> Result<LoginResponse> {
+    pub async fn device_lock_login(&self) -> Result<LoginResponse, RQError> {
         let resp = self.send_and_wait(self.build_device_lock_login_packet().await.into()).await.unwrap();
         if &resp.command_name != "wtlogin.login" {
             return Err(RQError::CommandName(resp.command_name).into());
@@ -84,14 +83,14 @@ impl super::Client {
     }
 
     /// 注册客户端，登录后必须注册
-    pub async fn register_client(&self) -> Result<SvcRespRegister> {
+    pub async fn register_client(&self) -> Result<SvcRespRegister, RQError> {
         let resp = self.send_and_wait(self.build_client_register_packet().await.into()).await?;
         if &resp.command_name != "StatSvc.register" {
-            return Err(RQError::CommandName(resp.command_name).into());
+            return Err(RQError::CommandName(resp.command_name));
         }
         let resp = decode_client_register_response(&resp.payload);
         if resp.result != "" || resp.reply_code != 0 {
-            return Err(RQError::Other(resp.result + &resp.reply_code.to_string()).into());
+            return Err(RQError::Other(resp.result + &resp.reply_code.to_string()));
         }
         self.online.store(true, Ordering::SeqCst);
         Ok(resp)
@@ -101,7 +100,7 @@ impl super::Client {
 /// API
 impl super::Client {
     /// 获取进群申请信息
-    pub async fn get_group_system_messages(&self, suspicious: bool) -> Result<GroupSystemMessages> {
+    pub async fn get_group_system_messages(&self, suspicious: bool) -> Result<GroupSystemMessages, RQError> {
         let resp = self.send_and_wait(self.build_system_msg_new_group_packet(suspicious).await.into()).await?;
         if &resp.command_name != "ProfileService.Pb.ReqSystemMsgNew.Group" {
             return Err(RQError::CommandName(resp.command_name).into());
@@ -111,7 +110,7 @@ impl super::Client {
 
     /// 获取好友列表
     /// 第一个参数offset，从0开始；第二个参数count，150，另外两个都是0
-    pub async fn get_friend_list(&self, friend_start_index: i16, friend_list_count: i16, group_start_index: i16, group_list_count: i16) -> Result<FriendListResponse> {
+    pub async fn get_friend_list(&self, friend_start_index: i16, friend_list_count: i16, group_start_index: i16, group_list_count: i16) -> Result<FriendListResponse, RQError> {
         let resp = self.send_and_wait(self.build_friend_group_list_request_packet(friend_start_index, friend_list_count, group_start_index, group_list_count).await.into()).await?;
         if &resp.command_name != "friendlist.getFriendGroupList" {
             return Err(RQError::CommandName(resp.command_name).into());
@@ -121,10 +120,10 @@ impl super::Client {
 
     /// 获取群列表
     /// 第一个参数offset，从0开始；第二个参数count，150，另外两个都是0
-    pub async fn get_group_list(&self, vec_cookie: &[u8]) -> Result<GroupListResponse> {
+    pub async fn get_group_list(&self, vec_cookie: &[u8]) -> Result<GroupListResponse, RQError> {
         let resp = self.send_and_wait(self.build_group_list_request_packet(vec_cookie).await.into()).await?;
         if &resp.command_name != "friendlist.GetTroopListReqV2" {
-            return Err(RQError::CommandName(resp.command_name).into());
+            return Err(RQError::CommandName(resp.command_name));
         }
         decode_group_list_response(&resp.payload)
     }
@@ -140,7 +139,7 @@ impl super::Client {
     }
 
     /// 获取群成员信息
-    pub async fn get_group_member_info(&self, group_code: i64, uin: i64) -> Result<GroupMemberInfo> {
+    pub async fn get_group_member_info(&self, group_code: i64, uin: i64) -> Result<GroupMemberInfo, RQError> {
         let resp = self.send_and_wait(self.build_group_member_info_request_packet(group_code, uin).await.into()).await?;
         if &resp.command_name != "group_member_card.get_group_member_card_info" {
             return Err(RQError::CommandName(resp.command_name).into());
@@ -169,7 +168,7 @@ impl super::Client {
     }
 
     /// 刷新群列表 TODO 获取群成员列表
-    pub async fn reload_group_list(self: &Arc<Self>) -> Result<()> {
+    pub async fn reload_group_list(self: &Arc<Self>) -> Result<(), RQError> {
         // 获取群列表
         let mut vec_cookie = Bytes::new();
         let mut groups = Vec::new();
@@ -211,7 +210,7 @@ impl super::Client {
     }
 
     /// 刷新好友列表
-    pub async fn reload_friend_list(&self) -> Result<()> {
+    pub async fn reload_friend_list(&self) -> Result<(), RQError> {
         let mut cur_friend_count = 0;
         let mut friends = Vec::new();
         loop {
@@ -231,7 +230,7 @@ impl super::Client {
     }
 
     /// 获取群成员列表 (low level api)
-    async fn _get_group_member_list(&self, group_uin: i64, group_code: i64, next_uin: i64) -> Result<GroupMemberListResponse> {
+    async fn _get_group_member_list(&self, group_uin: i64, group_code: i64, next_uin: i64) -> Result<GroupMemberListResponse, RQError> {
         let resp = self.send_and_wait(self.build_group_member_list_request_packet(group_uin, group_code, next_uin).await.into()).await?;
         if resp.command_name != "friendlist.GetTroopMemberListReq" {
             return Err(RQError::CommandName(resp.command_name).into());
@@ -240,13 +239,13 @@ impl super::Client {
     }
 
     /// 获取群成员列表
-    pub async fn get_group_member_list(&self, group_code: i64, group_uin: i64) -> Result<Vec<GroupMemberInfo>> {
+    pub async fn get_group_member_list(&self, group_code: i64, group_uin: i64) -> Result<Vec<GroupMemberInfo>, RQError> {
         let mut next_uin = 0;
         let mut list = Vec::new();
         loop {
             let mut resp = self._get_group_member_list(group_uin, group_code, next_uin).await?;
             if resp.list.is_empty() {
-                return Err(RQError::Other("member list is empty".to_string()).into());
+                return Err(RQError::Other("member list is empty".to_string()));
             }
             for m in resp.list.iter_mut() {
                 m.group_code = group_code;
@@ -261,7 +260,7 @@ impl super::Client {
     }
 
     /// 刷新客户端状态
-    pub async fn refresh_status(&self) -> Result<()> {
+    pub async fn refresh_status(&self) -> Result<(), RQError> {
         let resp = self.send_and_wait(self.build_get_offline_msg_request_packet().await.into()).await?;
         if resp.command_name != "RegPrxySvc.getOffMsg" {
             return Err(RQError::CommandName(resp.command_name).into());
@@ -270,7 +269,7 @@ impl super::Client {
     }
 
     /// 标记群消息已读
-    pub async fn mark_group_message_readed(&self, group_code: i64, seq: i32) -> Result<()> {
+    pub async fn mark_group_message_readed(&self, group_code: i64, seq: i32) -> Result<(), RQError> {
         let resp = self.send_and_wait(self.build_group_msg_read_packet(group_code, seq).await.into()).await?;
         if resp.command_name != "PbMessageSvc.PbMsgReadedReport" {
             return Err(RQError::CommandName(resp.command_name).into());
@@ -279,14 +278,14 @@ impl super::Client {
     }
 
     /// 标记私聊消息已读 TODO 待测试
-    pub async fn mark_private_message_readed(&self, uin: i64, time: i64) -> Result<()> {
+    pub async fn mark_private_message_readed(&self, uin: i64, time: i64) -> Result<(), RQError> {
         let resp = self.send_and_wait(self.build_private_msg_read_packet(uin, time).await.into()).await?;
         println!("{}", resp.command_name);// todo
         Ok(())
     }
 
     /// 获取通过安全验证的设备
-    pub async fn get_allowed_clients(&self) -> Result<Vec<SvcDevLoginInfo>> {
+    pub async fn get_allowed_clients(&self) -> Result<Vec<SvcDevLoginInfo>, RQError> {
         let resp = self.send_and_wait(self.build_device_list_request_packet().await.into()).await?;
         if resp.command_name != "StatSvc.GetDevLoginInfo" {
             return Err(RQError::CommandName(resp.command_name).into());

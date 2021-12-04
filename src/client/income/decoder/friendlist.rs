@@ -3,7 +3,6 @@ use jce_struct::Jce;
 use crate::client::structs::*;
 use crate::jce;
 use crate::jce::TroopMemberInfo;
-use anyhow::Result;
 use crate::client::errors::RQError;
 
 #[derive(Debug, Default)]
@@ -12,7 +11,7 @@ pub struct FriendListResponse {
     pub total_count: i16,
 }
 
-pub fn decode_friend_group_list_response(payload: &[u8]) -> Result<FriendListResponse> {
+pub fn decode_friend_group_list_response(payload: &[u8]) -> Result<FriendListResponse, RQError> {
     let mut payload = Bytes::from(payload.to_owned());
     let mut request: jce::RequestPacket = Jce::read_from_bytes(&mut payload);
     let mut data: jce::RequestDataVersion3 = Jce::read_from_bytes(&mut request.s_buffer);
@@ -38,7 +37,7 @@ pub struct GroupListResponse {
     pub vec_cookie: Bytes,
 }
 
-pub fn decode_group_list_response(payload: &[u8]) -> Result<GroupListResponse> {
+pub fn decode_group_list_response(payload: &[u8]) -> Result<GroupListResponse, RQError> {
     let mut payload = Bytes::from(payload.to_owned());
     let mut request: jce::RequestPacket = Jce::read_from_bytes(&mut payload);
     let mut data: jce::RequestDataVersion3 = Jce::read_from_bytes(&mut request.s_buffer);
@@ -72,7 +71,7 @@ pub struct GroupMemberListResponse {
     pub list: Vec<GroupMemberInfo>,
 }
 
-pub fn decode_group_member_list_response(payload: &[u8]) -> Result<GroupMemberListResponse> {
+pub fn decode_group_member_list_response(payload: &[u8]) -> Result<GroupMemberListResponse, RQError> {
     let mut payload = Bytes::from(payload.to_owned());
     let mut request: jce::RequestPacket = Jce::read_from_bytes(&mut payload);
     let mut data: jce::RequestDataVersion3 = Jce::read_from_bytes(&mut request.s_buffer);

@@ -6,7 +6,6 @@ use crate::client::income::IncomePacket;
 use crate::client::outcome::OutcomePacket;
 use crate::client::version::{gen_version_info, ClientProtocol};
 use crate::client::Password;
-use anyhow::Result;
 use bytes::Bytes;
 use rand::Rng;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, AtomicU16, Ordering};
@@ -21,8 +20,8 @@ impl super::Client {
         mut device_info: DeviceInfo,
         handler: H,
     ) -> (Client, net::OutPktReceiver)
-    where
-        H: crate::client::handler::Handler + 'static + Sync + Send,
+        where
+            H: crate::client::handler::Handler + 'static + Sync + Send,
     {
         device_info.gen_guid();
         device_info.gen_tgtgt_key();
@@ -98,7 +97,7 @@ impl super::Client {
         self.out_pkt_sender.send(pkt.bytes).unwrap(); //todo
     }
 
-    pub async fn send_and_wait(&self, pkt: OutcomePacket) -> Result<IncomePacket> {
+    pub async fn send_and_wait(&self, pkt: OutcomePacket) -> Result<IncomePacket, RQError> {
         let (sender, receiver) = oneshot::channel();
         {
             let mut packet_promises = self.packet_promises.write().await;
@@ -109,12 +108,10 @@ impl super::Client {
             packet_promises.remove(&pkt.seq);
             return Err(RQError::Network.into());
         }
-        let output = if let Ok(Ok(p)) =
-            tokio::time::timeout(std::time::Duration::from_secs(15), receiver).await
-        {
+        let output = if let Ok(Ok(p)) = tokio::time::timeout(std::time::Duration::from_secs(15), receiver).await {
             Ok(p)
         } else {
-            Err(RQError::Timeout.into())
+            Err(RQError::Timeout)
         };
         {
             let mut packet_promises = self.packet_promises.write().await;

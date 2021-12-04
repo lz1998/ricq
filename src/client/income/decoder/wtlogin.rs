@@ -4,7 +4,6 @@ use crate::binary::BinaryReader;
 use crate::client::Client;
 use crate::client::device::random_string;
 use crate::client::income::decoder::tlv::*;
-use anyhow::Result;
 use crate::client::errors::RQError;
 
 
@@ -59,7 +58,7 @@ pub enum LoginResponse {
 }
 
 
-pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Result<QRCodeState> {
+pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Result<QRCodeState, RQError> {
     if payload.len() < 48 {
         return Err(RQError::Decode("invalid payload length".to_string()).into());
     }
@@ -81,7 +80,7 @@ pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Result<Q
         body.get_i32();
         let code = body.get_u8();
         if code != 0 {
-            return Err(RQError::Decode("body code != 0".to_string()).into());
+            return Err(RQError::Decode("body code != 0".to_string()));
         }
         let sig = body.read_bytes_short();
         body.get_u16();
@@ -113,7 +112,7 @@ pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Result<Q
                 0x35 => Ok(QRCodeState::QRCodeWaitingForConfirm),
                 0x36 => Ok(QRCodeState::QRCodeCanceled),
                 0x11 => Ok(QRCodeState::QRCodeTimeout),
-                _ => Err(RQError::Decode("invalid body code".to_string()).into())
+                _ => Err(RQError::Decode("invalid body code".to_string()))
             };
         }
         cli.uin.store(body.get_i64(), Ordering::SeqCst);
@@ -121,7 +120,7 @@ pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Result<Q
         body.get_u16();
         let mut m = body.read_tlv_map(2);
         if !m.contains_key(&0x18) || !m.contains_key(&0x1e) || !m.contains_key(&0x19) {
-            return Err(RQError::Decode("invalid tlv map".to_string()).into());
+            return Err(RQError::Decode("invalid tlv map".to_string()));
         }
         {
             let mut device_info = cli.device_info.write().await;
@@ -133,10 +132,10 @@ pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Result<Q
             tgt_qr: m.remove(&0x65).unwrap(),
         });
     }
-    return Err(RQError::Decode("decode_trans_emp_response unknown error".to_string()).into());
+    return Err(RQError::Decode("decode_trans_emp_response unknown error".to_string()));
 }
 
-pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<LoginResponse> {
+pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<LoginResponse, RQError> {
     let mut reader = Bytes::from(payload.to_owned());
     reader.get_u16(); // sub command
     let t = reader.get_u8();
@@ -267,10 +266,10 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<Login
             error_message: t146r.read_string_short(),
         });
     }
-    return Err(RQError::Decode("decode_login_response unknown error".to_string()).into());
+    return Err(RQError::Decode("decode_login_response unknown error".to_string()));
 }
 
-pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> Result<()> {
+pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> Result<(), RQError> {
     let mut cache_info = cli.cache_info.write().await;
     let mut account_info = cli.account_info.write().await;
     let mut payload = Bytes::from(payload.to_owned());
@@ -279,7 +278,7 @@ pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> R
     payload.get_u16();
     let m = payload.read_tlv_map(2);
     if t != 0 {
-        return Err(RQError::Decode("decode_exchange_emp_response t != 0".to_string()).into());
+        return Err(RQError::Decode("decode_exchange_emp_response t != 0".to_string()));
     }
     if cmd == 15 {
         decode_t119r(m.get(&0x119).unwrap(), &cli.device_info.read().await.tgtgt_key, &mut cache_info, &mut account_info);
