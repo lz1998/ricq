@@ -13,12 +13,12 @@ impl<B> BinaryReader for B
     where B: Buf {
     fn read_string(&mut self) -> String {
         let len = self.get_i32() as usize - 4;
-        String::from_utf8(self.copy_to_bytes(len).to_vec()).unwrap()
+        String::from_utf8_lossy(&self.copy_to_bytes(len)).to_string()
     }
 
     fn read_string_short(&mut self) -> String {
         let len = self.get_u16() as usize;
-        String::from_utf8(self.copy_to_bytes(len).to_vec()).unwrap()
+        String::from_utf8_lossy(&self.copy_to_bytes(len)).to_string()
     }
 
     fn read_bytes_short(&mut self) -> Bytes {

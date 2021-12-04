@@ -20,15 +20,15 @@ pub fn decode_dev_list_response(payload: &[u8]) -> Result<Vec<SvcDevLoginInfo>,R
     let mut req = data.map.remove("SvcRspGetDevLoginInfo").unwrap();
     let mut msg = req.remove("QQService.SvcRspGetDevLoginInfo").unwrap();
     let mut rsp = Jce::new(&mut msg);
-    let mut d: Vec<SvcDevLoginInfo> = rsp.get_by_tag(4);
+    let d: Vec<SvcDevLoginInfo> = rsp.get_by_tag(4);
     if d.len() > 0 {
         return Ok(d);
     }
-    let mut d: Vec<SvcDevLoginInfo> = rsp.get_by_tag(5);
+    let d: Vec<SvcDevLoginInfo> = rsp.get_by_tag(5);
     if d.len() > 0 {
         return Ok(d);
     }
-    let mut d: Vec<SvcDevLoginInfo> = rsp.get_by_tag(6);
+    let d: Vec<SvcDevLoginInfo> = rsp.get_by_tag(6);
     if d.len() > 0 {
         return Ok(d);
     }

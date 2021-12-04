@@ -76,7 +76,7 @@ pub fn decode_online_push_req_packet(payload: &[u8]) -> Result<ReqPush, RQError>
     let infos: Vec<PushInfo> = msg_infos
         .iter()
         .map(|m| {
-            let mut info = PushInfo {
+            let info = PushInfo {
                 msg_seq: m.msg_seq,
                 msg_time: m.msg_time,
                 msg_uid: m.msg_uid,

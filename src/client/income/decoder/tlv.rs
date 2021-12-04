@@ -3,6 +3,7 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 use chrono::Utc;
 use crate::binary::BinaryReader;
 use crate::client::{AccountInfo, CacheInfo};
+use crate::client::errors::RQError;
 use crate::client::structs::LoginSigInfo;
 use crate::crypto::qqtea_decrypt;
 
@@ -11,31 +12,18 @@ pub fn decode_t161(data: &[u8], cache_info: &mut CacheInfo) {
     let mut reader = Bytes::from(data.to_owned());
     reader.advance(2);
     let mut m = reader.read_tlv_map(2);
-    if m.contains_key(&0x172) {
-        cache_info.rollback_sig = m.remove(&0x172).unwrap();
-    }
+    m.remove(&0x172).map(|v| cache_info.rollback_sig = v);
 }
 
-pub async fn decode_t119(data: &[u8], ek: &[u8], cache_info: &mut CacheInfo, account_info: &mut AccountInfo) {
+pub fn decode_t119(data: &[u8], ek: &[u8], cache_info: &mut CacheInfo, account_info: &mut AccountInfo) -> Result<(), RQError> {
     let mut reader = Bytes::from(qqtea_decrypt(data, ek).to_owned());
     reader.advance(2);
     let mut m = reader.read_tlv_map(2);
-    if m.contains_key(&0x130) {
-        decode_t130(&m.remove(&0x130).unwrap(), cache_info)
-    }
-    if m.contains_key(&0x113) {
-        decode_t113(&m.remove(&0x113).unwrap())
-    }
-    if m.contains_key(&0x528) {
-        cache_info.t528 = m.remove(&0x528).unwrap()
-    }
-    if m.contains_key(&0x530) {
-        cache_info.t530 = m.remove(&0x530).unwrap()
-    }
-    if m.contains_key(&0x108) {
-        cache_info.ksid = m.remove(&0x108).unwrap()
-    }
-
+    m.remove(&0x130).map(|v| decode_t130(&v, cache_info));
+    m.remove(&0x113).map(|v| decode_t113(&v));
+    m.remove(&0x528).map(|v| cache_info.t528 = v);
+    m.remove(&0x530).map(|v| cache_info.t530 = v);
+    m.remove(&0x108).map(|v| cache_info.ksid = v);
 
     let mut ps_key_map: HashMap<String, Bytes> = Default::default();
     let mut pt4token_map: HashMap<String, Bytes> = Default::default();
@@ -43,26 +31,24 @@ pub async fn decode_t119(data: &[u8], ek: &[u8], cache_info: &mut CacheInfo, acc
     if m.contains_key(&0x125) {
         // read_t125(t125)
     }
-    if m.contains_key(&0x186) {
-        decode_t186(&m.remove(&0x186).unwrap(), cache_info).await;
-    }
-    if m.contains_key(&0x11a) {
-        let (nick, age, gender) = read_t11a(&m.remove(&0x11a).unwrap());
+    m.remove(&0x186).map(|v| { decode_t186(&v, cache_info); });
+    m.remove(&0x11a).map(|v| {
+        let (nick, age, gender) = read_t11a(&v);
         account_info.nickname = nick;
         account_info.age = age;
         account_info.gender = gender;
-    }
+    });
     if m.contains_key(&0x199) {
         // read_t199(t199)
     }
     if m.contains_key(&0x200) {
         // (pf, pf_key) = read_t200(t200)
     }
-    if m.contains_key(&0x512) {
-        let (a, b) = read_t512(&m.remove(&0x512).unwrap());
+    m.remove(&0x512).map(|v| {
+        let (a, b) = read_t512(&v);
         ps_key_map = a;
         pt4token_map = b;
-    }
+    });
     if m.contains_key(&0x531) {
         // read_t531
     }
@@ -91,6 +77,7 @@ pub async fn decode_t119(data: &[u8], ek: &[u8], cache_info: &mut CacheInfo, acc
         pt4token_map,
     };
     cache_info.sig_info = sig_info;
+    Ok(())
 }
 
 
@@ -98,16 +85,16 @@ pub fn decode_t119r(data: &[u8], tgtgt_key: &[u8], cache_info: &mut CacheInfo, a
     let mut reader = Bytes::from(qqtea_decrypt(&data, tgtgt_key).to_owned());
     reader.advance(2);
     let mut m = reader.read_tlv_map(2);
-    if m.contains_key(&0x120) {
-        cache_info.sig_info.s_key = m.remove(&0x120).unwrap();
+    m.remove(&0x120).map(|v| {
+        cache_info.sig_info.s_key = v;
         cache_info.sig_info.s_key_expired_time = Utc::now().timestamp() + 21600;
-    }
-    if m.contains_key(&0x11a) {
-        let (nick, age, gender) = read_t11a(&m.remove(&0x11a).unwrap());
+    });
+    m.remove(&0x11a).map(|v| {
+        let (nick, age, gender) = read_t11a(&v);
         account_info.nickname = nick;
         account_info.age = age;
         account_info.gender = gender;
-    }
+    });
 }
 
 pub fn decode_t130(data: &[u8], cache_info: &mut CacheInfo) {
@@ -123,7 +110,7 @@ pub fn decode_t113(data: &[u8]) {
     println!("got t133 uin: {}", uin)
 }
 
-pub async fn decode_t186(data: &[u8], cache_info: &mut CacheInfo) {
+pub fn decode_t186(data: &[u8], cache_info: &mut CacheInfo) {
     cache_info.pwd_flag = data[1] == 1;
 }
 
@@ -193,7 +180,7 @@ fn read_t531(data: &[u8]) -> (Bytes, Bytes) {
     let mut m = reader.read_tlv_map(2);
     let mut a1 = BytesMut::new();
     let mut no_pic_sig = Bytes::new();
-    if m.contains_key(&0x103) && m.contains_key(&0x16a) && m.contains_key(&0x113) && m.contains_key(&0x10c) {
+    if [0x103, 0x16a, 0x113, 0x10c].iter().all(|v| m.contains_key(v)) {
         a1.put_slice(&m.remove(&0x106).unwrap());
         a1.put_slice(&m.remove(&0x10c).unwrap());
         no_pic_sig = Bytes::from(m.remove(&0x16a).unwrap());
