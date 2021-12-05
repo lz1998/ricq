@@ -88,7 +88,7 @@ impl super::Client {
         if &resp.command_name != "StatSvc.register" {
             return Err(RQError::CommandName(resp.command_name));
         }
-        let resp = decode_client_register_response(&resp.payload);
+        let resp = decode_client_register_response(&resp.payload)?;
         if resp.result != "" || resp.reply_code != 0 {
             return Err(RQError::Other(resp.result + &resp.reply_code.to_string()));
         }

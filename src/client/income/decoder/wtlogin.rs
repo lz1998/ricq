@@ -155,7 +155,7 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<Login
         let mut cache_info = cli.cache_info.write().await;
         let mut account_info = cli.account_info.write().await;
         m.remove(&0x150).map(|v| cache_info.t150 = v);
-        m.remove(&0x161).map(|v| { decode_t161(&v, &mut cache_info); });
+        m.remove(&0x161).map(|v| decode_t161(&v, &mut cache_info));
         m.remove(&0x403).map(|v| cache_info.rand_seed = v);
         decode_t119(&m.remove(&0x119).ok_or(RQError::Decode("missing 0x119".to_string()))?, &cli.device_info.read().await.tgtgt_key, &mut cache_info, &mut account_info)?;
         return Ok(LoginResponse::Success);
@@ -215,8 +215,8 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<Login
             });
         }
 
-        if let Some(t104) = m.remove(&0x17b) {
-            cache_info.t104 = t104;
+        if m.contains_key(&0x17b) {
+            cache_info.t104 = m.remove(&0x104).ok_or(RQError::Decode("missing 0x104".to_string()))?;
             return Ok(LoginResponse::SMSNeededError {
                 sms_phone: "".to_string(),
                 error_message: "".to_string(),

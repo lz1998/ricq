@@ -31,7 +31,7 @@ pub fn decode_t119(data: &[u8], ek: &[u8], cache_info: &mut CacheInfo, account_i
     if m.contains_key(&0x125) {
         // read_t125(t125)
     }
-    m.remove(&0x186).map(|v| { decode_t186(&v, cache_info); });
+    m.remove(&0x186).map(|v| decode_t186(&v, cache_info));
     m.remove(&0x11a).map(|v| {
         let (nick, age, gender) = read_t11a(&v);
         account_info.nickname = nick;
