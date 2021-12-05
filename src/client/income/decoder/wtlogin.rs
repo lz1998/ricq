@@ -80,14 +80,14 @@ pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Result<Q
         body.get_i32();
         let code = body.get_u8();
         if code != 0 {
-            return Err(RQError::Decode("body code != 0".to_string()));
+            return Err(RQError::Decode("body code != 0".into()));
         }
         let sig = body.read_bytes_short();
         body.get_u16();
         let mut m = body.read_tlv_map(2);
         if m.contains_key(&0x17) {
             return Ok(QRCodeState::QRCodeImageFetch {
-                image_data: m.remove(&0x17).unwrap(),
+                image_data: m.remove(&0x17).ok_or(RQError::Decode("missing 0x17".into()))?,
                 sig,
             });
         }
@@ -124,12 +124,12 @@ pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Result<Q
         }
         {
             let mut device_info = cli.device_info.write().await;
-            device_info.tgtgt_key = m.remove(&0x1e).unwrap();
+            device_info.tgtgt_key = m.remove(&0x1e).ok_or(RQError::Decode("missing 0x1e".into()))?;
         }
         return Ok(QRCodeState::QRCodeConfirmed {
-            tmp_pwd: m.remove(&0x18).unwrap(),
-            tmp_no_pic_sig: m.remove(&0x19).unwrap(),
-            tgt_qr: m.remove(&0x65).unwrap(),
+            tmp_pwd: m.remove(&0x18).ok_or(RQError::Decode("missing 0x18".into()))?,
+            tmp_no_pic_sig: m.remove(&0x19).ok_or(RQError::Decode("missing 0x19".into()))?,
+            tgt_qr: m.remove(&0x65).ok_or(RQError::Decode("missing 0x65".into()))?,
         });
     }
     return Err(RQError::Decode("decode_trans_emp_response unknown error".to_string()));

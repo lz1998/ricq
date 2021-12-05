@@ -49,6 +49,6 @@ impl<B> BinaryReader for B
     }
 
     fn read_string_limit(&mut self, limit: usize) -> String {
-        String::from_utf8(self.copy_to_bytes(limit).to_vec()).unwrap()
+        String::from_utf8_lossy(&self.copy_to_bytes(limit)).to_string()
     }
 }

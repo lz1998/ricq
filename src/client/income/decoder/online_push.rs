@@ -67,8 +67,8 @@ pub fn decode_online_push_req_packet(payload: &[u8]) -> Result<ReqPush, RQError>
     let mut payload = Bytes::from(payload.to_owned());
     let mut request: jce::RequestPacket = Jce::read_from_bytes(&mut payload);
     let mut data: jce::RequestDataVersion2 = Jce::read_from_bytes(&mut request.s_buffer);
-    let mut req = data.map.remove("req").unwrap();
-    let mut msg = req.remove("OnlinePushPack.SvcReqPushMsg").unwrap();
+    let mut req = data.map.remove("req").ok_or(RQError::Decode("req is none".into()))?;
+    let mut msg = req.remove("OnlinePushPack.SvcReqPushMsg").ok_or(RQError::Decode("OnlinePushPack.SvcReqPushMsg is none".into()))?;
     let mut jr = Jce::new(&mut msg);
     let uin: i64 = jr.get_by_tag(0);
     let msg_infos: Vec<jce::PushMessageInfo> = jr.get_by_tag(2);
@@ -137,7 +137,7 @@ pub fn decode_online_push_trans_packet(payload: &[u8]) -> Result<OnlinePushTrans
     let group_uin = info.from_uin.ok_or(RQError::Decode(
         "decode_online_push_trans_packet from_uin is 0".to_string(),
     ))?;
-    let mut data = Bytes::from(info.msg_data.unwrap());
+    let mut data = Bytes::from(info.msg_data.ok_or(RQError::Decode("msg_data is none".into()))?);
     // 去重暂时不做
     match info.msg_type {
         Some(34) => {
@@ -211,12 +211,6 @@ pub struct GroupMessagePart {
     pub div_seq: i32,
 }
 
-macro_rules! ref_unwrap {
-    ($a:tt, $($b:tt),*) => {
-        $a$(.$b.as_ref().unwrap())*
-    };
-}
-
 // 解析群消息分片 TODO 长消息需要合并
 pub fn decode_group_message_packet(payload: &[u8]) -> Result<GroupMessagePart, RQError> {
     let message = PushMessagePacket::from_bytes(payload)
@@ -224,17 +218,21 @@ pub fn decode_group_message_packet(payload: &[u8]) -> Result<GroupMessagePart, R
         .message
         .ok_or(RQError::Decode("message is none".to_string()))?;
 
+    let head = message.head.as_ref().ok_or(RQError::Decode("head is none".to_string()))?;
+    let body = message.body.as_ref().ok_or(RQError::Decode("body is none".to_string()))?;
+    let content = message.content.as_ref().ok_or(RQError::Decode("content is none".to_string()))?;
+    let rich_text = body.rich_text.as_ref().ok_or(RQError::Decode("rich_text is none".to_string()))?;
     return Ok(GroupMessagePart {
-        seq: message.head.as_ref().unwrap().msg_seq.unwrap(),
-        rand: ref_unwrap!(message, body, rich_text, attr).random.unwrap(),
-        group_code: ref_unwrap!(message, head, group_info).group_code.unwrap(),
-        from_uin: message.head.as_ref().unwrap().from_uin.unwrap(),
-        elems: ref_unwrap!(message, body, rich_text).elems.clone(),
-        time: message.head.as_ref().unwrap().msg_time.unwrap(),
-        pkg_num: message.content.as_ref().unwrap().pkg_num.unwrap(),
-        pkg_index: message.content.as_ref().unwrap().pkg_index.unwrap(),
-        div_seq: message.content.as_ref().unwrap().div_seq.unwrap(),
-        ptt: ref_unwrap!(message, body, rich_text).ptt.clone(),
+        seq: head.msg_seq.ok_or(RQError::Decode("msg_seq is none".to_string()))?,
+        rand: rich_text.attr.as_ref().ok_or(RQError::Decode("attr is none".into()))?.random.ok_or(RQError::Decode("attr.random is none".into()))?,
+        group_code: head.group_info.as_ref().ok_or(RQError::Decode("group_info is none".into()))?.group_code.ok_or(RQError::Decode("group_info.group_code is none".into()))?,
+        from_uin: head.from_uin.ok_or(RQError::Decode("from_uin is none".into()))?,
+        elems: rich_text.elems.clone(),
+        time: head.msg_time.ok_or(RQError::Decode("msg_time is none".into()))?,
+        pkg_num: content.pkg_num.ok_or(RQError::Decode("pkg_num is none".into()))?,
+        pkg_index: content.pkg_index.ok_or(RQError::Decode("pkg_index is none".into()))?,
+        div_seq: content.div_seq.ok_or(RQError::Decode("div_seq is none".into()))?,
+        ptt: rich_text.ptt.clone(),
     });
 }
 
@@ -272,11 +270,13 @@ pub struct NewFriendEvent {
 }
 
 pub fn msg_type_0x210_subb3_decoder(protobuf: &[u8]) -> Result<NewFriendEvent, RQError> {
-    let b3 = pb::SubB3::from_bytes(protobuf)
-        .map_err(|_| RQError::Decode("SubB3".to_string()))?;
+    let msg_add_frd_notify = pb::SubB3::from_bytes(protobuf)
+        .map_err(|_| RQError::Decode("SubB3".to_string()))?
+        .msg_add_frd_notify
+        .ok_or(RQError::Decode("msg_add_frd_notify is none".to_string()))?;
     let friend = FriendInfo {
-        uin: b3.msg_add_frd_notify.as_ref().unwrap().uin,
-        nick: b3.msg_add_frd_notify.unwrap().nick,
+        uin: msg_add_frd_notify.uin,
+        nick: msg_add_frd_notify.nick,
         ..Default::default()
     };
     Ok(NewFriendEvent { friend })

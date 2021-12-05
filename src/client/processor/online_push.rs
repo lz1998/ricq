@@ -3,13 +3,11 @@ use crate::client::income::{builder::GroupMessageBuilder, decoder::online_push::
 use crate::client::messages::GroupMessage;
 use crate::client::Client;
 use std::sync::atomic::Ordering;
+use crate::client::errors::RQError;
 
 impl Client {
-    pub async fn process_group_message_part(&self, group_message_part: GroupMessagePart) {
-        println!("{:?}", group_message_part);
-        self.mark_group_message_readed(group_message_part.group_code, group_message_part.seq)
-            .await
-            .unwrap(); //todo
+    pub async fn process_group_message_part(&self, group_message_part: GroupMessagePart) -> Result<(), RQError> {
+        // self.mark_group_message_readed(group_message_part.group_code, group_message_part.seq).await;
 
         // receipt message
         if group_message_part.from_uin == self.uin.load(Ordering::SeqCst) {
@@ -49,6 +47,7 @@ impl Client {
                 .await
                 .unwrap(); //todo
         }
+        Ok(())
     }
 
     pub(crate) async fn parse_group_message(&self, part: GroupMessagePart) -> GroupMessage {

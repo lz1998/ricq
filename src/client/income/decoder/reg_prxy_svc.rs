@@ -10,7 +10,7 @@ pub fn decode_push_param_packet(payload: &[u8]) -> Result<Vec<OtherClientInfo>, 
     let mut data: RequestDataVersion2 = Jce::read_from_bytes(&mut request.s_buffer);
     let mut req = data.map.remove("SvcRespParam")
         .ok_or(RQError::Decode("SvcRespParam is none".to_string()))?;
-    let mut reader = req.remove("RegisterProxySvcPack.SvcRespParam").unwrap();
+    let mut reader = req.remove("RegisterProxySvcPack.SvcRespParam").ok_or(RQError::Decode("RegisterProxySvcPack.SvcRespParam is none".to_string()))?;
     reader.advance(1);
     let rsp: SvcRespParam = Jce::read_from_bytes(&mut reader);
     Ok(rsp.online_infos.iter().map(|i| OtherClientInfo {

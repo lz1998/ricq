@@ -3,6 +3,7 @@ use crate::crypto::qqtea_decrypt;
 use bytes::{Buf, Bytes};
 use flate2::read::ZlibDecoder;
 use std::io::Read;
+use crate::client::errors::RQError;
 
 #[derive(Default, Debug)]
 pub struct IncomePacket {
@@ -45,9 +46,9 @@ impl IncomePacket {
 }
 
 impl super::super::Client {
-    pub async fn parse_incoming_packet(&self, payload: &mut Bytes) -> Result<IncomePacket, String> {
+    pub async fn parse_incoming_packet(&self, payload: &mut Bytes) -> Result<IncomePacket, RQError> {
         if payload.len() < 6 {
-            return Err("invalid  incoming packet length".to_string());
+            return Err(RQError::Decode("invalid  incoming packet length".into()));
         }
         let mut pkt = IncomePacket::default();
         pkt.flag1 = payload.get_i32();
@@ -64,10 +65,10 @@ impl super::super::Client {
             _ => Bytes::new(),
         };
         if pkt.payload.len() == 0 {
-            return Err("payload length==0".to_string());
+            return Err(RQError::Decode("payload length==0".into()));
         }
         if pkt.flag1 != 0x0A && pkt.flag1 != 0x0B {
-            return Err("flag1 error".to_string());
+            return Err(RQError::Decode("flag1 error".into()));
         }
         self.parse_sso_frame(&mut pkt).await?;
         if pkt.flag2 == 2 {
@@ -80,19 +81,19 @@ impl super::super::Client {
         Ok(pkt)
     }
 
-    pub async fn parse_sso_frame(&self, pkt: &mut IncomePacket) -> Result<(), String> {
+    pub async fn parse_sso_frame(&self, pkt: &mut IncomePacket) -> Result<(), RQError> {
         let mut payload = Bytes::from(pkt.payload.to_owned());
         let len = payload.get_i32() as usize - 4;
         if payload.remaining() < len {
-            return Err("remaining<len".to_string());
+            return Err(RQError::Decode("remaining<len".into()));
         }
         pkt.seq_id = payload.get_i32() as u16;
         let ret_code = payload.get_i32();
         if ret_code != 0 {
             if ret_code == -10008 {
-                return Err("ErrSessionExpired".to_string()); //ErrSessionExpired
+                return Err(RQError::Decode("ErrSessionExpired".into())); //ErrSessionExpired
             }
-            return Err("unsuccessful".to_string()); //unsuccessful
+            return Err(RQError::Decode("unsuccessful".into())); //unsuccessful
         }
 
         // extra data
@@ -117,7 +118,7 @@ impl super::super::Client {
                 let mut uncompressed = Vec::new();
                 ZlibDecoder::new(payload.chunk())
                     .read_to_end(&mut uncompressed)
-                    .unwrap(); //todo
+                    .map_err(|_| RQError::Other("failed to decode zlib".into()))?;
                 Bytes::from(uncompressed)
             }
             8 => Bytes::from(payload),

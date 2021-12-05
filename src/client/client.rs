@@ -93,8 +93,8 @@ impl super::Client {
         self.highway_apply_up_seq.fetch_add(2, Ordering::Relaxed)
     }
 
-    pub async fn send(&self, pkt: OutcomePacket) {
-        self.out_pkt_sender.send(pkt.bytes).unwrap(); //todo
+    pub async fn send(&self, pkt: OutcomePacket) -> Result<(), RQError> {
+        self.out_pkt_sender.send(pkt.bytes).map_err(|_| RQError::Other("failed to send out_pkt".into()))
     }
 
     pub async fn send_and_wait(&self, pkt: OutcomePacket) -> Result<IncomePacket, RQError> {
@@ -135,7 +135,9 @@ impl super::Client {
                 Ok(_) => {
                     times += 1;
                     if times >= 7 {
-                        self.register_client().await.unwrap(); //todo
+                        if self.register_client().await.is_err() {
+                            break;
+                        }
                         times = 0;
                     }
                 }

@@ -22,7 +22,7 @@ impl ClientNet {
         Self { client, receiver }
     }
     pub async fn connect_tcp(&self) -> TcpStream {
-        match connect("42.81.176.211:443".parse().unwrap()).await {
+        match connect("42.81.176.211:443".parse().expect("failed to parse addr")).await {
             Ok(stream) => {
                 self.client.connected.swap(true, Ordering::SeqCst);
                 stream

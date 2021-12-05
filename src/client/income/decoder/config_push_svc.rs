@@ -41,8 +41,8 @@ pub fn decode_push_req_packet(payload: &[u8]) -> Result<ConfigPushReq, RQError> 
     let mut payload = Bytes::from(payload.to_owned());
     let mut request: jce::RequestPacket = Jce::read_from_bytes(&mut payload);
     let mut data: jce::RequestDataVersion2 = Jce::read_from_bytes(&mut request.s_buffer);
-    let mut a = data.map.remove("PushReq").unwrap();
-    let mut b = a.remove("ConfigPush.PushReq").unwrap();
+    let mut a = data.map.remove("PushReq").ok_or(RQError::Decode("missing PushReq".into()))?;
+    let mut b = a.remove("ConfigPush.PushReq").ok_or(RQError::Decode("missing ConfigPush.PushReq".into()))?;
     let mut r = Jce::new(&mut b);
     let t: i32 = r.get_by_tag(1);
     let mut jce_buf: Bytes = r.get_by_tag(2);

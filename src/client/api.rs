@@ -39,7 +39,7 @@ impl super::Client {
 
     /// 密码登录 - 提交密码
     pub async fn password_login(&self) -> Result<LoginResponse, RQError> {
-        let resp = self.send_and_wait(self.build_login_packet(true).await.into()).await.unwrap();
+        let resp = self.send_and_wait(self.build_login_packet(true).await.into()).await?;
         if &resp.command_name != "wtlogin.login" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
@@ -48,7 +48,7 @@ impl super::Client {
 
     /// 密码登录 - 请求短信验证码
     pub async fn request_sms(&self) -> Result<LoginResponse, RQError> {
-        let resp = self.send_and_wait(self.build_sms_request_packet().await.into()).await.unwrap();
+        let resp = self.send_and_wait(self.build_sms_request_packet().await.into()).await?;
         if &resp.command_name != "wtlogin.login" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
@@ -57,7 +57,7 @@ impl super::Client {
 
     /// 密码登录 - 提交短信验证码
     pub async fn submit_sms_code(&self, code: &str) -> Result<LoginResponse, RQError> {
-        let resp = self.send_and_wait(self.build_sms_code_submit_packet(code.trim()).await.into()).await.unwrap();
+        let resp = self.send_and_wait(self.build_sms_code_submit_packet(code.trim()).await.into()).await?;
         if &resp.command_name != "wtlogin.login" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
@@ -66,7 +66,7 @@ impl super::Client {
 
     /// 密码登录 - 提交滑块ticket
     pub async fn submit_ticket(&self, ticket: &str) -> Result<LoginResponse, RQError> {
-        let resp = self.send_and_wait(self.build_ticket_submit_packet(ticket).await.into()).await.unwrap();
+        let resp = self.send_and_wait(self.build_ticket_submit_packet(ticket).await.into()).await?;
         if &resp.command_name != "wtlogin.login" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
@@ -75,7 +75,7 @@ impl super::Client {
 
     /// 设备锁登录 - 二维码、密码登录都需要
     pub async fn device_lock_login(&self) -> Result<LoginResponse, RQError> {
-        let resp = self.send_and_wait(self.build_device_lock_login_packet().await.into()).await.unwrap();
+        let resp = self.send_and_wait(self.build_device_lock_login_packet().await.into()).await?;
         if &resp.command_name != "wtlogin.login" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
@@ -129,13 +129,14 @@ impl super::Client {
     }
 
     /// 发送群消息 TODO 切片, At预处理Display
-    pub async fn send_group_message(&self, group_code: i64, message_chain: Vec<Msg>) {
+    pub async fn send_group_message(&self, group_code: i64, message_chain: Vec<Msg>) -> Result<(), RQError> {
         let mut elems = Vec::new();
         for message in message_chain.iter() {
             elems.append(&mut message.pack());
         }
         let (_, packet) = self.build_group_sending_packet(group_code, 383, 1, 0, 0, false, elems).await;
-        self.out_pkt_sender.send(packet).unwrap(); //todo
+        self.out_pkt_sender.send(packet).map_err(|_| RQError::Other("out_pkt_sender err".into()))?; //todo
+        Ok(())
     }
 
     /// 获取群成员信息
@@ -190,7 +191,7 @@ impl super::Client {
         for g in groups.iter_mut() {
             let cli = self.clone();
             let group = g.clone();
-            let permit = semaphore.clone().acquire_owned().await.unwrap();
+            let permit = semaphore.clone().acquire_owned().await.map_err(|_| RQError::Other("semaphore acquire_owned err".into()))?;
             handles.push(tokio::spawn(async move {
                 let mut mem_list = cli.get_group_member_list(group.code, group.uin).await.ok()?;
                 let mut members = group.members.write().await;
@@ -200,7 +201,7 @@ impl super::Client {
             }));
         }
         for h in handles {
-            h.await.unwrap(); //todo
+            h.await.map_err(|_| RQError::Other("joinhandle err".into()))?; //todo
         }
 
         let mut group_list = self.group_list.write().await;
