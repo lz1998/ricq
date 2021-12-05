@@ -14,22 +14,22 @@ use jce_struct::Jce;
 
 #[derive(Debug, Default)]
 pub struct ReqPush {
-    resp: ReqPushResp,
-    push_infos: Vec<PushInfo>,
+    pub resp: ReqPushResp,
+    pub push_infos: Vec<PushInfo>,
 }
 
 #[derive(Debug, Default)]
 pub struct ReqPushResp {
-    uin: i64,
-    msg_infos: Vec<jce::PushMessageInfo>,
+    pub uin: i64,
+    pub msg_infos: Vec<jce::PushMessageInfo>,
 }
 
 #[derive(Debug, Default)]
 pub struct PushInfo {
-    msg_seq: i16,
-    msg_time: i64,
-    msg_uid: i64,
-    push_msg: PushMsg,
+    pub msg_seq: i16,
+    pub msg_time: i64,
+    pub msg_uid: i64,
+    pub push_msg: PushMsg,
 }
 
 #[derive(Debug)]
@@ -239,9 +239,9 @@ pub fn decode_group_message_packet(payload: &[u8]) -> Result<GroupMessagePart, R
 }
 
 pub struct FriendMessageRecalledEvent {
-    friend_uin: i64,
-    message_id: i32,
-    time: i64,
+    pub friend_uin: i64,
+    pub message_id: i32,
+    pub time: i64,
 }
 
 pub fn msg_type_0x210_sub8a_decoder(
@@ -268,7 +268,7 @@ pub fn msg_type_0x210_sub8a_decoder(
 }
 
 pub struct NewFriendEvent {
-    friend: FriendInfo,
+    pub friend: FriendInfo,
 }
 
 pub fn msg_type_0x210_subb3_decoder(protobuf: &[u8]) -> Result<NewFriendEvent, RQError> {
@@ -284,8 +284,8 @@ pub fn msg_type_0x210_subb3_decoder(protobuf: &[u8]) -> Result<NewFriendEvent, R
 
 #[derive(Debug, Default)]
 pub struct GroupLeaveEvent {
-    group_code: i64,
-    operator: i64,
+    pub group_code: i64,
+    pub operator: i64,
 }
 
 // return group number group leave
@@ -300,15 +300,15 @@ pub fn msg_type_0x210_subd4_decoder(protobuf: &[u8]) -> Result<GroupLeaveEvent, 
 
 #[derive(Debug, Default)]
 pub struct Sub0x27Event {
-    group_name_updated_events: Vec<GroupNameUpdatedEvent>,
-    del_friend_events: Vec<i64>,
+    pub group_name_updated_events: Vec<GroupNameUpdatedEvent>,
+    pub del_friend_events: Vec<i64>,
 }
 
 #[derive(Debug, Default)]
 pub struct GroupNameUpdatedEvent {
-    group_code: i64,
-    new_name: String,
-    operator_uin: i64,
+    pub group_code: i64,
+    pub new_name: String,
+    pub operator_uin: i64,
 }
 
 pub fn msg_type_0x210_sub27_decoder(protobuf: &[u8]) -> Result<Sub0x27Event, RQError> {
@@ -344,8 +344,8 @@ pub fn msg_type_0x210_sub27_decoder(protobuf: &[u8]) -> Result<Sub0x27Event, RQE
 }
 
 pub struct FriendPokeNotifyEvent {
-    sender: i64,
-    receiver: i64,
+    pub sender: i64,
+    pub receiver: i64,
 }
 
 pub fn msg_type_0x210_sub122_decoder(protobuf: &[u8]) -> Result<FriendPokeNotifyEvent, RQError> {
@@ -368,7 +368,7 @@ pub fn msg_type_0x210_sub122_decoder(protobuf: &[u8]) -> Result<FriendPokeNotify
 
 // 需要同步群成员
 pub struct GroupMemberNeedSync {
-    group_code: i64,
+    pub group_code: i64,
 }
 
 pub fn msg_type_0x210_sub44_decoder(protobuf: &[u8]) -> Result<GroupMemberNeedSync, RQError> {

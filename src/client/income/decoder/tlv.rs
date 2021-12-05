@@ -117,14 +117,14 @@ pub fn decode_t186(data: &[u8], cache_info: &mut CacheInfo) {
 // --- tlv readers ---
 
 // not used
-fn read_t125(data: &[u8]) -> (Bytes, Bytes) {
+pub fn read_t125(data: &[u8]) -> (Bytes, Bytes) {
     let mut reader = Bytes::from(data.to_owned());
     let open_id = reader.read_bytes_short();
     let open_key = reader.read_bytes_short();
     (open_id, open_key)
 }
 
-fn read_t11a(data: &[u8]) -> (String, u16, u16) {
+pub fn read_t11a(data: &[u8]) -> (String, u16, u16) {
     let mut reader = Bytes::from(data.to_owned());
     reader.get_u16();
     let age = reader.get_u8() as u16;
@@ -135,7 +135,7 @@ fn read_t11a(data: &[u8]) -> (String, u16, u16) {
 }
 
 // not used
-fn read_t199(data: &[u8]) -> (Bytes, Bytes) {
+pub fn read_t199(data: &[u8]) -> (Bytes, Bytes) {
     let mut reader = Bytes::from(data.to_owned());
     let open_id = reader.read_bytes_short();
     let pay_token = reader.read_bytes_short();
@@ -143,14 +143,14 @@ fn read_t199(data: &[u8]) -> (Bytes, Bytes) {
 }
 
 // not used
-fn read_t200(data: &[u8]) -> (Bytes, Bytes) {
+pub fn read_t200(data: &[u8]) -> (Bytes, Bytes) {
     let mut reader = Bytes::from(data.to_owned());
     let pf = reader.read_bytes_short();
     let pf_key = reader.read_bytes_short();
     (pf, pf_key)
 }
 
-fn read_t512(data: &[u8]) -> (HashMap<String, Bytes>, HashMap<String, Bytes>) {
+pub fn read_t512(data: &[u8]) -> (HashMap<String, Bytes>, HashMap<String, Bytes>) {
     let mut reader = Bytes::from(data.to_owned());
     let length = reader.get_u16() as usize;
 
@@ -175,7 +175,7 @@ fn read_t512(data: &[u8]) -> (HashMap<String, Bytes>, HashMap<String, Bytes>) {
 }
 
 // not used
-fn read_t531(data: &[u8]) -> (Bytes, Bytes) {
+pub fn read_t531(data: &[u8]) -> (Bytes, Bytes) {
     let mut reader = Bytes::from(data.to_owned());
     let mut m = reader.read_tlv_map(2);
     let mut a1 = BytesMut::new();
@@ -188,7 +188,7 @@ fn read_t531(data: &[u8]) -> (Bytes, Bytes) {
     return (a1.into(), no_pic_sig);
 }
 
-fn select(a: Option<&Bytes>, b: &[u8]) -> Bytes {
+pub fn select(a: Option<&Bytes>, b: &[u8]) -> Bytes {
     return match a {
         None => { Bytes::from(b.to_owned()) }
         Some(a) => { Bytes::from(a.to_vec()) }

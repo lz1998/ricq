@@ -1,6 +1,6 @@
 use bytes::{Buf, Bytes};
 use jce_struct::Jce;
-use crate::client::{Client, OtherClientInfo};
+use crate::client::OtherClientInfo;
 use crate::jce::{RequestDataVersion2, RequestPacket, SvcRespParam};
 use crate::client::errors::RQError;
 

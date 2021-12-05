@@ -12,45 +12,45 @@ pub struct GroupSystemMessages {
 // 自己被邀请
 #[derive(Debug, Default)]
 pub struct SelfInvited {
-    request_id: i64,
-    invitor_uin: i64,
-    invitor_nick: String,
-    group_code: i64,
-    group_name: String,
-    checked: bool,
-    actor_uin: i64,
-    actor_nick: String,
+    pub request_id: i64,
+    pub invitor_uin: i64,
+    pub invitor_nick: String,
+    pub group_code: i64,
+    pub group_name: String,
+    pub checked: bool,
+    pub actor_uin: i64,
+    pub actor_nick: String,
 }
 
 // 用户申请进群
 #[derive(Debug, Default)]
 pub struct UserApply {
-    request_id: i64,
-    message: String,
-    requester_uin: i64,
-    requester_nick: String,
-    group_code: i64,
-    group_name: String,
-    checked: bool,
-    actor_uin: i64,
-    actor_nick: String,
-    suspicious: bool,
+    pub request_id: i64,
+    pub message: String,
+    pub requester_uin: i64,
+    pub requester_nick: String,
+    pub group_code: i64,
+    pub group_name: String,
+    pub checked: bool,
+    pub actor_uin: i64,
+    pub actor_nick: String,
+    pub suspicious: bool,
 }
 
 // 用户被邀请进群
 #[derive(Debug, Default)]
 pub struct UserInvited {
-    request_id: i64,
-    message: String,
-    requester_uin: i64,
-    requester_nick: String,
-    group_code: i64,
-    group_name: String,
-    checked: bool,
-    actor_uin: i64,
-    suspicious: bool,
-    action_uin: i64,
-    action_uin_nick: String,
+    pub request_id: i64,
+    pub message: String,
+    pub requester_uin: i64,
+    pub requester_nick: String,
+    pub group_code: i64,
+    pub group_name: String,
+    pub checked: bool,
+    pub actor_uin: i64,
+    pub suspicious: bool,
+    pub action_uin: i64,
+    pub action_uin_nick: String,
 }
 
 pub fn decode_system_msg_group_packet(payload: &[u8]) -> Result<GroupSystemMessages,RQError> {

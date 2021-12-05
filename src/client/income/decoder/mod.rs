@@ -1,4 +1,4 @@
-mod tlv;
+pub mod tlv;
 pub mod wtlogin;
 pub mod friendlist;
 pub mod stat_svc;
