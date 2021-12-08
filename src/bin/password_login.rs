@@ -3,8 +3,7 @@ use futures::StreamExt;
 use rs_qq::client::device::DeviceInfo;
 use rs_qq::client::handler::DefaultHandler;
 use rs_qq::client::income::decoder::wtlogin::LoginResponse;
-use rs_qq::client::net::ClientNet;
-use rs_qq::client::{Client, Password};
+use rs_qq::client::Client;
 use std::path::Path;
 use std::sync::Arc;
 use tokio_util::codec::{FramedRead, LinesCodec};
@@ -12,32 +11,36 @@ use tokio_util::codec::{FramedRead, LinesCodec};
 #[tokio::main]
 async fn main() -> Result<()> {
     // load uin and password from env
-    let uin: i64 = std::env::var("UIN").expect("failed to read UIN from env").parse().expect("failed to parse UIN");
+    let uin: i64 = std::env::var("UIN")
+        .expect("failed to read UIN from env")
+        .parse()
+        .expect("failed to parse UIN");
     let password = std::env::var("PASSWORD").expect("failed to read PASSWORD from env");
 
     let device_info = match Path::new("device.json").exists() {
-        true => {
-            DeviceInfo::from_json(&tokio::fs::read_to_string("device.json").await.expect("failed to read device.json")).expect("failed to parse device info")
-        }
+        true => DeviceInfo::from_json(
+            &tokio::fs::read_to_string("device.json")
+                .await
+                .expect("failed to read device.json"),
+        )
+        .expect("failed to parse device info"),
         false => DeviceInfo::random(),
     };
     tokio::fs::write("device.json", device_info.to_json())
         .await
         .expect("failed to write device info to file");
 
-    let (cli, receiver) = Client::new(
-        uin,
-        Password::from_str(&password),
-        device_info,
-        DefaultHandler,
-    )
-        .await;
+    let mut config = rs_qq::Config::new_with_device_info(device_info);
+    config.uin = uin;
+    config.password = password;
+    let cli = Client::new_with_config(config, DefaultHandler).await;
     let client = Arc::new(cli);
-    let client_net = ClientNet::new(client.clone(), receiver);
-    let stream = client_net.connect_tcp().await;
-    let net = tokio::spawn(client_net.net_loop(stream));
+    let net = client.run();
     tokio::spawn(async move {
-        let mut resp = client.password_login().await.expect("failed to login with password");
+        let mut resp = client
+            .password_login()
+            .await
+            .expect("failed to login with password");
         loop {
             match resp {
                 LoginResponse::Success => {
@@ -61,8 +64,16 @@ async fn main() -> Result<()> {
                     println!("滑块URL: {}", verify_url);
                     println!("请输入ticket:");
                     let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
-                    let ticket = reader.next().await.transpose().expect("failed to read ticket").expect("failed to read ticket");
-                    resp = client.submit_ticket(&ticket).await.expect("failed to submit ticket");
+                    let ticket = reader
+                        .next()
+                        .await
+                        .transpose()
+                        .expect("failed to read ticket")
+                        .expect("failed to read ticket");
+                    resp = client
+                        .submit_ticket(&ticket)
+                        .await
+                        .expect("failed to submit ticket");
                 }
                 LoginResponse::SMSNeededError {
                     ref sms_phone,
@@ -72,11 +83,22 @@ async fn main() -> Result<()> {
                     println!("{}", error_message);
                     println!("请输入短信验证码:");
                     let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
-                    let sms_code = reader.next().await.transpose().expect("failed to read sms_code").expect("failed to read sms_code");
-                    resp = client.submit_sms_code(&sms_code).await.expect("failed to submit sms_code");
+                    let sms_code = reader
+                        .next()
+                        .await
+                        .transpose()
+                        .expect("failed to read sms_code")
+                        .expect("failed to read sms_code");
+                    resp = client
+                        .submit_sms_code(&sms_code)
+                        .await
+                        .expect("failed to submit sms_code");
                 }
                 LoginResponse::NeedDeviceLockLogin => {
-                    resp = client.device_lock_login().await.expect("failed to login with device lock");
+                    resp = client
+                        .device_lock_login()
+                        .await
+                        .expect("failed to login with device lock");
                 }
                 LoginResponse::NeedCaptcha { .. } => {}
                 LoginResponse::UnsafeDeviceError { ref verify_url } => {
@@ -90,16 +112,28 @@ async fn main() -> Result<()> {
             }
         }
         println!("{:?}", resp);
-        client.register_client().await.expect("failed to register client");
-        client.refresh_status().await.expect("failed to refresh status");
+        client
+            .register_client()
+            .await
+            .expect("failed to register client");
+        client
+            .refresh_status()
+            .await
+            .expect("failed to refresh status");
         let c = client.clone();
         tokio::spawn(async move {
             c.do_heartbeat().await;
         });
         {
-            client.reload_friend_list().await.expect("failed to reload friend list");
+            client
+                .reload_friend_list()
+                .await
+                .expect("failed to reload friend list");
             println!("{:?}", client.friend_list.read().await);
-            client.reload_group_list().await.expect("failed to reload group list");
+            client
+                .reload_group_list()
+                .await
+                .expect("failed to reload group list");
             let _group_list = client.group_list.read().await;
         }
         let r = client.refresh_status().await;
@@ -116,7 +150,7 @@ async fn main() -> Result<()> {
         // let mem_list = client.get_group_member_list(335783090).await;
         // println!("{:?}", mem_list);
     });
-    net.await.expect("network error1").expect("network error2");
+    net.await.expect("network error1");
 
     Ok(())
 }

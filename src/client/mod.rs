@@ -40,8 +40,10 @@ pub struct Client {
     pub password_md5: Bytes,
     pub ecdh: EncryptECDH,
     pub connected: AtomicBool,
+    pub shutting_down: AtomicBool,
     pub heartbeat_enabled: AtomicBool,
     pub online: AtomicBool,
+    pub(crate) net: net::ClientNet,
 
     pub out_pkt_sender: net::OutPktSender,
     pub packet_promises: RwLock<HashMap<u16, oneshot::Sender<IncomePacket>>>,

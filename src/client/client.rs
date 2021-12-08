@@ -9,8 +9,10 @@ use crate::client::Password;
 use bytes::Bytes;
 use rand::Rng;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, AtomicU16, Ordering};
+use std::sync::Arc;
 use tokio::sync::oneshot;
 use tokio::sync::RwLock;
+use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
 
 impl super::Client {
@@ -19,9 +21,9 @@ impl super::Client {
         password: Password,
         mut device_info: DeviceInfo,
         handler: H,
-    ) -> (Client, net::OutPktReceiver)
-        where
-            H: crate::client::handler::Handler + 'static + Sync + Send,
+    ) -> Client
+    where
+        H: crate::client::handler::Handler + 'static + Sync + Send,
     {
         device_info.gen_guid();
         device_info.gen_tgtgt_key();
@@ -38,8 +40,10 @@ impl super::Client {
             uin: AtomicI64::new(uin),
             password_md5: password.md5(),
             connected: AtomicBool::new(false),
+            shutting_down: AtomicBool::new(false),
             heartbeat_enabled: AtomicBool::new(false),
             online: AtomicBool::new(false),
+            net: net::ClientNet::new(out_pkt_receiver),
             out_pkt_sender,
             random_key: Bytes::from(rand::thread_rng().gen::<[u8; 16]>().to_vec()),
             version: gen_version_info(&ClientProtocol::IPad),
@@ -65,7 +69,20 @@ impl super::Client {
         }
         cli.cache_info.write().await.ksid =
             format!("|{}|A8.2.7.27f6ea96", cli.device_info.read().await.imei).into();
-        (cli, out_pkt_receiver)
+        cli
+    }
+
+    pub async fn new_with_config<H>(config: crate::Config, handler: H) -> Self
+    where
+        H: crate::client::handler::Handler + 'static + Sync + Send,
+    {
+        let password = super::Password::from_str(&config.password);
+        Self::new(config.uin, password, config.device_info, handler).await
+    }
+
+    pub fn run(self: &Arc<Self>) -> JoinHandle<()> {
+        let cli = self.clone();
+        tokio::spawn(async move { cli.net.run(&cli).await })
     }
 
     pub fn next_seq(&self) -> u16 {
@@ -94,7 +111,9 @@ impl super::Client {
     }
 
     pub async fn send(&self, pkt: OutcomePacket) -> Result<(), RQError> {
-        self.out_pkt_sender.send(pkt.bytes).map_err(|_| RQError::Other("failed to send out_pkt".into()))
+        self.out_pkt_sender
+            .send(pkt.bytes)
+            .map_err(|_| RQError::Other("failed to send out_pkt".into()))
     }
 
     pub async fn send_and_wait(&self, pkt: OutcomePacket) -> Result<IncomePacket, RQError> {
@@ -108,7 +127,9 @@ impl super::Client {
             packet_promises.remove(&pkt.seq);
             return Err(RQError::Network.into());
         }
-        let output = if let Ok(Ok(p)) = tokio::time::timeout(std::time::Duration::from_secs(15), receiver).await {
+        let output = if let Ok(Ok(p)) =
+            tokio::time::timeout(std::time::Duration::from_secs(15), receiver).await
+        {
             Ok(p)
         } else {
             Err(RQError::Timeout)
