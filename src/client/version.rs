@@ -7,7 +7,7 @@ pub enum ClientProtocol {
     QiDian,
 }
 
-#[derive(Default,Debug)]
+#[derive(Default, Debug)]
 pub struct VersionInfo {
     pub apk_sign: Vec<u8>,
     pub apk_id: String,
@@ -22,9 +22,9 @@ pub struct VersionInfo {
     pub main_sig_map: u32,
     pub protocol: ClientProtocol,
 }
-impl Default for ClientProtocol{
+impl Default for ClientProtocol {
     fn default() -> Self {
-        return ClientProtocol::IPad
+        return ClientProtocol::IPad;
     }
 }
 
@@ -36,7 +36,10 @@ pub fn gen_version_info(p: &ClientProtocol) -> VersionInfo {
             sub_app_id: 537066738,
             sort_version_name: String::from("8.5.0"),
             build_time: 1607689988,
-            apk_sign: vec![0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E, 0xB6, 0x8D],
+            apk_sign: vec![
+                0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E,
+                0xB6, 0x8D,
+            ],
             sdk_version: String::from("6.0.0.2454"),
             sso_version: 15,
             misc_bitmap: 184024956,
@@ -50,7 +53,9 @@ pub fn gen_version_info(p: &ClientProtocol) -> VersionInfo {
             sub_app_id: 537065739,
             sort_version_name: String::from("5.8.9"),
             build_time: 1595836208,
-            apk_sign: vec![170, 57, 120, 244, 31, 217, 111, 249, 145, 74, 102, 158, 24, 100, 116, 199],
+            apk_sign: vec![
+                170, 57, 120, 244, 31, 217, 111, 249, 145, 74, 102, 158, 24, 100, 116, 199,
+            ],
             sdk_version: String::from("6.0.0.2433"),
             sso_version: 12,
             misc_bitmap: 150470524,
@@ -64,7 +69,10 @@ pub fn gen_version_info(p: &ClientProtocol) -> VersionInfo {
             sub_app_id: 537064446,
             sort_version_name: String::from("2.0.5"),
             build_time: 1559564731,
-            apk_sign: vec![0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E, 0xB6, 0x8D],
+            apk_sign: vec![
+                0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E,
+                0xB6, 0x8D,
+            ],
             sdk_version: String::from("6.0.0.236"),
             sso_version: 5,
             misc_bitmap: 16252796,
@@ -78,7 +86,9 @@ pub fn gen_version_info(p: &ClientProtocol) -> VersionInfo {
             sub_app_id: 537064315,
             sort_version_name: String::from("5.8.9"),
             build_time: 1595836208,
-            apk_sign: vec![170, 57, 120, 244, 31, 217, 111, 249, 145, 74, 102, 158, 24, 100, 116, 199],
+            apk_sign: vec![
+                170, 57, 120, 244, 31, 217, 111, 249, 145, 74, 102, 158, 24, 100, 116, 199,
+            ],
             sdk_version: String::from("6.0.0.2433"),
             sso_version: 12,
             misc_bitmap: 150470524,
@@ -92,7 +102,9 @@ pub fn gen_version_info(p: &ClientProtocol) -> VersionInfo {
             sub_app_id: 537036590,
             sort_version_name: String::from("3.8.6"),
             build_time: 1556628836,
-            apk_sign: vec![160, 30, 236, 171, 133, 233, 227, 186, 43, 15, 106, 21, 140, 133, 92, 41],
+            apk_sign: vec![
+                160, 30, 236, 171, 133, 233, 227, 186, 43, 15, 106, 21, 140, 133, 92, 41,
+            ],
             sdk_version: String::from("6.0.0.2365"),
             sso_version: 5,
             misc_bitmap: 49807228,

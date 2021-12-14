@@ -1,9 +1,9 @@
 use crate::binary::BinaryReader;
+use crate::client::errors::RQError;
 use crate::crypto::qqtea_decrypt;
 use bytes::{Buf, Bytes};
 use flate2::read::ZlibDecoder;
 use std::io::Read;
-use crate::client::errors::RQError;
 
 #[derive(Default, Debug)]
 pub struct IncomePacket {
@@ -46,7 +46,10 @@ impl IncomePacket {
 }
 
 impl super::super::Client {
-    pub async fn parse_incoming_packet(&self, payload: &mut Bytes) -> Result<IncomePacket, RQError> {
+    pub async fn parse_incoming_packet(
+        &self,
+        payload: &mut Bytes,
+    ) -> Result<IncomePacket, RQError> {
         if payload.len() < 6 {
             return Err(RQError::Decode("invalid  incoming packet length".into()));
         }

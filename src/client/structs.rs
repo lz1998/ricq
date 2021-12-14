@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use bytes::Bytes;
+use std::collections::HashMap;
 use tokio::sync::RwLock;
 
 #[derive(Default, Debug)]
@@ -37,7 +37,6 @@ pub struct BigDataReqSessionInfo {
     pub sig_session: Bytes,
     pub session_key: Bytes,
 }
-
 
 #[derive(Debug, Default)]
 pub struct GroupInfo {
@@ -84,7 +83,6 @@ impl Default for GroupMemberPermission {
         Self::Member
     }
 }
-
 
 #[derive(Debug, Default)]
 pub struct FriendInfo {

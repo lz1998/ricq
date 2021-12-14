@@ -1,9 +1,9 @@
-use bytes::{BufMut, Bytes};
-use rand::distributions::Alphanumeric;
-use rand::Rng;
 use crate::client::outcome::PbToBytes;
 use crate::hex::encode_hex;
 use crate::pb;
+use bytes::{BufMut, Bytes};
+use rand::distributions::Alphanumeric;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 
 //手机设备信息
@@ -42,8 +42,7 @@ pub struct DeviceInfo {
 }
 
 impl DeviceInfo {
-    pub fn random() -> DeviceInfo
-    {
+    pub fn random() -> DeviceInfo {
         let mut rng = rand::thread_rng();
         DeviceInfo {
             display: "GMC.".to_string() + &rng.gen_range(100000..999999).to_string() + ".001",
@@ -51,9 +50,13 @@ impl DeviceInfo {
             device: "sagit".to_string(),
             board: "eomam".to_string(),
             model: "MI 6".to_string(),
-            finger_print: "xiaomi/iarim/sagit:10/eomam.200122.001/".to_string() + &rng.gen_range(1000000..9999999).to_string() + &":user/release-keys".to_string(),
+            finger_print: "xiaomi/iarim/sagit:10/eomam.200122.001/".to_string()
+                + &rng.gen_range(1000000..9999999).to_string()
+                + &":user/release-keys".to_string(),
             boot_id: random_uuid(),
-            proc_version: "Linux 5.4.0-54-generic-".to_string() + &random_string(8) + &" (android-build@google.com)".to_string(),
+            proc_version: "Linux 5.4.0-54-generic-".to_string()
+                + &random_string(8)
+                + &" (android-build@google.com)".to_string(),
             imei: random_imei(),
             brand: "Xiaomi".to_string(),
             bootloader: "U-boot".to_string(),
@@ -70,13 +73,14 @@ impl DeviceInfo {
             apn: "wifi".to_string(),
             vendor_name: "MIUI".to_string(),
             vendor_os_name: "gmc".to_string(),
-            guid: Bytes::new(), // md5(android_id + mac_address)
-            tgtgt_key: Bytes::new(),// random bytes
+            guid: Bytes::new(),      // md5(android_id + mac_address)
+            tgtgt_key: Bytes::new(), // random bytes
         }
     }
 
     pub fn gen_guid(&mut self) {
-        self.guid = Bytes::from(md5::compute(self.android_id.to_owned() + &self.mac_address).to_vec());
+        self.guid =
+            Bytes::from(md5::compute(self.android_id.to_owned() + &self.mac_address).to_vec());
     }
 
     pub fn gen_tgtgt_key(&mut self) {
@@ -97,7 +101,8 @@ impl DeviceInfo {
             android_id: self.android_id.to_owned(),
             base_band: self.base_band.to_owned(),
             inner_version: self.version.incremental.to_owned(),
-        }.to_bytes()
+        }
+        .to_bytes()
     }
 
     pub fn to_json(&self) -> String {
@@ -139,12 +144,14 @@ pub fn random_string(len: usize) -> String {
 
 pub fn random_uuid() -> String {
     let r = md5::compute(&rand::thread_rng().gen::<[u8; 16]>()).to_vec();
-    format!("{}-{}-{}-{}-{}",
-            encode_hex(&r[0..4]),
-            encode_hex(&r[4..6]),
-            encode_hex(&r[6..8]),
-            encode_hex(&r[8..10]),
-            encode_hex(&r[10..16]))
+    format!(
+        "{}-{}-{}-{}-{}",
+        encode_hex(&r[0..4]),
+        encode_hex(&r[4..6]),
+        encode_hex(&r[6..8]),
+        encode_hex(&r[8..10]),
+        encode_hex(&r[10..16])
+    )
 }
 
 pub fn random_imei() -> String {
@@ -169,9 +176,9 @@ pub fn random_imei() -> String {
 
 #[cfg(test)]
 mod tests {
-    use rand::distributions::Alphanumeric;
-    use rand::{Rng, thread_rng};
     use crate::client::device::{random_imei, random_string, random_uuid};
+    use rand::distributions::Alphanumeric;
+    use rand::{thread_rng, Rng};
 
     #[test]
     fn test_random() {

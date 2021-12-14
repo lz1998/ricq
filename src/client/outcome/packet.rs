@@ -1,9 +1,16 @@
-use bytes::{BufMut, Bytes, BytesMut};
-use crate::binary::{BinaryWriter};
+use crate::binary::BinaryWriter;
 use crate::crypto::IEncryptMethod;
+use bytes::{BufMut, Bytes, BytesMut};
 
-pub fn build_oicq_request_packet<E>(uin: i64, command_id: u16, encrypt: &E, key: &[u8], body: &[u8]) -> Bytes
-    where E: IEncryptMethod
+pub fn build_oicq_request_packet<E>(
+    uin: i64,
+    command_id: u16,
+    encrypt: &E,
+    key: &[u8],
+    body: &[u8],
+) -> Bytes
+where
+    E: IEncryptMethod,
 {
     let body = encrypt.do_encrypt(body, key);
     {
@@ -26,14 +33,26 @@ pub fn build_oicq_request_packet<E>(uin: i64, command_id: u16, encrypt: &E, key:
     }
 }
 
-pub fn build_sso_packet(seq: u16, app_id: u32, sub_app_id: u32, command_name: &str, imei: &str, ext_data: &[u8], out_packet_session_id: &[u8], body: &[u8], ksid: &[u8]) -> Bytes {
+pub fn build_sso_packet(
+    seq: u16,
+    app_id: u32,
+    sub_app_id: u32,
+    command_name: &str,
+    imei: &str,
+    ext_data: &[u8],
+    out_packet_session_id: &[u8],
+    body: &[u8],
+    ksid: &[u8],
+) -> Bytes {
     let mut p = BytesMut::new();
     p.write_int_lv_packet(4, &{
         let mut writer = Vec::new();
         writer.put_u32(seq as u32);
         writer.put_u32(app_id);
         writer.put_u32(sub_app_id);
-        writer.put_slice(&vec![0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00]);
+        writer.put_slice(&vec![
+            0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00,
+        ]);
         if ext_data.len() == 0 || ext_data.len() == 4 {
             writer.put_u32(0x04)
         } else {
@@ -80,7 +99,13 @@ pub fn build_code2d_request_packet(seq: u32, j: u64, cmd: u16, body: &[u8]) -> B
     w.into()
 }
 
-pub fn build_login_packet(uin: i64, body_type: u8, key: &[u8], body: &[u8], extra_data: &[u8]) -> Bytes {
+pub fn build_login_packet(
+    uin: i64,
+    body_type: u8,
+    key: &[u8],
+    body: &[u8],
+    extra_data: &[u8],
+) -> Bytes {
     let mut w = BytesMut::new();
 
     w.write_int_lv_packet(4, &{
@@ -104,7 +129,16 @@ pub fn build_login_packet(uin: i64, body_type: u8, key: &[u8], body: &[u8], extr
     w.into()
 }
 
-pub fn build_uni_packet(uin: i64, seq: u16, command_name: &str, encrypt_type: u8, session_id: &[u8], extra_data: &[u8], key: &[u8], body: &[u8]) -> Bytes {
+pub fn build_uni_packet(
+    uin: i64,
+    seq: u16,
+    command_name: &str,
+    encrypt_type: u8,
+    session_id: &[u8],
+    extra_data: &[u8],
+    key: &[u8],
+    body: &[u8],
+) -> Bytes {
     let mut w2 = BytesMut::new();
     {
         w2.put_u32(0x0B);

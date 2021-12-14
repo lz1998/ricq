@@ -1,13 +1,15 @@
-use crate::pb;
+use crate::client::errors::RQError;
 use crate::client::outcome::PbToBytes;
 use crate::client::structs::{GroupMemberInfo, GroupMemberPermission};
-use crate::client::errors::RQError;
+use crate::pb;
 
 pub fn decode_group_member_info_response(payload: &[u8]) -> Result<GroupMemberInfo, RQError> {
     let resp = pb::GroupMemberRspBody::from_bytes(payload)
         .map_err(|_| RQError::Decode("GroupMemberRspBody".to_string()))?;
     let group_code = resp.group_code;
-    let mem_info = resp.mem_info.ok_or(RQError::Decode("mem_info is none".to_string()))?;
+    let mem_info = resp
+        .mem_info
+        .ok_or(RQError::Decode("mem_info is none".to_string()))?;
     Ok(GroupMemberInfo {
         group_code,
         uin: mem_info.uin,

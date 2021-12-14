@@ -1,12 +1,11 @@
-use std::collections::HashMap;
-use bytes::{Buf, BufMut, Bytes, BytesMut};
-use chrono::Utc;
 use crate::binary::BinaryReader;
-use crate::client::{AccountInfo, CacheInfo};
 use crate::client::errors::RQError;
 use crate::client::structs::LoginSigInfo;
+use crate::client::{AccountInfo, CacheInfo};
 use crate::crypto::qqtea_decrypt;
-
+use bytes::{Buf, BufMut, Bytes, BytesMut};
+use chrono::Utc;
+use std::collections::HashMap;
 
 pub fn decode_t161(data: &[u8], cache_info: &mut CacheInfo) {
     let mut reader = Bytes::from(data.to_owned());
@@ -15,7 +14,12 @@ pub fn decode_t161(data: &[u8], cache_info: &mut CacheInfo) {
     m.remove(&0x172).map(|v| cache_info.rollback_sig = v);
 }
 
-pub fn decode_t119(data: &[u8], ek: &[u8], cache_info: &mut CacheInfo, account_info: &mut AccountInfo) -> Result<(), RQError> {
+pub fn decode_t119(
+    data: &[u8],
+    ek: &[u8],
+    cache_info: &mut CacheInfo,
+    account_info: &mut AccountInfo,
+) -> Result<(), RQError> {
     let mut reader = Bytes::from(qqtea_decrypt(data, ek).to_owned());
     reader.advance(2);
     let mut m = reader.read_tlv_map(2);
@@ -62,14 +66,28 @@ pub fn decode_t119(data: &[u8], ek: &[u8], cache_info: &mut CacheInfo, account_i
         srm_token: select(m.get(&0x16a), &cache_info.sig_info.srm_token).into(),
         t133: select(m.get(&0x133), &cache_info.sig_info.t133),
         encrypted_a1: select(m.get(&0x106), &cache_info.sig_info.encrypted_a1),
-        tgt: m.remove(&0x10a).ok_or(RQError::Decode("missing 0x10a".into()))?,
-        tgt_key: m.remove(&0x10d).ok_or(RQError::Decode("missing 0x10d".into()))?,
-        user_st_key: m.remove(&0x10e).ok_or(RQError::Decode("missing 0x10e".into()))?,
-        user_st_web_sig: m.remove(&0x103).ok_or(RQError::Decode("missing 0x103".into()))?,
-        s_key: m.remove(&0x120).ok_or(RQError::Decode("missing 0x120".into()))?,
+        tgt: m
+            .remove(&0x10a)
+            .ok_or(RQError::Decode("missing 0x10a".into()))?,
+        tgt_key: m
+            .remove(&0x10d)
+            .ok_or(RQError::Decode("missing 0x10d".into()))?,
+        user_st_key: m
+            .remove(&0x10e)
+            .ok_or(RQError::Decode("missing 0x10e".into()))?,
+        user_st_web_sig: m
+            .remove(&0x103)
+            .ok_or(RQError::Decode("missing 0x103".into()))?,
+        s_key: m
+            .remove(&0x120)
+            .ok_or(RQError::Decode("missing 0x120".into()))?,
         s_key_expired_time: Utc::now().timestamp() + 21600,
-        d2: m.remove(&0x143).ok_or(RQError::Decode("missing 0x143".into()))?,
-        d2key: m.remove(&0x305).ok_or(RQError::Decode("missing 0x305".into()))?,
+        d2: m
+            .remove(&0x143)
+            .ok_or(RQError::Decode("missing 0x143".into()))?,
+        d2key: m
+            .remove(&0x305)
+            .ok_or(RQError::Decode("missing 0x305".into()))?,
         wt_session_ticket_key: select(m.get(&0x134), &cache_info.sig_info.wt_session_ticket_key),
         device_token: m.remove(&0x322),
 
@@ -80,8 +98,12 @@ pub fn decode_t119(data: &[u8], ek: &[u8], cache_info: &mut CacheInfo, account_i
     Ok(())
 }
 
-
-pub fn decode_t119r(data: &[u8], tgtgt_key: &[u8], cache_info: &mut CacheInfo, account_info: &mut AccountInfo) {
+pub fn decode_t119r(
+    data: &[u8],
+    tgtgt_key: &[u8],
+    cache_info: &mut CacheInfo,
+    account_info: &mut AccountInfo,
+) {
     let mut reader = Bytes::from(qqtea_decrypt(&data, tgtgt_key).to_owned());
     reader.advance(2);
     let mut m = reader.read_tlv_map(2);
@@ -180,7 +202,10 @@ pub fn read_t531(data: &[u8]) -> (Bytes, Bytes) {
     let mut m = reader.read_tlv_map(2);
     let mut a1 = BytesMut::new();
     let mut no_pic_sig = Bytes::new();
-    if [0x103, 0x16a, 0x113, 0x10c].iter().all(|v| m.contains_key(v)) {
+    if [0x103, 0x16a, 0x113, 0x10c]
+        .iter()
+        .all(|v| m.contains_key(v))
+    {
         a1.put_slice(&m.remove(&0x106).unwrap());
         a1.put_slice(&m.remove(&0x10c).unwrap());
         no_pic_sig = Bytes::from(m.remove(&0x16a).unwrap());
@@ -190,7 +215,7 @@ pub fn read_t531(data: &[u8]) -> (Bytes, Bytes) {
 
 pub fn select(a: Option<&Bytes>, b: &[u8]) -> Bytes {
     return match a {
-        None => { Bytes::from(b.to_owned()) }
-        Some(a) => { Bytes::from(a.to_vec()) }
+        None => Bytes::from(b.to_owned()),
+        Some(a) => Bytes::from(a.to_vec()),
     };
 }

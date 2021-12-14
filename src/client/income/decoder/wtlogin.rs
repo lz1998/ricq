@@ -1,11 +1,10 @@
-use std::sync::atomic::Ordering;
-use bytes::{Bytes, Buf, BufMut};
 use crate::binary::BinaryReader;
-use crate::client::Client;
 use crate::client::device::random_string;
-use crate::client::income::decoder::tlv::*;
 use crate::client::errors::RQError;
-
+use crate::client::income::decoder::tlv::*;
+use crate::client::Client;
+use bytes::{Buf, BufMut, Bytes};
+use std::sync::atomic::Ordering;
 
 #[derive(Debug)]
 pub enum QRCodeState {
@@ -23,7 +22,6 @@ pub enum QRCodeState {
     },
     QRCodeCanceled,
 }
-
 
 #[derive(Debug)]
 pub enum LoginResponse {
@@ -48,22 +46,24 @@ pub enum LoginResponse {
         error_message: String,
     },
     UnsafeDeviceError {
-        verify_url: String
+        verify_url: String,
     },
     TooManySMSRequestError,
     OtherLoginError {
-        error_message: String
+        error_message: String,
     },
     NeedDeviceLockLogin,
 }
 
-
-pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Result<QRCodeState, RQError> {
+pub async fn decode_trans_emp_response(
+    cli: &Client,
+    payload: &[u8],
+) -> Result<QRCodeState, RQError> {
     if payload.len() < 48 {
         return Err(RQError::Decode("invalid payload length".to_string()).into());
     }
     let mut payload = Bytes::from(payload.to_owned());
-    payload.advance(5);// trans req head
+    payload.advance(5); // trans req head
     payload.get_u8();
     payload.get_u16();
     let cmd = payload.get_u16();
@@ -87,7 +87,9 @@ pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Result<Q
         let mut m = body.read_tlv_map(2);
         if m.contains_key(&0x17) {
             return Ok(QRCodeState::QRCodeImageFetch {
-                image_data: m.remove(&0x17).ok_or(RQError::Decode("missing 0x17".into()))?,
+                image_data: m
+                    .remove(&0x17)
+                    .ok_or(RQError::Decode("missing 0x17".into()))?,
                 sig,
             });
         }
@@ -97,7 +99,7 @@ pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Result<Q
         if a_var_len != 0 {
             a_var_len -= 1; // 阴间的位移操作
             if body.get_u8() == 2 {
-                body.get_i64();//uin?
+                body.get_i64(); //uin?
                 a_var_len -= 8;
             }
         }
@@ -112,7 +114,7 @@ pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Result<Q
                 0x35 => Ok(QRCodeState::QRCodeWaitingForConfirm),
                 0x36 => Ok(QRCodeState::QRCodeCanceled),
                 0x11 => Ok(QRCodeState::QRCodeTimeout),
-                _ => Err(RQError::Decode("invalid body code".to_string()))
+                _ => Err(RQError::Decode("invalid body code".to_string())),
             };
         }
         cli.uin.store(body.get_i64(), Ordering::SeqCst);
@@ -124,15 +126,25 @@ pub async fn decode_trans_emp_response(cli: &Client, payload: &[u8]) -> Result<Q
         }
         {
             let mut device_info = cli.device_info.write().await;
-            device_info.tgtgt_key = m.remove(&0x1e).ok_or(RQError::Decode("missing 0x1e".into()))?;
+            device_info.tgtgt_key = m
+                .remove(&0x1e)
+                .ok_or(RQError::Decode("missing 0x1e".into()))?;
         }
         return Ok(QRCodeState::QRCodeConfirmed {
-            tmp_pwd: m.remove(&0x18).ok_or(RQError::Decode("missing 0x18".into()))?,
-            tmp_no_pic_sig: m.remove(&0x19).ok_or(RQError::Decode("missing 0x19".into()))?,
-            tgt_qr: m.remove(&0x65).ok_or(RQError::Decode("missing 0x65".into()))?,
+            tmp_pwd: m
+                .remove(&0x18)
+                .ok_or(RQError::Decode("missing 0x18".into()))?,
+            tmp_no_pic_sig: m
+                .remove(&0x19)
+                .ok_or(RQError::Decode("missing 0x19".into()))?,
+            tgt_qr: m
+                .remove(&0x65)
+                .ok_or(RQError::Decode("missing 0x65".into()))?,
         });
     }
-    return Err(RQError::Decode("decode_trans_emp_response unknown error".to_string()));
+    return Err(RQError::Decode(
+        "decode_trans_emp_response unknown error".to_string(),
+    ));
 }
 
 pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<LoginResponse, RQError> {
@@ -144,7 +156,9 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<Login
     if m.contains_key(&0x402) {
         let mut cache_info = cli.cache_info.write().await;
         cache_info.dpwd = random_string(16).into();
-        cache_info.t402 = m.remove(&0x402).ok_or(RQError::Decode("missing 0x402".to_string()))?;
+        cache_info.t402 = m
+            .remove(&0x402)
+            .ok_or(RQError::Decode("missing 0x402".to_string()))?;
         let mut v = Vec::new();
         v.put_slice(&cli.device_info.read().await.guid);
         v.put_slice(&cache_info.dpwd);
@@ -157,19 +171,30 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<Login
         m.remove(&0x150).map(|v| cache_info.t150 = v);
         m.remove(&0x161).map(|v| decode_t161(&v, &mut cache_info));
         m.remove(&0x403).map(|v| cache_info.rand_seed = v);
-        decode_t119(&m.remove(&0x119).ok_or(RQError::Decode("missing 0x119".to_string()))?, &cli.device_info.read().await.tgtgt_key, &mut cache_info, &mut account_info)?;
+        decode_t119(
+            &m.remove(&0x119)
+                .ok_or(RQError::Decode("missing 0x119".to_string()))?,
+            &cli.device_info.read().await.tgtgt_key,
+            &mut cache_info,
+            &mut account_info,
+        )?;
         return Ok(LoginResponse::Success);
     }
     if t == 2 {
         let mut cache_info = cli.cache_info.write().await;
-        cache_info.t104 = m.remove(&0x104).ok_or(RQError::Decode("missing 0x104".to_string()))?;
+        cache_info.t104 = m
+            .remove(&0x104)
+            .ok_or(RQError::Decode("missing 0x104".to_string()))?;
         if let Some(v) = m.remove(&0x192) {
             return Ok(LoginResponse::SliderNeededError {
                 verify_url: String::from_utf8_lossy(&v).to_string(),
             });
         }
         if m.contains_key(&0x165) {
-            let mut img_data = Bytes::from(m.remove(&0x105).ok_or(RQError::Decode("missing 0x105".to_string()))?);
+            let mut img_data = Bytes::from(
+                m.remove(&0x105)
+                    .ok_or(RQError::Decode("missing 0x105".to_string()))?,
+            );
             let sign_len = img_data.get_u16();
             img_data.get_u16();
             let sign = img_data.copy_to_bytes(sign_len as usize);
@@ -179,7 +204,7 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<Login
             });
         } else {
             return Ok(LoginResponse::UnknownLoginError {
-                error_message: "".to_string()
+                error_message: "".to_string(),
             });
         }
     } // need captcha
@@ -193,30 +218,46 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<Login
     if t == 160 || t == 239 {
         let mut cache_info = cli.cache_info.write().await;
         if m.contains_key(&0x174) {
-            cache_info.t174 = m.remove(&0x174).ok_or(RQError::Decode("missing 0x174".to_string()))?;
-            cache_info.t104 = m.remove(&0x104).ok_or(RQError::Decode("missing 0x104".to_string()))?;
-            cache_info.rand_seed = m.remove(&0x403).ok_or(RQError::Decode("missing 0x403".to_string()))?;
+            cache_info.t174 = m
+                .remove(&0x174)
+                .ok_or(RQError::Decode("missing 0x174".to_string()))?;
+            cache_info.t104 = m
+                .remove(&0x104)
+                .ok_or(RQError::Decode("missing 0x104".to_string()))?;
+            cache_info.rand_seed = m
+                .remove(&0x403)
+                .ok_or(RQError::Decode("missing 0x403".to_string()))?;
             let phone = {
                 // let mut r = Bytes::from(m.remove(&0x178).unwrap());
                 // let len = r.get_i32() as usize;
                 // r.read_string_limit(len)
-                "phone_num".to_string()// 这里有问题
+                "phone_num".to_string() // 这里有问题
             };
             if let Some(v) = m.get(&0x204) {
                 return Ok(LoginResponse::SMSOrVerifyNeededError {
                     verify_url: String::from_utf8_lossy(v).to_string(),
                     sms_phone: phone,
-                    error_message: String::from_utf8_lossy(m.get(&0x17e).ok_or(RQError::Decode("missing 0x17e".to_string()))?).to_string(),
+                    error_message: String::from_utf8_lossy(
+                        m.get(&0x17e)
+                            .ok_or(RQError::Decode("missing 0x17e".to_string()))?,
+                    )
+                    .to_string(),
                 });
             }
             return Ok(LoginResponse::SMSNeededError {
                 sms_phone: phone,
-                error_message: String::from_utf8_lossy(m.get(&0x17e).ok_or(RQError::Decode("missing 0x17e".to_string()))?).to_string(),
+                error_message: String::from_utf8_lossy(
+                    m.get(&0x17e)
+                        .ok_or(RQError::Decode("missing 0x17e".to_string()))?,
+                )
+                .to_string(),
             });
         }
 
         if m.contains_key(&0x17b) {
-            cache_info.t104 = m.remove(&0x104).ok_or(RQError::Decode("missing 0x104".to_string()))?;
+            cache_info.t104 = m
+                .remove(&0x104)
+                .ok_or(RQError::Decode("missing 0x104".to_string()))?;
             return Ok(LoginResponse::SMSNeededError {
                 sms_phone: "".to_string(),
                 error_message: "".to_string(),
@@ -236,15 +277,19 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<Login
     if t == 204 {
         {
             let mut cache_info = cli.cache_info.write().await;
-            cache_info.t104 = m.remove(&0x104).ok_or(RQError::Decode("missing 0x104".to_string()))?;
-            cache_info.rand_seed = m.remove(&0x403).ok_or(RQError::Decode("missing 0x403".to_string()))?;
+            cache_info.t104 = m
+                .remove(&0x104)
+                .ok_or(RQError::Decode("missing 0x104".to_string()))?;
+            cache_info.rand_seed = m
+                .remove(&0x403)
+                .ok_or(RQError::Decode("missing 0x403".to_string()))?;
         }
         return Ok(LoginResponse::NeedDeviceLockLogin);
     } // drive lock
 
     if let Some(mut t149r) = m.remove(&0x149) {
         t149r.advance(2);
-        t149r.read_string_short();//title
+        t149r.read_string_short(); //title
         return Ok(LoginResponse::OtherLoginError {
             error_message: t149r.read_string_short(),
         });
@@ -256,7 +301,9 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<Login
             error_message: t146r.read_string_short(),
         });
     }
-    return Err(RQError::Decode("decode_login_response unknown error".to_string()));
+    return Err(RQError::Decode(
+        "decode_login_response unknown error".to_string(),
+    ));
 }
 
 pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> Result<(), RQError> {
@@ -268,14 +315,28 @@ pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> R
     payload.get_u16();
     let m = payload.read_tlv_map(2);
     if t != 0 {
-        return Err(RQError::Decode("decode_exchange_emp_response t != 0".to_string()));
+        return Err(RQError::Decode(
+            "decode_exchange_emp_response t != 0".to_string(),
+        ));
     }
     if cmd == 15 {
-        decode_t119r(m.get(&0x119).ok_or(RQError::Decode("missing 0x119".to_string()))?, &cli.device_info.read().await.tgtgt_key, &mut cache_info, &mut account_info);
+        decode_t119r(
+            m.get(&0x119)
+                .ok_or(RQError::Decode("missing 0x119".to_string()))?,
+            &cli.device_info.read().await.tgtgt_key,
+            &mut cache_info,
+            &mut account_info,
+        );
     }
     if cmd == 11 {
         let h = md5::compute(&cli.cache_info.read().await.sig_info.d2key).to_vec();
-        decode_t119(m.get(&0x119).ok_or(RQError::Decode("missing 0x119".to_string()))?, &h, &mut cache_info, &mut account_info)?;
+        decode_t119(
+            m.get(&0x119)
+                .ok_or(RQError::Decode("missing 0x119".to_string()))?,
+            &h,
+            &mut cache_info,
+            &mut account_info,
+        )?;
     }
     return Ok(());
 }

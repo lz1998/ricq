@@ -1,7 +1,6 @@
+use crate::binary::BinaryWriter;
 use bytes::{BufMut, Bytes, BytesMut};
 use chrono::Utc;
-use crate::binary::BinaryWriter;
-
 
 pub fn t1(uin: u32, ip: &[u8]) -> Bytes {
     if ip.len() != 4 {
@@ -22,7 +21,15 @@ pub fn t1(uin: u32, ip: &[u8]) -> Bytes {
     buf.freeze()
 }
 
-pub fn t1b(micro: u32, version: u32, size: u32, margin: u32, dpi: u32, ec_level: u32, hint: u32) -> Bytes {
+pub fn t1b(
+    micro: u32,
+    version: u32,
+    size: u32,
+    margin: u32,
+    dpi: u32,
+    ec_level: u32,
+    hint: u32,
+) -> Bytes {
     let mut buf = BytesMut::new();
     buf.put_u16(0x1b);
     buf.write_bytes_short(&{
@@ -55,7 +62,14 @@ pub fn t1d(misc_bitmap: u32) -> Bytes {
     buf.freeze()
 }
 
-pub fn t1f(is_root: bool, os_name: &str, os_version: &str, sim_operator_name: &str, apn: &str, network_type: u16) -> Bytes {
+pub fn t1f(
+    is_root: bool,
+    os_name: &str,
+    os_version: &str,
+    sim_operator_name: &str,
+    apn: &str,
+    network_type: u16,
+) -> Bytes {
     let mut buf = BytesMut::new();
     buf.put_u16(0x1f);
     buf.write_bytes_short(&{
@@ -105,7 +119,15 @@ pub fn t10a(arr: &[u8]) -> Bytes {
     buf.freeze()
 }
 
-pub fn t16(sso_version: u32, app_id: u32, sub_app_id: u32, guid: &[u8], apk_id: &str, apk_version_name: &str, apk_sign: &[u8]) -> Bytes {
+pub fn t16(
+    sso_version: u32,
+    app_id: u32,
+    sub_app_id: u32,
+    guid: &[u8],
+    apk_id: &str,
+    apk_version_name: &str,
+    apk_sign: &[u8],
+) -> Bytes {
     let mut buf = BytesMut::new();
     buf.put_u16(0x16);
     buf.write_bytes_short(&{
@@ -217,8 +239,8 @@ pub fn t100(sso_version: u32, protocol: u32, main_sig_map: u32) -> Bytes {
         w.put_u32(sso_version);
         w.put_u32(16);
         w.put_u32(protocol);
-        w.put_u32(0);             // App client version
-        w.put_u32(main_sig_map);  // 34869472
+        w.put_u32(0); // App client version
+        w.put_u32(main_sig_map); // 34869472
         w.freeze()
     });
     buf.freeze()
@@ -231,7 +253,17 @@ pub fn t104(data: &[u8]) -> Bytes {
     buf.freeze()
 }
 
-pub fn t106(uin: u32, salt: u32, app_id: u32, sso_ver: u32, password_md5: &[u8], guid_available: bool, guid: &[u8], tgtgt_key: &[u8], wtf: u32) -> Bytes {
+pub fn t106(
+    uin: u32,
+    salt: u32,
+    app_id: u32,
+    sso_ver: u32,
+    password_md5: &[u8],
+    guid_available: bool,
+    guid: &[u8],
+    tgtgt_key: &[u8],
+    wtf: u32,
+) -> Bytes {
     let mut buf = BytesMut::new();
     buf.put_u16(0x106);
     let body = &{
@@ -240,7 +272,7 @@ pub fn t106(uin: u32, salt: u32, app_id: u32, sso_ver: u32, password_md5: &[u8],
         w.put_u32(rand::random::<u32>());
         w.put_u32(sso_ver);
         w.put_u32(16); // appId
-        w.put_u32(0);  // app client version
+        w.put_u32(0); // app client version
         if uin == 0 {
             w.put_u64(salt as u64)
         } else {
@@ -327,7 +359,7 @@ pub fn t116(misc_bitmap: u32, sub_sig_map: u32) -> Bytes {
         w.put_u32(misc_bitmap);
         w.put_u32(sub_sig_map);
         w.put_u8(0x01);
-        w.put_u32(1600000226);  // app id list
+        w.put_u32(1600000226); // app id list
         w.freeze()
     });
     buf.freeze()
@@ -349,7 +381,15 @@ pub fn t124(os_type: &str, os_version: &str, sim_info: &str, apn: &str) -> Bytes
     buf.freeze()
 }
 
-pub fn t128(is_guid_from_file_null: bool, is_guid_available: bool, is_guid_changed: bool, guid_flag: u32, build_model: &str, guid: &[u8], build_brand: &str) -> Bytes {
+pub fn t128(
+    is_guid_from_file_null: bool,
+    is_guid_available: bool,
+    is_guid_changed: bool,
+    guid_flag: u32,
+    build_model: &str,
+    guid: &[u8],
+    build_brand: &str,
+) -> Bytes {
     let mut buf = BytesMut::new();
     buf.put_u16(0x128);
     buf.write_bytes_short(&{
@@ -361,7 +401,7 @@ pub fn t128(is_guid_from_file_null: bool, is_guid_available: bool, is_guid_chang
         w.put_u32(guid_flag);
         w.write_tlv_limited_size(build_model.as_bytes(), 32);
         w.write_tlv_limited_size(guid, 16);
-        w.write_tlv_limited_size(build_brand.as_bytes(), 16);  // app id list
+        w.write_tlv_limited_size(build_brand.as_bytes(), 16); // app id list
         w.freeze()
     });
     buf.freeze()
@@ -400,10 +440,21 @@ pub fn t143(arr: &[u8]) -> Bytes {
     buf.freeze()
 }
 
-pub fn t144(imei: &str, dev_info: &[u8], os_type: &str, os_version: &str, sim_info: &str, apn: &str,
-            is_guid_from_file_null: bool, is_guid_available: bool, is_guid_changed: bool,
-            guid_flag: u32,
-            build_model: &str, guid: &[u8], build_brand: &str, tgtgt_key: &[u8],
+pub fn t144(
+    imei: &str,
+    dev_info: &[u8],
+    os_type: &str,
+    os_version: &str,
+    sim_info: &str,
+    apn: &str,
+    is_guid_from_file_null: bool,
+    is_guid_available: bool,
+    is_guid_changed: bool,
+    guid_flag: u32,
+    build_model: &str,
+    guid: &[u8],
+    build_brand: &str,
+    tgtgt_key: &[u8],
 ) -> Bytes {
     let mut w = BytesMut::new();
     w.put_u16(0x144);
@@ -415,7 +466,15 @@ pub fn t144(imei: &str, dev_info: &[u8], os_type: &str, os_version: &str, sim_in
             w.put_slice(&t109(imei));
             w.put_slice(&t52d(dev_info));
             w.put_slice(&t124(os_type, os_version, sim_info, apn));
-            w.put_slice(&t128(is_guid_from_file_null, is_guid_available, is_guid_changed, guid_flag, build_model, guid, build_brand));
+            w.put_slice(&t128(
+                is_guid_from_file_null,
+                is_guid_available,
+                is_guid_changed,
+                guid_flag,
+                build_model,
+                guid,
+                build_brand,
+            ));
             w.put_slice(&t16e(build_model.as_bytes()));
             w.freeze()
         });
@@ -423,7 +482,6 @@ pub fn t144(imei: &str, dev_info: &[u8], os_type: &str, os_version: &str, sim_in
     });
     w.freeze()
 }
-
 
 pub fn t145(guid: &[u8]) -> Bytes {
     let mut buf = BytesMut::new();
@@ -574,7 +632,15 @@ pub fn t202(wifi_bssid: &str, wifi_ssid: &str) -> Bytes {
     buf.freeze()
 }
 
-pub fn t400(g: &[u8], uin: i64, guid: &[u8], dpwd: &[u8], j2: i64, j3: i64, rand_seed: &[u8]) -> Bytes {
+pub fn t400(
+    g: &[u8],
+    uin: i64,
+    guid: &[u8],
+    dpwd: &[u8],
+    j2: i64,
+    j3: i64,
+    rand_seed: &[u8],
+) -> Bytes {
     let mut buf = BytesMut::new();
     buf.put_u16(0x400);
     buf.write_bytes_short(&{
@@ -618,13 +684,13 @@ pub fn t511(domains: Vec<&str>) -> Bytes {
         for d in arr2 {
             let index_of: isize;
             match d.find('(') {
-                None => { index_of = -1 }
-                Some(i) => { index_of = i as isize }
+                None => index_of = -1,
+                Some(i) => index_of = i as isize,
             }
             let index_of2: isize;
             match d.find(')') {
-                None => { index_of2 = -1 }
-                Some(i) => { index_of2 = i as isize }
+                None => index_of2 = -1,
+                Some(i) => index_of2 = i as isize,
             }
             if index_of != 0 || index_of2 <= 0 {
                 w.put_u8(0x01);
@@ -718,34 +784,40 @@ mod tests {
     use crate::client::outcome::tlv::*;
     use lazy_static::*;
     lazy_static! {
-    static ref GUID: [u8; 16] = [142, 27, 163, 177, 172, 31, 181, 137, 118, 115, 8, 126, 24, 49, 54, 169];
-    static ref TGTGT_KEY: [u8; 16] = [199, 12, 183, 107, 3, 28, 81, 148, 116, 20, 229, 112, 0, 64, 152, 255];
-    static ref UIN: u32 = 349195854;
-    static ref OS_NAME: String = "android".to_string();
-    static ref OS_VERSION: String = "7.1.2".to_string();
-    static ref SIM_INFO: String = "T-Mobile".to_string();
-    static ref IMEI: String = "468356291846738".to_string();
-    static ref IMEI_MD5: &'static [u8] = "9792b1bba1867318bf782af418306ef8".as_bytes();
-    static ref WIFI_BSSID: String = "00:50:56:C0:00:08".to_string();
-    static ref WIFI_SSID: String = "<unknown ssid>".to_string();
-    static ref APN: String = "wifi".to_string();
-    static ref APK_SIGN: [u8; 16] = [0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E, 0xB6, 0x8D];
-    static ref APK_ID: String = "com.tencent.mobileqq".to_string();
-    static ref APP_ID: u32 = 537066738;
-    static ref SUB_APP_ID: u32 = 537066738;
-    static ref SSO_VERSION: u32 = 15;
-    static ref SDK_VERSION: &'static str = "6.0.0.2454";
-    static ref MISC_BITMAP: u32 = 184024956;
-    static ref SUB_SIG_MAP: u32 = 0x10400;
-    static ref MAIN_SIG_MAP: u32 = 34869472;
-    static ref MAC_ADDRESS: String = "00:50:56:C0:00:08".to_string();
-    static ref IS_ROOT: bool = false;
-    static ref ANDROID_ID: String = "QKQ1.191117.002".to_string();
-    static ref APK_VERSION_NAME: String = "2.0.5".to_string();
-    static ref DEV_INFO: &'static [u8] = "dev_info_dev_info_dev_info_dev_info_dev_info_".as_bytes();
-    static ref BUILD_MODEL: String = "mirai".to_string();
-    static ref BUILD_BRAND: String = "mamoe".to_string();
-    static ref OS_TYPE: String = "android".to_string();
+        static ref GUID: [u8; 16] =
+            [142, 27, 163, 177, 172, 31, 181, 137, 118, 115, 8, 126, 24, 49, 54, 169];
+        static ref TGTGT_KEY: [u8; 16] =
+            [199, 12, 183, 107, 3, 28, 81, 148, 116, 20, 229, 112, 0, 64, 152, 255];
+        static ref UIN: u32 = 349195854;
+        static ref OS_NAME: String = "android".to_string();
+        static ref OS_VERSION: String = "7.1.2".to_string();
+        static ref SIM_INFO: String = "T-Mobile".to_string();
+        static ref IMEI: String = "468356291846738".to_string();
+        static ref IMEI_MD5: &'static [u8] = "9792b1bba1867318bf782af418306ef8".as_bytes();
+        static ref WIFI_BSSID: String = "00:50:56:C0:00:08".to_string();
+        static ref WIFI_SSID: String = "<unknown ssid>".to_string();
+        static ref APN: String = "wifi".to_string();
+        static ref APK_SIGN: [u8; 16] = [
+            0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E,
+            0xB6, 0x8D
+        ];
+        static ref APK_ID: String = "com.tencent.mobileqq".to_string();
+        static ref APP_ID: u32 = 537066738;
+        static ref SUB_APP_ID: u32 = 537066738;
+        static ref SSO_VERSION: u32 = 15;
+        static ref SDK_VERSION: &'static str = "6.0.0.2454";
+        static ref MISC_BITMAP: u32 = 184024956;
+        static ref SUB_SIG_MAP: u32 = 0x10400;
+        static ref MAIN_SIG_MAP: u32 = 34869472;
+        static ref MAC_ADDRESS: String = "00:50:56:C0:00:08".to_string();
+        static ref IS_ROOT: bool = false;
+        static ref ANDROID_ID: String = "QKQ1.191117.002".to_string();
+        static ref APK_VERSION_NAME: String = "2.0.5".to_string();
+        static ref DEV_INFO: &'static [u8] =
+            "dev_info_dev_info_dev_info_dev_info_dev_info_".as_bytes();
+        static ref BUILD_MODEL: String = "mirai".to_string();
+        static ref BUILD_BRAND: String = "mamoe".to_string();
+        static ref OS_TYPE: String = "android".to_string();
     }
 
     #[test]
@@ -805,7 +877,15 @@ mod tests {
 
     #[test]
     fn test_t16() {
-        let result = t16(*SSO_VERSION, *APP_ID, *SUB_APP_ID, &*GUID, &APK_ID, &APK_VERSION_NAME, &*APK_SIGN);
+        let result = t16(
+            *SSO_VERSION,
+            *APP_ID,
+            *SUB_APP_ID,
+            &*GUID,
+            &APK_ID,
+            &APK_VERSION_NAME,
+            &*APK_SIGN,
+        );
         println!("{}", result.len());
         println!("{:?}", result)
     }
@@ -816,7 +896,6 @@ mod tests {
         println!("{}", result.len());
         println!("{:?}", result)
     }
-
 
     #[test]
     fn test_t16e() {
@@ -884,7 +963,17 @@ mod tests {
 
     #[test]
     fn test_t106() {
-        let result = t106(*UIN, 0, *APP_ID, *SSO_VERSION, &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], true, &*GUID, &*TGTGT_KEY, 0);
+        let result = t106(
+            *UIN,
+            0,
+            *APP_ID,
+            *SSO_VERSION,
+            &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            true,
+            &*GUID,
+            &*TGTGT_KEY,
+            0,
+        );
         println!("{}", result.len());
         println!("{:?}", result)
     }
@@ -954,9 +1043,22 @@ mod tests {
 
     #[test]
     fn test_t144() {
-        let result = t144(&IMEI, *DEV_INFO, &OS_TYPE, &OS_VERSION,
-                          &SIM_INFO, &APN, false, true, false, 16,
-                          &BUILD_MODEL, &*GUID, &BUILD_BRAND, &*TGTGT_KEY);
+        let result = t144(
+            &IMEI,
+            *DEV_INFO,
+            &OS_TYPE,
+            &OS_VERSION,
+            &SIM_INFO,
+            &APN,
+            false,
+            true,
+            false,
+            16,
+            &BUILD_MODEL,
+            &*GUID,
+            &BUILD_BRAND,
+            &*TGTGT_KEY,
+        );
         println!("{}", result.len());
         println!("{:?}", result);
     }
@@ -1077,9 +1179,22 @@ mod tests {
 
     #[test]
     fn test_t511() {
-        let result = t511(vec!["tenpay.com", "openmobile.qq.com", "docs.qq.com", "connect.qq.com",
-                               "qzone.qq.com", "vip.qq.com", "gamecenter.qq.com", "qun.qq.com", "game.qq.com",
-                               "qqweb.qq.com", "office.qq.com", "ti.qq.com", "mail.qq.com", "mma.qq.com"]);
+        let result = t511(vec![
+            "tenpay.com",
+            "openmobile.qq.com",
+            "docs.qq.com",
+            "connect.qq.com",
+            "qzone.qq.com",
+            "vip.qq.com",
+            "gamecenter.qq.com",
+            "qun.qq.com",
+            "game.qq.com",
+            "qqweb.qq.com",
+            "office.qq.com",
+            "ti.qq.com",
+            "mail.qq.com",
+            "mma.qq.com",
+        ]);
         println!("{}", result.len());
         println!("{:?}", result);
     }

@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use bytes::{Buf, Bytes};
+use std::collections::HashMap;
 
 pub trait BinaryReader {
     fn read_string(&mut self) -> String;
@@ -10,7 +10,9 @@ pub trait BinaryReader {
 }
 
 impl<B> BinaryReader for B
-    where B: Buf {
+where
+    B: Buf,
+{
     fn read_string(&mut self) -> String {
         let len = self.get_i32() as usize - 4;
         String::from_utf8_lossy(&self.copy_to_bytes(len)).to_string()

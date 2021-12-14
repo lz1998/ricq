@@ -1,6 +1,6 @@
-use bytes::{Buf, BufMut, BytesMut};
-use crate::hex::decode_hex;
 use crate::crypto::qqtea_encrypt;
+use crate::hex::decode_hex;
+use bytes::{Buf, BufMut, BytesMut};
 
 pub trait BinaryWriter {
     fn write_bytes_short(&mut self, data: &[u8]);
@@ -8,12 +8,20 @@ pub trait BinaryWriter {
     fn write_hex(&mut self, h: &str);
     fn write_int_lv_packet(&mut self, offset: usize, data: &[u8]);
     fn write_string(&mut self, v: &str);
-    fn write_uni_packet(&mut self, command_name: &str, session_id: &[u8], extra_data: &[u8], body: &[u8]);
+    fn write_uni_packet(
+        &mut self,
+        command_name: &str,
+        session_id: &[u8],
+        extra_data: &[u8],
+        body: &[u8],
+    );
     fn write_tlv_limited_size(&mut self, data: &[u8], limit: isize);
 }
 
 impl<B> BinaryWriter for B
-    where B: BufMut {
+where
+    B: BufMut,
+{
     fn write_bytes_short(&mut self, data: &[u8]) {
         self.put_u16(data.chunk().len() as u16);
         self.put_slice(data.chunk())
@@ -40,7 +48,13 @@ impl<B> BinaryWriter for B
         self.put_slice(&payload)
     }
 
-    fn write_uni_packet(&mut self, command_name: &str, session_id: &[u8], extra_data: &[u8], body: &[u8]) {
+    fn write_uni_packet(
+        &mut self,
+        command_name: &str,
+        session_id: &[u8],
+        extra_data: &[u8],
+        body: &[u8],
+    ) {
         let mut w1 = BytesMut::new();
         {
             w1.write_string(command_name);

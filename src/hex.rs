@@ -1,5 +1,5 @@
-use std::num::ParseIntError;
 use std::fmt::Write;
+use std::num::ParseIntError;
 
 pub fn decode_hex(s: &str) -> Result<Vec<u8>, ParseIntError> {
     (0..s.len())
