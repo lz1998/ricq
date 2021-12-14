@@ -143,7 +143,7 @@ pub enum OnlinePushTrans {
 pub fn decode_online_push_trans_packet(payload: &[u8]) -> Result<OnlinePushTrans, RQError> {
     let info = TransMsgInfo::from_bytes(payload)
         .map_err(|_| RQError::Decode("failed to decode TransMsgInfo".to_string()))?;
-    let msg_uid = info.msg_uid.unwrap_or(0);
+    let msg_uid = info.msg_uid.unwrap_or_default();
     let group_uin = info.from_uin.ok_or(RQError::Decode(
         "decode_online_push_trans_packet from_uin is 0".to_string(),
     ))?;
@@ -363,19 +363,17 @@ pub fn msg_type_0x210_sub27_decoder(protobuf: &[u8]) -> Result<Sub0x27Event, RQE
         .map_err(|_| RQError::Decode("SubMsg0x27Body".to_string()))?;
     let mut sub_0x27_event = Sub0x27Event::default();
     for m in s27.mod_infos {
-        if let Some(ref profile) = m.mod_group_profile {
-            for info in profile.group_profile_infos.iter() {
+        if let Some(profile) = m.mod_group_profile {
+            for info in profile.group_profile_infos.into_iter() {
                 if let Some(field) = info.field {
                     if field == 1 {
                         sub_0x27_event
                             .group_name_updated_events
                             .push(GroupNameUpdatedEvent {
-                                group_code: profile.group_code.unwrap_or(0) as i64,
-                                new_name: String::from_utf8_lossy(
-                                    &info.value.as_ref().unwrap_or(&vec![]),
-                                )
-                                .to_string(),
-                                operator_uin: profile.cmd_uin.unwrap_or(0) as i64,
+                                group_code: profile.group_code.unwrap_or_default() as i64,
+                                new_name: String::from_utf8_lossy(&info.value.unwrap_or_default())
+                                    .to_string(),
+                                operator_uin: profile.cmd_uin.unwrap_or_default() as i64,
                             });
                     }
                 }
@@ -402,9 +400,9 @@ pub fn msg_type_0x210_sub122_decoder(protobuf: &[u8]) -> Result<FriendPokeNotify
     let mut receiver: i64 = 0;
     for templ in t.msg_templ_param {
         if templ.name == "uin_str1" {
-            sender = templ.value.parse::<i64>().unwrap_or(0)
+            sender = templ.value.parse::<i64>().unwrap_or_default()
         } else if templ.name == "uin_str2" {
-            receiver = templ.value.parse::<i64>().unwrap_or(0)
+            receiver = templ.value.parse::<i64>().unwrap_or_default()
         }
     }
     return if sender == 0 {

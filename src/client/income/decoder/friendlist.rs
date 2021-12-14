@@ -27,11 +27,11 @@ pub fn decode_friend_group_list_response(payload: &[u8]) -> Result<FriendListRes
     Ok(FriendListResponse {
         total_count: total_friend_count,
         list: friends
-            .iter()
+            .into_iter()
             .map(|f| FriendInfo {
                 uin: f.friend_uin,
-                nick: f.nick.to_owned(),
-                remark: f.remark.to_owned(),
+                nick: f.nick,
+                remark: f.remark,
                 face_id: f.face_id,
             })
             .collect(),
