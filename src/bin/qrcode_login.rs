@@ -25,7 +25,7 @@ async fn main() -> Result<()> {
     let config = rs_qq::Config::new_with_device_info(device_info);
     let cli = Client::new_with_config(config, DefaultHandler).await;
     let client = Arc::new(cli);
-    let net = client.run();
+    let net = client.run().await;
     tokio::spawn(async move {
         let resp = client.fetch_qrcode().await.expect("failed to fetch qrcode");
 
@@ -77,10 +77,7 @@ async fn main() -> Result<()> {
                     QRCodeState::QRCodeCanceled => {}
                 }
             }
-            client
-                .register_client()
-                .await
-                .expect("failed to register client"); //todo
+            client.register_client().await.unwrap();
             let rsp = client.group_list.read().await;
             println!("{:?}", rsp);
             let rsp = client.friend_list.read().await;

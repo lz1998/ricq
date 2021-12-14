@@ -22,16 +22,17 @@ prost = "0.8"
 prost-types = "0.8"
 tokio = { version = "1", features = ["full"] }
 tokio-util = { version = "0.6", features = ["codec"] }
-futures="0.3"
+futures = "0.3"
 anyhow = "1"
 thiserror = "1.0.30"
 tracing = "0.1"
-jce_struct = { path = "jce_struct" }
 lazy_static = "1.4.0"
 async-trait = "0.1"
+
+jcers = { version = "0.1.0" , features = ["derive"] }
 
 [build-dependencies]
 prost-build = { version = "0.8.0" }
 
 [workspace]
-members = ["jce_struct", "jce_derive"]
+members = []

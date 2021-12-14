@@ -2,7 +2,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum RQError {
-
     #[error("other error {0}")]
     Other(String),
 
@@ -17,5 +16,7 @@ pub enum RQError {
 
     #[error("network error")]
     Network,
-}
 
+    #[error("jce error, {0}")]
+    Jce(#[from] jcers::JceError),
+}

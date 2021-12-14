@@ -1,89 +1,50 @@
 use bytes::Bytes;
-use jce_struct::*;
+use jcers::{JceGet, JcePut};
 use std::collections::HashMap;
 
 mod test;
 
-JceStruct!(RequestPacket {
-    1  => i_version: i16,
-    2  => c_packet_type: u8,
-    3  => i_message_type: i32,
-    4  => i_request_id: i32,
-    5  => s_servant_name: String,
-    6  => s_func_name: String,
-    7  => s_buffer: Bytes,
-    8  => i_timeout: i32,
-    9  => context: HashMap<String,String>,
-    10 => status: HashMap<String,String>,
-});
+macro_rules! JceStruct {
+    ($struct_name: ident {$($tag: expr => $field: ident: $field_t: ty,)*}) => {
+        #[derive(Debug, Clone, PartialEq, JceGet, JcePut, Default)]
+        pub struct $struct_name {
+            $(#[jce($tag)]
+            pub $field: $field_t),*
+        }
+    };
+}
+
+#[derive(Debug, Clone, JceGet, JcePut, Default)]
+pub struct RequestPacket {
+    #[jce(1)]
+    pub i_version: i16,
+    #[jce(2)]
+    pub c_packet_type: u8,
+    #[jce(3)]
+    pub i_message_type: i32,
+    #[jce(4)]
+    pub i_request_id: i32,
+    #[jce(5)]
+    pub s_servant_name: String,
+    #[jce(6)]
+    pub s_func_name: String,
+    #[jce(7)]
+    pub s_buffer: Bytes,
+    #[jce(8)]
+    pub i_timeout: i32,
+    #[jce(9)]
+    pub context: HashMap<String, String>,
+    #[jce(10)]
+    pub status: HashMap<String, String>,
+}
 
 JceStruct!(RequestDataVersion3 {
     0 => map: HashMap<String,Bytes>,
 });
 
-// Recursive expansion of JceStruct! macro
-// ========================================
-
-// pub struct RequestDataVersion3 {
-//     pub map: HashMap<String, Bytes>,
-// }
-// impl JcePut for RequestDataVersion3 {
-//     fn put(self, jce_mut: &mut JceMut, tag: u8) -> &mut JceMut {
-//         jce_mut.put_head(10, tag);
-//         self.put_raw(jce_mut);
-//         jce_mut.put_head(11, 0)
-//     }
-//     fn put_raw(self, jce_mut: &mut JceMut) -> &mut JceMut {
-//         self.map.put(jce_mut, 0);
-//         jce_mut
-//     }
-// }
-// impl JceGet for RequestDataVersion3 {
-//     fn get(jce: &mut Jce) -> Self {
-//         let map = jce.get_by_tag(0);
-//         jce.end_object();
-//         RequestDataVersion3 { map }
-//     }
-//     fn empty() -> Self {
-//         {
-//             panic!("jce get empty, should have a object")
-//         }
-//     }
-// }
-
 JceStruct!(RequestDataVersion2 {
     0 => map: HashMap<String,HashMap<String,Bytes>>,
 });
-
-// Recursive expansion of JceStruct! macro
-// ========================================
-
-// pub struct RequestDataVersion2 {
-//     pub map: HashMap<String, HashMap<String, Bytes>>,
-// }
-// impl JcePut for RequestDataVersion2 {
-//     fn put(self, jce_mut: &mut JceMut, tag: u8) -> &mut JceMut {
-//         jce_mut.put_head(10, tag);
-//         self.put_raw(jce_mut);
-//         jce_mut.put_head(11, 0)
-//     }
-//     fn put_raw(self, jce_mut: &mut JceMut) -> &mut JceMut {
-//         self.map.put(jce_mut, 0);
-//         jce_mut
-//     }
-// }
-// impl JceGet for RequestDataVersion2 {
-//     fn get(jce: &mut Jce) -> Self {
-//         let map = jce.get_by_tag(0);
-//         jce.end_object();
-//         RequestDataVersion2 { map }
-//     }
-//     fn empty() -> Self {
-//         {
-//             panic!("jce get empty, should have a object")
-//         }
-//     }
-// }
 
 JceStruct!(HttpServerListRes {
     2 => sso_server_infos: Vec<SsoServerInfo>,
@@ -115,24 +76,24 @@ JceStruct!(FileStorageServerInfo {
 });
 
 JceStruct!(BigDataChannel {
-	0 => ip_lists: Vec<BigDataIPList>,
-	1 => sig_session: Bytes,
-	2 => key_session: Bytes,
-	3 => sig_uin: i64,
-	4 => connect_flag: i32,
-	5 => pb_buf: Bytes,
+    0 => ip_lists: Vec<BigDataIPList>,
+    1 => sig_session: Bytes,
+    2 => key_session: Bytes,
+    3 => sig_uin: i64,
+    4 => connect_flag: i32,
+    5 => pb_buf: Bytes,
 });
 
 JceStruct!(BigDataIPList {
-	0 => service_type: i64,
-	1 => ip_list: Vec<BigDataIPInfo>,
-	3 => fragment_size: i64,
+    0 => service_type: i64,
+    1 => ip_list: Vec<BigDataIPInfo>,
+    3 => fragment_size: i64,
 });
 
 JceStruct!(BigDataIPInfo {
-	0 => r#type: i64,
-	1 => server: String,
-	2 => port: i64,
+    0 => r#type: i64,
+    1 => server: String,
+    2 => port: i64,
 });
 
 JceStruct!(SvcReqPullGroupMsgSeq {
@@ -726,16 +687,16 @@ JceStruct!(FriendInfo {
 });
 
 JceStruct!(TroopListRequest {
-		0 => uin: i64,
-		1 => get_msf_msg_flag: u8,
-		2 => cookies: Bytes,
-		3 => group_info: Vec<i64>,
-		4 => group_flag_ext: u8,
-		5 => version: i32,
-		6 => company_id: i64,
-		7 => version_num: i64,
-		8 => get_long_group_name: u8,
-	});
+    0 => uin: i64,
+    1 => get_msf_msg_flag: u8,
+    2 => cookies: Bytes,
+    3 => group_info: Vec<i64>,
+    4 => group_flag_ext: u8,
+    5 => version: i32,
+    6 => company_id: i64,
+    7 => version_num: i64,
+    8 => get_long_group_name: u8,
+});
 
 JceStruct!(TroopNumber {
     0 => group_uin: i64,
@@ -776,53 +737,53 @@ JceStruct!(TroopNumber {
 });
 
 JceStruct!(TroopMemberListRequest {
-		0 => uin: i64,
-		1 => group_code: i64,
-		2 => next_uin: i64,
-		3 => group_uin: i64,
-		4 => version: i64,
-		5 => req_type: i64,
-		6 => get_list_appoint_time: i64,
-		7 => rich_card_name_ver: u8,
-	});
+    0 => uin: i64,
+    1 => group_code: i64,
+    2 => next_uin: i64,
+    3 => group_uin: i64,
+    4 => version: i64,
+    5 => req_type: i64,
+    6 => get_list_appoint_time: i64,
+    7 => rich_card_name_ver: u8,
+});
 
 JceStruct!(TroopMemberInfo {
-		0 => member_uin: i64,
-		1 => face_id: i16,
-		2 => age: u8,
-		3 => gender: u8,
-		4 => nick: String,
-		5 => status: u8,
-		6 => show_name: String,
-		8 => name: String,
-		12 => memo: String,
-		13 => auto_remark: String,
-		14 => member_level: i64,
-		15 => join_time: i64,
-		16 => last_speak_time: i64,
-		17 => credit_level: i64,
-		18 => flag: i64,
-		19 => flag_ext: i64,
-		20 => point: i64,
-		21 => concerned: u8,
-		22 => shielded: u8,
-		23 => special_title: String,
-		24 => special_title_expire_time: i64,
-		25 => job: String,
-		26 => apollo_flag: u8,
-		27 => apollo_timestamp: i64,
-		28 => global_group_level: i64,
-		29 => title_id: i64,
-		30 => shut_up_timestap: i64,
-		31 => global_group_point: i64,
-		33 => rich_card_name_ver: u8,
-		34 => vip_type: i64,
-		35 => vip_level: i64,
-		36 => big_club_level: i64,
-		37 => big_club_flag: i64,
-		38 => nameplate: i64,
-		39 => group_honor: Bytes,
-	});
+    0 => member_uin: i64,
+    1 => face_id: i16,
+    2 => age: u8,
+    3 => gender: u8,
+    4 => nick: String,
+    5 => status: u8,
+    6 => show_name: String,
+    8 => name: String,
+    12 => memo: String,
+    13 => auto_remark: String,
+    14 => member_level: i64,
+    15 => join_time: i64,
+    16 => last_speak_time: i64,
+    17 => credit_level: i64,
+    18 => flag: i64,
+    19 => flag_ext: i64,
+    20 => point: i64,
+    21 => concerned: u8,
+    22 => shielded: u8,
+    23 => special_title: String,
+    24 => special_title_expire_time: i64,
+    25 => job: String,
+    26 => apollo_flag: u8,
+    27 => apollo_timestamp: i64,
+    28 => global_group_level: i64,
+    29 => title_id: i64,
+    30 => shut_up_timestap: i64,
+    31 => global_group_point: i64,
+    33 => rich_card_name_ver: u8,
+    34 => vip_type: i64,
+    35 => vip_level: i64,
+    36 => big_club_level: i64,
+    37 => big_club_flag: i64,
+    38 => nameplate: i64,
+    39 => group_honor: Bytes,
+});
 
 // JceStruct!(ModifyGroupCardRequest {
 //

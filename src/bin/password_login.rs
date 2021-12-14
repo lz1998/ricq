@@ -35,7 +35,7 @@ async fn main() -> Result<()> {
     config.password = password;
     let cli = Client::new_with_config(config, DefaultHandler).await;
     let client = Arc::new(cli);
-    let net = client.run();
+    let net = client.run().await;
     tokio::spawn(async move {
         let mut resp = client
             .password_login()

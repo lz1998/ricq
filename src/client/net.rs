@@ -23,9 +23,9 @@ impl ClientNet {
         }
     }
 
-    pub async fn run(&self, client: &Arc<Client>) {
+    pub async fn run(&self, client: &Arc<Client>) -> impl Future<Output = ()> {
         let stream = self.connect_tcp(client).await;
-        self.net_loop(client, stream).await;
+        self.net_loop(client, stream)
     }
 
     pub async fn connect_tcp(&self, client: &Arc<Client>) -> TcpStream {

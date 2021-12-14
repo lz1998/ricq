@@ -80,9 +80,9 @@ impl super::Client {
         Self::new(config.uin, password, config.device_info, handler).await
     }
 
-    pub fn run(self: &Arc<Self>) -> JoinHandle<()> {
-        let cli = self.clone();
-        tokio::spawn(async move { cli.net.run(&cli).await })
+    pub async fn run(self: &Arc<Self>) -> JoinHandle<()> {
+        let net = self.net.run(self).await;
+        tokio::spawn(net)
     }
 
     pub fn next_seq(&self) -> u16 {

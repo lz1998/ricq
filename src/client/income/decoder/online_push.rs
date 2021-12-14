@@ -10,7 +10,7 @@ use crate::pb::msg;
 use crate::pb::msg::{PushMessagePacket, TransMsgInfo};
 use crate::pb::notify::GeneralGrayTipInfo;
 use bytes::{Buf, Bytes};
-use jce_struct::Jce;
+use jcers::Jce;
 
 #[derive(Debug, Default)]
 pub struct ReqPush {
@@ -65,13 +65,22 @@ pub struct GroupDigestEvent {}
 // todo decode_online_push_req_packet
 pub fn decode_online_push_req_packet(payload: &[u8]) -> Result<ReqPush, RQError> {
     let mut payload = Bytes::from(payload.to_owned());
-    let mut request: jce::RequestPacket = Jce::read_from_bytes(&mut payload);
-    let mut data: jce::RequestDataVersion2 = Jce::read_from_bytes(&mut request.s_buffer);
-    let mut req = data.map.remove("req").ok_or(RQError::Decode("req is none".into()))?;
-    let mut msg = req.remove("OnlinePushPack.SvcReqPushMsg").ok_or(RQError::Decode("OnlinePushPack.SvcReqPushMsg is none".into()))?;
+    let mut request: jce::RequestPacket =
+        jcers::from_buf(&mut payload).map_err(|e| RQError::from(e))?;
+    let mut data: jce::RequestDataVersion2 =
+        jcers::from_buf(&mut request.s_buffer).map_err(|e| RQError::from(e))?;
+    let mut req = data
+        .map
+        .remove("req")
+        .ok_or(RQError::Decode("req is none".into()))?;
+    let mut msg = req
+        .remove("OnlinePushPack.SvcReqPushMsg")
+        .ok_or(RQError::Decode(
+            "OnlinePushPack.SvcReqPushMsg is none".into(),
+        ))?;
     let mut jr = Jce::new(&mut msg);
-    let uin: i64 = jr.get_by_tag(0);
-    let msg_infos: Vec<jce::PushMessageInfo> = jr.get_by_tag(2);
+    let uin: i64 = jr.get_by_tag(0).map_err(|e| RQError::from(e))?;
+    let msg_infos: Vec<jce::PushMessageInfo> = jr.get_by_tag(2).map_err(|e| RQError::from(e))?;
 
     let infos: Vec<PushInfo> = msg_infos
         .iter()
@@ -137,7 +146,10 @@ pub fn decode_online_push_trans_packet(payload: &[u8]) -> Result<OnlinePushTrans
     let group_uin = info.from_uin.ok_or(RQError::Decode(
         "decode_online_push_trans_packet from_uin is 0".to_string(),
     ))?;
-    let mut data = Bytes::from(info.msg_data.ok_or(RQError::Decode("msg_data is none".into()))?);
+    let mut data = Bytes::from(
+        info.msg_data
+            .ok_or(RQError::Decode("msg_data is none".into()))?,
+    );
     // 去重暂时不做
     match info.msg_type {
         Some(34) => {
@@ -189,7 +201,9 @@ pub fn decode_online_push_trans_packet(payload: &[u8]) -> Result<OnlinePushTrans
         }
         _ => {}
     }
-    Err(RQError::Decode("decode_online_push_trans_packet unknown error".to_string()))
+    Err(RQError::Decode(
+        "decode_online_push_trans_packet unknown error".to_string(),
+    ))
 }
 
 #[derive(Debug, Default, Clone, PartialEq)]
@@ -218,20 +232,54 @@ pub fn decode_group_message_packet(payload: &[u8]) -> Result<GroupMessagePart, R
         .message
         .ok_or(RQError::Decode("message is none".to_string()))?;
 
-    let head = message.head.as_ref().ok_or(RQError::Decode("head is none".to_string()))?;
-    let body = message.body.as_ref().ok_or(RQError::Decode("body is none".to_string()))?;
-    let content = message.content.as_ref().ok_or(RQError::Decode("content is none".to_string()))?;
-    let rich_text = body.rich_text.as_ref().ok_or(RQError::Decode("rich_text is none".to_string()))?;
+    let head = message
+        .head
+        .as_ref()
+        .ok_or(RQError::Decode("head is none".to_string()))?;
+    let body = message
+        .body
+        .as_ref()
+        .ok_or(RQError::Decode("body is none".to_string()))?;
+    let content = message
+        .content
+        .as_ref()
+        .ok_or(RQError::Decode("content is none".to_string()))?;
+    let rich_text = body
+        .rich_text
+        .as_ref()
+        .ok_or(RQError::Decode("rich_text is none".to_string()))?;
     return Ok(GroupMessagePart {
-        seq: head.msg_seq.ok_or(RQError::Decode("msg_seq is none".to_string()))?,
-        rand: rich_text.attr.as_ref().ok_or(RQError::Decode("attr is none".into()))?.random.ok_or(RQError::Decode("attr.random is none".into()))?,
-        group_code: head.group_info.as_ref().ok_or(RQError::Decode("group_info is none".into()))?.group_code.ok_or(RQError::Decode("group_info.group_code is none".into()))?,
-        from_uin: head.from_uin.ok_or(RQError::Decode("from_uin is none".into()))?,
+        seq: head
+            .msg_seq
+            .ok_or(RQError::Decode("msg_seq is none".to_string()))?,
+        rand: rich_text
+            .attr
+            .as_ref()
+            .ok_or(RQError::Decode("attr is none".into()))?
+            .random
+            .ok_or(RQError::Decode("attr.random is none".into()))?,
+        group_code: head
+            .group_info
+            .as_ref()
+            .ok_or(RQError::Decode("group_info is none".into()))?
+            .group_code
+            .ok_or(RQError::Decode("group_info.group_code is none".into()))?,
+        from_uin: head
+            .from_uin
+            .ok_or(RQError::Decode("from_uin is none".into()))?,
         elems: rich_text.elems.clone(),
-        time: head.msg_time.ok_or(RQError::Decode("msg_time is none".into()))?,
-        pkg_num: content.pkg_num.ok_or(RQError::Decode("pkg_num is none".into()))?,
-        pkg_index: content.pkg_index.ok_or(RQError::Decode("pkg_index is none".into()))?,
-        div_seq: content.div_seq.ok_or(RQError::Decode("div_seq is none".into()))?,
+        time: head
+            .msg_time
+            .ok_or(RQError::Decode("msg_time is none".into()))?,
+        pkg_num: content
+            .pkg_num
+            .ok_or(RQError::Decode("pkg_num is none".into()))?,
+        pkg_index: content
+            .pkg_index
+            .ok_or(RQError::Decode("pkg_index is none".into()))?,
+        div_seq: content
+            .div_seq
+            .ok_or(RQError::Decode("div_seq is none".into()))?,
         ptt: rich_text.ptt.clone(),
     });
 }
@@ -246,8 +294,7 @@ pub fn msg_type_0x210_sub8a_decoder(
     uin: i64,
     protobuf: &[u8],
 ) -> Result<Vec<FriendMessageRecalledEvent>, RQError> {
-    let s8a = pb::Sub8A::from_bytes(protobuf)
-        .map_err(|_| RQError::Decode("Sub8A".to_string()))?;
+    let s8a = pb::Sub8A::from_bytes(protobuf).map_err(|_| RQError::Decode("Sub8A".to_string()))?;
     let mut events = Vec::new();
     for m in s8a.msg_info {
         if m.to_uin == uin {
@@ -290,8 +337,7 @@ pub struct GroupLeaveEvent {
 
 // return group number group leave
 pub fn msg_type_0x210_subd4_decoder(protobuf: &[u8]) -> Result<GroupLeaveEvent, RQError> {
-    let d4 = pb::SubD4::from_bytes(protobuf)
-        .map_err(|_| RQError::Decode("SubD4".to_string()))?;
+    let d4 = pb::SubD4::from_bytes(protobuf).map_err(|_| RQError::Decode("SubD4".to_string()))?;
     Ok(GroupLeaveEvent {
         group_code: d4.uin,
         ..Default::default()
@@ -313,7 +359,7 @@ pub struct GroupNameUpdatedEvent {
 
 pub fn msg_type_0x210_sub27_decoder(protobuf: &[u8]) -> Result<Sub0x27Event, RQError> {
     let s27 = pb::msgtype0x210::SubMsg0x27Body::from_bytes(protobuf)
-        .map_err(|_| { RQError::Decode("SubMsg0x27Body".to_string()) })?;
+        .map_err(|_| RQError::Decode("SubMsg0x27Body".to_string()))?;
     let mut sub_0x27_event = Sub0x27Event::default();
     for m in s27.mod_infos {
         if let Some(ref profile) = m.mod_group_profile {
@@ -327,7 +373,7 @@ pub fn msg_type_0x210_sub27_decoder(protobuf: &[u8]) -> Result<Sub0x27Event, RQE
                                 new_name: String::from_utf8_lossy(
                                     &info.value.as_ref().unwrap_or(&vec![]),
                                 )
-                                    .to_string(),
+                                .to_string(),
                                 operator_uin: profile.cmd_uin.unwrap_or(0) as i64,
                             });
                     }
@@ -349,7 +395,8 @@ pub struct FriendPokeNotifyEvent {
 }
 
 pub fn msg_type_0x210_sub122_decoder(protobuf: &[u8]) -> Result<FriendPokeNotifyEvent, RQError> {
-    let t = GeneralGrayTipInfo::from_bytes(protobuf).map_err(|_| { RQError::Decode("GeneralGrayTipInfo".to_string()) })?;
+    let t = GeneralGrayTipInfo::from_bytes(protobuf)
+        .map_err(|_| RQError::Decode("GeneralGrayTipInfo".to_string()))?;
     let mut sender: i64 = 0;
     let mut receiver: i64 = 0;
     for templ in t.msg_templ_param {
@@ -360,7 +407,9 @@ pub fn msg_type_0x210_sub122_decoder(protobuf: &[u8]) -> Result<FriendPokeNotify
         }
     }
     return if sender == 0 {
-        Err(RQError::Decode("msg_type_0x210_sub122_decoder sender is 0".to_string()))
+        Err(RQError::Decode(
+            "msg_type_0x210_sub122_decoder sender is 0".to_string(),
+        ))
     } else {
         Ok(FriendPokeNotifyEvent { sender, receiver })
     };
@@ -372,8 +421,7 @@ pub struct GroupMemberNeedSync {
 }
 
 pub fn msg_type_0x210_sub44_decoder(protobuf: &[u8]) -> Result<GroupMemberNeedSync, RQError> {
-    let b44 = pb::Sub44::from_bytes(protobuf)
-        .map_err(|_| RQError::Decode("Sub44".to_string()))?;
+    let b44 = pb::Sub44::from_bytes(protobuf).map_err(|_| RQError::Decode("Sub44".to_string()))?;
     let group_code = b44
         .group_sync_msg
         .ok_or(RQError::Decode(
@@ -383,5 +431,7 @@ pub fn msg_type_0x210_sub44_decoder(protobuf: &[u8]) -> Result<GroupMemberNeedSy
     if group_code != 0 {
         return Ok(GroupMemberNeedSync { group_code });
     }
-    return Err(RQError::Decode("msg_type_0x210_sub44_decoder unknown error".to_string()));
+    return Err(RQError::Decode(
+        "msg_type_0x210_sub44_decoder unknown error".to_string(),
+    ));
 }

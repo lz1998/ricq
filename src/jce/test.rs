@@ -13,17 +13,18 @@ fn sso_address_resp_decode() {
     let mut de_rsp = Bytes::from(qqtea_decrypt(&data, &key));
 
     de_rsp.advance(4);
-    let mut request_packet: RequestPacket = Jce::read_from_bytes(&mut de_rsp);
+    let mut request_packet: RequestPacket = jcers::from_buf(&mut de_rsp).unwrap();
 
     let mut request_data_version3: RequestDataVersion3 =
-        Jce::read_from_bytes(&mut request_packet.s_buffer);
+        jcers::from_buf(&mut request_packet.s_buffer).unwrap();
 
-    let sso_server_infos: HttpServerListRes = Jce::read_from_bytes(
+    let sso_server_infos: HttpServerListRes = jcers::from_buf(
         request_data_version3
             .map
             .get_mut("HttpServerListRes")
             .unwrap(),
-    );
+    )
+    .unwrap();
     for s in sso_server_infos.sso_server_infos {
         println!("Get Addrs server:{} port:{}", s.server, s.port);
     }

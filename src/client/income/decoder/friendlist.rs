@@ -1,9 +1,9 @@
-use bytes::{Bytes};
-use jce_struct::Jce;
+use crate::client::errors::RQError;
 use crate::client::structs::*;
 use crate::jce;
 use crate::jce::TroopMemberInfo;
-use crate::client::errors::RQError;
+use bytes::Bytes;
+use jcers::Jce;
 
 #[derive(Debug, Default)]
 pub struct FriendListResponse {
@@ -13,23 +13,29 @@ pub struct FriendListResponse {
 
 pub fn decode_friend_group_list_response(payload: &[u8]) -> Result<FriendListResponse, RQError> {
     let mut payload = Bytes::from(payload.to_owned());
-    let mut request: jce::RequestPacket = Jce::read_from_bytes(&mut payload);
-    let mut data: jce::RequestDataVersion3 = Jce::read_from_bytes(&mut request.s_buffer);
-    let mut fl_resp = data.map.remove("FLRESP").ok_or(RQError::Decode("decode_friend_group_list_response FLRESP not found".to_string()))?;
+    let mut request: jce::RequestPacket =
+        jcers::from_buf(&mut payload).map_err(|e| RQError::from(e))?;
+    let mut data: jce::RequestDataVersion3 =
+        jcers::from_buf(&mut request.s_buffer).map_err(|e| RQError::from(e))?;
+    let mut fl_resp = data.map.remove("FLRESP").ok_or(RQError::Decode(
+        "decode_friend_group_list_response FLRESP not found".to_string(),
+    ))?;
     let mut r = Jce::new(&mut fl_resp);
-    let total_friend_count: i16 = r.get_by_tag(5);
-    let friends: Vec<jce::FriendInfo> = r.get_by_tag(7); // FIXME jce bug
+    let total_friend_count: i16 = r.get_by_tag(5).map_err(|e| RQError::from(e))?;
+    let friends: Vec<jce::FriendInfo> = r.get_by_tag(7).map_err(|e| RQError::from(e))?; // FIXME jce bug
     Ok(FriendListResponse {
         total_count: total_friend_count,
-        list: friends.iter().map(|f| FriendInfo {
-            uin: f.friend_uin,
-            nick: f.nick.to_owned(),
-            remark: f.remark.to_owned(),
-            face_id: f.face_id,
-        }).collect(),
+        list: friends
+            .iter()
+            .map(|f| FriendInfo {
+                uin: f.friend_uin,
+                nick: f.nick.to_owned(),
+                remark: f.remark.to_owned(),
+                face_id: f.face_id,
+            })
+            .collect(),
     })
 }
-
 
 #[derive(Debug)]
 pub struct GroupListResponse {
@@ -39,12 +45,19 @@ pub struct GroupListResponse {
 
 pub fn decode_group_list_response(payload: &[u8]) -> Result<GroupListResponse, RQError> {
     let mut payload = Bytes::from(payload.to_owned());
-    let mut request: jce::RequestPacket = Jce::read_from_bytes(&mut payload);
-    let mut data: jce::RequestDataVersion3 = Jce::read_from_bytes(&mut request.s_buffer);
-    let mut fl_resp = data.map.remove("GetTroopListRespV2").ok_or(RQError::Decode("decode_group_list_response GetTroopListRespV2 not found".to_string()))?;
+    let mut request: jce::RequestPacket =
+        jcers::from_buf(&mut payload).map_err(|e| RQError::from(e))?;
+    let mut data: jce::RequestDataVersion3 =
+        jcers::from_buf(&mut request.s_buffer).map_err(|e| RQError::from(e))?;
+    let mut fl_resp = data
+        .map
+        .remove("GetTroopListRespV2")
+        .ok_or(RQError::Decode(
+            "decode_group_list_response GetTroopListRespV2 not found".to_string(),
+        ))?;
     let mut r = Jce::new(&mut fl_resp);
-    let vec_cookie: Bytes = r.get_by_tag(4);
-    let groups: Vec<jce::TroopNumber> = r.get_by_tag(5);
+    let vec_cookie: Bytes = r.get_by_tag(4).map_err(|e| RQError::from(e))?;
+    let groups: Vec<jce::TroopNumber> = r.get_by_tag(5).map_err(|e| RQError::from(e))?;
     let mut l: Vec<GroupInfo> = Vec::new();
     for g in groups {
         l.push(GroupInfo {
@@ -64,21 +77,26 @@ pub fn decode_group_list_response(payload: &[u8]) -> Result<GroupListResponse, R
     })
 }
 
-
 #[derive(Debug)]
 pub struct GroupMemberListResponse {
     pub next_uin: i64,
     pub list: Vec<GroupMemberInfo>,
 }
 
-pub fn decode_group_member_list_response(payload: &[u8]) -> Result<GroupMemberListResponse, RQError> {
+pub fn decode_group_member_list_response(
+    payload: &[u8],
+) -> Result<GroupMemberListResponse, RQError> {
     let mut payload = Bytes::from(payload.to_owned());
-    let mut request: jce::RequestPacket = Jce::read_from_bytes(&mut payload);
-    let mut data: jce::RequestDataVersion3 = Jce::read_from_bytes(&mut request.s_buffer);
-    let mut fl_resp = data.map.remove("GTMLRESP").ok_or(RQError::Decode("decode_group_member_list_response GTMLRESP not found".to_string()))?;
+    let mut request: jce::RequestPacket =
+        jcers::from_buf(&mut payload).map_err(|e| RQError::from(e))?;
+    let mut data: jce::RequestDataVersion3 =
+        jcers::from_buf(&mut request.s_buffer).map_err(|e| RQError::from(e))?;
+    let mut fl_resp = data.map.remove("GTMLRESP").ok_or(RQError::Decode(
+        "decode_group_member_list_response GTMLRESP not found".to_string(),
+    ))?;
     let mut r = Jce::new(&mut fl_resp);
-    let members: Vec<TroopMemberInfo> = r.get_by_tag(3);
-    let next_uin = r.get_by_tag(4);
+    let members: Vec<TroopMemberInfo> = r.get_by_tag(3).map_err(|e| RQError::from(e))?;
+    let next_uin = r.get_by_tag(4).map_err(|e| RQError::from(e))?;
     let mut l: Vec<GroupMemberInfo> = Vec::new();
     for m in members {
         l.push(GroupMemberInfo {
@@ -99,8 +117,5 @@ pub fn decode_group_member_list_response(payload: &[u8]) -> Result<GroupMemberLi
             ..Default::default()
         })
     }
-    Ok(GroupMemberListResponse {
-        next_uin,
-        list: l,
-    })
+    Ok(GroupMemberListResponse { next_uin, list: l })
 }

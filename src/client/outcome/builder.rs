@@ -1,16 +1,16 @@
-use std::collections::HashMap;
-use std::sync::atomic::Ordering;
-use bytes::{BufMut, Bytes, BytesMut};
-use chrono::Utc;
 use crate::binary::BinaryWriter;
-use crate::crypto::EncryptSession;
 use crate::client::outcome::packet::*;
 use crate::client::outcome::tlv::*;
-use crate::client::version::{ClientProtocol, gen_version_info};
-use crate::jce::*;
-use jce_struct::*;
 use crate::client::outcome::PbToBytes;
+use crate::client::version::{gen_version_info, ClientProtocol};
+use crate::crypto::EncryptSession;
+use crate::jce::*;
 use crate::pb;
+use bytes::{BufMut, Bytes, BytesMut};
+use chrono::Utc;
+use jcers::JcePut;
+use std::collections::HashMap;
+use std::sync::atomic::Ordering;
 
 fn pack_uni_request_data(data: &[u8]) -> Bytes {
     let mut r = BytesMut::new();
@@ -33,21 +33,46 @@ impl crate::client::Client {
                 w.put_u16(0); // const
                 w.put_u32(16); // app id
                 w.put_u64(0); // const
-                w.put_u8(8);  // const
+                w.put_u8(8); // const
                 w.write_bytes_short(&vec![]);
 
                 w.put_u16(6);
-                w.put_slice(&t16(watch.sso_version, 16, watch.app_id, &self.device_info.read().await.guid, &watch.apk_id, &watch.sort_version_name, &watch.apk_sign));
+                w.put_slice(&t16(
+                    watch.sso_version,
+                    16,
+                    watch.app_id,
+                    &self.device_info.read().await.guid,
+                    &watch.apk_id,
+                    &watch.sort_version_name,
+                    &watch.apk_sign,
+                ));
                 w.put_slice(&t1b(0, 0, 3, 4, 72, 2, 2));
                 w.put_slice(&t1d(watch.misc_bitmap));
-                w.put_slice(&t1f(false, &self.device_info.read().await.os_type, "7.1.2", "China Mobile GSM", &self.device_info.read().await.apn, 2));
+                w.put_slice(&t1f(
+                    false,
+                    &self.device_info.read().await.os_type,
+                    "7.1.2",
+                    "China Mobile GSM",
+                    &self.device_info.read().await.apn,
+                    2,
+                ));
                 w.put_slice(&t33(&self.device_info.read().await.guid));
                 w.put_slice(&t35(8));
                 w
             }));
             w
         });
-        let sso = build_sso_packet(seq, watch.app_id, self.version.sub_app_id, "wtlogin.trans_emp", &self.device_info.read().await.imei, &vec![], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
+        let sso = build_sso_packet(
+            seq,
+            watch.app_id,
+            self.version.sub_app_id,
+            "wtlogin.trans_emp",
+            &self.device_info.read().await.imei,
+            &vec![],
+            &self.out_going_packet_session_id.read().await,
+            &req,
+            &self.cache_info.read().await.ksid,
+        );
         let packet = build_login_packet(0, 2, &vec![0; 16], &sso, &vec![]);
         return (seq, packet);
     }
@@ -74,282 +99,528 @@ impl crate::client::Client {
             }));
             w
         });
-        let sso = build_sso_packet(seq, watch.app_id, self.version.sub_app_id, "wtlogin.trans_emp", &self.device_info.read().await.imei, &vec![], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
+        let sso = build_sso_packet(
+            seq,
+            watch.app_id,
+            self.version.sub_app_id,
+            "wtlogin.trans_emp",
+            &self.device_info.read().await.imei,
+            &vec![],
+            &self.out_going_packet_session_id.read().await,
+            &req,
+            &self.cache_info.read().await.ksid,
+        );
         let packet = build_login_packet(0, 2, &vec![0; 16], &sso, &vec![]);
         return (seq, packet);
     }
 
-    pub async fn build_qrcode_login_packet(&self, t106: &[u8], t16a: &[u8], t318: &[u8]) -> (u16, Bytes) {
+    pub async fn build_qrcode_login_packet(
+        &self,
+        t106: &[u8],
+        t16a: &[u8],
+        t318: &[u8],
+    ) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst), 0x0810, &self.ecdh, &self.random_key, &{
-            let mut w = BytesMut::new();
-            w.put_u16(9);
-            w.put_u16(24);
+        let req = build_oicq_request_packet(
+            self.uin.load(Ordering::SeqCst),
+            0x0810,
+            &self.ecdh,
+            &self.random_key,
+            &{
+                let mut w = BytesMut::new();
+                w.put_u16(9);
+                w.put_u16(24);
 
-            w.put_slice(&t18(16, self.uin.load(Ordering::SeqCst) as u32));
-            w.put_slice(&t1(self.uin.load(Ordering::SeqCst) as u32, &self.device_info.read().await.ip_address));
-            w.put_slice(&{
-                let mut w = Vec::new();
-                w.put_u16(0x106);
-                w.write_bytes_short(t106);
-                w
-            });
-            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
-            w.put_slice(&t100(self.version.sso_version, self.version.sub_app_id, self.version.main_sig_map));
-            w.put_slice(&t107(0));
-            w.put_slice(&t142(&self.version.apk_id));
-            w.put_slice(&t144(
-                &self.device_info.read().await.imei,
-                &self.device_info.read().await.gen_pb_data(),
-                &self.device_info.read().await.os_type,
-                &self.device_info.read().await.version.release,
-                &self.device_info.read().await.sim_info,
-                &self.device_info.read().await.apn,
-                false, true, false, guid_flag(),
-                &self.device_info.read().await.model,
-                &self.device_info.read().await.guid,
-                &self.device_info.read().await.brand,
-                &self.device_info.read().await.tgtgt_key,
-            ));
+                w.put_slice(&t18(16, self.uin.load(Ordering::SeqCst) as u32));
+                w.put_slice(&t1(
+                    self.uin.load(Ordering::SeqCst) as u32,
+                    &self.device_info.read().await.ip_address,
+                ));
+                w.put_slice(&{
+                    let mut w = Vec::new();
+                    w.put_u16(0x106);
+                    w.write_bytes_short(t106);
+                    w
+                });
+                w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+                w.put_slice(&t100(
+                    self.version.sso_version,
+                    self.version.sub_app_id,
+                    self.version.main_sig_map,
+                ));
+                w.put_slice(&t107(0));
+                w.put_slice(&t142(&self.version.apk_id));
+                w.put_slice(&t144(
+                    &self.device_info.read().await.imei,
+                    &self.device_info.read().await.gen_pb_data(),
+                    &self.device_info.read().await.os_type,
+                    &self.device_info.read().await.version.release,
+                    &self.device_info.read().await.sim_info,
+                    &self.device_info.read().await.apn,
+                    false,
+                    true,
+                    false,
+                    guid_flag(),
+                    &self.device_info.read().await.model,
+                    &self.device_info.read().await.guid,
+                    &self.device_info.read().await.brand,
+                    &self.device_info.read().await.tgtgt_key,
+                ));
 
-            w.put_slice(&t145(&self.device_info.read().await.guid));
-            w.put_slice(&t147(16,
-                              &self.version.sort_version_name,
-                              &self.version.apk_sign));
-            w.put_slice(&{
-                let mut w = Vec::new();
-                w.put_u16(0x16A);
-                w.write_bytes_short(t16a);
+                w.put_slice(&t145(&self.device_info.read().await.guid));
+                w.put_slice(&t147(
+                    16,
+                    &self.version.sort_version_name,
+                    &self.version.apk_sign,
+                ));
+                w.put_slice(&{
+                    let mut w = Vec::new();
+                    w.put_u16(0x16A);
+                    w.write_bytes_short(t16a);
+                    w
+                });
+                w.put_slice(&t154(seq));
+                w.put_slice(&t141(
+                    &self.device_info.read().await.sim_info,
+                    &self.device_info.read().await.apn,
+                ));
+                w.put_slice(&t8(2052));
+                w.put_slice(&t511(vec![
+                    "tenpay.com",
+                    "openmobile.qq.com",
+                    "docs.qq.com",
+                    "connect.qq.com",
+                    "qzone.qq.com",
+                    "vip.qq.com",
+                    "gamecenter.qq.com",
+                    "qun.qq.com",
+                    "game.qq.com",
+                    "qqweb.qq.com",
+                    "office.qq.com",
+                    "ti.qq.com",
+                    "mail.qq.com",
+                    "mma.qq.com",
+                ]));
+                w.put_slice(&t187(&self.device_info.read().await.mac_address));
+                w.put_slice(&t188(&self.device_info.read().await.android_id));
+                if self.device_info.read().await.imsi_md5.len() != 0 {
+                    w.put_slice(&t194(self.device_info.read().await.imsi_md5.as_slice()))
+                }
+                w.put_slice(&t191(0x00));
+                if self.device_info.read().await.wifi_bssid.len() != 0
+                    && self.device_info.read().await.wifi_ssid.len() != 0
+                {
+                    w.put_slice(&t202(
+                        &self.device_info.read().await.wifi_bssid,
+                        &self.device_info.read().await.wifi_ssid,
+                    ));
+                }
+                w.put_slice(&t177(
+                    self.version.build_time,
+                    self.version.sdk_version.as_str(),
+                ));
+                w.put_slice(&t516());
+                w.put_slice(&t521(8));
+                // let v:Vec<u8> = vec![0x01, 0x00];
+                // w.put_slice(&t525(&t536(&v)));
+                w.put_slice(&{
+                    let mut w = Vec::new();
+                    w.put_u16(0x318);
+                    w.write_bytes_short(t318);
+                    w
+                });
                 w
-            });
-            w.put_slice(&t154(seq));
-            w.put_slice(&t141(&self.device_info.read().await.sim_info, &self.device_info.read().await.apn));
-            w.put_slice(&t8(2052));
-            w.put_slice(&t511(vec!["tenpay.com", "openmobile.qq.com", "docs.qq.com", "connect.qq.com",
-                                   "qzone.qq.com", "vip.qq.com", "gamecenter.qq.com", "qun.qq.com", "game.qq.com",
-                                   "qqweb.qq.com", "office.qq.com", "ti.qq.com", "mail.qq.com", "mma.qq.com"]));
-            w.put_slice(&t187(&self.device_info.read().await.mac_address));
-            w.put_slice(&t188(&self.device_info.read().await.android_id));
-            if self.device_info.read().await.imsi_md5.len() != 0 {
-                w.put_slice(&t194(self.device_info.read().await.imsi_md5.as_slice()))
-            }
-            w.put_slice(&t191(0x00));
-            if self.device_info.read().await.wifi_bssid.len() != 0 && self.device_info.read().await.wifi_ssid.len() != 0 {
-                w.put_slice(&t202(&self.device_info.read().await.wifi_bssid, &self.device_info.read().await.wifi_ssid));
-            }
-            w.put_slice(&t177(self.version.build_time, self.version.sdk_version.as_str()));
-            w.put_slice(&t516());
-            w.put_slice(&t521(8));
-            // let v:Vec<u8> = vec![0x01, 0x00];
-            // w.put_slice(&t525(&t536(&v)));
-            w.put_slice(&{
-                let mut w = Vec::new();
-                w.put_u16(0x318);
-                w.write_bytes_short(t318);
-                w
-            });
-            w
-        });
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.read().await.imei, &[], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
+            },
+        );
+        let sso = build_sso_packet(
+            seq,
+            self.version.app_id,
+            self.version.sub_app_id,
+            "wtlogin.login",
+            &self.device_info.read().await.imei,
+            &[],
+            &self.out_going_packet_session_id.read().await,
+            &req,
+            &self.cache_info.read().await.ksid,
+        );
         let packet = build_login_packet(self.uin.load(Ordering::SeqCst), 2, &[0; 16], &sso, &[]);
         (seq, packet)
     }
 
     pub async fn build_device_lock_login_packet(&self) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst), 0x0810, &self.ecdh, &self.random_key, &{
-            let mut w = Vec::new();
-            w.put_u16(20);
-            w.put_u16(4);
+        let req = build_oicq_request_packet(
+            self.uin.load(Ordering::SeqCst),
+            0x0810,
+            &self.ecdh,
+            &self.random_key,
+            &{
+                let mut w = Vec::new();
+                w.put_u16(20);
+                w.put_u16(4);
 
-            w.put_slice(&t8(2052));
-            w.put_slice(&t104(&self.cache_info.read().await.t104));
-            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
-            w.put_slice(&t401(&self.cache_info.read().await.g));
-            w
-        });
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.read().await.imei, &[], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
-        let packet = build_login_packet(self.uin.load(Ordering::SeqCst), 2, &vec![0; 16], &sso, &[]);
+                w.put_slice(&t8(2052));
+                w.put_slice(&t104(&self.cache_info.read().await.t104));
+                w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+                w.put_slice(&t401(&self.cache_info.read().await.g));
+                w
+            },
+        );
+        let sso = build_sso_packet(
+            seq,
+            self.version.app_id,
+            self.version.sub_app_id,
+            "wtlogin.login",
+            &self.device_info.read().await.imei,
+            &[],
+            &self.out_going_packet_session_id.read().await,
+            &req,
+            &self.cache_info.read().await.ksid,
+        );
+        let packet =
+            build_login_packet(self.uin.load(Ordering::SeqCst), 2, &vec![0; 16], &sso, &[]);
         (seq, packet)
     }
 
     pub async fn build_captcha_packet(&self, result: String, sign: &[u8]) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst), 0x810, &self.ecdh, &self.random_key, &{
-            let mut w = Vec::new();
-            w.put_u16(2); // sub command
-            w.put_u16(4);
+        let req = build_oicq_request_packet(
+            self.uin.load(Ordering::SeqCst),
+            0x810,
+            &self.ecdh,
+            &self.random_key,
+            &{
+                let mut w = Vec::new();
+                w.put_u16(2); // sub command
+                w.put_u16(4);
 
-            w.put_slice(&t2(result, sign));
-            w.put_slice(&t8(2052));
-            w.put_slice(&t104(&self.cache_info.read().await.t104));
-            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
-            w
-        });
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.read().await.imei, &[], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
-        let packet = build_login_packet(self.uin.load(Ordering::SeqCst), 2, &vec![0; 16], &sso, &[]);
+                w.put_slice(&t2(result, sign));
+                w.put_slice(&t8(2052));
+                w.put_slice(&t104(&self.cache_info.read().await.t104));
+                w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+                w
+            },
+        );
+        let sso = build_sso_packet(
+            seq,
+            self.version.app_id,
+            self.version.sub_app_id,
+            "wtlogin.login",
+            &self.device_info.read().await.imei,
+            &[],
+            &self.out_going_packet_session_id.read().await,
+            &req,
+            &self.cache_info.read().await.ksid,
+        );
+        let packet =
+            build_login_packet(self.uin.load(Ordering::SeqCst), 2, &vec![0; 16], &sso, &[]);
         (seq, packet)
     }
 
     pub async fn build_sms_request_packet(&self) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst), 0x810, &self.ecdh, &self.random_key, &{
-            let mut w = Vec::new();
-            w.put_u16(8);
-            w.put_u16(6);
+        let req = build_oicq_request_packet(
+            self.uin.load(Ordering::SeqCst),
+            0x810,
+            &self.ecdh,
+            &self.random_key,
+            &{
+                let mut w = Vec::new();
+                w.put_u16(8);
+                w.put_u16(6);
 
-            w.put_slice(&t8(2052));
-            w.put_slice(&t104(&self.cache_info.read().await.t104));
-            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
-            w.put_slice(&t174(&self.cache_info.read().await.t174));
-            w.put_slice(&t17a(9));
-            w.put_slice(&t197());
-            w
-        });
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.read().await.imei, &[], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
+                w.put_slice(&t8(2052));
+                w.put_slice(&t104(&self.cache_info.read().await.t104));
+                w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+                w.put_slice(&t174(&self.cache_info.read().await.t174));
+                w.put_slice(&t17a(9));
+                w.put_slice(&t197());
+                w
+            },
+        );
+        let sso = build_sso_packet(
+            seq,
+            self.version.app_id,
+            self.version.sub_app_id,
+            "wtlogin.login",
+            &self.device_info.read().await.imei,
+            &[],
+            &self.out_going_packet_session_id.read().await,
+            &req,
+            &self.cache_info.read().await.ksid,
+        );
         let packet = build_login_packet(self.uin.load(Ordering::SeqCst), 2, &[0; 16], &sso, &[]);
         (seq, packet)
     }
 
     pub async fn build_sms_code_submit_packet(&self, code: &str) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst), 0x810, &self.ecdh, &self.random_key, &{
-            let mut w = Vec::new();
-            w.put_u16(7);
-            w.put_u16(7);
+        let req = build_oicq_request_packet(
+            self.uin.load(Ordering::SeqCst),
+            0x810,
+            &self.ecdh,
+            &self.random_key,
+            &{
+                let mut w = Vec::new();
+                w.put_u16(7);
+                w.put_u16(7);
 
-            w.put_slice(&t8(2052));
-            w.put_slice(&t104(&self.cache_info.read().await.t104));
-            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
-            w.put_slice(&t174(&self.cache_info.read().await.t174));
-            w.put_slice(&t17c(code));
-            w.put_slice(&t401(&self.cache_info.read().await.g));
-            w.put_slice(&t198());
-            w
-        });
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.read().await.imei, &[], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
+                w.put_slice(&t8(2052));
+                w.put_slice(&t104(&self.cache_info.read().await.t104));
+                w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+                w.put_slice(&t174(&self.cache_info.read().await.t174));
+                w.put_slice(&t17c(code));
+                w.put_slice(&t401(&self.cache_info.read().await.g));
+                w.put_slice(&t198());
+                w
+            },
+        );
+        let sso = build_sso_packet(
+            seq,
+            self.version.app_id,
+            self.version.sub_app_id,
+            "wtlogin.login",
+            &self.device_info.read().await.imei,
+            &[],
+            &self.out_going_packet_session_id.read().await,
+            &req,
+            &self.cache_info.read().await.ksid,
+        );
         let packet = build_login_packet(self.uin.load(Ordering::SeqCst), 2, &[0; 16], &sso, &[]);
         (seq, packet)
     }
 
     pub async fn build_ticket_submit_packet(&self, ticket: &str) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst), 0x810, &self.ecdh, &self.random_key, &{
-            let mut w = Vec::new();
-            w.put_u16(2);
-            w.put_u16(4);
+        let req = build_oicq_request_packet(
+            self.uin.load(Ordering::SeqCst),
+            0x810,
+            &self.ecdh,
+            &self.random_key,
+            &{
+                let mut w = Vec::new();
+                w.put_u16(2);
+                w.put_u16(4);
 
-            w.put_slice(&t193(ticket));
-            w.put_slice(&t8(2052));
-            w.put_slice(&t104(&self.cache_info.read().await.t104));
-            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
-            w
-        });
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.read().await.imei, &[], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
+                w.put_slice(&t193(ticket));
+                w.put_slice(&t8(2052));
+                w.put_slice(&t104(&self.cache_info.read().await.t104));
+                w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+                w
+            },
+        );
+        let sso = build_sso_packet(
+            seq,
+            self.version.app_id,
+            self.version.sub_app_id,
+            "wtlogin.login",
+            &self.device_info.read().await.imei,
+            &[],
+            &self.out_going_packet_session_id.read().await,
+            &req,
+            &self.cache_info.read().await.ksid,
+        );
         let packet = build_login_packet(self.uin.load(Ordering::SeqCst), 2, &[0; 16], &sso, &[]);
         (seq, packet)
     }
 
     pub async fn build_request_tgtgt_no_pic_sig_packet(&self) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst), 0x810, &EncryptSession::new(&self.cache_info.read().await.sig_info.t133), &self.cache_info.read().await.sig_info.wt_session_ticket_key, &{
-            let mut w = Vec::new();
-            w.put_u16(15);
-            w.put_u16(24);
-
-            w.put_slice(&t18(16, self.uin.load(Ordering::SeqCst) as u32));
-            w.put_slice(&t1(self.uin.load(Ordering::SeqCst) as u32, &self.device_info.read().await.ip_address));
-            w.put_slice(&{
+        let req = build_oicq_request_packet(
+            self.uin.load(Ordering::SeqCst),
+            0x810,
+            &EncryptSession::new(&self.cache_info.read().await.sig_info.t133),
+            &self.cache_info.read().await.sig_info.wt_session_ticket_key,
+            &{
                 let mut w = Vec::new();
-                w.put_u16(0x106);
-                w.write_bytes_short(&self.cache_info.read().await.sig_info.encrypted_a1);
+                w.put_u16(15);
+                w.put_u16(24);
+
+                w.put_slice(&t18(16, self.uin.load(Ordering::SeqCst) as u32));
+                w.put_slice(&t1(
+                    self.uin.load(Ordering::SeqCst) as u32,
+                    &self.device_info.read().await.ip_address,
+                ));
+                w.put_slice(&{
+                    let mut w = Vec::new();
+                    w.put_u16(0x106);
+                    w.write_bytes_short(&self.cache_info.read().await.sig_info.encrypted_a1);
+                    w
+                });
+                w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+                w.put_slice(&t100(
+                    self.version.sso_version,
+                    2,
+                    self.version.main_sig_map,
+                ));
+                w.put_slice(&t107(0));
+                w.put_slice(&t144(
+                    &self.device_info.read().await.android_id,
+                    &self.device_info.read().await.gen_pb_data(),
+                    &self.device_info.read().await.os_type,
+                    &self.device_info.read().await.version.release,
+                    &self.device_info.read().await.sim_info,
+                    &self.device_info.read().await.apn,
+                    false,
+                    true,
+                    false,
+                    guid_flag(),
+                    &self.device_info.read().await.model,
+                    &self.device_info.read().await.guid,
+                    &self.device_info.read().await.brand,
+                    &self.device_info.read().await.tgtgt_key,
+                ));
+                w.put_slice(&t142(&self.version.apk_id));
+                w.put_slice(&t145(&self.device_info.read().await.guid));
+                w.put_slice(&t16a(&self.cache_info.read().await.sig_info.srm_token));
+                w.put_slice(&t141(
+                    &self.device_info.read().await.sim_info,
+                    &self.device_info.read().await.apn,
+                ));
+                w.put_slice(&t8(2052));
+                w.put_slice(&t511(vec![
+                    "tenpay.com",
+                    "openmobile.qq.com",
+                    "docs.qq.com",
+                    "connect.qq.com",
+                    "qzone.qq.com",
+                    "vip.qq.com",
+                    "gamecenter.qq.com",
+                    "qun.qq.com",
+                    "game.qq.com",
+                    "qqweb.qq.com",
+                    "office.qq.com",
+                    "ti.qq.com",
+                    "mail.qq.com",
+                    "mma.qq.com",
+                ]));
+                w.put_slice(&t147(
+                    16,
+                    &self.version.sort_version_name,
+                    &self.version.apk_sign,
+                ));
+                w.put_slice(&t177(self.version.build_time, &self.version.sdk_version));
+                w.put_slice(&t400(
+                    &self.cache_info.read().await.g,
+                    self.uin.load(Ordering::SeqCst),
+                    &self.device_info.read().await.guid,
+                    &self.cache_info.read().await.dpwd,
+                    1,
+                    16,
+                    &self.random_key,
+                ));
+                w.put_slice(&t187(&self.device_info.read().await.mac_address));
+                w.put_slice(&t188(&self.device_info.read().await.android_id));
+                w.put_slice(&t194(&self.device_info.read().await.imsi_md5));
+                w.put_slice(&t202(
+                    &self.device_info.read().await.wifi_bssid,
+                    &self.device_info.read().await.wifi_ssid,
+                ));
+                w.put_slice(&t516());
+                w.put_slice(&t521(0));
+                w.put_slice(&t525(&t536(&vec![0x01, 0x00])));
                 w
-            });
-            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
-            w.put_slice(&t100(self.version.sso_version, 2, self.version.main_sig_map));
-            w.put_slice(&t107(0));
-            w.put_slice(&t144(
-                &self.device_info.read().await.android_id,
-                &self.device_info.read().await.gen_pb_data(),
-                &self.device_info.read().await.os_type,
-                &self.device_info.read().await.version.release,
-                &self.device_info.read().await.sim_info,
-                &self.device_info.read().await.apn,
-                false, true, false, guid_flag(),
-                &self.device_info.read().await.model,
-                &self.device_info.read().await.guid,
-                &self.device_info.read().await.brand,
-                &self.device_info.read().await.tgtgt_key,
-            ));
-            w.put_slice(&t142(&self.version.apk_id));
-            w.put_slice(&t145(&self.device_info.read().await.guid));
-            w.put_slice(&t16a(&self.cache_info.read().await.sig_info.srm_token));
-            w.put_slice(&t141(&self.device_info.read().await.sim_info, &self.device_info.read().await.apn));
-            w.put_slice(&t8(2052));
-            w.put_slice(&t511(vec!["tenpay.com", "openmobile.qq.com", "docs.qq.com", "connect.qq.com",
-                                   "qzone.qq.com", "vip.qq.com", "gamecenter.qq.com", "qun.qq.com", "game.qq.com",
-                                   "qqweb.qq.com", "office.qq.com", "ti.qq.com", "mail.qq.com", "mma.qq.com"]
-            ));
-            w.put_slice(&t147(16, &self.version.sort_version_name, &self.version.apk_sign));
-            w.put_slice(&t177(self.version.build_time, &self.version.sdk_version));
-            w.put_slice(&t400(&self.cache_info.read().await.g, self.uin.load(Ordering::SeqCst), &self.device_info.read().await.guid, &self.cache_info.read().await.dpwd, 1, 16, &self.random_key));
-            w.put_slice(&t187(&self.device_info.read().await.mac_address));
-            w.put_slice(&t188(&self.device_info.read().await.android_id));
-            w.put_slice(&t194(&self.device_info.read().await.imsi_md5));
-            w.put_slice(&t202(&self.device_info.read().await.wifi_bssid, &self.device_info.read().await.wifi_ssid));
-            w.put_slice(&t516());
-            w.put_slice(&t521(0));
-            w.put_slice(&t525(&t536(&vec![0x01, 0x00])));
-            w
-        });
-        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "wtlogin.exchange_emp", 2, &self.out_going_packet_session_id.read().await, &[], &[0; 16], &req);
+            },
+        );
+        let packet = build_uni_packet(
+            self.uin.load(Ordering::SeqCst),
+            seq,
+            "wtlogin.exchange_emp",
+            2,
+            &self.out_going_packet_session_id.read().await,
+            &[],
+            &[0; 16],
+            &req,
+        );
         (seq, packet)
     }
 
     pub async fn build_request_change_sig_packet(&self) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst), 0x810, &self.ecdh, &self.random_key, &{
-            let mut w = BytesMut::new();
-            w.put_u16(11);
-            w.put_u16(17);
+        let req = build_oicq_request_packet(
+            self.uin.load(Ordering::SeqCst),
+            0x810,
+            &self.ecdh,
+            &self.random_key,
+            &{
+                let mut w = BytesMut::new();
+                w.put_u16(11);
+                w.put_u16(17);
 
-            w.put_slice(&t100(self.version.sso_version, 100, self.version.main_sig_map));
-            w.put_slice(&t10a(&self.cache_info.read().await.sig_info.tgt));
-            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
-            w.put_slice(&t108(&self.device_info.read().await.imei));
-            let h = md5::compute(&self.cache_info.read().await.sig_info.d2key).to_vec();
-            w.put_slice(&t144(
-                &self.device_info.read().await.android_id,
-                &self.device_info.read().await.gen_pb_data(),
-                &self.device_info.read().await.os_type,
-                &self.device_info.read().await.version.release,
-                &self.device_info.read().await.sim_info,
-                &self.device_info.read().await.apn,
-                false, true, false, guid_flag(),
-                &self.device_info.read().await.model,
-                &self.device_info.read().await.guid,
-                &self.device_info.read().await.brand,
-                &h,
-            ));
-            w.put_slice(&t143(&self.cache_info.read().await.sig_info.d2));
-            w.put_slice(&t142(&self.version.apk_id));
-            w.put_slice(&t154(seq));
-            w.put_slice(&t18(16, self.uin.load(Ordering::SeqCst) as u32));
-            w.put_slice(&t141(&self.device_info.read().await.sim_info, &self.device_info.read().await.apn));
-            w.put_slice(&t8(2052));
-            w.put_slice(&t147(16, &self.version.sort_version_name, &self.version.apk_sign));
-            w.put_slice(&t177(self.version.build_time, &self.version.sdk_version));
-            w.put_slice(&t187(&self.device_info.read().await.mac_address));
-            w.put_slice(&t188(&self.device_info.read().await.android_id));
-            w.put_slice(&t194(&self.device_info.read().await.imsi_md5));
-            w.put_slice(&t511(vec!["tenpay.com", "openmobile.qq.com", "docs.qq.com", "connect.qq.com",
-                                   "qzone.qq.com", "vip.qq.com", "gamecenter.qq.com", "qun.qq.com", "game.qq.com",
-                                   "qqweb.qq.com", "office.qq.com", "ti.qq.com", "mail.qq.com", "mma.qq.com"]
-            ));
-            // w.put_slice(&t202(self.device_info.wifi_bssid.as_bytes(), self.device_info.wifi_ssid.as_bytes()));
-            w
-        });
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.exchange_emp", &self.device_info.read().await.imei, &[], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
+                w.put_slice(&t100(
+                    self.version.sso_version,
+                    100,
+                    self.version.main_sig_map,
+                ));
+                w.put_slice(&t10a(&self.cache_info.read().await.sig_info.tgt));
+                w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+                w.put_slice(&t108(&self.device_info.read().await.imei));
+                let h = md5::compute(&self.cache_info.read().await.sig_info.d2key).to_vec();
+                w.put_slice(&t144(
+                    &self.device_info.read().await.android_id,
+                    &self.device_info.read().await.gen_pb_data(),
+                    &self.device_info.read().await.os_type,
+                    &self.device_info.read().await.version.release,
+                    &self.device_info.read().await.sim_info,
+                    &self.device_info.read().await.apn,
+                    false,
+                    true,
+                    false,
+                    guid_flag(),
+                    &self.device_info.read().await.model,
+                    &self.device_info.read().await.guid,
+                    &self.device_info.read().await.brand,
+                    &h,
+                ));
+                w.put_slice(&t143(&self.cache_info.read().await.sig_info.d2));
+                w.put_slice(&t142(&self.version.apk_id));
+                w.put_slice(&t154(seq));
+                w.put_slice(&t18(16, self.uin.load(Ordering::SeqCst) as u32));
+                w.put_slice(&t141(
+                    &self.device_info.read().await.sim_info,
+                    &self.device_info.read().await.apn,
+                ));
+                w.put_slice(&t8(2052));
+                w.put_slice(&t147(
+                    16,
+                    &self.version.sort_version_name,
+                    &self.version.apk_sign,
+                ));
+                w.put_slice(&t177(self.version.build_time, &self.version.sdk_version));
+                w.put_slice(&t187(&self.device_info.read().await.mac_address));
+                w.put_slice(&t188(&self.device_info.read().await.android_id));
+                w.put_slice(&t194(&self.device_info.read().await.imsi_md5));
+                w.put_slice(&t511(vec![
+                    "tenpay.com",
+                    "openmobile.qq.com",
+                    "docs.qq.com",
+                    "connect.qq.com",
+                    "qzone.qq.com",
+                    "vip.qq.com",
+                    "gamecenter.qq.com",
+                    "qun.qq.com",
+                    "game.qq.com",
+                    "qqweb.qq.com",
+                    "office.qq.com",
+                    "ti.qq.com",
+                    "mail.qq.com",
+                    "mma.qq.com",
+                ]));
+                // w.put_slice(&t202(self.device_info.wifi_bssid.as_bytes(), self.device_info.wifi_ssid.as_bytes()));
+                w
+            },
+        );
+        let sso = build_sso_packet(
+            seq,
+            self.version.app_id,
+            self.version.sub_app_id,
+            "wtlogin.exchange_emp",
+            &self.device_info.read().await.imei,
+            &[],
+            &self.out_going_packet_session_id.read().await,
+            &req,
+            &self.cache_info.read().await.ksid,
+        );
         let packet = build_login_packet(self.uin.load(Ordering::SeqCst), 2, &[0; 16], &sso, &[]);
         (seq, packet)
     }
@@ -381,30 +652,46 @@ impl crate::client::Client {
             cpid: 0,
             vendor_name: self.device_info.read().await.vendor_name.to_owned(),
             vendor_os_name: self.device_info.read().await.vendor_os_name.to_owned(),
-            b769: Bytes::from_static(&[0x0A, 0x04, 0x08, 0x2E, 0x10, 0x00, 0x0A, 0x05, 0x08, 0x9B, 0x02, 0x10, 0x00]),
+            b769: Bytes::from_static(&[
+                0x0A, 0x04, 0x08, 0x2E, 0x10, 0x00, 0x0A, 0x05, 0x08, 0x9B, 0x02, 0x10, 0x00,
+            ]),
             set_mute: 0,
             ..Default::default()
         };
         let mut b = BytesMut::new();
         b.put_slice(&[0x0A]);
-        b.put_slice(&svc.build());
+        b.put_slice(&svc.freeze());
         b.put_slice(&[0x0B]);
         let buf = RequestDataVersion3 {
-            map: HashMap::from([
-                ("SvcReqRegister".to_string(), b.into())
-            ])
+            map: HashMap::from([("SvcReqRegister".to_string(), b.into())]),
         };
         let pkt = RequestPacket {
             i_version: 3,
             s_servant_name: "PushService".to_string(),
             s_func_name: "SvcReqRegister".to_string(),
-            s_buffer: buf.build(),
+            s_buffer: buf.freeze(),
             context: Default::default(),
             status: Default::default(),
             ..Default::default()
         };
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "StatSvc.register", &self.device_info.read().await.imei, &self.cache_info.read().await.sig_info.tgt, &self.out_going_packet_session_id.read().await, &pkt.build(), &self.cache_info.read().await.ksid);
-        let packet = build_login_packet(self.uin.load(Ordering::SeqCst), 1, &self.cache_info.read().await.sig_info.d2key, &sso, &self.cache_info.read().await.sig_info.d2);
+        let sso = build_sso_packet(
+            seq,
+            self.version.app_id,
+            self.version.sub_app_id,
+            "StatSvc.register",
+            &self.device_info.read().await.imei,
+            &self.cache_info.read().await.sig_info.tgt,
+            &self.out_going_packet_session_id.read().await,
+            &pkt.freeze(),
+            &self.cache_info.read().await.ksid,
+        );
+        let packet = build_login_packet(
+            self.uin.load(Ordering::SeqCst),
+            1,
+            &self.cache_info.read().await.sig_info.d2key,
+            &sso,
+            &self.cache_info.read().await.sig_info.d2,
+        );
 
         return (seq, packet);
     }
@@ -412,22 +699,42 @@ impl crate::client::Client {
     // TODO 还没测试
     pub async fn build_heartbeat_packet(&self) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "Heartbeat.Alive", &self.device_info.read().await.imei, &[], &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.ksid);
+        let sso = build_sso_packet(
+            seq,
+            self.version.app_id,
+            self.version.sub_app_id,
+            "Heartbeat.Alive",
+            &self.device_info.read().await.imei,
+            &[],
+            &self.out_going_packet_session_id.read().await,
+            &[],
+            &self.cache_info.read().await.ksid,
+        );
         let packet = build_login_packet(self.uin.load(Ordering::SeqCst), 0, &[], &sso, &[]);
         (seq, packet)
     }
 
-    pub async fn build_friend_group_list_request_packet(&self, friend_start_index: i16, friend_list_count: i16, group_start_index: i16, group_list_count: i16) -> (u16, Bytes) {
+    pub async fn build_friend_group_list_request_packet(
+        &self,
+        friend_start_index: i16,
+        friend_list_count: i16,
+        group_start_index: i16,
+        group_list_count: i16,
+    ) -> (u16, Bytes) {
         let seq = self.next_seq();
         let mut d50 = BytesMut::new();
-        prost::Message::encode(&pb::D50ReqBody {
-            appid: 1002,
-            req_music_switch: 1,
-            req_mutualmark_alienation: 1,
-            req_ksing_switch: 1,
-            req_mutualmark_lbsshare: 1,
-            ..Default::default()
-        }, &mut d50).unwrap();
+        prost::Message::encode(
+            &pb::D50ReqBody {
+                appid: 1002,
+                req_music_switch: 1,
+                req_mutualmark_alienation: 1,
+                req_ksing_switch: 1,
+                req_mutualmark_lbsshare: 1,
+                ..Default::default()
+            },
+            &mut d50,
+        )
+        .unwrap();
 
         let req = FriendListRequest {
             reqtype: 3,
@@ -451,9 +758,7 @@ impl crate::client::Client {
             sns_type_list: vec![13580, 13581, 13582],
         };
         let buf = RequestDataVersion3 {
-            map: HashMap::from([
-                ("FL".to_string(), pack_uni_request_data(&req.build()))
-            ])
+            map: HashMap::from([("FL".to_string(), pack_uni_request_data(&req.freeze()))]),
         };
         let pkt = RequestPacket {
             i_version: 3,
@@ -461,12 +766,21 @@ impl crate::client::Client {
             i_request_id: 1921334514,
             s_servant_name: "mqq.IMService.FriendListServiceServantObj".to_string(),
             s_func_name: "GetFriendListReq".to_string(),
-            s_buffer: buf.build(),
+            s_buffer: buf.freeze(),
             context: Default::default(),
             status: Default::default(),
             ..Default::default()
         };
-        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "friendlist.getFriendGroupList", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        let packet = build_uni_packet(
+            self.uin.load(Ordering::SeqCst),
+            seq,
+            "friendlist.getFriendGroupList",
+            1,
+            &self.out_going_packet_session_id.read().await,
+            &[],
+            &self.cache_info.read().await.sig_info.d2key,
+            &pkt.freeze(),
+        );
         (seq, packet)
     }
 
@@ -500,70 +814,138 @@ impl crate::client::Client {
             ..Default::default()
         };
         let payload = req.to_bytes();
-        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "ProfileService.Pb.ReqSystemMsgNew.Group", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &payload);
+        let packet = build_uni_packet(
+            self.uin.load(Ordering::SeqCst),
+            seq,
+            "ProfileService.Pb.ReqSystemMsgNew.Group",
+            1,
+            &self.out_going_packet_session_id.read().await,
+            &[],
+            &self.cache_info.read().await.sig_info.d2key,
+            &payload,
+        );
         (seq, packet)
     }
 
     pub async fn build_login_packet(&self, allow_slider: bool) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let req = build_oicq_request_packet(self.uin.load(Ordering::SeqCst), 0x0810, &self.ecdh, &self.random_key, &{
-            let mut w = BytesMut::new();
-            w.put_u16(9);
+        let req = build_oicq_request_packet(
+            self.uin.load(Ordering::SeqCst),
+            0x0810,
+            &self.ecdh,
+            &self.random_key,
+            &{
+                let mut w = BytesMut::new();
+                w.put_u16(9);
 
-            w.put_u16(if allow_slider { 0x17 } else { 0x16 });
+                w.put_u16(if allow_slider { 0x17 } else { 0x16 });
 
-            w.put_slice(&t18(16, self.uin.load(Ordering::SeqCst) as u32));
-            w.put_slice(&t1(self.uin.load(Ordering::SeqCst) as u32, &self.device_info.read().await.ip_address));
-            w.put_slice(&t106(self.uin.load(Ordering::SeqCst) as u32, 0, self.version.app_id, self.version.sso_version, &self.password_md5, true, &self.device_info.read().await.guid, &self.device_info.read().await.tgtgt_key, 0));
-            w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
-            w.put_slice(&t100(self.version.sso_version, self.version.sub_app_id, self.version.main_sig_map));
-            w.put_slice(&t107(0));
-            w.put_slice(&t142(&self.version.apk_id));
-            w.put_slice(&t144(
-                &self.device_info.read().await.imei,
-                &self.device_info.read().await.gen_pb_data(),
-                &self.device_info.read().await.os_type,
-                &self.device_info.read().await.version.release,
-                &self.device_info.read().await.sim_info,
-                &self.device_info.read().await.apn,
-                false, true, false, guid_flag(),
-                &self.device_info.read().await.model,
-                &self.device_info.read().await.guid,
-                &self.device_info.read().await.brand,
-                &self.device_info.read().await.tgtgt_key,
-            ));
-            w.put_slice(&t145(&self.device_info.read().await.guid));
-            w.put_slice(&t147(16, &self.version.sort_version_name, &self.version.apk_sign));
-            w.put_slice(&t154(seq));
-            w.put_slice(&t141(&self.device_info.read().await.sim_info, &self.device_info.read().await.apn));
-            w.put_slice(&t8(2052));
-            w.put_slice(&t511(vec![
-                "tenpay.com", "openmobile.qq.com", "docs.qq.com", "connect.qq.com",
-                "qzone.qq.com", "vip.qq.com", "gamecenter.qq.com", "qun.qq.com", "game.qq.com",
-                "qqweb.qq.com", "office.qq.com", "ti.qq.com", "mail.qq.com", "mma.qq.com",
-            ]));
+                w.put_slice(&t18(16, self.uin.load(Ordering::SeqCst) as u32));
+                w.put_slice(&t1(
+                    self.uin.load(Ordering::SeqCst) as u32,
+                    &self.device_info.read().await.ip_address,
+                ));
+                w.put_slice(&t106(
+                    self.uin.load(Ordering::SeqCst) as u32,
+                    0,
+                    self.version.app_id,
+                    self.version.sso_version,
+                    &self.password_md5,
+                    true,
+                    &self.device_info.read().await.guid,
+                    &self.device_info.read().await.tgtgt_key,
+                    0,
+                ));
+                w.put_slice(&t116(self.version.misc_bitmap, self.version.sub_sig_map));
+                w.put_slice(&t100(
+                    self.version.sso_version,
+                    self.version.sub_app_id,
+                    self.version.main_sig_map,
+                ));
+                w.put_slice(&t107(0));
+                w.put_slice(&t142(&self.version.apk_id));
+                w.put_slice(&t144(
+                    &self.device_info.read().await.imei,
+                    &self.device_info.read().await.gen_pb_data(),
+                    &self.device_info.read().await.os_type,
+                    &self.device_info.read().await.version.release,
+                    &self.device_info.read().await.sim_info,
+                    &self.device_info.read().await.apn,
+                    false,
+                    true,
+                    false,
+                    guid_flag(),
+                    &self.device_info.read().await.model,
+                    &self.device_info.read().await.guid,
+                    &self.device_info.read().await.brand,
+                    &self.device_info.read().await.tgtgt_key,
+                ));
+                w.put_slice(&t145(&self.device_info.read().await.guid));
+                w.put_slice(&t147(
+                    16,
+                    &self.version.sort_version_name,
+                    &self.version.apk_sign,
+                ));
+                w.put_slice(&t154(seq));
+                w.put_slice(&t141(
+                    &self.device_info.read().await.sim_info,
+                    &self.device_info.read().await.apn,
+                ));
+                w.put_slice(&t8(2052));
+                w.put_slice(&t511(vec![
+                    "tenpay.com",
+                    "openmobile.qq.com",
+                    "docs.qq.com",
+                    "connect.qq.com",
+                    "qzone.qq.com",
+                    "vip.qq.com",
+                    "gamecenter.qq.com",
+                    "qun.qq.com",
+                    "game.qq.com",
+                    "qqweb.qq.com",
+                    "office.qq.com",
+                    "ti.qq.com",
+                    "mail.qq.com",
+                    "mma.qq.com",
+                ]));
 
-            w.put_slice(&t187(&self.device_info.read().await.mac_address));
-            w.put_slice(&t188(&self.device_info.read().await.android_id));
+                w.put_slice(&t187(&self.device_info.read().await.mac_address));
+                w.put_slice(&t188(&self.device_info.read().await.android_id));
 
-            if self.device_info.read().await.imsi_md5.len() != 0 {
-                w.put_slice(&t194(&self.device_info.read().await.imsi_md5))
-            }
+                if self.device_info.read().await.imsi_md5.len() != 0 {
+                    w.put_slice(&t194(&self.device_info.read().await.imsi_md5))
+                }
 
-            if allow_slider {
-                w.put_slice(&t191(0x82));
-            }
-            if self.device_info.read().await.wifi_bssid.len() != 0 && self.device_info.read().await.wifi_ssid.len() != 0 {
-                w.put_slice(&t202(&self.device_info.read().await.wifi_bssid, &self.device_info.read().await.wifi_ssid));
-            }
-            w.put_slice(&t177(self.version.build_time, &self.version.sdk_version));
-            w.put_slice(&t516());
-            w.put_slice(&t521(0));
-            w.put_slice(&t525(&t536(&[0x01, 0x00])));
+                if allow_slider {
+                    w.put_slice(&t191(0x82));
+                }
+                if self.device_info.read().await.wifi_bssid.len() != 0
+                    && self.device_info.read().await.wifi_ssid.len() != 0
+                {
+                    w.put_slice(&t202(
+                        &self.device_info.read().await.wifi_bssid,
+                        &self.device_info.read().await.wifi_ssid,
+                    ));
+                }
+                w.put_slice(&t177(self.version.build_time, &self.version.sdk_version));
+                w.put_slice(&t516());
+                w.put_slice(&t521(0));
+                w.put_slice(&t525(&t536(&[0x01, 0x00])));
 
-            w.freeze()
-        });
-        let sso = build_sso_packet(seq, self.version.app_id, self.version.sub_app_id, "wtlogin.login", &self.device_info.read().await.imei, &[], &self.out_going_packet_session_id.read().await, &req, &self.cache_info.read().await.ksid);
+                w.freeze()
+            },
+        );
+        let sso = build_sso_packet(
+            seq,
+            self.version.app_id,
+            self.version.sub_app_id,
+            "wtlogin.login",
+            &self.device_info.read().await.imei,
+            &[],
+            &self.out_going_packet_session_id.read().await,
+            &req,
+            &self.cache_info.read().await.ksid,
+        );
         let packet = build_login_packet(self.uin.load(Ordering::SeqCst), 2, &[0; 16], &sso, &[]);
         (seq, packet)
     }
@@ -582,9 +964,10 @@ impl crate::client::Client {
             get_long_group_name: 1,
         };
         let buf = RequestDataVersion3 {
-            map: HashMap::from([
-                ("GetTroopListReqV2Simplify".to_string(), pack_uni_request_data(&req.build()))
-            ])
+            map: HashMap::from([(
+                "GetTroopListReqV2Simplify".to_string(),
+                pack_uni_request_data(&req.freeze()),
+            )]),
         };
         let pkt = RequestPacket {
             i_version: 3,
@@ -593,21 +976,41 @@ impl crate::client::Client {
             i_request_id: self.next_packet_seq(),
             s_servant_name: "mqq.IMService.FriendListServiceServantObj".to_string(),
             s_func_name: "GetTroopListReqV2Simplify".to_string(),
-            s_buffer: buf.build(),
+            s_buffer: buf.freeze(),
             context: Default::default(),
             status: Default::default(),
             ..Default::default()
         };
-        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "friendlist.GetTroopListReqV2", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        let packet = build_uni_packet(
+            self.uin.load(Ordering::SeqCst),
+            seq,
+            "friendlist.GetTroopListReqV2",
+            1,
+            &self.out_going_packet_session_id.read().await,
+            &[],
+            &self.cache_info.read().await.sig_info.d2key,
+            &pkt.freeze(),
+        );
         (seq, packet)
     }
 
-    pub async fn build_group_sending_packet(&self, group_code: i64, r: i32, pkg_num: i32, pkg_index: i32, pkg_div: i32, forward: bool, elems: Vec<pb::msg::Elem>) -> (u16, Bytes) {
+    pub async fn build_group_sending_packet(
+        &self,
+        group_code: i64,
+        r: i32,
+        pkg_num: i32,
+        pkg_index: i32,
+        pkg_div: i32,
+        forward: bool,
+        elems: Vec<pb::msg::Elem>,
+    ) -> (u16, Bytes) {
         let seq = self.next_seq();
         let req = pb::msg::SendMessageRequest {
             routing_head: Some(pb::msg::RoutingHead {
                 c2c: None,
-                grp: Some(pb::msg::Grp { group_code: Some(group_code) }),
+                grp: Some(pb::msg::Grp {
+                    group_code: Some(group_code),
+                }),
                 grp_tmp: None,
                 wpa_tmp: None,
             }),
@@ -631,15 +1034,32 @@ impl crate::client::Client {
             msg_rand: Some(r),
             sync_cookie: Some(Vec::new()),
             msg_via: Some(1),
-            msg_ctrl: if forward { Some(pb::msg::MsgCtrl { msg_flag: Some(4) }) } else { None },
+            msg_ctrl: if forward {
+                Some(pb::msg::MsgCtrl { msg_flag: Some(4) })
+            } else {
+                None
+            },
             data_statist: None,
             multi_send_seq: None,
         };
-        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "MessageSvc.PbSendMsg", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &req.to_bytes());
+        let packet = build_uni_packet(
+            self.uin.load(Ordering::SeqCst),
+            seq,
+            "MessageSvc.PbSendMsg",
+            1,
+            &self.out_going_packet_session_id.read().await,
+            &[],
+            &self.cache_info.read().await.sig_info.d2key,
+            &req.to_bytes(),
+        );
         (seq, packet)
     }
 
-    pub async fn build_group_member_info_request_packet(&self, group_code: i64, uin: i64) -> (u16, Bytes) {
+    pub async fn build_group_member_info_request_packet(
+        &self,
+        group_code: i64,
+        uin: i64,
+    ) -> (u16, Bytes) {
         let seq = self.next_seq();
         let payload = pb::GroupMemberReqBody {
             group_code,
@@ -648,11 +1068,25 @@ impl crate::client::Client {
             client_type: 1,
             rich_card_name_ver: 1,
         };
-        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "group_member_card.get_group_member_card_info", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &payload.to_bytes());
+        let packet = build_uni_packet(
+            self.uin.load(Ordering::SeqCst),
+            seq,
+            "group_member_card.get_group_member_card_info",
+            1,
+            &self.out_going_packet_session_id.read().await,
+            &[],
+            &self.cache_info.read().await.sig_info.d2key,
+            &payload.to_bytes(),
+        );
         (seq, packet)
     }
 
-    pub async fn build_group_member_list_request_packet(&self, group_uin: i64, group_code: i64, next_uin: i64) -> (u16, Bytes) {
+    pub async fn build_group_member_list_request_packet(
+        &self,
+        group_uin: i64,
+        group_code: i64,
+        next_uin: i64,
+    ) -> (u16, Bytes) {
         let seq = self.next_seq();
         let payload = TroopMemberListRequest {
             uin: self.uin.load(Ordering::SeqCst),
@@ -664,26 +1098,40 @@ impl crate::client::Client {
         };
         let mut b = BytesMut::new();
         b.put_slice(&[0x0A]);
-        b.put_slice(&payload.build());
+        b.put_slice(&payload.freeze());
         b.put_slice(&[0x0B]);
         let buf = RequestDataVersion3 {
-            map: HashMap::from([
-                ("GTML".to_string(), b.into())
-            ])
+            map: HashMap::from([("GTML".to_string(), b.into())]),
         };
         let pkt = RequestPacket {
             i_version: 3,
             i_request_id: self.next_packet_seq(),
             s_servant_name: "mqq.IMService.FriendListServiceServantObj".to_string(),
             s_func_name: "GetTroopMemberListReq".to_string(),
-            s_buffer: buf.build(),
+            s_buffer: buf.freeze(),
             ..Default::default()
         };
-        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "friendlist.GetTroopMemberListReq", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        let packet = build_uni_packet(
+            self.uin.load(Ordering::SeqCst),
+            seq,
+            "friendlist.GetTroopMemberListReq",
+            1,
+            &self.out_going_packet_session_id.read().await,
+            &[],
+            &self.cache_info.read().await.sig_info.d2key,
+            &pkt.freeze(),
+        );
         return (seq, packet);
     }
 
-    pub async fn build_delete_online_push_packet(&self, uin: i64, svrip: i32, push_token: Bytes, seq: u16, del_msg: Vec<PushMessageInfo>) -> (u16, Bytes) {
+    pub async fn build_delete_online_push_packet(
+        &self,
+        uin: i64,
+        svrip: i32,
+        push_token: Bytes,
+        seq: u16,
+        del_msg: Vec<PushMessageInfo>,
+    ) -> (u16, Bytes) {
         let mut req = SvcRespPushMsg {
             uin,
             svrip,
@@ -699,46 +1147,65 @@ impl crate::client::Client {
                 ..Default::default()
             })
         }
-        let b = pack_uni_request_data(&req.build());
+        let b = pack_uni_request_data(&req.freeze());
         let buf = RequestDataVersion3 {
-            map: HashMap::from([
-                ("resp".to_string(), b.into())
-            ])
+            map: HashMap::from([("resp".to_string(), b.into())]),
         };
         let pkt = RequestPacket {
             i_version: 3,
             i_request_id: seq as i32,
             s_servant_name: "OnlinePush".to_string(),
             s_func_name: "SvcRespPushMsg".to_string(),
-            s_buffer: buf.build(),
+            s_buffer: buf.freeze(),
             ..Default::default()
         };
-        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "OnlinePush.RespPush", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        let packet = build_uni_packet(
+            self.uin.load(Ordering::SeqCst),
+            seq,
+            "OnlinePush.RespPush",
+            1,
+            &self.out_going_packet_session_id.read().await,
+            &[],
+            &self.cache_info.read().await.sig_info.d2key,
+            &pkt.freeze(),
+        );
         (seq, packet)
     }
 
-    pub async fn build_conf_push_resp_packet(&self, t: i32, pkt_seq: i64, jce_buf: Bytes) -> (u16, Bytes) {
+    pub async fn build_conf_push_resp_packet(
+        &self,
+        t: i32,
+        pkt_seq: i64,
+        jce_buf: Bytes,
+    ) -> (u16, Bytes) {
         let seq = self.next_seq();
-        let mut req = JceMut::new();
+        let mut req = jcers::JceMut::new();
         req.put_i32(t, 1);
         req.put_i64(pkt_seq, 2);
         req.put_bytes(jce_buf, 3);
 
         let buf = RequestDataVersion3 {
-            map: HashMap::from([
-                ("PushResp".to_string(), pack_uni_request_data(&req.freeze()))
-            ])
+            map: HashMap::from([("PushResp".to_string(), pack_uni_request_data(&req.freeze()))]),
         };
         let pkt = RequestPacket {
             i_version: 3,
             s_servant_name: "QQService.ConfigPushSvc.MainServant".to_string(),
             s_func_name: "PushResp".to_string(),
-            s_buffer: buf.build(),
+            s_buffer: buf.freeze(),
             context: Default::default(),
             status: Default::default(),
             ..Default::default()
         };
-        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "ConfigPushSvc.PushResp", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        let packet = build_uni_packet(
+            self.uin.load(Ordering::SeqCst),
+            seq,
+            "ConfigPushSvc.PushResp",
+            1,
+            &self.out_going_packet_session_id.read().await,
+            &[],
+            &self.cache_info.read().await.sig_info.d2key,
+            &pkt.freeze(),
+        );
         (seq, packet)
     }
 
@@ -749,8 +1216,8 @@ impl crate::client::Client {
             c2c_msg: SvcReqGetMsgV2 {
                 uin: self.uin.load(Ordering::SeqCst),
                 date_time: match self.last_message_time.load(Ordering::SeqCst) {
-                    0 => { 1 }
-                    _ => { self.last_message_time.load(Ordering::SeqCst) as i32 }
+                    0 => 1,
+                    _ => self.last_message_time.load(Ordering::SeqCst) as i32,
                 },
                 recive_pic: 1,
                 ability: 15,
@@ -761,7 +1228,9 @@ impl crate::client::Client {
                 sync_flag: 0,
                 ramble_flag: 0,
                 general_abi: 1,
-                pub_account_cookie: Bytes::from(self.cache_info.read().await.pub_account_cookie.to_vec()),
+                pub_account_cookie: Bytes::from(
+                    self.cache_info.read().await.pub_account_cookie.to_vec(),
+                ),
             },
             group_msg: SvcReqPullGroupMsgSeq {
                 verify_type: 0,
@@ -781,26 +1250,39 @@ impl crate::client::Client {
             latest_ramble_number: Some(20),
             other_ramble_number: Some(3),
             ..Default::default()
-        }.to_bytes();
+        }
+        .to_bytes();
         let mut buf = BytesMut::new();
         buf.put_slice(&[0, 0, 0, 0]);
         buf.put_slice(&msg_req);
         let buf = buf.freeze();
-        let mut req = JceMut::new();
+        let mut req = jcers::JceMut::new();
         req.put_bytes(buf, 0);
         let buf = RequestDataVersion3 {
             map: HashMap::from([
                 ("req_PbOffMsg".to_string(), req.freeze()),
-                ("req_OffMsg".to_string(), pack_uni_request_data(&reg_req.build()))
-            ])
+                (
+                    "req_OffMsg".to_string(),
+                    pack_uni_request_data(&reg_req.freeze()),
+                ),
+            ]),
         };
         let pkt = RequestPacket {
             i_version: 3,
             s_servant_name: "RegPrxySvc".to_string(),
-            s_buffer: buf.build(),
+            s_buffer: buf.freeze(),
             ..Default::default()
         };
-        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "RegPrxySvc.getOffMsg", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        let packet = build_uni_packet(
+            self.uin.load(Ordering::SeqCst),
+            seq,
+            "RegPrxySvc.getOffMsg",
+            1,
+            &self.out_going_packet_session_id.read().await,
+            &[],
+            &self.cache_info.read().await.sig_info.d2key,
+            &pkt.freeze(),
+        );
         (seq, packet)
     }
 
@@ -818,15 +1300,16 @@ impl crate::client::Client {
                 },
             ],
             ..Default::default()
-        }.to_bytes();
+        }
+        .to_bytes();
         let reg_req = SvcReqRegisterNew {
             request_optional: 128 | 64 | 256 | 2 | 8192 | 16384 | 65536,
             dis_group_msg_filter: 1,
             c2c_msg: SvcReqGetMsgV2 {
                 uin: self.uin.load(Ordering::SeqCst),
                 date_time: match self.last_message_time.load(Ordering::SeqCst) {
-                    0 => { 1 }
-                    _ => { self.last_message_time.load(Ordering::SeqCst) as i32 }
+                    0 => 1,
+                    _ => self.last_message_time.load(Ordering::SeqCst) as i32,
                 },
                 recive_pic: 1,
                 ability: 15,
@@ -837,7 +1320,9 @@ impl crate::client::Client {
                 sync_flag: 0, // START
                 ramble_flag: 0,
                 general_abi: 1,
-                pub_account_cookie: Bytes::from(self.cache_info.read().await.pub_account_cookie.to_vec()),
+                pub_account_cookie: Bytes::from(
+                    self.cache_info.read().await.pub_account_cookie.to_vec(),
+                ),
             },
             group_mask: 2,
             end_seq: rand::random::<u32>() as i64,
@@ -864,45 +1349,76 @@ impl crate::client::Client {
         let buf = RequestDataVersion3 {
             map: HashMap::from([
                 ("req_PbOffMsg".to_string(), {
-                    let mut w = JceMut::new();
-                    w.put_bytes({
-                                    let mut b = BytesMut::new();
-                                    b.put_slice(&[0; 4]);
-                                    b.put_slice(&off_msg);
-                                    b.freeze()
-                                }, 0);
+                    let mut w = jcers::JceMut::new();
+                    w.put_bytes(
+                        {
+                            let mut b = BytesMut::new();
+                            b.put_slice(&[0; 4]);
+                            b.put_slice(&off_msg);
+                            b.freeze()
+                        },
+                        0,
+                    );
                     w.freeze()
                 }),
                 ("req_PbPubMsg".to_string(), {
-                    let mut w = JceMut::new();
-                    w.put_bytes({
-                                    let mut b = BytesMut::new();
-                                    b.put_slice(&[0; 4]);
-                                    b.put_slice(&pub_msg);
-                                    b.freeze()
-                                }, 0);
+                    let mut w = jcers::JceMut::new();
+                    w.put_bytes(
+                        {
+                            let mut b = BytesMut::new();
+                            b.put_slice(&[0; 4]);
+                            b.put_slice(&pub_msg);
+                            b.freeze()
+                        },
+                        0,
+                    );
                     w.freeze()
                 }),
-                ("req_OffMsg".to_string(), pack_uni_request_data(&reg_req.build())),
-            ])
+                (
+                    "req_OffMsg".to_string(),
+                    pack_uni_request_data(&reg_req.freeze()),
+                ),
+            ]),
         };
         let pkt = RequestPacket {
             i_version: 3,
             s_servant_name: "RegPrxySvc".to_string(),
-            s_buffer: buf.build(),
+            s_buffer: buf.freeze(),
             ..Default::default()
         };
-        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "RegPrxySvc.infoSync", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        let packet = build_uni_packet(
+            self.uin.load(Ordering::SeqCst),
+            seq,
+            "RegPrxySvc.infoSync",
+            1,
+            &self.out_going_packet_session_id.read().await,
+            &[],
+            &self.cache_info.read().await.sig_info.d2key,
+            &pkt.freeze(),
+        );
         (seq, packet)
     }
 
     pub async fn build_group_msg_read_packet(&self, group_code: i64, msg_seq: i32) -> (u16, Bytes) {
         let seq = self.next_seq();
         let req = pb::msg::PbMsgReadedReportReq {
-            grp_read_report: vec![pb::msg::PbGroupReadedReportReq { group_code: Some(group_code as u64), last_read_seq: Some(msg_seq as u64) }],
+            grp_read_report: vec![pb::msg::PbGroupReadedReportReq {
+                group_code: Some(group_code as u64),
+                last_read_seq: Some(msg_seq as u64),
+            }],
             ..Default::default()
-        }.to_bytes();
-        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "PbMessageSvc.PbMsgReadedReport", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &req);
+        }
+        .to_bytes();
+        let packet = build_uni_packet(
+            self.uin.load(Ordering::SeqCst),
+            seq,
+            "PbMessageSvc.PbMsgReadedReport",
+            1,
+            &self.out_going_packet_session_id.read().await,
+            &[],
+            &self.cache_info.read().await.sig_info.d2key,
+            &req,
+        );
         (seq, packet)
     }
 
@@ -919,8 +1435,18 @@ impl crate::client::Client {
                 ..Default::default()
             }),
             ..Default::default()
-        }.to_bytes();
-        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "PbMessageSvc.PbMsgReadedReport", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &req);
+        }
+        .to_bytes();
+        let packet = build_uni_packet(
+            self.uin.load(Ordering::SeqCst),
+            seq,
+            "PbMessageSvc.PbMsgReadedReport",
+            1,
+            &self.out_going_packet_session_id.read().await,
+            &[],
+            &self.cache_info.read().await.sig_info.d2key,
+            &req,
+        );
         (seq, packet)
     }
 
@@ -935,18 +1461,28 @@ impl crate::client::Client {
             ..Default::default()
         };
         let buf = RequestDataVersion3 {
-            map: HashMap::from([
-                ("SvcReqGetDevLoginInfo".to_string(), pack_uni_request_data(&req.build()))
-            ])
+            map: HashMap::from([(
+                "SvcReqGetDevLoginInfo".to_string(),
+                pack_uni_request_data(&req.freeze()),
+            )]),
         };
         let pkt = RequestPacket {
             i_version: 3,
             s_servant_name: "StatSvc".to_string(),
             s_func_name: "SvcReqGetDevLoginInfo".to_string(),
-            s_buffer: buf.build(),
+            s_buffer: buf.freeze(),
             ..Default::default()
         };
-        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "StatSvc.GetDevLoginInfo", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &pkt.build());
+        let packet = build_uni_packet(
+            self.uin.load(Ordering::SeqCst),
+            seq,
+            "StatSvc.GetDevLoginInfo",
+            1,
+            &self.out_going_packet_session_id.read().await,
+            &[],
+            &self.cache_info.read().await.sig_info.d2key,
+            &pkt.freeze(),
+        );
         (seq, packet)
     }
 
@@ -954,40 +1490,38 @@ impl crate::client::Client {
         let seq = self.next_seq();
         let body = pb::oidb::D88dReqBody {
             app_id: Some(self.version.app_id),
-            req_group_info: vec![
-                pb::oidb::ReqGroupInfo {
-                    group_code: Some(group_code as u64),
-                    stgroupinfo: Some(pb::oidb::D88dGroupInfo {
-                        group_owner: Some(0),
-                        group_uin: Some(0),
-                        group_create_time: Some(0),
-                        group_flag: Some(0),
-                        group_member_max_num: Some(0),
-                        group_member_num: Some(0),
-                        group_option: Some(0),
-                        group_level: Some(0),
-                        group_face: Some(0),
-                        group_name: Some(vec![]),
-                        group_memo: Some(vec![]),
-                        group_finger_memo: Some(vec![]),
-                        group_last_msg_time: Some(0),
-                        group_cur_msg_seq: Some(0),
-                        group_question: Some(vec![]),
-                        group_answer: Some(vec![]),
-                        group_grade: Some(0),
-                        active_member_num: Some(0),
-                        head_portrait_seq: Some(0),
-                        msg_head_portrait: Some(pb::oidb::D88dGroupHeadPortrait::default()),
-                        st_group_ex_info: Some(pb::oidb::D88dGroupExInfoOnly::default()),
-                        group_sec_level: Some(0),
-                        cmduin_privilege: Some(0),
-                        no_finger_open_flag: Some(0),
-                        no_code_finger_open_flag: Some(0),
-                        ..Default::default()
-                    }),
+            req_group_info: vec![pb::oidb::ReqGroupInfo {
+                group_code: Some(group_code as u64),
+                stgroupinfo: Some(pb::oidb::D88dGroupInfo {
+                    group_owner: Some(0),
+                    group_uin: Some(0),
+                    group_create_time: Some(0),
+                    group_flag: Some(0),
+                    group_member_max_num: Some(0),
+                    group_member_num: Some(0),
+                    group_option: Some(0),
+                    group_level: Some(0),
+                    group_face: Some(0),
+                    group_name: Some(vec![]),
+                    group_memo: Some(vec![]),
+                    group_finger_memo: Some(vec![]),
+                    group_last_msg_time: Some(0),
+                    group_cur_msg_seq: Some(0),
+                    group_question: Some(vec![]),
+                    group_answer: Some(vec![]),
+                    group_grade: Some(0),
+                    active_member_num: Some(0),
+                    head_portrait_seq: Some(0),
+                    msg_head_portrait: Some(pb::oidb::D88dGroupHeadPortrait::default()),
+                    st_group_ex_info: Some(pb::oidb::D88dGroupExInfoOnly::default()),
+                    group_sec_level: Some(0),
+                    cmduin_privilege: Some(0),
+                    no_finger_open_flag: Some(0),
+                    no_code_finger_open_flag: Some(0),
                     ..Default::default()
-                }
-            ],
+                }),
+                ..Default::default()
+            }],
             pc_client_version: Some(0),
         };
         let payload = pb::oidb::OidbssoPkg {
@@ -995,11 +1529,19 @@ impl crate::client::Client {
             bodybuffer: body.to_bytes().to_vec(),
             ..Default::default()
         };
-        let packet = build_uni_packet(self.uin.load(Ordering::SeqCst), seq, "OidbSvc.0x88d_0", 1, &self.out_going_packet_session_id.read().await, &[], &self.cache_info.read().await.sig_info.d2key, &payload.to_bytes());
+        let packet = build_uni_packet(
+            self.uin.load(Ordering::SeqCst),
+            seq,
+            "OidbSvc.0x88d_0",
+            1,
+            &self.out_going_packet_session_id.read().await,
+            &[],
+            &self.cache_info.read().await.sig_info.d2key,
+            &payload.to_bytes(),
+        );
         (seq, packet)
     }
 }
-
 
 // #[cfg(test)]
 // mod tests {

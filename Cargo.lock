@@ -405,20 +405,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b71991ff56294aa922b450139ee08b3bfc70982c6b2c7562771375cf73542dd4"
 
 [[package]]
-name = "jce_derive"
+name = "jcers"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "545a4108a8abfa2e720ff5e77d12347956c402170b14f3d541a011df68af2ffa"
+dependencies = [
+ "bytes",
+ "jcers_proc",
+]
+
+[[package]]
+name = "jcers_proc"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c886d02037458dd4436cb66948ae2e50502f876250fc026fe52c45f4150da454"
 dependencies = [
  "proc-macro2",
  "quote",
  "syn",
-]
-
-[[package]]
-name = "jce_struct"
-version = "0.1.0"
-dependencies = [
- "bytes",
- "jce_derive",
 ]
 
 [[package]]
@@ -793,7 +797,7 @@ dependencies = [
  "flate2",
  "futures",
  "generic-array",
- "jce_struct",
+ "jcers",
  "lazy_static",
  "md5",
  "p256",
