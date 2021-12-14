@@ -1,9 +1,11 @@
+use std::io::Read;
+
+use bytes::{Buf, Bytes};
+use flate2::read::ZlibDecoder;
+
 use crate::binary::BinaryReader;
 use crate::client::errors::RQError;
 use crate::crypto::qqtea_decrypt;
-use bytes::{Buf, Bytes};
-use flate2::read::ZlibDecoder;
-use std::io::Read;
 
 #[derive(Default, Debug)]
 pub struct IncomePacket {
@@ -18,11 +20,16 @@ pub struct IncomePacket {
 }
 
 impl IncomePacket {
-    pub fn decrypt_payload(&mut self, ecdh_share_key: &[u8], _random: &[u8], session_key: &[u8]) {
+    pub fn decrypt_payload(
+        &mut self,
+        ecdh_share_key: &[u8],
+        _random: &[u8],
+        session_key: &[u8],
+    ) -> Result<(), RQError> {
         let mut payload = Bytes::from(self.payload.to_owned());
         if payload.get_u8() != 2 {
             // err
-            return;
+            return Err(RQError::Other("unknown flag".into()));
         }
         payload.advance(2);
         payload.advance(2);
@@ -35,12 +42,15 @@ impl IncomePacket {
             let len = payload.remaining() - 1;
             let data = payload.copy_to_bytes(len);
             self.payload = Bytes::from(qqtea_decrypt(&data, ecdh_share_key));
+            return Ok(());
         }
         if encrypt_type == 3 {
             let len = payload.remaining() - 1;
             let data = payload.copy_to_bytes(len);
             self.payload = Bytes::from(qqtea_decrypt(&data, session_key));
+            return Ok(());
         }
+        return Err(RQError::Other("unknown encrypt type".into()));
         //return error
     }
 }
@@ -79,19 +89,20 @@ impl super::super::Client {
                 &self.ecdh.initial_share_key,
                 &self.random_key,
                 &self.cache_info.read().await.sig_info.wt_session_ticket_key,
-            )
+            )?
         }
         Ok(pkt)
     }
 
     pub async fn parse_sso_frame(&self, pkt: &mut IncomePacket) -> Result<(), RQError> {
         let mut payload = Bytes::from(pkt.payload.to_owned());
-        let len = payload.get_i32() as usize - 4;
-        if payload.remaining() < len {
+        let head_len = payload.get_i32() as usize - 4;
+        if payload.remaining() < head_len {
             return Err(RQError::Decode("remaining<len".into()));
         }
-        pkt.seq_id = payload.get_i32() as u16;
-        let ret_code = payload.get_i32();
+        let mut head = payload.copy_to_bytes(head_len);
+        pkt.seq_id = head.get_i32() as u16;
+        let ret_code = head.get_i32();
         if ret_code != 0 {
             if ret_code == -10008 {
                 return Err(RQError::Decode("ErrSessionExpired".into())); //ErrSessionExpired
@@ -100,26 +111,24 @@ impl super::super::Client {
         }
 
         // extra data
-        let len = payload.get_i32() as usize - 4;
-        payload.advance(len);
+        let len = head.get_i32() as usize - 4;
+        head.advance(len);
 
-        pkt.command_name = payload.read_string();
+        pkt.command_name = head.read_string();
 
-        let len = payload.get_i32() as usize - 4;
-        pkt.session_id = payload.copy_to_bytes(len);
+        let len = head.get_i32() as usize - 4;
+        pkt.session_id = head.copy_to_bytes(len);
         if pkt.command_name == "Heartbeat.Alive" {
             return Ok(());
         }
-        let compressed_flag = payload.get_i32();
+        let compressed_flag = head.get_i32();
+
+        let body_len = payload.get_i32() as usize - 4;
         let packet = match compressed_flag {
-            0 => {
-                let _ = (payload.get_i32() as u64) & 0xffffffff;
-                Bytes::from(payload.chunk().to_owned())
-            }
+            0 => Bytes::from(payload.copy_to_bytes(body_len)),
             1 => {
-                payload.advance(4);
                 let mut uncompressed = Vec::new();
-                ZlibDecoder::new(payload.chunk())
+                ZlibDecoder::new(payload.copy_to_bytes(body_len).chunk())
                     .read_to_end(&mut uncompressed)
                     .map_err(|_| RQError::Other("failed to decode zlib".into()))?;
                 Bytes::from(uncompressed)

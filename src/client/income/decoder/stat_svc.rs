@@ -33,6 +33,7 @@ pub fn decode_dev_list_response(payload: &[u8]) -> Result<Vec<SvcDevLoginInfo>, 
         .ok_or(RQError::Decode(
             "missing QQService.SvcRspGetDevLoginInfo".into(),
         ))?;
+    msg.advance(1);
     let mut rsp = Jce::new(&mut msg);
     let d: Vec<SvcDevLoginInfo> = rsp.get_by_tag(4).map_err(|e| RQError::from(e))?;
     if d.len() > 0 {

@@ -2,7 +2,7 @@ use crate::client::errors::RQError;
 use crate::client::structs::*;
 use crate::jce;
 use crate::jce::TroopMemberInfo;
-use bytes::Bytes;
+use bytes::{Buf, Bytes};
 use jcers::Jce;
 
 #[derive(Debug, Default)]
@@ -20,6 +20,7 @@ pub fn decode_friend_group_list_response(payload: &[u8]) -> Result<FriendListRes
     let mut fl_resp = data.map.remove("FLRESP").ok_or(RQError::Decode(
         "decode_friend_group_list_response FLRESP not found".to_string(),
     ))?;
+    fl_resp.advance(1);
     let mut r = Jce::new(&mut fl_resp);
     let total_friend_count: i16 = r.get_by_tag(5).map_err(|e| RQError::from(e))?;
     let friends: Vec<jce::FriendInfo> = r.get_by_tag(7).map_err(|e| RQError::from(e))?; // FIXME jce bug
@@ -55,6 +56,7 @@ pub fn decode_group_list_response(payload: &[u8]) -> Result<GroupListResponse, R
         .ok_or(RQError::Decode(
             "decode_group_list_response GetTroopListRespV2 not found".to_string(),
         ))?;
+    fl_resp.advance(1);
     let mut r = Jce::new(&mut fl_resp);
     let vec_cookie: Bytes = r.get_by_tag(4).map_err(|e| RQError::from(e))?;
     let groups: Vec<jce::TroopNumber> = r.get_by_tag(5).map_err(|e| RQError::from(e))?;
@@ -94,6 +96,7 @@ pub fn decode_group_member_list_response(
     let mut fl_resp = data.map.remove("GTMLRESP").ok_or(RQError::Decode(
         "decode_group_member_list_response GTMLRESP not found".to_string(),
     ))?;
+    fl_resp.advance(1);
     let mut r = Jce::new(&mut fl_resp);
     let members: Vec<TroopMemberInfo> = r.get_by_tag(3).map_err(|e| RQError::from(e))?;
     let next_uin = r.get_by_tag(4).map_err(|e| RQError::from(e))?;

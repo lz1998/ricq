@@ -1,8 +1,9 @@
+use std::sync::Arc;
+
 use crate::client::income::decoder::config_push_svc::decode_push_req_packet;
 use crate::client::income::decoder::online_push::decode_group_message_packet;
 use crate::client::income::decoder::reg_prxy_svc::decode_push_param_packet;
 use crate::client::income::IncomePacket;
-use std::sync::Arc;
 
 pub mod config_push_svc;
 pub mod online_push;
@@ -20,15 +21,21 @@ impl super::Client {
             match pkt.command_name.as_ref() {
                 "OnlinePush.PbPushGroupMsg" => {
                     let p = decode_group_message_packet(&pkt.payload).unwrap();
-                    self.process_group_message_part(p).await;
+                    if let Err(e) = self.process_group_message_part(p).await {
+                        tracing::error!("process group message part error: {:?}", e);
+                    }
                 }
                 "ConfigPushSvc.PushReq" => {
                     let req = decode_push_req_packet(&pkt.payload).unwrap();
-                    self.process_config_push_req(req).await;
+                    if let Err(e) = self.process_config_push_req(req).await {
+                        tracing::error!("process config push req error: {:?}", e);
+                    }
                 }
                 "RegPrxySvc.PushParam" => {
                     let other_clients = decode_push_param_packet(&pkt.payload).unwrap();
-                    self.process_push_param(other_clients).await;
+                    if let Err(e) = self.process_push_param(other_clients).await {
+                        tracing::error!("process push param error: {:?}", e);
+                    }
                 }
                 _ => {
                     println!("unhandled pkt: {}", &pkt.command_name);

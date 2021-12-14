@@ -111,6 +111,7 @@ pub fn decode_online_push_req_packet(payload: &[u8]) -> Result<ReqPush, RQError>
         .collect();
     Ok(ReqPush {
         resp: ReqPushResp { uin, msg_infos },
+        push_infos: infos,
         ..Default::default()
     })
 }
