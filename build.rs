@@ -8,6 +8,7 @@ fn main() -> Result<()> {
             "src/pb/msg/head.proto",
             "src/pb/msg/objmsg.proto",
             "src/pb/msg/report.proto",
+            "src/pb/msg/TextMsgExt.proto",
             "src/pb/structmsg/structmsg.proto",
             "src/pb/cmd0x6ff/smbcmd0x519.proto",
             "src/pb/cmd0x6ff/subcmd0x501.proto",

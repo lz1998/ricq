@@ -1,7 +1,7 @@
 use crate::client::errors::RQError;
 use crate::client::handler::Msgs;
 use crate::client::income::{builder::GroupMessageBuilder, decoder::online_push::GroupMessagePart};
-use crate::client::messages::GroupMessage;
+use crate::client::msg::GroupMessage;
 use crate::client::Client;
 use std::sync::atomic::Ordering;
 

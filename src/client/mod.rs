@@ -19,7 +19,6 @@ pub mod device;
 pub mod errors;
 pub mod handler;
 pub mod income;
-pub mod messages;
 pub mod msg;
 pub mod net;
 pub mod outcome;

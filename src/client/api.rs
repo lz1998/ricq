@@ -1,7 +1,7 @@
 use super::errors::RQError;
 use crate::client::income::decoder::group_member_card::decode_group_member_info_response;
 use crate::client::income::decoder::{friendlist::*, profile_service::*, stat_svc::*, wtlogin::*};
-use crate::client::msg::Msg;
+use crate::client::msg::MsgElem;
 use crate::client::structs::{GroupInfo, GroupMemberInfo};
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
 use bytes::Bytes;
@@ -195,12 +195,9 @@ impl super::Client {
     pub async fn send_group_message(
         &self,
         group_code: i64,
-        message_chain: Vec<Msg>,
+        message_chain: Vec<MsgElem>,
     ) -> Result<(), RQError> {
-        let mut elems = Vec::new();
-        for message in message_chain.iter() {
-            elems.append(&mut message.pack());
-        }
+        let elems = crate::client::msg::into_elems(message_chain);
         let (_, packet) = self
             .build_group_sending_packet(group_code, 383, 1, 0, 0, false, elems)
             .await;
