@@ -6,6 +6,8 @@ use rand::distributions::Alphanumeric;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 
+const DEVICE_FILE_PATH: &str = "device.json";
+
 //手机设备信息
 #[derive(Default, Serialize, Deserialize, Debug)]
 pub struct DeviceInfo {
@@ -111,6 +113,29 @@ impl DeviceInfo {
 
     pub fn from_json(s: &str) -> Result<Self, serde_json::Error> {
         serde_json::from_str(s)
+    }
+
+    pub fn load_or_new() -> Self {
+        Self::load_from_file().unwrap_or_else(|_| {
+            let info = Self::random();
+            info.save_to_file().unwrap();
+            info
+        })
+    }
+
+    pub fn load_from_file() -> Result<Self, std::io::Error> {
+        use std::io::Read;
+        let mut file = std::fs::File::open(DEVICE_FILE_PATH)?;
+        let mut s = String::new();
+        file.read_to_string(&mut s)?;
+        Ok(Self::from_json(&s)?)
+    }
+
+    pub fn save_to_file(&self) -> Result<(), std::io::Error> {
+        use std::io::Write;
+        let mut file = std::fs::File::create(DEVICE_FILE_PATH)?;
+        file.write_all(self.to_json().as_bytes())?;
+        Ok(())
     }
 }
 
