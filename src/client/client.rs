@@ -1,4 +1,4 @@
-use super::errors::RQError;
+use crate::error::RQError;
 use super::net;
 use super::Client;
 use crate::client::device::DeviceInfo;

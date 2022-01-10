@@ -1,4 +1,4 @@
-use crate::client::errors::RQError;
+use crate::RQError;
 use crate::jce::*;
 use bytes::{Buf, Bytes};
 use jcers::Jce;

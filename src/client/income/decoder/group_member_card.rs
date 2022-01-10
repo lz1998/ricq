@@ -1,4 +1,4 @@
-use crate::client::errors::RQError;
+use crate::RQError;
 use crate::client::outcome::PbToBytes;
 use crate::client::structs::{GroupMemberInfo, GroupMemberPermission};
 use crate::pb;

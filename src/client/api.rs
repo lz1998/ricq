@@ -1,4 +1,4 @@
-use super::errors::RQError;
+use crate::RQError;
 use crate::client::income::decoder::group_member_card::decode_group_member_info_response;
 use crate::client::income::decoder::{friendlist::*, profile_service::*, stat_svc::*, wtlogin::*};
 use crate::client::msg::MsgElem;

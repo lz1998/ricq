@@ -1,6 +1,6 @@
 use crate::binary::BinaryReader;
 use crate::client::device::random_string;
-use crate::client::errors::RQError;
+use crate::RQError;
 use crate::client::income::decoder::tlv::*;
 use crate::client::Client;
 use bytes::{Buf, BufMut, Bytes};

@@ -1,4 +1,4 @@
-use crate::client::errors::RQError;
+use crate::RQError;
 use crate::client::structs::*;
 use crate::jce;
 use crate::jce::TroopMemberInfo;

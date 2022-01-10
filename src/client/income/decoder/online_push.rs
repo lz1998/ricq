@@ -1,4 +1,4 @@
-use crate::client::errors::RQError;
+use crate::RQError;
 use crate::client::income::decoder::online_push::OnlinePushTrans::{
     MemberKicked, MemberLeave, MemberPermissionChanged,
 };
@@ -94,7 +94,7 @@ pub fn decode_online_push_req_packet(payload: &[u8]) -> Result<ReqPush, RQError>
             match m.msg_type {
                 732 => {
                     let mut r = m.v_msg.clone();
-                    let group_code = r.get_i32() as i64;
+                    let _group_code = r.get_i32() as i64;
                     let i_type = r.get_u8();
                     r.get_u8();
                     match i_type {

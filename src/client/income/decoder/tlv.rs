@@ -1,5 +1,5 @@
 use crate::binary::BinaryReader;
-use crate::client::errors::RQError;
+use crate::RQError;
 use crate::client::structs::LoginSigInfo;
 use crate::client::{AccountInfo, CacheInfo};
 use crate::crypto::qqtea_decrypt;

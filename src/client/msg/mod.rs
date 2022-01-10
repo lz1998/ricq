@@ -296,6 +296,23 @@ impl From<u32> for ImageBizType {
     }
 }
 
+impl Into<u32> for ImageBizType {
+    fn into(self) -> u32 {
+        match self {
+            ImageBizType::UnknownBizType => 0,
+            ImageBizType::CustomFaceImage => 1,
+            ImageBizType::HotImage => 2,
+            ImageBizType::DouImage => 3,
+            ImageBizType::ZhiTuImage => 4,
+            ImageBizType::StickerImage => 7,
+            ImageBizType::SelfieImage => 8,
+            ImageBizType::StickerAdImage => 9,
+            ImageBizType::RelatedEmoImage => 10,
+            ImageBizType::HotSearchImage => 13,
+        }
+    }
+}
+
 pub(crate) fn parse_elems(elems: Vec<crate::pb::msg::Elem>) -> Vec<MsgElem> {
     elems.into_iter().map(|e| e.into()).collect()
 }

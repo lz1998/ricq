@@ -2,10 +2,15 @@ pub mod binary;
 pub mod client;
 mod config;
 pub mod crypto;
+pub mod error;
 pub mod hex;
 pub mod jce;
 
+pub use client::handler::{Handler, Msg};
+pub use client::Client;
 pub use config::Config;
+pub use error::{RQError, RQResult};
+pub use client::msg::*;
 
 pub mod pb {
     include!(concat!(env!("OUT_DIR"), "/pb.rs"));

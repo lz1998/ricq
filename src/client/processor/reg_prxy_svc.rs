@@ -1,4 +1,4 @@
-use crate::client::errors::RQError;
+use crate::RQError;
 use crate::client::{Client, OtherClientInfo};
 // use crate::client::income::decoder::online_push::GroupMessagePart;
 

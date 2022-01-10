@@ -1,4 +1,4 @@
-use crate::client::errors::RQError;
+use crate::RQError;
 use crate::client::income::decoder::config_push_svc::ConfigPushReq;
 use crate::client::Client;
 

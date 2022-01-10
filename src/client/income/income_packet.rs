@@ -4,7 +4,7 @@ use bytes::{Buf, Bytes};
 use flate2::read::ZlibDecoder;
 
 use crate::binary::BinaryReader;
-use crate::client::errors::RQError;
+use crate::RQError;
 use crate::crypto::qqtea_decrypt;
 
 #[derive(Default, Debug)]

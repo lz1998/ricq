@@ -1,4 +1,4 @@
-use crate::client::errors::RQError;
+use crate::RQError;
 use crate::client::OtherClientInfo;
 use crate::jce::{RequestDataVersion2, RequestPacket, SvcRespParam};
 use bytes::{Buf, Bytes};

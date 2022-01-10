@@ -1,8 +1,14 @@
-use crate::pb::msg::{CommonElem, Elem, Face, MsgElemInfoServtype33, RichMsg, Text};
+use crate::{
+    pb::msg::{
+        AnimationImageShow, CommonElem, CustomFace, Elem, Face, LightAppElem, MsgElemInfoServtype3,
+        MsgElemInfoServtype33, MsgElemInfoServtype37, ResvAttr, RichMsg, Text,
+    },
+    ImageBizType,
+};
 use bytes::BufMut;
-use flate2::bufread::ZlibEncoder;
+use flate2::{bufread::ZlibEncoder, Compression};
 use prost::Message;
-use std::io::Read;
+use std::{io::Read, vec};
 
 impl Into<Vec<Elem>> for super::MsgElem {
     fn into(self) -> Vec<Elem> {
@@ -23,13 +29,12 @@ impl Into<Vec<Elem>> for super::MsgElem {
                         text: Some(text.clone()),
                         compat: Some(text),
                         buf: None,
-                    };
-                    let mut b = Vec::new();
-                    elem.encode(&mut b).unwrap();
+                    }
+                    .encode_to_vec();
                     vec![Elem {
                         common_elem: Some(CommonElem {
                             service_type: Some(33),
-                            pb_elem: Some(b),
+                            pb_elem: Some(elem),
                             business_type: Some(1),
                         }),
                         ..Default::default()
@@ -89,7 +94,7 @@ impl Into<Vec<Elem>> for super::MsgElem {
                 id,
                 content,
                 res_id,
-                sub_type,
+                ..
             } => {
                 if id == 1 {
                     vec![Elem {
@@ -100,19 +105,168 @@ impl Into<Vec<Elem>> for super::MsgElem {
                         ..Default::default()
                     }]
                 } else {
-                    todo!()
-                    // vec![Elem {
-                    //     rich_msg: Some(RichMsg {
-                    //         template1: { ZlibEncoder::new(content.as_bytes(), Compa).read_to_end() },
-                    //         service_id: Some(id),
-                    //         ..Default::default()
-                    //     }),
-                    //     ..Default::default()
-                    // }]
+                    vec![Elem {
+                        rich_msg: Some(RichMsg {
+                            template1: Some(zlib_encode(content.as_bytes())),
+                            service_id: Some(id),
+                            ..Default::default()
+                        }),
+                        ..Default::default()
+                    }]
+                }
+            }
+
+            Self::LightApp { content } => {
+                vec![Elem {
+                    light_app: Some(LightAppElem {
+                        data: Some(zlib_encode(content.as_bytes())),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }]
+            }
+
+            Self::ShortVideo { .. } => todo!(),
+
+            Self::AnimatedSticker { id, mut name } => {
+                if name.is_empty() {
+                    name = super::face::FACES_MAP.get(&id).unwrap().to_string();
+                }
+                name = ["/".to_string(), name].concat();
+                let business = if id == 114 { 2 } else { 1 };
+                let pb_elem = MsgElemInfoServtype37 {
+                    packid: Some("1".as_bytes().to_vec()),
+                    stickerid: Some(
+                        super::face::STICKER_MAP
+                            .get(&id)
+                            .unwrap()
+                            .as_bytes()
+                            .to_vec(),
+                    ),
+                    qsid: Some(id as u32),
+                    sourcetype: Some(1),
+                    stickertype: Some(business),
+                    resultid: None,
+                    text: Some(name.as_bytes().to_vec()),
+                    surpriseid: None,
+                    randomtype: Some(1),
+                }
+                .encode_to_vec();
+                let pb_reverse = Elem {
+                    text: Some(Text {
+                        str: Some(format!("[{}]请使用最新版手机QQ体验新功能", name)),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }
+                .encode_to_vec();
+                vec![
+                    Elem {
+                        common_elem: Some(CommonElem {
+                            service_type: Some(37),
+                            pb_elem: Some(pb_elem),
+                            business_type: Some(business as i32),
+                        }),
+                        ..Default::default()
+                    },
+                    Elem {
+                        text: Some(Text {
+                            str: Some(name),
+                            pb_reserve: Some(pb_reverse),
+                            ..Default::default()
+                        }),
+                        ..Default::default()
+                    },
+                ]
+            }
+
+            Self::GroupImage {
+                mut width,
+                mut height,
+                file_id,
+                image_id,
+                image_type,
+                size,
+                md5,
+                flash,
+                effect_id,
+                image_biz_type,
+                url: _,
+            } => {
+                if width == 0 {
+                    width = 720
+                }
+                if height == 0 {
+                    height = 480
+                }
+
+                let mut face = CustomFace {
+                    file_type: Some(66),
+                    useful: Some(1),
+                    biz_type: Some(5),
+                    width: Some(width),
+                    height: Some(height),
+                    file_id: Some(file_id as i32),
+                    file_path: Some(image_id),
+                    image_type: Some(image_type),
+                    size: Some(size),
+                    md5: Some(md5.to_vec()),
+                    flag: Some(vec![0x00; 4]),
+                    ..Default::default()
+                };
+                if flash {
+                    let flash = MsgElemInfoServtype3 {
+                        flash_troop_pic: Some(face),
+                        ..Default::default()
+                    }
+                    .encode_to_vec();
+                    vec![
+                        Elem {
+                            common_elem: Some(CommonElem {
+                                service_type: Some(3),
+                                pb_elem: Some(flash),
+                                ..Default::default()
+                            }),
+                            ..Default::default()
+                        },
+                        Elem {
+                            text: Some(Text {
+                                str: Some("[闪照]请使用新版手机QQ查看闪照。".to_string()),
+                                ..Default::default()
+                            }),
+                            ..Default::default()
+                        },
+                    ]
+                } else {
+                    let mut res = ResvAttr::default();
+                    if effect_id != 0 {
+                        res.image_show = Some(AnimationImageShow {
+                            effect_id: Some(effect_id),
+                            animation_param: Some("{}".as_bytes().to_vec()),
+                        });
+                        face.flag = Some(vec![0x11, 0x00, 0x00, 0x00]);
+                    }
+                    if image_biz_type != ImageBizType::UnknownBizType {
+                        res.image_biz_type = Some(image_biz_type.into());
+                    }
+                    face.pb_reserve = Some(res.encode_to_vec());
+                    vec![Elem {
+                        custom_face: Some(face),
+                        ..Default::default()
+                    }]
                 }
             }
 
             _ => todo!(),
         }
     }
+}
+
+fn zlib_encode(content: &[u8]) -> Vec<u8> {
+    let mut buf = Vec::new();
+    ZlibEncoder::new(content, Compression::default())
+        .read_to_end(&mut buf)
+        .unwrap();
+    buf.insert(0, 1);
+    buf
 }

@@ -1,4 +1,4 @@
-use crate::client::errors::RQError;
+use crate::RQError;
 use crate::client::outcome::PbToBytes;
 use crate::jce;
 use crate::pb;

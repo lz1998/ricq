@@ -1,8 +1,8 @@
-use crate::client::errors::RQError;
-use crate::client::handler::Msgs;
+use crate::client::handler::Msg;
 use crate::client::income::{builder::GroupMessageBuilder, decoder::online_push::GroupMessagePart};
 use crate::client::msg::GroupMessage;
 use crate::client::Client;
+use crate::RQError;
 use std::sync::atomic::Ordering;
 
 impl Client {
@@ -44,11 +44,8 @@ impl Client {
         if let Some(group_msg) = group_msg {
             // message is finish
             self.handler
-                .handle(Msgs::GroupMessage(
-                    self.parse_group_message(group_msg).await,
-                ))
-                .await
-                .unwrap(); //todo
+                .handle(Msg::GroupMessage(self.parse_group_message(group_msg).await))
+                .await; //todo
         }
         Ok(())
     }
