@@ -22,6 +22,7 @@ pub mod msg;
 pub mod net;
 pub mod outcome;
 pub mod processor;
+mod protocol;
 pub mod structs;
 pub mod version;
 

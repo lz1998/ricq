@@ -16,7 +16,7 @@ pub trait IEncryptMethod {
 pub struct EncryptECDH {
     pub initial_share_key: Bytes,
     pub public_key: Bytes,
-    public_key_ver: u16,
+    pub public_key_ver: u16,
 }
 
 impl Default for EncryptECDH {
