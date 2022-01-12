@@ -113,8 +113,8 @@ impl Transport {
         if pkt.packet_type == PacketType::Login {
             w.write_string(&self.device.imei);
             w.put_u32(0x04);
-            w.put_u16(self.sig.ksid.len() as u16 + 2);
-            w.put_slice(&self.sig.ksid);
+            w.put_u16(self.device.ksid().len() as u16 + 2);
+            w.put_slice(&self.device.ksid());
         }
         w.put_u32(0x04);
 

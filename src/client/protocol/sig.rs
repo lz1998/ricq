@@ -31,6 +31,6 @@ pub struct Sig {
     pub t402: Bytes,
     pub rand_seed: Bytes, // t403
 
-    // TODO...
-    pub ksid: Bytes,
+    pub sync_cookie: Bytes,
+    pub pub_account_cookie: Bytes,
 }
