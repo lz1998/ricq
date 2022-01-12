@@ -1,14 +1,18 @@
-use bytes::{BufMut, Bytes, BytesMut};
+use bytes::{Buf, BufMut, Bytes, BytesMut};
 
 use crate::binary::BinaryWriter;
-use crate::crypto::EncryptECDH;
-use crate::RQResult;
+use crate::crypto::{qqtea_decrypt, EncryptECDH};
+use crate::{RQError, RQResult};
 
+#[derive(Debug, derivative::Derivative)]
+#[derivative(Default)]
 pub enum EncryptionMethod {
+    #[derivative(Default)]
     ECDH,
     ST,
 }
 
+#[derive(Default)]
 pub struct Message {
     pub uin: u32,
     pub command: u16,
@@ -61,14 +65,41 @@ impl Codec {
         }
         w.put_u8(0x03);
 
-        // TODO 不知道有没有更好的写法
         let len = w.len() as u16;
-        w.as_mut()[1..3].copy_from_slice(&len.to_be_bytes());
-
+        w[1..3].as_mut().put_u16(len);
         w.freeze()
     }
 
-    pub fn decode(&self, b: Bytes) -> RQResult<Message> {
-        todo!()
+    pub fn decode<B>(&self, mut reader: B) -> RQResult<Message>
+    where
+        B: Buf,
+    {
+        let flag = reader.get_u8();
+        if flag != 2 {
+            return Err(RQError::UnknownFlag);
+        }
+        let mut m = Message::default();
+        reader.get_u16(); // len
+        reader.get_u16(); // version
+        m.command = reader.get_u16();
+        reader.get_u16(); // 1
+        m.uin = reader.get_i32() as u32;
+        reader.get_u8();
+        let encrypt_type = reader.get_u8();
+        reader.get_u8();
+        match encrypt_type {
+            0 => {
+                let len = reader.remaining() - 1;
+                let d = reader.copy_to_bytes(len);
+                m.body = Bytes::from(qqtea_decrypt(&d, &self.ecdh.initial_share_key));
+            }
+            3 => {
+                let len = reader.remaining() - 1;
+                let d = reader.copy_to_bytes(len);
+                m.body = Bytes::from(qqtea_decrypt(&d, &self.wt_session_ticket_key));
+            }
+            _ => return Err(RQError::UnknownEncryptType),
+        }
+        return Ok(m);
     }
 }

@@ -21,4 +21,10 @@ pub enum RQError {
 
     #[error("jce error, {0}")]
     Jce(#[from] jcers::JceError),
+
+    #[error("unknown flag")]
+    UnknownFlag,
+
+    #[error("unknown encrypt type")]
+    UnknownEncryptType,
 }

@@ -4,8 +4,8 @@ use bytes::{Buf, Bytes};
 use flate2::read::ZlibDecoder;
 
 use crate::binary::BinaryReader;
-use crate::RQError;
 use crate::crypto::qqtea_decrypt;
+use crate::RQError;
 
 #[derive(Default, Debug)]
 pub struct IncomePacket {
