@@ -77,8 +77,8 @@ impl Codec {
         }
         w.put_u8(0x03);
 
-        let len = w.len() as u16;
-        w[1..3].as_mut().put_u16(len);
+        let len = w.len();
+        w[1..3].as_mut().put_u16(len as u16);
         w.freeze()
     }
 

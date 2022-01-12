@@ -30,4 +30,7 @@ pub struct Sig {
     pub g: Bytes,
     pub t402: Bytes,
     pub rand_seed: Bytes, // t403
+
+    // TODO...
+    pub ksid: Bytes,
 }

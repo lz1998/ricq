@@ -1,18 +1,18 @@
 use bytes::Bytes;
 
-#[derive(derivative::Derivative)]
+#[derive(PartialEq, derivative::Derivative)]
 #[derivative(Default)]
 pub enum PacketType {
     #[derivative(Default)]
-    RequestTypeSimple,
-    RequestTypeLogin,
+    Simple,
+    Login,
 }
 
 impl PacketType {
     pub fn value(&self) -> u32 {
         match self {
-            PacketType::RequestTypeLogin => 0x0A,
-            PacketType::RequestTypeSimple => 0x0B,
+            PacketType::Login => 0x0A,
+            PacketType::Simple => 0x0B,
         }
     }
 }
@@ -21,17 +21,17 @@ impl PacketType {
 #[derivative(Default)]
 pub enum EncryptType {
     #[derivative(Default)]
-    EncryptTypeNoEncrypt,
-    EncryptTypeD2Key,
-    EncryptTypeEmptyKey,
+    NoEncrypt,
+    D2Key,
+    EmptyKey,
 }
 
 impl EncryptType {
     pub fn value(&self) -> u32 {
         match self {
-            EncryptType::EncryptTypeNoEncrypt => 0x00,
-            EncryptType::EncryptTypeD2Key => 0x01,
-            EncryptType::EncryptTypeEmptyKey => 0x02,
+            EncryptType::NoEncrypt => 0x00,
+            EncryptType::D2Key => 0x01,
+            EncryptType::EmptyKey => 0x02,
         }
     }
 }
