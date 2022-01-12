@@ -1,10 +1,12 @@
+use std::sync::atomic::Ordering;
+
+use bytes::{Buf, BufMut, Bytes};
+
 use crate::binary::BinaryReader;
 use crate::client::device::random_string;
-use crate::RQError;
 use crate::client::income::decoder::tlv::*;
 use crate::client::Client;
-use bytes::{Buf, BufMut, Bytes};
-use std::sync::atomic::Ordering;
+use crate::RQError;
 
 #[derive(Debug)]
 pub enum QRCodeState {
@@ -168,6 +170,7 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<Login
     if t == 0 {
         let mut cache_info = cli.cache_info.write().await;
         let mut account_info = cli.account_info.write().await;
+        let mut oicq_codec = cli.oicq_codec.write().await;
         m.remove(&0x150).map(|v| cache_info.t150 = v);
         m.remove(&0x161).map(|v| decode_t161(&v, &mut cache_info));
         m.remove(&0x403).map(|v| cache_info.rand_seed = v);
@@ -177,6 +180,7 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<Login
             &cli.device_info.read().await.tgtgt_key,
             &mut cache_info,
             &mut account_info,
+            &mut oicq_codec,
         )?;
         return Ok(LoginResponse::Success);
     }
@@ -309,6 +313,7 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<Login
 pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> Result<(), RQError> {
     let mut cache_info = cli.cache_info.write().await;
     let mut account_info = cli.account_info.write().await;
+    let mut oicq_codec = cli.oicq_codec.write().await;
     let mut payload = Bytes::from(payload.to_owned());
     let cmd = payload.get_u16();
     let t = payload.get_u8();
@@ -336,6 +341,7 @@ pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> R
             &h,
             &mut cache_info,
             &mut account_info,
+            &mut oicq_codec,
         )?;
     }
     return Ok(());

@@ -1,19 +1,23 @@
-use crate::error::RQError;
-use super::net;
-use super::Client;
-use crate::client::device::DeviceInfo;
-use crate::client::income::IncomePacket;
-use crate::client::outcome::OutcomePacket;
-use crate::client::version::{gen_version_info, ClientProtocol};
-use crate::client::Password;
-use bytes::Bytes;
-use rand::Rng;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, AtomicU16, Ordering};
 use std::sync::Arc;
+
+use bytes::Bytes;
+use rand::Rng;
 use tokio::sync::oneshot;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
+
+use crate::client::device::DeviceInfo;
+use crate::client::income::IncomePacket;
+use crate::client::outcome::OutcomePacket;
+use crate::client::protocol::oicq;
+use crate::client::version::{gen_version_info, ClientProtocol};
+use crate::client::Password;
+use crate::error::RQError;
+
+use super::net;
+use super::Client;
 
 impl super::Client {
     pub async fn new<H>(
@@ -50,7 +54,7 @@ impl super::Client {
             device_info: RwLock::new(device_info),
             out_going_packet_session_id: RwLock::new(Bytes::from_static(&[0x02, 0xb0, 0x5b, 0x8b])),
             packet_promises: Default::default(),
-            ecdh: Default::default(),
+            oicq_codec: RwLock::new(oicq::Codec::default()),
             account_info: Default::default(),
             cache_info: Default::default(),
             address: Default::default(),

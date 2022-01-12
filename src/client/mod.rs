@@ -9,6 +9,7 @@ use bytes::Bytes;
 use tokio::sync::RwLock;
 
 use crate::client::income::IncomePacket;
+use crate::client::protocol::oicq;
 use crate::crypto::EncryptECDH;
 use crate::jce::FileStoragePushFSSvcList;
 use tokio::sync::oneshot;
@@ -37,7 +38,7 @@ pub struct Client {
 
     pub uin: AtomicI64,
     pub password_md5: Bytes,
-    pub ecdh: EncryptECDH,
+    pub oicq_codec: RwLock<oicq::Codec>,
     pub connected: AtomicBool,
     pub shutting_down: AtomicBool,
     pub heartbeat_enabled: AtomicBool,

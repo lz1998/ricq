@@ -17,7 +17,6 @@ pub struct LoginSigInfo {
     pub s_key_expired_time: i64,
     pub d2: Bytes,
     pub d2key: Bytes,
-    pub wt_session_ticket_key: Bytes,
     // TODO 是不是可能None？
     pub device_token: Option<Bytes>,
     pub ps_key_map: HashMap<String, Bytes>,

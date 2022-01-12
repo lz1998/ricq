@@ -85,11 +85,9 @@ impl super::super::Client {
         }
         self.parse_sso_frame(&mut pkt).await?;
         if pkt.flag2 == 2 {
-            pkt.decrypt_payload(
-                &self.ecdh.initial_share_key,
-                &self.random_key,
-                &self.cache_info.read().await.sig_info.wt_session_ticket_key,
-            )?
+            let oicq_codec = self.oicq_codec.read().await;
+            let decrypted_message = oicq_codec.decode(pkt.payload)?;
+            pkt.payload = decrypted_message.body;
         }
         Ok(pkt)
     }

@@ -1,8 +1,9 @@
 use crate::binary::BinaryReader;
-use crate::RQError;
+use crate::client::protocol::oicq;
 use crate::client::structs::LoginSigInfo;
 use crate::client::{AccountInfo, CacheInfo};
 use crate::crypto::qqtea_decrypt;
+use crate::RQError;
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use chrono::Utc;
 use std::collections::HashMap;
@@ -19,6 +20,7 @@ pub fn decode_t119(
     ek: &[u8],
     cache_info: &mut CacheInfo,
     account_info: &mut AccountInfo,
+    oicq_codec: &mut oicq::Codec,
 ) -> Result<(), RQError> {
     let mut reader = Bytes::from(qqtea_decrypt(data, ek).to_owned());
     reader.advance(2);
@@ -88,12 +90,12 @@ pub fn decode_t119(
         d2key: m
             .remove(&0x305)
             .ok_or(RQError::Decode("missing 0x305".into()))?,
-        wt_session_ticket_key: select(m.get(&0x134), &cache_info.sig_info.wt_session_ticket_key),
         device_token: m.remove(&0x322),
 
         ps_key_map,
         pt4token_map,
     };
+    oicq_codec.wt_session_ticket_key = select(m.get(&0x134), &oicq_codec.wt_session_ticket_key);
     cache_info.sig_info = sig_info;
     Ok(())
 }

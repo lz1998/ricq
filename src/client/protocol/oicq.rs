@@ -1,4 +1,5 @@
 use bytes::{Buf, BufMut, Bytes, BytesMut};
+use rand::Rng;
 
 use crate::binary::BinaryWriter;
 use crate::crypto::{qqtea_decrypt, EncryptECDH};
@@ -25,6 +26,17 @@ pub struct Codec {
     pub random_key: Bytes,
     pub wt_session_ticket_key: Bytes,
 }
+
+impl Default for Codec {
+    fn default() -> Self {
+        Self {
+            ecdh: Default::default(),
+            random_key: Bytes::from(rand::thread_rng().gen::<[u8; 16]>().to_vec()),
+            wt_session_ticket_key: Default::default(),
+        }
+    }
+}
+
 impl Codec {
     pub fn encode(&self, m: Message) -> Bytes {
         let mut w = BytesMut::new();

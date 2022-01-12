@@ -1,36 +1,22 @@
-use crate::binary::BinaryWriter;
-use crate::crypto::IEncryptMethod;
 use bytes::{BufMut, Bytes, BytesMut};
 
-pub fn build_oicq_request_packet<E>(
+use crate::binary::BinaryWriter;
+use crate::client::protocol::oicq;
+use crate::crypto::IEncryptMethod;
+
+pub fn build_oicq_request_packet(
+    codec: &oicq::Codec,
     uin: i64,
     command_id: u16,
-    encrypt: &E,
-    key: &[u8],
     body: &[u8],
-) -> Bytes
-where
-    E: IEncryptMethod,
-{
-    let body = encrypt.do_encrypt(body, key);
-    {
-        let mut p = BytesMut::new();
-        p.put_u8(0x02);
-        p.put_u16(27 + 2 + (body.len() as u16));
-        p.put_u16(8001);
-        p.put_u16(command_id);
-        p.put_u16(1);
-        p.put_u32(uin as u32);
-        p.put_u8(3);
-        p.put_u8(encrypt.id());
-        p.put_u8(0);
-        p.put_u32(2);
-        p.put_u32(0);
-        p.put_u32(0);
-        p.put_slice(&body);
-        p.put_u8(0x03);
-        p.into()
-    }
+) -> Bytes {
+    let req = oicq::Message {
+        uin: uin as u32,
+        command: command_id,
+        body: Bytes::from(body.to_vec()),
+        encryption_method: oicq::EncryptionMethod::ECDH,
+    };
+    codec.encode(req)
 }
 
 pub fn build_sso_packet(
