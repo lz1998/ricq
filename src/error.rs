@@ -27,4 +27,15 @@ pub enum RQError {
 
     #[error("unknown encrypt type")]
     UnknownEncryptType,
+
+    #[error("invalid packet type")]
+    InvalidPacketType,
+    #[error("invalid encrypt type")]
+    InvalidEncryptType,
+    #[error("packet dropped")]
+    PacketDropped,
+    #[error("session expired")]
+    SessionExpired,
+    #[error("session expired, {0}")]
+    UnsuccessfulRetCode(i32),
 }

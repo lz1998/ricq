@@ -1,9 +1,17 @@
-use bytes::{BufMut, Bytes, BytesMut};
+use std::io::Read;
 
-use crate::binary::BinaryWriter;
-use crate::client::protocol::packet::{EncryptType, PacketType};
-use crate::client::protocol::{device::Device, packet::Packet, sig::Sig, version::Version};
-use crate::crypto::qqtea_encrypt;
+use bytes::{Buf, BufMut, Bytes, BytesMut};
+use flate2::read::ZlibDecoder;
+
+use crate::binary::{BinaryReader, BinaryWriter};
+use crate::client::protocol::{
+    device::Device,
+    packet::{EncryptType, Packet, PacketType},
+    sig::Sig,
+    version::Version,
+};
+use crate::crypto::{qqtea_decrypt, qqtea_encrypt};
+use crate::{RQError, RQResult};
 
 pub struct Transport {
     sig: Sig,
@@ -56,9 +64,29 @@ impl Transport {
         w[pos..pos + 4].as_mut().put_u32(len as u32);
         w.freeze()
     }
-    pub fn decode_packet(&self, payload: &[u8]) -> Packet {
-        todo!()
+
+    pub fn decode_packet<B>(&self, mut r: B) -> RQResult<Packet>
+    where
+        B: Buf,
+    {
+        let mut pkt = Packet::default();
+        pkt.packet_type = PacketType::from_i32(r.get_i32())?;
+        pkt.encrypt_type = EncryptType::from_u8(r.get_u8())?;
+        r.get_u8(); // 0x00
+
+        pkt.uin = r.read_string().parse().unwrap_or_default();
+
+        let mut body = Bytes::from(r.chunk().to_owned());
+        match pkt.encrypt_type {
+            EncryptType::NoEncrypt => {}
+            EncryptType::D2Key => body = Bytes::from(qqtea_decrypt(&body, &self.sig.d2key)),
+            EncryptType::EmptyKey => body = Bytes::from(qqtea_decrypt(&body, &[0; 16])),
+        }
+
+        self.decode_sso_frame(&mut pkt, body)?;
+        Ok(pkt)
     }
+
     fn encode_body(&self, pkt: &Packet, w: &mut BytesMut) {
         let pos = w.len();
         w.put_u32(0); // len
@@ -96,5 +124,54 @@ impl Transport {
 
         w.put_u32(pkt.body.len() as u32 + 4);
         w.put_slice(&pkt.body);
+    }
+
+    fn decode_sso_frame<B>(&self, pkt: &mut Packet, mut r: B) -> RQResult<()>
+    where
+        B: Buf,
+    {
+        let head_len = r.get_i32() as usize;
+        if head_len - 4 > r.remaining() {
+            return Err(RQError::PacketDropped);
+        }
+
+        let mut head = r.copy_to_bytes(head_len - 4);
+        pkt.seq_id = head.get_i32();
+
+        let ret_code = head.get_i32();
+        match ret_code {
+            0 => {}
+            -10008 => return Err(RQError::SessionExpired),
+            _ => return Err(RQError::UnsuccessfulRetCode(ret_code)),
+        }
+        pkt.message = head.read_string();
+        pkt.command_name = head.read_string();
+        if &pkt.command_name == "Heartbeat.Alive" {
+            return Ok(());
+        }
+
+        let session_id_len = head.get_i32() as usize - 4;
+        let _ = head.copy_to_bytes(session_id_len);
+
+        let compress_flag = head.get_i32();
+
+        let mut body_len = r.get_i32() as usize - 4;
+        body_len = if body_len > 0 && body_len <= r.remaining() {
+            body_len
+        } else {
+            r.remaining()
+        };
+        let mut body = r.copy_to_bytes(body_len);
+
+        if compress_flag == 1 {
+            let mut uncompressed = Vec::new();
+            ZlibDecoder::new(body.chunk())
+                .read_to_end(&mut uncompressed)
+                .map_err(|_| RQError::Other("failed to decode zlib".into()))?;
+            body = Bytes::from(uncompressed)
+        }
+
+        pkt.body = body;
+        Ok(())
     }
 }
