@@ -60,9 +60,14 @@ impl Codec {
             }
         }
         w.put_u8(0x03);
-        // write w.len()
-        todo!()
+
+        // TODO 不知道有没有更好的写法
+        let len = w.len() as u16;
+        w.as_mut()[1..3].copy_from_slice(&len.to_be_bytes());
+
+        w.freeze()
     }
+
     pub fn decode(&self, b: Bytes) -> RQResult<Message> {
         todo!()
     }
