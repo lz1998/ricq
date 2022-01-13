@@ -61,7 +61,7 @@ impl Transport {
         let mut body = w2.freeze();
         match pkt.encrypt_type {
             EncryptType::D2Key => {
-                body = Bytes::from(qqtea_encrypt(&body, &self.sig.d2));
+                body = Bytes::from(qqtea_encrypt(&body, &self.sig.d2key));
             }
             EncryptType::EmptyKey => {
                 body = Bytes::from(qqtea_encrypt(&body, &[0; 16]));
