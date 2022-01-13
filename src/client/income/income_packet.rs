@@ -72,7 +72,7 @@ impl super::super::Client {
             0 => Bytes::from(payload.chunk().to_owned()),
             1 => Bytes::from(qqtea_decrypt(
                 payload.chunk(),
-                &self.cache_info.read().await.sig_info.d2key,
+                &self.transport.read().await.sig.d2key,
             )),
             2 => Bytes::from(qqtea_decrypt(payload.chunk(), &[0; 16])),
             _ => Bytes::new(),

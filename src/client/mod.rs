@@ -2,17 +2,15 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, AtomicU16};
 use std::sync::Arc;
 
-use crate::client::device::DeviceInfo;
-use crate::client::structs::{FriendInfo, GroupInfo, LoginSigInfo};
-use crate::client::version::VersionInfo;
 use bytes::Bytes;
+use tokio::sync::oneshot;
 use tokio::sync::RwLock;
 
 use crate::client::income::IncomePacket;
 use crate::client::protocol::oicq;
-use crate::crypto::EncryptECDH;
+use crate::client::protocol::transport::Transport;
+use crate::client::structs::{FriendInfo, GroupInfo, LoginSigInfo};
 use crate::jce::FileStoragePushFSSvcList;
-use tokio::sync::oneshot;
 
 pub mod api;
 pub mod client;
@@ -23,7 +21,7 @@ pub mod msg;
 pub mod net;
 pub mod outcome;
 pub mod processor;
-mod protocol;
+pub mod protocol;
 pub mod structs;
 pub mod version;
 
@@ -36,6 +34,7 @@ pub struct Client {
     group_data_trans_seq: AtomicI32,
     highway_apply_up_seq: AtomicI32,
 
+    pub transport: RwLock<Transport>,
     pub uin: AtomicI64,
     pub password_md5: Bytes,
     pub oicq_codec: RwLock<oicq::Codec>,
@@ -49,14 +48,10 @@ pub struct Client {
     pub packet_promises: RwLock<HashMap<u16, oneshot::Sender<IncomePacket>>>,
     //随机16位
     pub random_key: Bytes,
-    pub version: VersionInfo,
-    pub device_info: RwLock<DeviceInfo>,
     pub out_going_packet_session_id: RwLock<Bytes>,
 
     // account info
     pub account_info: RwLock<AccountInfo>,
-
-    pub cache_info: RwLock<CacheInfo>,
 
     // address
     pub address: RwLock<AddressInfo>,

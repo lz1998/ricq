@@ -1,8 +1,8 @@
 use anyhow::Result;
 use futures::StreamExt;
-use rs_qq::client::device::DeviceInfo;
 use rs_qq::client::handler::DefaultHandler;
 use rs_qq::client::income::decoder::wtlogin::LoginResponse;
+use rs_qq::client::protocol::device::Device;
 use rs_qq::client::Client;
 use std::path::Path;
 use std::sync::Arc;
@@ -17,20 +17,20 @@ async fn main() -> Result<()> {
         .expect("failed to parse UIN");
     let password = std::env::var("PASSWORD").expect("failed to read PASSWORD from env");
 
-    let device_info = match Path::new("device.json").exists() {
-        true => DeviceInfo::from_json(
+    let device = match Path::new("device.json").exists() {
+        true => serde_json::from_str(
             &tokio::fs::read_to_string("device.json")
                 .await
                 .expect("failed to read device.json"),
         )
         .expect("failed to parse device info"),
-        false => DeviceInfo::random(),
+        false => Device::random(),
     };
-    tokio::fs::write("device.json", device_info.to_json())
+    tokio::fs::write("device.json", serde_json::to_string(&device).unwrap())
         .await
         .expect("failed to write device info to file");
 
-    let mut config = rs_qq::Config::new_with_device_info(device_info);
+    let mut config = rs_qq::Config::new_with_device_info(device);
     config.uin = uin;
     config.password = password;
     let cli = Client::new_with_config(config, DefaultHandler).await;

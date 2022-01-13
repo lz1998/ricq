@@ -14,9 +14,19 @@ use crate::crypto::{qqtea_decrypt, qqtea_encrypt};
 use crate::{RQError, RQResult};
 
 pub struct Transport {
-    sig: Sig,
-    device: Device,
-    version: Version,
+    pub sig: Sig,
+    pub device: Device,
+    pub version: &'static Version,
+}
+
+impl Transport {
+    pub fn new(device: Device, version: &'static Version) -> Self {
+        Self {
+            sig: Sig::new(&device),
+            device,
+            version,
+        }
+    }
 }
 
 impl Transport {

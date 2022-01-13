@@ -1,11 +1,13 @@
+use crate::client::outcome::PbToBytes;
 use bytes::Bytes;
 use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 
 use crate::hex::encode_hex;
+use crate::pb;
 
 //系统版本
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct OSVersion {
     pub incremental: String,
     pub release: String,
@@ -25,7 +27,7 @@ impl Default for OSVersion {
 }
 
 //手机设备信息
-#[derive(Default, Serialize, Deserialize, Debug)]
+#[derive(Default, Serialize, Deserialize, Debug, Clone)]
 pub struct Device {
     pub display: String,
     pub product: String,
@@ -91,20 +93,27 @@ impl Device {
         }
     }
 
-    pub fn guid(&self) -> Bytes {
-        Bytes::from(md5::compute(self.android_id.to_owned() + &self.mac_address).to_vec())
-    }
-
-    pub fn tgtgt_key(&self) -> Bytes {
-        Bytes::from(md5::compute(self.guid()).to_vec())
-    }
-
     pub fn ksid(&self) -> Bytes {
         Bytes::from(
             format!("|{}|A8.2.7.27f6ea96", self.imei)
                 .as_bytes()
                 .to_vec(),
         )
+    }
+
+    pub fn gen_pb_data(&self) -> Bytes {
+        pb::DeviceInfo {
+            bootloader: self.bootloader.to_owned(),
+            proc_version: self.proc_version.to_owned(),
+            codename: self.version.codename.to_owned(),
+            incremental: self.version.incremental.to_owned(),
+            fingerprint: self.finger_print.to_owned(),
+            boot_id: self.boot_id.to_owned(),
+            android_id: self.android_id.to_owned(),
+            base_band: self.base_band.to_owned(),
+            inner_version: self.version.incremental.to_owned(),
+        }
+        .to_bytes()
     }
 }
 

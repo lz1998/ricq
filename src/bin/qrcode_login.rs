@@ -1,7 +1,7 @@
 use anyhow::Result;
-use rs_qq::client::device::DeviceInfo;
 use rs_qq::client::handler::DefaultHandler;
 use rs_qq::client::income::decoder::wtlogin::{LoginResponse, QRCodeState};
+use rs_qq::client::protocol::device::Device;
 use rs_qq::client::Client;
 use std::path::Path;
 use std::sync::Arc;
@@ -9,20 +9,20 @@ use tokio::time::{sleep, Duration};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let device_info = match Path::new("device.json").exists() {
-        true => DeviceInfo::from_json(
+    let device = match Path::new("device.json").exists() {
+        true => serde_json::from_str(
             &tokio::fs::read_to_string("device.json")
                 .await
                 .expect("failed to read device.json"),
         )
         .expect("failed to parse device json"),
-        false => DeviceInfo::random(),
+        false => Device::random(),
     };
-    tokio::fs::write("device.json", device_info.to_json())
+    tokio::fs::write("device.json", serde_json::to_string(&device).unwrap())
         .await
         .expect("failed to write device.json"); //todo
 
-    let config = rs_qq::Config::new_with_device_info(device_info);
+    let config = rs_qq::Config::new_with_device_info(device);
     let cli = Client::new_with_config(config, DefaultHandler).await;
     let client = Arc::new(cli);
     let net = client.run().await;

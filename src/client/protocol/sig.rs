@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use bytes::Bytes;
 
+use crate::client::protocol::device::Device;
+
 #[derive(Default, Debug)]
 pub struct Sig {
     pub login_bitmap: u64,
@@ -18,8 +20,8 @@ pub struct Sig {
     pub s_key_expired_time: i64,
     pub d2: Bytes,
     pub d2key: Bytes,
-    pub device_token: Option<Bytes>,
     // TODO 是不是可能None？
+    pub device_token: Option<Bytes>,
     pub ps_key_map: HashMap<String, Bytes>,
     pub pt4token_map: HashMap<String, Bytes>,
 
@@ -33,4 +35,20 @@ pub struct Sig {
 
     pub sync_cookie: Bytes,
     pub pub_account_cookie: Bytes,
+
+    // device?
+    pub guid: Bytes,
+    pub tgtgt_key: Bytes,
+    pub ksid: Bytes,
+}
+
+impl Sig {
+    pub fn new(device: &Device) -> Self {
+        let mut sig = Self::default();
+        sig.guid =
+            Bytes::from(md5::compute(device.android_id.to_owned() + &device.mac_address).to_vec());
+        sig.tgtgt_key = Bytes::from(md5::compute(&sig.guid).to_vec());
+        sig.ksid = Bytes::from(format!("|{}|A8.2.7.27f6ea96", device.imei));
+        sig
+    }
 }

@@ -332,10 +332,10 @@ pub fn t107(pic_type: u16) -> Bytes {
     buf.freeze()
 }
 
-pub fn t108(imei: &str) -> Bytes {
+pub fn t108(ksid: &[u8]) -> Bytes {
     let mut buf = BytesMut::new();
     buf.put_u16(0x108);
-    buf.write_bytes_short(&imei.as_bytes().to_vec());
+    buf.write_bytes_short(&ksid);
     buf.freeze()
 }
 

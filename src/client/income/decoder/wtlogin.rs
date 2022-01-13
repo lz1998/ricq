@@ -127,8 +127,8 @@ pub async fn decode_trans_emp_response(
             return Err(RQError::Decode("invalid tlv map".to_string()));
         }
         {
-            let mut device_info = cli.device_info.write().await;
-            device_info.tgtgt_key = m
+            let mut transport = cli.transport.write().await;
+            transport.sig.tgtgt_key = m
                 .remove(&0x1e)
                 .ok_or(RQError::Decode("missing 0x1e".into()))?;
         }
@@ -150,43 +150,42 @@ pub async fn decode_trans_emp_response(
 }
 
 pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<LoginResponse, RQError> {
+    let mut transport = cli.transport.write().await;
     let mut reader = Bytes::from(payload.to_owned());
     reader.get_u16(); // sub command
     let t = reader.get_u8();
     reader.get_u16();
     let mut m = reader.read_tlv_map(2);
     if m.contains_key(&0x402) {
-        let mut cache_info = cli.cache_info.write().await;
-        cache_info.dpwd = random_string(16).into();
-        cache_info.t402 = m
+        transport.sig.dpwd = random_string(16).into();
+        transport.sig.t402 = m
             .remove(&0x402)
             .ok_or(RQError::Decode("missing 0x402".to_string()))?;
         let mut v = Vec::new();
-        v.put_slice(&cli.device_info.read().await.guid);
-        v.put_slice(&cache_info.dpwd);
-        v.put_slice(&cache_info.t402);
-        cache_info.g = md5::compute(&v).to_vec().into();
+        v.put_slice(&transport.sig.guid);
+        v.put_slice(&transport.sig.dpwd);
+        v.put_slice(&transport.sig.t402);
+        transport.sig.g = md5::compute(&v).to_vec().into();
     }
     if t == 0 {
-        let mut cache_info = cli.cache_info.write().await;
         let mut account_info = cli.account_info.write().await;
-        let mut oicq_codec = cli.oicq_codec.write().await;
-        m.remove(&0x150).map(|v| cache_info.t150 = v);
-        m.remove(&0x161).map(|v| decode_t161(&v, &mut cache_info));
-        m.remove(&0x403).map(|v| cache_info.rand_seed = v);
+        let mut codec = cli.oicq_codec.write().await;
+        // m.remove(&0x150).map(|v| transport.sig.t150 = v);
+        m.remove(&0x161).map(|v| decode_t161(&v));
+        m.remove(&0x403).map(|v| transport.sig.rand_seed = v);
         decode_t119(
             &m.remove(&0x119)
                 .ok_or(RQError::Decode("missing 0x119".to_string()))?,
-            &cli.device_info.read().await.tgtgt_key,
-            &mut cache_info,
+            &transport.sig.tgtgt_key.clone(),
+            &mut transport,
             &mut account_info,
-            &mut oicq_codec,
-        )?;
+            &mut codec,
+        )
+        .await?;
         return Ok(LoginResponse::Success);
     }
     if t == 2 {
-        let mut cache_info = cli.cache_info.write().await;
-        cache_info.t104 = m
+        transport.sig.t104 = m
             .remove(&0x104)
             .ok_or(RQError::Decode("missing 0x104".to_string()))?;
         if let Some(v) = m.remove(&0x192) {
@@ -220,15 +219,14 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<Login
     }
 
     if t == 160 || t == 239 {
-        let mut cache_info = cli.cache_info.write().await;
         if m.contains_key(&0x174) {
-            cache_info.t174 = m
+            transport.sig.t174 = m
                 .remove(&0x174)
                 .ok_or(RQError::Decode("missing 0x174".to_string()))?;
-            cache_info.t104 = m
+            transport.sig.t104 = m
                 .remove(&0x104)
                 .ok_or(RQError::Decode("missing 0x104".to_string()))?;
-            cache_info.rand_seed = m
+            transport.sig.rand_seed = m
                 .remove(&0x403)
                 .ok_or(RQError::Decode("missing 0x403".to_string()))?;
             let phone = {
@@ -259,7 +257,7 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<Login
         }
 
         if m.contains_key(&0x17b) {
-            cache_info.t104 = m
+            transport.sig.t104 = m
                 .remove(&0x104)
                 .ok_or(RQError::Decode("missing 0x104".to_string()))?;
             return Ok(LoginResponse::SMSNeededError {
@@ -280,11 +278,10 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<Login
 
     if t == 204 {
         {
-            let mut cache_info = cli.cache_info.write().await;
-            cache_info.t104 = m
+            transport.sig.t104 = m
                 .remove(&0x104)
                 .ok_or(RQError::Decode("missing 0x104".to_string()))?;
-            cache_info.rand_seed = m
+            transport.sig.rand_seed = m
                 .remove(&0x403)
                 .ok_or(RQError::Decode("missing 0x403".to_string()))?;
         }
@@ -311,9 +308,7 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<Login
 }
 
 pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> Result<(), RQError> {
-    let mut cache_info = cli.cache_info.write().await;
-    let mut account_info = cli.account_info.write().await;
-    let mut oicq_codec = cli.oicq_codec.write().await;
+    let mut transport = cli.transport.write().await;
     let mut payload = Bytes::from(payload.to_owned());
     let cmd = payload.get_u16();
     let t = payload.get_u8();
@@ -325,24 +320,29 @@ pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> R
         ));
     }
     if cmd == 15 {
+        let mut account_info = cli.account_info.write().await;
         decode_t119r(
             m.get(&0x119)
                 .ok_or(RQError::Decode("missing 0x119".to_string()))?,
-            &cli.device_info.read().await.tgtgt_key,
-            &mut cache_info,
+            &transport.sig.tgtgt_key.clone(),
+            &mut transport,
             &mut account_info,
-        );
+        )
+        .await;
     }
     if cmd == 11 {
-        let h = md5::compute(&cli.cache_info.read().await.sig_info.d2key).to_vec();
+        let mut account_info = cli.account_info.write().await;
+        let mut codec = cli.oicq_codec.write().await;
+        let h = md5::compute(&transport.sig.d2key).to_vec();
         decode_t119(
             m.get(&0x119)
                 .ok_or(RQError::Decode("missing 0x119".to_string()))?,
             &h,
-            &mut cache_info,
+            &mut transport,
             &mut account_info,
-            &mut oicq_codec,
-        )?;
+            &mut codec,
+        )
+        .await?;
     }
     return Ok(());
 }

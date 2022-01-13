@@ -1,35 +1,37 @@
-use crate::binary::BinaryReader;
-use crate::client::protocol::oicq;
-use crate::client::structs::LoginSigInfo;
-use crate::client::{AccountInfo, CacheInfo};
-use crate::crypto::qqtea_decrypt;
-use crate::RQError;
-use bytes::{Buf, BufMut, Bytes, BytesMut};
-use chrono::Utc;
 use std::collections::HashMap;
 
-pub fn decode_t161(data: &[u8], cache_info: &mut CacheInfo) {
-    let mut reader = Bytes::from(data.to_owned());
-    reader.advance(2);
-    let mut m = reader.read_tlv_map(2);
-    m.remove(&0x172).map(|v| cache_info.rollback_sig = v);
+use bytes::{Buf, BufMut, Bytes, BytesMut};
+use chrono::Utc;
+
+use crate::binary::BinaryReader;
+use crate::client::protocol::oicq;
+use crate::client::protocol::transport::Transport;
+use crate::client::AccountInfo;
+use crate::crypto::qqtea_decrypt;
+use crate::RQError;
+
+pub fn decode_t161(_: &[u8]) {
+    // let mut reader = Bytes::from(data.to_owned());
+    // reader.advance(2);
+    // let mut m = reader.read_tlv_map(2);
+    // m.remove(&0x172).map(|v| cache_info.rollback_sig = v);
 }
 
-pub fn decode_t119(
+pub async fn decode_t119(
     data: &[u8],
     ek: &[u8],
-    cache_info: &mut CacheInfo,
+    transport: &mut Transport,
     account_info: &mut AccountInfo,
-    oicq_codec: &mut oicq::Codec,
+    codec: &mut oicq::Codec,
 ) -> Result<(), RQError> {
     let mut reader = Bytes::from(qqtea_decrypt(data, ek).to_owned());
     reader.advance(2);
     let mut m = reader.read_tlv_map(2);
-    m.remove(&0x130).map(|v| decode_t130(&v, cache_info));
+    m.remove(&0x130).map(|v| decode_t130(&v));
     m.remove(&0x113).map(|v| decode_t113(&v));
-    m.remove(&0x528).map(|v| cache_info.t528 = v);
-    m.remove(&0x530).map(|v| cache_info.t530 = v);
-    m.remove(&0x108).map(|v| cache_info.ksid = v);
+    // m.remove(&0x528).map(|v| cache_info.t528 = v);
+    // m.remove(&0x530).map(|v| cache_info.t530 = v);
+    m.remove(&0x108).map(|v| transport.sig.ksid = v);
 
     let mut ps_key_map: HashMap<String, Bytes> = Default::default();
     let mut pt4token_map: HashMap<String, Bytes> = Default::default();
@@ -37,7 +39,7 @@ pub fn decode_t119(
     if m.contains_key(&0x125) {
         // read_t125(t125)
     }
-    m.remove(&0x186).map(|v| decode_t186(&v, cache_info));
+    m.remove(&0x186).map(|v| decode_t186(&v));
     m.remove(&0x11a).map(|v| {
         let (nick, age, gender) = read_t11a(&v);
         account_info.nickname = nick;
@@ -63,55 +65,52 @@ pub fn decode_t119(
         // read_t138 // chg time
     }
 
-    let sig_info = LoginSigInfo {
-        login_bitmap: 0,
-        srm_token: select(m.get(&0x16a), &cache_info.sig_info.srm_token).into(),
-        t133: select(m.get(&0x133), &cache_info.sig_info.t133),
-        encrypted_a1: select(m.get(&0x106), &cache_info.sig_info.encrypted_a1),
-        tgt: m
-            .remove(&0x10a)
-            .ok_or(RQError::Decode("missing 0x10a".into()))?,
-        tgt_key: m
-            .remove(&0x10d)
-            .ok_or(RQError::Decode("missing 0x10d".into()))?,
-        user_st_key: m
-            .remove(&0x10e)
-            .ok_or(RQError::Decode("missing 0x10e".into()))?,
-        user_st_web_sig: m
-            .remove(&0x103)
-            .ok_or(RQError::Decode("missing 0x103".into()))?,
-        s_key: m
-            .remove(&0x120)
-            .ok_or(RQError::Decode("missing 0x120".into()))?,
-        s_key_expired_time: Utc::now().timestamp() + 21600,
-        d2: m
-            .remove(&0x143)
-            .ok_or(RQError::Decode("missing 0x143".into()))?,
-        d2key: m
-            .remove(&0x305)
-            .ok_or(RQError::Decode("missing 0x305".into()))?,
-        device_token: m.remove(&0x322),
+    codec.wt_session_ticket_key = select(m.get(&0x134), &codec.wt_session_ticket_key);
+    transport.sig.login_bitmap = 0;
+    transport.sig.srm_token = select(m.get(&0x16a), &transport.sig.srm_token);
+    transport.sig.t133 = select(m.get(&0x133), &transport.sig.t133);
+    transport.sig.encrypted_a1 = select(m.get(&0x106), &transport.sig.encrypted_a1);
+    transport.sig.tgt = m
+        .remove(&0x10a)
+        .ok_or(RQError::Decode("missing 0x10a".into()))?;
+    transport.sig.tgt_key = m
+        .remove(&0x10d)
+        .ok_or(RQError::Decode("missing 0x10d".into()))?;
+    transport.sig.user_st_key = m
+        .remove(&0x10e)
+        .ok_or(RQError::Decode("missing 0x10e".into()))?;
+    transport.sig.user_st_web_sig = m
+        .remove(&0x103)
+        .ok_or(RQError::Decode("missing 0x103".into()))?;
+    transport.sig.s_key = m
+        .remove(&0x120)
+        .ok_or(RQError::Decode("missing 0x120".into()))?;
+    transport.sig.s_key_expired_time = Utc::now().timestamp() + 21600;
+    transport.sig.d2 = m
+        .remove(&0x143)
+        .ok_or(RQError::Decode("missing 0x143".into()))?;
+    transport.sig.d2key = m
+        .remove(&0x305)
+        .ok_or(RQError::Decode("missing 0x305".into()))?;
+    transport.sig.device_token = m.remove(&0x322);
+    transport.sig.ps_key_map = ps_key_map;
+    transport.sig.pt4token_map = pt4token_map;
 
-        ps_key_map,
-        pt4token_map,
-    };
-    oicq_codec.wt_session_ticket_key = select(m.get(&0x134), &oicq_codec.wt_session_ticket_key);
-    cache_info.sig_info = sig_info;
     Ok(())
 }
 
-pub fn decode_t119r(
+pub async fn decode_t119r(
     data: &[u8],
     tgtgt_key: &[u8],
-    cache_info: &mut CacheInfo,
+    transport: &mut Transport,
     account_info: &mut AccountInfo,
 ) {
     let mut reader = Bytes::from(qqtea_decrypt(&data, tgtgt_key).to_owned());
     reader.advance(2);
     let mut m = reader.read_tlv_map(2);
     m.remove(&0x120).map(|v| {
-        cache_info.sig_info.s_key = v;
-        cache_info.sig_info.s_key_expired_time = Utc::now().timestamp() + 21600;
+        transport.sig.s_key = v;
+        transport.sig.s_key_expired_time = Utc::now().timestamp() + 21600;
     });
     m.remove(&0x11a).map(|v| {
         let (nick, age, gender) = read_t11a(&v);
@@ -121,11 +120,9 @@ pub fn decode_t119r(
     });
 }
 
-pub fn decode_t130(data: &[u8], cache_info: &mut CacheInfo) {
+pub fn decode_t130(data: &[u8]) {
     let mut reader = Bytes::from(data.to_owned());
     reader.advance(2);
-    cache_info.time_diff = reader.get_i32() as i64 - Utc::now().timestamp();
-    cache_info.t149 = reader.copy_to_bytes(4)
 }
 
 pub fn decode_t113(data: &[u8]) {
@@ -134,9 +131,7 @@ pub fn decode_t113(data: &[u8]) {
     println!("got t133 uin: {}", uin)
 }
 
-pub fn decode_t186(data: &[u8], cache_info: &mut CacheInfo) {
-    cache_info.pwd_flag = data[1] == 1;
-}
+pub fn decode_t186(_: &[u8]) {}
 
 // --- tlv readers ---
 
