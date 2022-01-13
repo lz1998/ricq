@@ -14,7 +14,6 @@ use crate::jce::FileStoragePushFSSvcList;
 
 pub mod api;
 pub mod client;
-pub mod device;
 pub mod handler;
 pub mod income;
 pub mod msg;
@@ -23,7 +22,6 @@ pub mod outcome;
 pub mod processor;
 pub mod protocol;
 pub mod structs;
-pub mod version;
 
 pub struct Client {
     handler: Box<dyn handler::Handler + Sync + Send + 'static>,

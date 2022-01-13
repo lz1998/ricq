@@ -3,8 +3,8 @@ use std::sync::atomic::Ordering;
 use bytes::{Buf, BufMut, Bytes};
 
 use crate::binary::BinaryReader;
-use crate::client::device::random_string;
 use crate::client::income::decoder::tlv::*;
+use crate::client::protocol::device::random_string;
 use crate::client::Client;
 use crate::RQError;
 
