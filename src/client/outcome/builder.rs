@@ -36,8 +36,8 @@ impl crate::client::Client {
         self.oicq_codec.read().await.encode(req)
     }
 
-    pub async fn uni_packet_with_seq(&self, seq: u16, command: &str, body: Bytes) -> Bytes {
-        self.transport.read().await.encode_packet(Packet {
+    pub fn uni_packet_with_seq(&self, seq: u16, command: &str, body: Bytes) -> Packet {
+        Packet {
             packet_type: PacketType::Simple,
             encrypt_type: EncryptType::D2Key,
             seq_id: seq as i32,
@@ -45,18 +45,17 @@ impl crate::client::Client {
             command_name: command.to_owned(),
             uin: self.uin.load(Ordering::Relaxed),
             ..Default::default()
-        })
+        }
     }
 
-    pub async fn uni_packet(&self, command: &str, body: Bytes) -> (u16, Bytes) {
+    pub async fn uni_packet(&self, command: &str, body: Bytes) -> Packet {
         let seq = self.next_seq();
-        let packet = self.uni_packet_with_seq(seq, command, body).await;
-        (seq, packet)
+        self.uni_packet_with_seq(seq, command, body)
     }
 }
 
 impl crate::client::Client {
-    pub async fn build_qrcode_fetch_request_packet(&self) -> (u16, Bytes) {
+    pub async fn build_qrcode_fetch_request_packet(&self) -> Packet {
         let watch = get_version(Protocol::AndroidWatch);
         let transport = self.transport.read().await;
         let seq = self.next_seq();
@@ -100,18 +99,17 @@ impl crate::client::Client {
                 w
             })
             .await;
-        let packet = self.transport.read().await.encode_packet(Packet {
+        Packet {
             packet_type: PacketType::Login,
             encrypt_type: EncryptType::EmptyKey,
             seq_id: seq as i32,
             body: req,
             command_name: "wtlogin.trans_emp".into(),
             ..Default::default()
-        });
-        return (seq, packet);
+        }
     }
 
-    pub async fn build_qrcode_result_query_request_packet(&self, sig: &[u8]) -> (u16, Bytes) {
+    pub async fn build_qrcode_result_query_request_packet(&self, sig: &[u8]) -> Packet {
         let seq = self.next_seq();
         let req = self
             .build_oicq_request_packet(0, 0x812, &{
@@ -135,27 +133,17 @@ impl crate::client::Client {
             })
             .await;
 
-        let mut transport = self.transport.write().await;
-        let version = transport.version;
-        transport.version = get_version(Protocol::AndroidWatch);
-        let packet = transport.encode_packet(Packet {
+        Packet {
             packet_type: PacketType::Login,
             encrypt_type: EncryptType::EmptyKey,
             seq_id: seq as i32,
             body: req,
             command_name: "wtlogin.trans_emp".into(),
             ..Default::default()
-        });
-        transport.version = version;
-        return (seq, packet);
+        }
     }
 
-    pub async fn build_qrcode_login_packet(
-        &self,
-        t106: &[u8],
-        t16a: &[u8],
-        t318: &[u8],
-    ) -> (u16, Bytes) {
+    pub async fn build_qrcode_login_packet(&self, t106: &[u8], t16a: &[u8], t318: &[u8]) -> Packet {
         let seq = self.next_seq();
         let transport = self.transport.read().await;
         let req = self
@@ -263,7 +251,7 @@ impl crate::client::Client {
                 w
             })
             .await;
-        let packet = self.transport.read().await.encode_packet(Packet {
+        Packet {
             packet_type: PacketType::Login,
             encrypt_type: EncryptType::EmptyKey,
             seq_id: seq as i32,
@@ -271,11 +259,10 @@ impl crate::client::Client {
             command_name: "wtlogin.login".to_string(),
             uin: self.uin.load(Ordering::Relaxed),
             message: "".to_string(),
-        });
-        (seq, packet)
+        }
     }
 
-    pub async fn build_device_lock_login_packet(&self) -> (u16, Bytes) {
+    pub async fn build_device_lock_login_packet(&self) -> Packet {
         let seq = self.next_seq();
         let transport = self.transport.read().await;
         let req = self
@@ -294,7 +281,7 @@ impl crate::client::Client {
                 w
             })
             .await;
-        let packet = transport.encode_packet(Packet {
+        Packet {
             packet_type: PacketType::Login,
             encrypt_type: EncryptType::EmptyKey,
             seq_id: seq as i32,
@@ -302,11 +289,10 @@ impl crate::client::Client {
             command_name: "wtlogin.login".into(),
             uin: self.uin.load(Ordering::Relaxed),
             ..Default::default()
-        });
-        (seq, packet)
+        }
     }
 
-    pub async fn build_captcha_packet(&self, result: String, sign: &[u8]) -> (u16, Bytes) {
+    pub async fn build_captcha_packet(&self, result: String, sign: &[u8]) -> Packet {
         let seq = self.next_seq();
         let transport = self.transport.read().await;
         let req = self
@@ -326,7 +312,7 @@ impl crate::client::Client {
             })
             .await;
 
-        let packet = transport.encode_packet(Packet {
+        Packet {
             packet_type: PacketType::Login,
             encrypt_type: EncryptType::EmptyKey,
             seq_id: seq as i32,
@@ -334,11 +320,10 @@ impl crate::client::Client {
             command_name: "wtlogin.login".into(),
             uin: self.uin.load(Ordering::Relaxed),
             ..Default::default()
-        });
-        (seq, packet)
+        }
     }
 
-    pub async fn build_sms_request_packet(&self) -> (u16, Bytes) {
+    pub async fn build_sms_request_packet(&self) -> Packet {
         let seq = self.next_seq();
         let transport = self.transport.read().await;
         let req = self
@@ -359,7 +344,7 @@ impl crate::client::Client {
                 w
             })
             .await;
-        let packet = transport.encode_packet(Packet {
+        Packet {
             packet_type: PacketType::Login,
             encrypt_type: EncryptType::EmptyKey,
             seq_id: seq as i32,
@@ -367,11 +352,10 @@ impl crate::client::Client {
             command_name: "wtlogin.login".into(),
             uin: self.uin.load(Ordering::Relaxed),
             ..Default::default()
-        });
-        (seq, packet)
+        }
     }
 
-    pub async fn build_sms_code_submit_packet(&self, code: &str) -> (u16, Bytes) {
+    pub async fn build_sms_code_submit_packet(&self, code: &str) -> Packet {
         let seq = self.next_seq();
         let transport = self.transport.read().await;
         let req = self
@@ -393,7 +377,7 @@ impl crate::client::Client {
                 w
             })
             .await;
-        let packet = transport.encode_packet(Packet {
+        Packet {
             packet_type: PacketType::Login,
             encrypt_type: EncryptType::EmptyKey,
             seq_id: seq as i32,
@@ -401,11 +385,10 @@ impl crate::client::Client {
             command_name: "wtlogin.login".into(),
             uin: self.uin.load(Ordering::Relaxed),
             ..Default::default()
-        });
-        (seq, packet)
+        }
     }
 
-    pub async fn build_ticket_submit_packet(&self, ticket: &str) -> (u16, Bytes) {
+    pub async fn build_ticket_submit_packet(&self, ticket: &str) -> Packet {
         let seq = self.next_seq();
         let transport = self.transport.read().await;
         let req = self
@@ -424,7 +407,7 @@ impl crate::client::Client {
                 w
             })
             .await;
-        let packet = transport.encode_packet(Packet {
+        Packet {
             packet_type: PacketType::Login,
             encrypt_type: EncryptType::EmptyKey,
             seq_id: seq as i32,
@@ -432,11 +415,10 @@ impl crate::client::Client {
             command_name: "wtlogin.login".into(),
             uin: self.uin.load(Ordering::Relaxed),
             ..Default::default()
-        });
-        (seq, packet)
+        }
     }
 
-    pub async fn build_request_tgtgt_no_pic_sig_packet(&self) -> (u16, Bytes) {
+    pub async fn build_request_tgtgt_no_pic_sig_packet(&self) -> Packet {
         let seq = self.next_seq();
         let transport = self.transport.read().await;
         let codec = self.oicq_codec.read().await;
@@ -539,7 +521,7 @@ impl crate::client::Client {
             body: req,
             encryption_method: EncryptionMethod::ST,
         };
-        let packet = transport.encode_packet(Packet {
+        Packet {
             packet_type: PacketType::Simple,
             encrypt_type: EncryptType::EmptyKey,
             seq_id: seq as i32,
@@ -547,11 +529,10 @@ impl crate::client::Client {
             command_name: "wtlogin.exchange_emp".into(),
             uin: self.uin.load(Ordering::SeqCst),
             message: "".to_string(),
-        });
-        (seq, packet)
+        }
     }
 
-    pub async fn build_request_change_sig_packet(&self) -> (u16, Bytes) {
+    pub async fn build_request_change_sig_packet(&self) -> Packet {
         let seq = self.next_seq();
         let transport = self.transport.read().await;
         let req = self
@@ -626,7 +607,7 @@ impl crate::client::Client {
                 w
             })
             .await;
-        let packet = transport.encode_packet(Packet {
+        Packet {
             packet_type: PacketType::Login,
             encrypt_type: EncryptType::EmptyKey,
             seq_id: seq as i32,
@@ -634,11 +615,10 @@ impl crate::client::Client {
             command_name: "wtlogin.exchange_emp".into(),
             uin: self.uin.load(Ordering::SeqCst),
             ..Default::default()
-        });
-        (seq, packet)
+        }
     }
 
-    pub async fn build_client_register_packet(&self) -> (u16, Bytes) {
+    pub async fn build_client_register_packet(&self) -> Packet {
         let seq = self.next_seq();
         let transport = self.transport.read().await;
 
@@ -688,7 +668,7 @@ impl crate::client::Client {
             status: Default::default(),
             ..Default::default()
         };
-        let packet = transport.encode_packet(Packet {
+        Packet {
             packet_type: PacketType::Login,
             encrypt_type: EncryptType::D2Key,
             seq_id: seq as i32,
@@ -696,24 +676,20 @@ impl crate::client::Client {
             command_name: "StatSvc.register".into(),
             uin: self.uin.load(Ordering::SeqCst),
             ..Default::default()
-        });
-
-        return (seq, packet);
+        }
     }
 
     // TODO 还没测试
-    pub async fn build_heartbeat_packet(&self) -> (u16, Bytes) {
+    pub async fn build_heartbeat_packet(&self) -> Packet {
         let seq = self.next_seq();
-        let transport = self.transport.read().await;
-        let packet = transport.encode_packet(Packet {
+        Packet {
             packet_type: PacketType::Login,
             encrypt_type: EncryptType::NoEncrypt,
             seq_id: seq as i32,
             command_name: "Heartbeat.Alive".into(),
             uin: self.uin.load(Ordering::SeqCst),
             ..Default::default()
-        });
-        (seq, packet)
+        }
     }
 
     pub async fn build_friend_group_list_request_packet(
@@ -722,7 +698,7 @@ impl crate::client::Client {
         friend_list_count: i16,
         group_start_index: i16,
         group_list_count: i16,
-    ) -> (u16, Bytes) {
+    ) -> Packet {
         let mut d50 = BytesMut::new();
         prost::Message::encode(
             &pb::D50ReqBody {
@@ -776,7 +752,7 @@ impl crate::client::Client {
             .await
     }
 
-    pub async fn build_system_msg_new_group_packet(&self, suspicious: bool) -> (u16, Bytes) {
+    pub async fn build_system_msg_new_group_packet(&self, suspicious: bool) -> Packet {
         let req = pb::structmsg::ReqSystemMsgNew {
             msg_num: 100,
             version: 1000,
@@ -809,7 +785,7 @@ impl crate::client::Client {
             .await
     }
 
-    pub async fn build_login_packet(&self, allow_slider: bool) -> (u16, Bytes) {
+    pub async fn build_login_packet(&self, allow_slider: bool) -> Packet {
         let seq = self.next_seq();
         let transport = self.transport.read().await;
         let req = self
@@ -915,7 +891,7 @@ impl crate::client::Client {
                 w.freeze()
             })
             .await;
-        let packet = transport.encode_packet(Packet {
+        Packet {
             packet_type: PacketType::Login,
             encrypt_type: EncryptType::EmptyKey,
             seq_id: seq as i32,
@@ -923,11 +899,10 @@ impl crate::client::Client {
             command_name: "wtlogin.login".into(),
             uin: self.uin.load(Ordering::SeqCst),
             ..Default::default()
-        });
-        (seq, packet)
+        }
     }
 
-    pub async fn build_group_list_request_packet(&self, vec_cookie: &[u8]) -> (u16, Bytes) {
+    pub async fn build_group_list_request_packet(&self, vec_cookie: &[u8]) -> Packet {
         let req = TroopListRequest {
             uin: self.uin.load(Ordering::SeqCst),
             get_msf_msg_flag: 1,
@@ -970,7 +945,7 @@ impl crate::client::Client {
         pkg_div: i32,
         forward: bool,
         elems: Vec<pb::msg::Elem>,
-    ) -> (u16, Bytes) {
+    ) -> Packet {
         let req = pb::msg::SendMessageRequest {
             routing_head: Some(pb::msg::RoutingHead {
                 c2c: None,
@@ -1016,7 +991,7 @@ impl crate::client::Client {
         &self,
         group_code: i64,
         uin: i64,
-    ) -> (u16, Bytes) {
+    ) -> Packet {
         let payload = pb::GroupMemberReqBody {
             group_code,
             uin,
@@ -1036,7 +1011,7 @@ impl crate::client::Client {
         group_uin: i64,
         group_code: i64,
         next_uin: i64,
-    ) -> (u16, Bytes) {
+    ) -> Packet {
         let payload = TroopMemberListRequest {
             uin: self.uin.load(Ordering::SeqCst),
             group_code,
@@ -1071,7 +1046,7 @@ impl crate::client::Client {
         push_token: Bytes,
         seq: u16,
         del_msg: Vec<PushMessageInfo>,
-    ) -> (u16, Bytes) {
+    ) -> Packet {
         let mut req = SvcRespPushMsg {
             uin,
             svrip,
@@ -1107,7 +1082,7 @@ impl crate::client::Client {
         t: i32,
         pkt_seq: i64,
         jce_buf: Bytes,
-    ) -> (u16, Bytes) {
+    ) -> Packet {
         let mut req = jcers::JceMut::new();
         req.put_i32(t, 1);
         req.put_i64(pkt_seq, 2);
@@ -1129,7 +1104,7 @@ impl crate::client::Client {
             .await
     }
 
-    pub async fn build_get_offline_msg_request_packet(&self) -> (u16, Bytes) {
+    pub async fn build_get_offline_msg_request_packet(&self) -> Packet {
         let transport = self.transport.read().await;
         let reg_req = SvcReqRegisterNew {
             request_optional: 0x101C2 | 32,
@@ -1194,7 +1169,7 @@ impl crate::client::Client {
         self.uni_packet("RegPrxySvc.getOffMsg", pkt.freeze()).await
     }
 
-    pub async fn build_sync_msg_request_packet(&self) -> (u16, Bytes) {
+    pub async fn build_sync_msg_request_packet(&self) -> Packet {
         let transport = self.transport.read().await;
         let oidb_req = pb::oidb::D769RspBody {
             config_list: vec![
@@ -1295,7 +1270,7 @@ impl crate::client::Client {
         self.uni_packet("RegPrxySvc.infoSync", pkt.freeze()).await
     }
 
-    pub async fn build_group_msg_read_packet(&self, group_code: i64, msg_seq: i32) -> (u16, Bytes) {
+    pub async fn build_group_msg_read_packet(&self, group_code: i64, msg_seq: i32) -> Packet {
         let req = pb::msg::PbMsgReadedReportReq {
             grp_read_report: vec![pb::msg::PbGroupReadedReportReq {
                 group_code: Some(group_code as u64),
@@ -1307,7 +1282,7 @@ impl crate::client::Client {
             .await
     }
 
-    pub async fn build_private_msg_read_packet(&self, uin: i64, time: i64) -> (u16, Bytes) {
+    pub async fn build_private_msg_read_packet(&self, uin: i64, time: i64) -> Packet {
         let transport = self.transport.read().await;
         let req = pb::msg::PbMsgReadedReportReq {
             c2_c_read_report: Some(pb::msg::PbC2cReadedReportReq {
@@ -1325,7 +1300,7 @@ impl crate::client::Client {
             .await
     }
 
-    pub async fn build_device_list_request_packet(&self) -> (u16, Bytes) {
+    pub async fn build_device_list_request_packet(&self) -> Packet {
         let transport = self.transport.read().await;
         let req = SvcReqGetDevLoginInfo {
             guid: transport.sig.guid.to_owned(),
@@ -1352,7 +1327,7 @@ impl crate::client::Client {
             .await
     }
 
-    pub async fn build_group_info_request_packet(&self, group_code: i64) -> (u16, Bytes) {
+    pub async fn build_group_info_request_packet(&self, group_code: i64) -> Packet {
         let transport = self.transport.read().await;
         let body = pb::oidb::D88dReqBody {
             app_id: Some(transport.version.app_id),

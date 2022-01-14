@@ -27,7 +27,7 @@ impl PacketType {
     }
 }
 
-#[derive(derivative::Derivative)]
+#[derive(PartialEq, derivative::Derivative)]
 #[derivative(Default, Debug)]
 pub enum EncryptType {
     #[derivative(Default)]

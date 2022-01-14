@@ -13,27 +13,23 @@ impl super::Client {
     /// 二维码登录 - 获取二维码
     pub async fn fetch_qrcode(&self) -> Result<QRCodeState, RQError> {
         let resp = self
-            .send_and_wait(self.build_qrcode_fetch_request_packet().await.into())
+            .send_and_wait(self.build_qrcode_fetch_request_packet().await)
             .await?;
         if &resp.command_name != "wtlogin.trans_emp" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
-        decode_trans_emp_response(self, &resp.payload).await
+        decode_trans_emp_response(self, &resp.body).await
     }
 
     /// 二维码登录 - 查询二维码状态
     pub async fn query_qrcode_result(&self, sig: &[u8]) -> Result<QRCodeState, RQError> {
         let resp = self
-            .send_and_wait(
-                self.build_qrcode_result_query_request_packet(sig)
-                    .await
-                    .into(),
-            )
+            .send_and_wait(self.build_qrcode_result_query_request_packet(sig).await)
             .await?;
         if &resp.command_name != "wtlogin.trans_emp" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
-        decode_trans_emp_response(self, &resp.payload).await
+        decode_trans_emp_response(self, &resp.body).await
     }
 
     /// 二维码登录 - 登录 ( 可能还需要 device_lock_login )
@@ -53,73 +49,73 @@ impl super::Client {
         if &resp.command_name != "wtlogin.login" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
-        decode_login_response(self, &resp.payload).await
+        decode_login_response(self, &resp.body).await
     }
 
     /// 密码登录 - 提交密码
     pub async fn password_login(&self) -> Result<LoginResponse, RQError> {
         let resp = self
-            .send_and_wait(self.build_login_packet(true).await.into())
+            .send_and_wait(self.build_login_packet(true).await)
             .await?;
         if &resp.command_name != "wtlogin.login" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
-        decode_login_response(self, &resp.payload).await
+        decode_login_response(self, &resp.body).await
     }
 
     /// 密码登录 - 请求短信验证码
     pub async fn request_sms(&self) -> Result<LoginResponse, RQError> {
         let resp = self
-            .send_and_wait(self.build_sms_request_packet().await.into())
+            .send_and_wait(self.build_sms_request_packet().await)
             .await?;
         if &resp.command_name != "wtlogin.login" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
-        decode_login_response(self, &resp.payload).await
+        decode_login_response(self, &resp.body).await
     }
 
     /// 密码登录 - 提交短信验证码
     pub async fn submit_sms_code(&self, code: &str) -> Result<LoginResponse, RQError> {
         let resp = self
-            .send_and_wait(self.build_sms_code_submit_packet(code.trim()).await.into())
+            .send_and_wait(self.build_sms_code_submit_packet(code.trim()).await)
             .await?;
         if &resp.command_name != "wtlogin.login" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
-        decode_login_response(self, &resp.payload).await
+        decode_login_response(self, &resp.body).await
     }
 
     /// 密码登录 - 提交滑块ticket
     pub async fn submit_ticket(&self, ticket: &str) -> Result<LoginResponse, RQError> {
         let resp = self
-            .send_and_wait(self.build_ticket_submit_packet(ticket).await.into())
+            .send_and_wait(self.build_ticket_submit_packet(ticket).await)
             .await?;
         if &resp.command_name != "wtlogin.login" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
-        decode_login_response(self, &resp.payload).await
+        decode_login_response(self, &resp.body).await
     }
 
     /// 设备锁登录 - 二维码、密码登录都需要
     pub async fn device_lock_login(&self) -> Result<LoginResponse, RQError> {
         let resp = self
-            .send_and_wait(self.build_device_lock_login_packet().await.into())
+            .send_and_wait(self.build_device_lock_login_packet().await)
             .await?;
         if &resp.command_name != "wtlogin.login" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
-        decode_login_response(self, &resp.payload).await
+        decode_login_response(self, &resp.body).await
     }
 
     /// 注册客户端，登录后必须注册
     pub async fn register_client(&self) -> Result<SvcRespRegister, RQError> {
         let resp = self
-            .send_and_wait(self.build_client_register_packet().await.into())
+            .send_and_wait(self.build_client_register_packet().await)
             .await?;
         if &resp.command_name != "StatSvc.register" {
             return Err(RQError::CommandName(resp.command_name));
         }
-        let resp = decode_client_register_response(&resp.payload)?;
+        let resp = decode_client_register_response(&resp.body)?;
         if resp.result != "" || resp.reply_code != 0 {
             return Err(RQError::Other(resp.result + &resp.reply_code.to_string()));
         }
@@ -145,7 +141,7 @@ impl super::Client {
         if &resp.command_name != "ProfileService.Pb.ReqSystemMsgNew.Group" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
-        decode_system_msg_group_packet(&resp.payload)
+        decode_system_msg_group_packet(&resp.body)
     }
 
     /// 获取好友列表
@@ -172,7 +168,7 @@ impl super::Client {
         if &resp.command_name != "friendlist.getFriendGroupList" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
-        decode_friend_group_list_response(&resp.payload)
+        decode_friend_group_list_response(&resp.body)
     }
 
     /// 获取群列表
@@ -188,7 +184,7 @@ impl super::Client {
         if &resp.command_name != "friendlist.GetTroopListReqV2" {
             return Err(RQError::CommandName(resp.command_name));
         }
-        decode_group_list_response(&resp.payload)
+        decode_group_list_response(&resp.body)
     }
 
     /// 发送群消息 TODO 切片, At预处理Display
@@ -198,12 +194,10 @@ impl super::Client {
         message_chain: Vec<MsgElem>,
     ) -> Result<(), RQError> {
         let elems = crate::client::msg::into_elems(message_chain);
-        let (_, packet) = self
+        let packet = self
             .build_group_sending_packet(group_code, 383, 1, 0, 0, false, elems)
             .await;
-        self.out_pkt_sender
-            .send(packet)
-            .map_err(|_| RQError::Other("out_pkt_sender err".into()))?; //todo
+        self.send(packet).await?;
         Ok(())
     }
 
@@ -223,7 +217,7 @@ impl super::Client {
         if &resp.command_name != "group_member_card.get_group_member_card_info" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
-        decode_group_member_info_response(&resp.payload)
+        decode_group_member_info_response(&resp.body)
     }
 
     /// 通过群号获取群
@@ -333,7 +327,7 @@ impl super::Client {
         if resp.command_name != "friendlist.GetTroopMemberListReq" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
-        decode_group_member_list_response(&resp.payload)
+        decode_group_member_list_response(&resp.body)
     }
 
     /// 获取群成员列表
@@ -366,7 +360,7 @@ impl super::Client {
     /// 刷新客户端状态
     pub async fn refresh_status(&self) -> Result<(), RQError> {
         let resp = self
-            .send_and_wait(self.build_get_offline_msg_request_packet().await.into())
+            .send_and_wait(self.build_get_offline_msg_request_packet().await)
             .await?;
         if resp.command_name != "RegPrxySvc.getOffMsg" {
             return Err(RQError::CommandName(resp.command_name).into());
@@ -396,7 +390,7 @@ impl super::Client {
     /// 标记私聊消息已读 TODO 待测试
     pub async fn mark_private_message_readed(&self, uin: i64, time: i64) -> Result<(), RQError> {
         let resp = self
-            .send_and_wait(self.build_private_msg_read_packet(uin, time).await.into())
+            .send_and_wait(self.build_private_msg_read_packet(uin, time).await)
             .await?;
         println!("{}", resp.command_name); // todo
         Ok(())
@@ -405,11 +399,11 @@ impl super::Client {
     /// 获取通过安全验证的设备
     pub async fn get_allowed_clients(&self) -> Result<Vec<SvcDevLoginInfo>, RQError> {
         let resp = self
-            .send_and_wait(self.build_device_list_request_packet().await.into())
+            .send_and_wait(self.build_device_list_request_packet().await)
             .await?;
         if resp.command_name != "StatSvc.GetDevLoginInfo" {
             return Err(RQError::CommandName(resp.command_name).into());
         }
-        decode_dev_list_response(&resp.payload)
+        decode_dev_list_response(&resp.body)
     }
 }

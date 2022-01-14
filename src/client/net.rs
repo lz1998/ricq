@@ -1,12 +1,16 @@
-use super::Client;
-use bytes::Bytes;
 use std::future::Future;
 use std::net::SocketAddr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+
+use bytes::Bytes;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::sync::{mpsc, RwLock};
+
+use crate::client::protocol::packet::EncryptType;
+
+use super::Client;
 
 pub type OutPktSender = mpsc::UnboundedSender<Bytes>;
 pub type OutPktReceiver = mpsc::UnboundedReceiver<Bytes>;
@@ -59,7 +63,17 @@ impl ClientNet {
                 let mut data = vec![0; len as usize - 4];
                 read_half.read_exact(&mut data).await.unwrap();
                 let mut data = Bytes::from(data);
-                let pkt = cli.parse_incoming_packet(&mut data).await.unwrap();
+
+                let pkt = {
+                    let transport = cli.transport.read().await;
+                    let mut pkt = transport.decode_packet(&mut data).unwrap();
+                    if pkt.encrypt_type == EncryptType::EmptyKey {
+                        // decrypt with ecdh
+                        let codec = cli.oicq_codec.read().await;
+                        pkt.body = codec.decode(pkt.body).unwrap().body;
+                    }
+                    pkt
+                };
                 cli.process_income_packet(pkt).await;
             }
         });

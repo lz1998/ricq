@@ -8,12 +8,13 @@ use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
 
-use crate::client::income::IncomePacket;
-use crate::client::outcome::OutcomePacket;
-use crate::client::protocol::device::Device;
-use crate::client::protocol::oicq;
-use crate::client::protocol::transport::Transport;
-use crate::client::protocol::version::{get_version, Protocol};
+use crate::client::protocol::{
+    device::Device,
+    oicq,
+    packet::Packet,
+    transport::Transport,
+    version::{get_version, Protocol},
+};
 use crate::client::Password;
 use crate::error::RQError;
 
@@ -97,21 +98,25 @@ impl super::Client {
         self.highway_apply_up_seq.fetch_add(2, Ordering::Relaxed)
     }
 
-    pub async fn send(&self, pkt: OutcomePacket) -> Result<(), RQError> {
+    pub async fn send(&self, pkt: Packet) -> Result<(), RQError> {
         self.out_pkt_sender
-            .send(pkt.bytes)
+            .send(self.transport.read().await.encode_packet(pkt))
             .map_err(|_| RQError::Other("failed to send out_pkt".into()))
     }
 
-    pub async fn send_and_wait(&self, pkt: OutcomePacket) -> Result<IncomePacket, RQError> {
+    pub async fn send_and_wait(&self, pkt: Packet) -> Result<Packet, RQError> {
+        let seq = pkt.seq_id;
         let (sender, receiver) = oneshot::channel();
         {
             let mut packet_promises = self.packet_promises.write().await;
-            packet_promises.insert(pkt.seq, sender);
+            packet_promises.insert(seq, sender);
         }
-        if let Err(_) = self.out_pkt_sender.send(pkt.bytes) {
+        if let Err(_) = self
+            .out_pkt_sender
+            .send(self.transport.read().await.encode_packet(pkt))
+        {
             let mut packet_promises = self.packet_promises.write().await;
-            packet_promises.remove(&pkt.seq);
+            packet_promises.remove(&seq);
             return Err(RQError::Network.into());
         }
         let output = if let Ok(Ok(p)) =
@@ -123,7 +128,7 @@ impl super::Client {
         };
         {
             let mut packet_promises = self.packet_promises.write().await;
-            packet_promises.remove(&pkt.seq);
+            packet_promises.remove(&seq);
         }
         output
     }

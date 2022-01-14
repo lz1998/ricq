@@ -6,9 +6,7 @@ use bytes::Bytes;
 use tokio::sync::oneshot;
 use tokio::sync::RwLock;
 
-use crate::client::income::IncomePacket;
-use crate::client::protocol::oicq;
-use crate::client::protocol::transport::Transport;
+use crate::client::protocol::{oicq, packet::Packet, transport::Transport};
 use crate::client::structs::{FriendInfo, GroupInfo, LoginSigInfo};
 use crate::jce::FileStoragePushFSSvcList;
 
@@ -43,7 +41,7 @@ pub struct Client {
     pub(crate) net: net::ClientNet,
 
     pub out_pkt_sender: net::OutPktSender,
-    pub packet_promises: RwLock<HashMap<u16, oneshot::Sender<IncomePacket>>>,
+    pub packet_promises: RwLock<HashMap<i32, oneshot::Sender<Packet>>>,
     //随机16位
     pub random_key: Bytes,
     pub out_going_packet_session_id: RwLock<Bytes>,
