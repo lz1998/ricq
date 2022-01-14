@@ -10,8 +10,8 @@ pub enum RQError {
     #[error("failed to decode, {0}")]
     Decode(String),
 
-    #[error("command_name is error, {0}")]
-    CommandName(String),
+    #[error("command_name mismatch, expected {0} get {1}")]
+    CommandNameMismatch(String, String),
 
     #[error("timeout error")]
     Timeout,

@@ -106,7 +106,11 @@ impl super::Client {
             .map_err(|_| RQError::Other("failed to send out_pkt".into()))
     }
 
-    pub async fn send_and_wait(&self, pkt: OutcomePacket) -> Result<IncomePacket, RQError> {
+    pub async fn send_and_wait(
+        &self,
+        pkt: OutcomePacket,
+        expected_command_name: &str,
+    ) -> Result<IncomePacket, RQError> {
         let (sender, receiver) = oneshot::channel();
         {
             let mut packet_promises = self.packet_promises.write().await;
@@ -117,21 +121,16 @@ impl super::Client {
             packet_promises.remove(&pkt.seq);
             return Err(RQError::Network.into());
         }
-        let output = if let Ok(Ok(p)) =
-            tokio::time::timeout(std::time::Duration::from_secs(15), receiver).await
-        {
-            Ok(p)
-        } else {
-            Err(RQError::Timeout)
-        };
-        {
-            let mut packet_promises = self.packet_promises.write().await;
-            packet_promises.remove(&pkt.seq);
+        match tokio::time::timeout(std::time::Duration::from_secs(15), receiver).await {
+            Ok(p) => p.unwrap().check_command_name(expected_command_name),
+            Err(_) => {
+                self.packet_promises.write().await.remove(&pkt.seq);
+                Err(RQError::Timeout)
+            }
         }
-        output
     }
 
-    pub async fn wait_packet(&self, pkt_name: &'static str, delay: u64) -> RQResult<IncomePacket> {
+    pub async fn wait_packet(&self, pkt_name: &str, delay: u64) -> RQResult<IncomePacket> {
         let (tx, rx) = oneshot::channel();
         {
             self.packet_waiters
@@ -141,7 +140,10 @@ impl super::Client {
         }
         match tokio::time::timeout(std::time::Duration::from_secs(delay), rx).await {
             Ok(i) => Ok(i.unwrap()),
-            Err(_) => Err(RQError::Timeout),
+            Err(_) => {
+                self.packet_waiters.write().await.remove(pkt_name);
+                Err(RQError::Timeout)
+            }
         }
     }
 
@@ -151,7 +153,10 @@ impl super::Client {
         while self.online.load(Ordering::SeqCst) {
             sleep(Duration::from_secs(30)).await;
             match self
-                .send_and_wait(self.build_heartbeat_packet().await.into())
+                .send_and_wait(
+                    self.build_heartbeat_packet().await.into(),
+                    "Heartbeat.Alive",
+                )
                 .await
             {
                 Err(_) => {

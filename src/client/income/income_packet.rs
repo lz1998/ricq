@@ -5,7 +5,7 @@ use flate2::read::ZlibDecoder;
 
 use crate::binary::BinaryReader;
 use crate::crypto::qqtea_decrypt;
-use crate::RQError;
+use crate::{RQError, RQResult};
 
 #[derive(Default, Debug)]
 pub struct IncomePacket {
@@ -52,6 +52,17 @@ impl IncomePacket {
         }
         return Err(RQError::Other("unknown encrypt type".into()));
         //return error
+    }
+
+    pub(crate) fn check_command_name(self, command_name: &str) -> RQResult<Self> {
+        if !(&self.command_name == command_name) {
+            Err(RQError::CommandNameMismatch(
+                command_name.to_owned(),
+                self.command_name.clone(),
+            ))
+        } else {
+            Ok(self)
+        }
     }
 }
 
