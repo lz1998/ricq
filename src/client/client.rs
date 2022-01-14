@@ -1,13 +1,14 @@
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, AtomicU16, Ordering};
 use std::sync::Arc;
 
-use bytes::Bytes;
+use bytes::{Buf, BufMut, Bytes, BytesMut};
 use rand::Rng;
 use tokio::sync::oneshot;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
 
+use crate::binary::{BinaryReader, BinaryWriter};
 use crate::client::income::IncomePacket;
 use crate::client::outcome::OutcomePacket;
 use crate::client::protocol::device::Device;
@@ -16,6 +17,7 @@ use crate::client::protocol::transport::Transport;
 use crate::client::protocol::version::{get_version, Protocol};
 use crate::client::Password;
 use crate::error::RQError;
+use crate::RQResult;
 
 use super::net;
 use super::Client;
@@ -45,8 +47,9 @@ impl super::Client {
             net: net::ClientNet::new(out_pkt_receiver),
             out_pkt_sender,
             random_key: Bytes::from(rand::thread_rng().gen::<[u8; 16]>().to_vec()),
-            out_going_packet_session_id: RwLock::new(Bytes::from_static(&[0x02, 0xb0, 0x5b, 0x8b])),
+            // out_going_packet_session_id: RwLock::new(Bytes::from_static(&[0x02, 0xb0, 0x5b, 0x8b])),
             packet_promises: Default::default(),
+            packet_waiters: Default::default(),
             oicq_codec: RwLock::new(oicq::Codec::default()),
             account_info: Default::default(),
             address: Default::default(),
@@ -128,6 +131,20 @@ impl super::Client {
         output
     }
 
+    pub async fn wait_packet(&self, pkt_name: &'static str, delay: u64) -> RQResult<IncomePacket> {
+        let (tx, rx) = oneshot::channel();
+        {
+            self.packet_waiters
+                .write()
+                .await
+                .insert(pkt_name.to_owned(), tx);
+        }
+        match tokio::time::timeout(std::time::Duration::from_secs(delay), rx).await {
+            Ok(i) => Ok(i.unwrap()),
+            Err(_) => Err(RQError::Timeout),
+        }
+    }
+
     pub async fn do_heartbeat(&self) {
         self.heartbeat_enabled.store(true, Ordering::SeqCst);
         let mut times = 0;
@@ -152,5 +169,35 @@ impl super::Client {
             }
         }
         self.heartbeat_enabled.store(false, Ordering::SeqCst);
+    }
+
+    pub async fn gen_token(&self) -> Bytes {
+        let mut token = BytesMut::with_capacity(1024); //todo
+        let sig = &self.transport.read().await.sig;
+        token.put_i64(self.uin.load(Ordering::SeqCst));
+        token.write_bytes_short(&sig.d2);
+        token.write_bytes_short(&sig.d2key);
+        token.write_bytes_short(&sig.tgt);
+        token.write_bytes_short(&sig.srm_token);
+        token.write_bytes_short(&sig.t133);
+        token.write_bytes_short(&sig.encrypted_a1);
+        token.write_bytes_short(&self.oicq_codec.read().await.wt_session_ticket_key);
+        token.write_bytes_short(&sig.out_packet_session_id);
+        token.write_bytes_short(&sig.tgtgt_key);
+        token.freeze()
+    }
+
+    pub async fn load_token(&self, token: &mut impl Buf) {
+        let sig = &mut self.transport.write().await.sig;
+        self.uin.store(token.get_i64(), Ordering::SeqCst);
+        sig.d2 = token.read_bytes_short();
+        sig.d2key = token.read_bytes_short();
+        sig.tgt = token.read_bytes_short();
+        sig.srm_token = token.read_bytes_short();
+        sig.t133 = token.read_bytes_short();
+        sig.encrypted_a1 = token.read_bytes_short();
+        self.oicq_codec.write().await.wt_session_ticket_key = token.read_bytes_short();
+        sig.out_packet_session_id = token.read_bytes_short();
+        sig.tgtgt_key = token.read_bytes_short();
     }
 }

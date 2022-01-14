@@ -17,6 +17,11 @@ impl super::Client {
             return;
         }
 
+        if let Some(tx) = self.packet_waiters.write().await.remove(&pkt.command_name) {
+            tx.send(pkt).unwrap();
+            return;
+        }
+
         tokio::spawn(async move {
             match pkt.command_name.as_ref() {
                 "OnlinePush.PbPushGroupMsg" => {

@@ -42,11 +42,12 @@ pub struct Client {
     pub online: AtomicBool,
     pub(crate) net: net::ClientNet,
 
-    pub out_pkt_sender: net::OutPktSender,
-    pub packet_promises: RwLock<HashMap<u16, oneshot::Sender<IncomePacket>>>,
+    out_pkt_sender: net::OutPktSender,
+    packet_promises: RwLock<HashMap<u16, oneshot::Sender<IncomePacket>>>,
+    packet_waiters: RwLock<HashMap<String, oneshot::Sender<IncomePacket>>>,
     //随机16位
-    pub random_key: Bytes,
-    pub out_going_packet_session_id: RwLock<Bytes>,
+    random_key: Bytes,
+    // out_going_packet_session_id: RwLock<Bytes>,
 
     // account info
     pub account_info: RwLock<AccountInfo>,

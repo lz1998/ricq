@@ -38,4 +38,7 @@ pub enum RQError {
     SessionExpired,
     #[error("session expired, {0}")]
     UnsuccessfulRetCode(i32),
+
+    #[error("Token login failed")]
+    TokenLoginFailed,
 }

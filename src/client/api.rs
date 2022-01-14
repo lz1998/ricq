@@ -3,7 +3,8 @@ use crate::client::income::decoder::{friendlist::*, profile_service::*, stat_svc
 use crate::client::msg::MsgElem;
 use crate::client::structs::{GroupInfo, GroupMemberInfo};
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
-use crate::RQError;
+use crate::{RQError, RQResult};
+use bytes::Buf;
 use bytes::Bytes;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -109,6 +110,22 @@ impl super::Client {
             return Err(RQError::CommandName(resp.command_name).into());
         }
         decode_login_response(self, &resp.payload).await
+    }
+
+    /// token 登录
+    pub async fn token_login(&self, token: &mut impl Buf) -> RQResult<()> {
+        self.load_token(token).await;
+        self.send_and_wait(self.build_request_change_sig_packet().await.into())
+            .await?;
+        let r = tokio::join! {
+            self.wait_packet("StatSvc.ReqMSFOffline", 1),
+            self.wait_packet("MessageSvc.PushForceOffline", 1)
+        };
+        if let (Err(RQError::Timeout), Err(RQError::Timeout)) = r {
+            Ok(())
+        } else {
+            Err(RQError::TokenLoginFailed)
+        }
     }
 
     /// 注册客户端，登录后必须注册
