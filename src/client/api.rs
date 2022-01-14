@@ -44,8 +44,7 @@ impl super::Client {
         let resp = self
             .send_and_wait(
                 self.build_qrcode_login_packet(tmp_pwd, tmp_no_pic_sig, tgt_qr)
-                    .await
-                    .into(),
+                    .await,
                 "wtlogin.login",
             )
             .await?;
@@ -102,7 +101,7 @@ impl super::Client {
     pub async fn token_login(&self, mut token: impl Buf) -> RQResult<()> {
         self.load_token(&mut token).await;
         self.send_and_wait(
-            self.build_request_change_sig_packet().await.into(),
+            self.build_request_change_sig_packet().await,
             "wtlogin.exchange_emp",
         )
         .await?;
@@ -143,9 +142,7 @@ impl super::Client {
     ) -> Result<GroupSystemMessages, RQError> {
         let resp = self
             .send_and_wait(
-                self.build_system_msg_new_group_packet(suspicious)
-                    .await
-                    .into(),
+                self.build_system_msg_new_group_packet(suspicious).await,
                 "ProfileService.Pb.ReqSystemMsgNew.Group",
             )
             .await?;
