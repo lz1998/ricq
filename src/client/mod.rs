@@ -7,7 +7,7 @@ use tokio::sync::oneshot;
 use tokio::sync::RwLock;
 
 use crate::client::protocol::{oicq, packet::Packet, transport::Transport};
-use crate::client::structs::{FriendInfo, GroupInfo, LoginSigInfo};
+use crate::client::structs::{FriendInfo, GroupInfo};
 use crate::jce::FileStoragePushFSSvcList;
 
 pub mod api;
@@ -78,33 +78,6 @@ impl Password {
     pub fn from_str(s: &str) -> Self {
         Self::String(s.to_owned())
     }
-}
-
-#[derive(Default, Debug)]
-pub struct CacheInfo {
-    // tlv cache
-    pub t104: Bytes,
-    pub t174: Bytes,
-    pub g: Bytes,
-    pub t402: Bytes,
-    pub t150: Bytes,
-    pub t149: Bytes,
-    pub t528: Bytes,
-    pub t530: Bytes,
-    pub rand_seed: Bytes,
-    pub rollback_sig: Bytes,
-
-    // sync info
-    pub sync_cookie: Bytes,
-    pub pub_account_cookie: Bytes,
-    pub msg_ctrl_buf: Bytes,
-    pub ksid: Bytes,
-
-    // session info
-    pub sig_info: LoginSigInfo,
-    pub dpwd: Bytes,
-    pub time_diff: i64,
-    pub pwd_flag: bool,
 }
 
 #[derive(Default, Debug)]
