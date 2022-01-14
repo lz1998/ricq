@@ -785,7 +785,7 @@ impl crate::client::Client {
             .await
     }
 
-    pub async fn build_login_packet(&self, allow_slider: bool) -> Packet {
+    pub async fn build_login_packet(&self, password_md5: &[u8], allow_slider: bool) -> Packet {
         let seq = self.next_seq();
         let transport = self.transport.read().await;
         let req = self
@@ -805,7 +805,7 @@ impl crate::client::Client {
                     0,
                     transport.version.app_id,
                     transport.version.sso_version,
-                    &self.password_md5,
+                    password_md5,
                     true,
                     &transport.sig.guid,
                     &transport.sig.tgtgt_key,

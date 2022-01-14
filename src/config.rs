@@ -1,37 +1,31 @@
 use std::fmt::Debug;
 
-use serde::{Deserialize, Serialize};
+use crate::client::protocol::{
+    device::Device,
+    version::Version,
+    version::{get_version, Protocol},
+};
 
-use crate::client::protocol::device::Device;
-
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Debug)]
 pub struct Config {
-    pub uin: i64,
-    pub password: String,
-    pub allow_slice: bool,
-    #[serde(skip)]
     pub device: Device,
+    pub version: &'static Version,
 }
 
 impl Default for Config {
     fn default() -> Self {
-        Config {
-            uin: 0,
-            password: "".to_string(),
-            allow_slice: false,
+        Self {
             device: Device::random(),
+            version: get_version(Protocol::IPad),
         }
     }
 }
 
 impl Config {
-    pub fn load_device_info(&mut self, device: Device) {
-        self.device = device;
-    }
-
-    pub fn new_with_device_info(device_info: Device) -> Self {
+    pub fn new(device: Device, version: &'static Version) -> Self {
         let mut config = Self::default();
-        config.load_device_info(device_info);
+        config.device = device;
+        config.version = version;
         config
     }
 }

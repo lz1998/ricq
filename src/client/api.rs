@@ -51,12 +51,25 @@ impl super::Client {
         decode_login_response(self, &resp.body).await
     }
 
-    /// 密码登录 - 提交密码
-    pub async fn password_login(&self) -> Result<LoginResponse, RQError> {
+    /// 密码登录 - 提交密码md5
+    pub async fn password_md5_login(
+        &self,
+        uin: i64,
+        password_md5: &[u8],
+    ) -> Result<LoginResponse, RQError> {
+        self.uin.store(uin, Ordering::Relaxed);
         let resp = self
-            .send_and_wait(self.build_login_packet(true).await, "wtlogin.login")
+            .send_and_wait(
+                self.build_login_packet(password_md5, true).await,
+                "wtlogin.login",
+            )
             .await?;
         decode_login_response(self, &resp.body).await
+    }
+
+    pub async fn password_login(&self, uin: i64, password: &str) -> Result<LoginResponse, RQError> {
+        self.password_md5_login(uin, &md5::compute(password).to_vec())
+            .await
     }
 
     /// 密码登录 - 请求短信验证码

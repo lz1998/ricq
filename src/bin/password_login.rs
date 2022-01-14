@@ -1,12 +1,15 @@
+use std::path::Path;
+use std::sync::Arc;
+
 use anyhow::Result;
 use futures::StreamExt;
+use tokio_util::codec::{FramedRead, LinesCodec};
+
 use rs_qq::client::handler::DefaultHandler;
 use rs_qq::client::income::decoder::wtlogin::LoginResponse;
 use rs_qq::client::protocol::device::Device;
+use rs_qq::client::protocol::version::{get_version, Protocol};
 use rs_qq::client::Client;
-use std::path::Path;
-use std::sync::Arc;
-use tokio_util::codec::{FramedRead, LinesCodec};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -30,15 +33,13 @@ async fn main() -> Result<()> {
         .await
         .expect("failed to write device info to file");
 
-    let mut config = rs_qq::Config::new_with_device_info(device);
-    config.uin = uin;
-    config.password = password;
+    let config = rs_qq::Config::new(device, get_version(Protocol::IPad));
     let cli = Client::new_with_config(config, DefaultHandler).await;
     let client = Arc::new(cli);
     let net = client.run().await;
     tokio::spawn(async move {
         let mut resp = client
-            .password_login()
+            .password_login(uin, &password)
             .await
             .expect("failed to login with password");
         loop {

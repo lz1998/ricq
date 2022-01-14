@@ -16,7 +16,6 @@ use crate::client::protocol::{
     transport::Transport,
     version::{get_version, Protocol},
 };
-use crate::client::Password;
 use crate::error::RQError;
 use crate::RQResult;
 
@@ -24,7 +23,7 @@ use super::net;
 use super::Client;
 
 impl super::Client {
-    pub async fn new<H>(uin: i64, password: Password, device: Device, handler: H) -> Client
+    pub async fn new<H>(device: Device, handler: H) -> Client
     where
         H: crate::client::handler::Handler + 'static + Sync + Send,
     {
@@ -39,8 +38,7 @@ impl super::Client {
             friend_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),
             group_data_trans_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),
             highway_apply_up_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),
-            uin: AtomicI64::new(uin),
-            password_md5: password.md5(),
+            uin: AtomicI64::new(0),
             connected: AtomicBool::new(false),
             shutting_down: AtomicBool::new(false),
             heartbeat_enabled: AtomicBool::new(false),
@@ -66,8 +64,7 @@ impl super::Client {
     where
         H: crate::client::handler::Handler + 'static + Sync + Send,
     {
-        let password = super::Password::from_str(&config.password);
-        Self::new(config.uin, password, config.device, handler).await
+        Self::new(config.device, handler).await
     }
 
     pub async fn run(self: &Arc<Self>) -> JoinHandle<()> {

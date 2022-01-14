@@ -32,7 +32,6 @@ pub struct Client {
 
     pub transport: RwLock<Transport>,
     pub uin: AtomicI64,
-    pub password_md5: Bytes,
     pub oicq_codec: RwLock<oicq::Codec>,
     pub connected: AtomicBool,
     pub shutting_down: AtomicBool,

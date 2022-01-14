@@ -1,11 +1,14 @@
+use std::path::Path;
+use std::sync::Arc;
+
 use anyhow::Result;
+use tokio::time::{sleep, Duration};
+
 use rs_qq::client::handler::DefaultHandler;
 use rs_qq::client::income::decoder::wtlogin::{LoginResponse, QRCodeState};
 use rs_qq::client::protocol::device::Device;
+use rs_qq::client::protocol::version::{get_version, Protocol};
 use rs_qq::client::Client;
-use std::path::Path;
-use std::sync::Arc;
-use tokio::time::{sleep, Duration};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -22,7 +25,7 @@ async fn main() -> Result<()> {
         .await
         .expect("failed to write device.json"); //todo
 
-    let config = rs_qq::Config::new_with_device_info(device);
+    let config = rs_qq::Config::new(device, get_version(Protocol::IPad));
     let cli = Client::new_with_config(config, DefaultHandler).await;
     let client = Arc::new(cli);
     let net = client.run().await;
