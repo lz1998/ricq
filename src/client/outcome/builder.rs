@@ -501,7 +501,7 @@ impl crate::client::Client {
                 &transport.sig.dpwd,
                 1,
                 16,
-                &self.random_key,
+                &transport.sig.rand_seed,
             ));
             w.put_slice(&t187(&transport.device.mac_address));
             w.put_slice(&t188(&transport.device.android_id));

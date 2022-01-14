@@ -64,3 +64,16 @@ pub struct Packet {
     pub uin: i64,
     pub message: String,
 }
+
+impl Packet {
+    pub(crate) fn check_command_name(self, command_name: &str) -> RQResult<Self> {
+        if !(&self.command_name == command_name) {
+            Err(RQError::CommandNameMismatch(
+                command_name.to_owned(),
+                self.command_name.clone(),
+            ))
+        } else {
+            Ok(self)
+        }
+    }
+}

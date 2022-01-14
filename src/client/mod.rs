@@ -42,9 +42,7 @@ pub struct Client {
 
     pub out_pkt_sender: net::OutPktSender,
     pub packet_promises: RwLock<HashMap<i32, oneshot::Sender<Packet>>>,
-    //随机16位
-    pub random_key: Bytes,
-    pub out_going_packet_session_id: RwLock<Bytes>,
+    packet_waiters: RwLock<HashMap<String, oneshot::Sender<Packet>>>,
 
     // account info
     pub account_info: RwLock<AccountInfo>,

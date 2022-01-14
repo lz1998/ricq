@@ -42,3 +42,37 @@ impl Handler for DefaultHandler {
         println!("{:?}", msgs);
     }
 }
+
+use tokio::sync::{
+    broadcast::Sender as BroadcastSender,
+    mpsc::{Sender as MpscSender, UnboundedSender},
+    watch::Sender as WatchSender,
+};
+
+#[async_trait]
+impl Handler for BroadcastSender<Msg> {
+    async fn handle(&self, msg: Msg) {
+        self.send(msg).unwrap();
+    }
+}
+
+#[async_trait]
+impl Handler for MpscSender<Msg> {
+    async fn handle(&self, msg: Msg) {
+        self.send(msg).await.unwrap();
+    }
+}
+
+#[async_trait]
+impl Handler for UnboundedSender<Msg> {
+    async fn handle(&self, msg: Msg) {
+        self.send(msg).unwrap();
+    }
+}
+
+#[async_trait]
+impl Handler for WatchSender<Msg> {
+    async fn handle(&self, msg: Msg) {
+        self.send(msg).unwrap();
+    }
+}
