@@ -68,3 +68,10 @@ pub struct FriendInfo {
     pub remark: String,
     pub face_id: i16,
 }
+
+impl GroupInfo {
+    pub async fn find_member(&self, uin: i64) -> Option<GroupMemberInfo> {
+        let members = self.members.read().await;
+        members.iter().find(|m| m.uin == uin).cloned()
+    }
+}

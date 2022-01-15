@@ -1,8 +1,8 @@
-use crate::client::handler::Msg;
+use crate::client::handler::QEvent;
 use crate::client::income::{builder::GroupMessageBuilder, decoder::online_push::GroupMessagePart};
-use crate::client::msg::GroupMessage;
+use crate::client::msg::*;
 use crate::client::Client;
-use crate::RQError;
+use crate::{RQError, RQResult};
 use std::sync::atomic::Ordering;
 
 impl Client {
@@ -14,8 +14,14 @@ impl Client {
 
         // receipt message
         if group_message_part.from_uin == self.uin.load(Ordering::SeqCst) {
-            //todo
-            todo!();
+            self.handler
+                .handle(QEvent::GroupMessageReceipt(GroupMessageReceiptEvent {
+                    rand: group_message_part.rand,
+                    seq: group_message_part.seq,
+                    msg_event: self.parse_group_message(group_message_part).await?,
+                }))
+                .await;
+            return Ok(());
         }
 
         // merge parts
@@ -44,24 +50,68 @@ impl Client {
         if let Some(group_msg) = group_msg {
             // message is finish
             self.handler
-                .handle(Msg::GroupMessage(self.parse_group_message(group_msg).await))
+                .handle(QEvent::GroupMessage(
+                    self.parse_group_message(group_msg).await?,
+                ))
                 .await; //todo
         }
         Ok(())
     }
 
-    pub(crate) async fn parse_group_message(&self, part: GroupMessagePart) -> GroupMessage {
+    pub(crate) async fn parse_group_message(
+        &self,
+        part: GroupMessagePart,
+    ) -> RQResult<GroupMessageEvent> {
         let group = match self.find_group(part.group_code).await {
             Some(group) => group,
-            None => {
-                // self.get_group_info(part.group_code).await;
-                todo!();
-            }
+            None => self.get_group(part.group_code).await.unwrap(),
         };
         if group.member_count == 0 {
-            todo!();
+            group
+                .members
+                .write()
+                .await
+                .append(&mut self.get_group_member_list(group.code, group.uin).await?)
         }
 
-        todo!()
+        let anon_info = part
+            .elems
+            .iter()
+            .find(|elem| elem.anon_group_msg.is_some())
+            .map(|e| e.anon_group_msg.as_ref().unwrap());
+        let sender = if let Some(anon_info) = anon_info {
+            let anonymous_info: AnonymousInfo = anon_info.clone().into();
+            Sender {
+                uin: 80000000,
+                nickname: anonymous_info.anonymous_nick.clone(),
+                anonymous_info,
+                is_friend: false,
+                card_name: "".to_string(),
+            }
+        } else {
+            let member = group.find_member(part.from_uin).await.unwrap(); //todo
+            Sender {
+                uin: member.uin,
+                nickname: member.nickname.clone(),
+                card_name: member.card_name.clone(),
+                is_friend: self.find_friend(member.uin).await.is_some(),
+                anonymous_info: AnonymousInfo::default(),
+            }
+        };
+
+        let group_message = GroupMessageEvent {
+            id: part.seq,
+            group_code: group.code,
+            group_name: group.name.clone(),
+            sender,
+            time: part.time,
+            original_obj: part.clone(),
+            elements: parse_elems(part.elems),
+            internal_id: part.rand,
+        };
+        //todo extInfo
+        //todo group_card_update
+        //todo ptt
+        return Ok(group_message);
     }
 }

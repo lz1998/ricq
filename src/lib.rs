@@ -1,4 +1,4 @@
-pub use client::handler::{Handler, Msg};
+pub use client::handler::{Handler, QEvent};
 pub use client::msg::*;
 pub use client::Client;
 pub use config::Config;

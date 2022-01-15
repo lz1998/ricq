@@ -6,7 +6,7 @@ use bytes::{Buf, Bytes};
 use crate::client::income::decoder::group_member_card::decode_group_member_info_response;
 use crate::client::income::decoder::{friendlist::*, profile_service::*, stat_svc::*, wtlogin::*};
 use crate::client::msg::MsgElem;
-use crate::client::structs::{GroupInfo, GroupMemberInfo};
+use crate::client::structs::{FriendInfo, GroupInfo, GroupMemberInfo};
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
 use crate::{RQError, RQResult};
 
@@ -208,6 +208,19 @@ impl super::Client {
         None
     }
 
+    /// 通过群号从服务器获取群，请先尝试 find_group
+    pub async fn get_group(&self, code: i64) -> Option<Arc<GroupInfo>> {
+        if let Ok(_resp) = self
+            .send_and_wait(self.build_group_info_request_packet(code).await)
+            .await
+        {
+            // decode_group_info_response(&resp.body)
+            todo!()
+        } else {
+            None
+        }
+    }
+
     /// 通过uin获取群
     pub async fn find_group_by_uin(&self, uin: i64) -> Option<Arc<GroupInfo>> {
         for g in self.group_list.read().await.iter() {
@@ -288,6 +301,16 @@ impl super::Client {
         Ok(())
     }
 
+    /// 根据 uin 获取好友
+    pub async fn find_friend(&self, uin: i64) -> Option<Arc<FriendInfo>> {
+        self.friend_list
+            .read()
+            .await
+            .iter()
+            .find(|f| f.uin == uin)
+            .cloned()
+    }
+
     /// 获取群成员列表 (low level api)
     async fn _get_group_member_list(
         &self,
@@ -346,7 +369,7 @@ impl super::Client {
         seq: i32,
     ) -> Result<(), RQError> {
         let _resp = self
-            .send_and_wait(self.build_group_msg_read_packet(group_code, seq).await)
+            .send_and_wait(self.build_group_msg_readed_packet(group_code, seq).await)
             .await?;
         Ok(())
     }

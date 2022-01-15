@@ -1270,7 +1270,7 @@ impl crate::client::Client {
         self.uni_packet("RegPrxySvc.infoSync", pkt.freeze()).await
     }
 
-    pub async fn build_group_msg_read_packet(&self, group_code: i64, msg_seq: i32) -> Packet {
+    pub async fn build_group_msg_readed_packet(&self, group_code: i64, msg_seq: i32) -> Packet {
         let req = pb::msg::PbMsgReadedReportReq {
             grp_read_report: vec![pb::msg::PbGroupReadedReportReq {
                 group_code: Some(group_code as u64),
@@ -1282,7 +1282,7 @@ impl crate::client::Client {
             .await
     }
 
-    pub async fn build_private_msg_read_packet(&self, uin: i64, time: i64) -> Packet {
+    pub async fn build_private_msg_readed_packet(&self, uin: i64, time: i64) -> Packet {
         let transport = self.transport.read().await;
         let req = pb::msg::PbMsgReadedReportReq {
             c2_c_read_report: Some(pb::msg::PbC2cReadedReportReq {

@@ -9,7 +9,7 @@ pub use face::FACES_MAP;
 use crate::client::income::decoder::online_push::GroupMessagePart;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct PrivateMessage {
+pub struct PrivateMessageEvent {
     pub id: i32,
     pub internal_id: i32,
     pub self_id: i64, //?
@@ -20,7 +20,7 @@ pub struct PrivateMessage {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct GroupMessage {
+pub struct GroupMessageEvent {
     pub id: i32,
     pub internal_id: i32,
     pub group_code: i64,
@@ -29,6 +29,13 @@ pub struct GroupMessage {
     pub time: i32,
     pub elements: Vec<MsgElem>,
     pub original_obj: GroupMessagePart,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct GroupMessageReceiptEvent {
+    pub rand: i32,
+    pub seq: i32,
+    pub msg_event: GroupMessageEvent,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -40,7 +47,7 @@ pub struct Sender {
     pub is_friend: bool,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct AnonymousInfo {
     pub anonymous_id: String,
     pub anonymous_nick: String,
@@ -192,6 +199,7 @@ pub enum MsgElem {
         value: i32,
         finger_guess_name: String,
     },
+    None,
 }
 
 const FINGER_GUESS_NAME_SET: [&str; 3] = ["石头", "剪刀", "布"];
@@ -314,7 +322,13 @@ impl Into<u32> for ImageBizType {
 }
 
 pub(crate) fn parse_elems(elems: Vec<crate::pb::msg::Elem>) -> Vec<MsgElem> {
-    elems.into_iter().map(|e| e.into()).collect()
+    let mut msg_elems = vec![];
+    elems.into_iter().map(|e| e.into()).for_each(|e| {
+        if e != MsgElem::None {
+            msg_elems.push(e);
+        }
+    });
+    msg_elems
 }
 
 pub(crate) fn into_elems(msg_elems: Vec<MsgElem>) -> Vec<crate::pb::msg::Elem> {

@@ -6,9 +6,10 @@ use std::io::Read;
 use super::AtSubType;
 use crate::binary::BinaryReader;
 use crate::client::msg::ImageBizType;
-use crate::pb::msg::{Elem, ObjMsg};
+use crate::pb::msg::{AnonymousGroupMessage, Elem, ObjMsg};
+use crate::{AnonymousInfo, MsgElem};
 
-impl From<Elem> for super::MsgElem {
+impl From<Elem> for MsgElem {
     fn from(elem: Elem) -> Self {
         if let Some(Some(m)) = elem.src_msg.map(|m| {
             if m.orig_seqs.len() == 0 {
@@ -310,7 +311,16 @@ impl From<Elem> for super::MsgElem {
             }
         }
 
-        unreachable!()
+        Self::None
+    }
+}
+
+impl From<AnonymousGroupMessage> for AnonymousInfo {
+    fn from(msg: AnonymousGroupMessage) -> Self {
+        Self {
+            anonymous_id: base64::encode(&msg.anon_id()),
+            anonymous_nick: String::from_utf8_lossy(msg.anon_nick()).to_string(),
+        }
     }
 }
 

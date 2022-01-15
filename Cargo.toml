@@ -29,6 +29,7 @@ tracing = "0.1"
 lazy_static = "1.4.0"
 async-trait = "0.1"
 derivative = "2"
+base64 = "0.13"
 
 jcers = { version = "0.1.0", features = ["derive"] }
 
