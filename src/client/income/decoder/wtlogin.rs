@@ -1,12 +1,14 @@
+use std::collections::HashMap;
 use std::sync::atomic::Ordering;
 
 use bytes::{Buf, BufMut, Bytes};
+use jcers::JcePut;
 
 use crate::binary::BinaryReader;
 use crate::client::income::decoder::tlv::*;
 use crate::client::protocol::device::random_string;
 use crate::client::Client;
-use crate::RQError;
+use crate::{RQError, RQResult};
 
 #[derive(Debug)]
 pub enum QRCodeState {
@@ -24,37 +26,130 @@ pub enum QRCodeState {
     },
     QRCodeCanceled,
 }
+#[derive(Debug)]
+pub struct ImageCaptcha {
+    pub sign: Bytes,
+    pub image: Bytes,
+}
 
 #[derive(Debug)]
 pub enum LoginResponse {
-    Success,
-    SliderNeededError {
-        verify_url: String,
+    Success {
+        rollback_sig: Option<T161>,
+        rand_seed: Option<Bytes>,
+        ksid: Option<Bytes>,
+        account_info: Option<T11A>,
+        t512: Option<T512>,
+        wt_session_ticket_key: Option<Bytes>,
+        srm_token: Option<Bytes>,
+        t133: Option<Bytes>,
+        encrypt_a1: Option<Bytes>,
+        tgt: Option<Bytes>,
+        tgt_key: Option<Bytes>,
+        user_st_key: Option<Bytes>,
+        user_st_web_sig: Option<Bytes>,
+        s_key: Option<Bytes>,
+        s_key_expired_time: i64,
+        d2: Option<Bytes>,
+        d2key: Option<Bytes>,
+        device_token: Option<Bytes>,
     },
     NeedCaptcha {
-        captcha_sign: Bytes,
-        captcha_image: Bytes,
+        t104: Option<Bytes>,
+        verify_url: Option<String>,
+        image_captcha: Option<ImageCaptcha>,
     },
-    UnknownLoginError {
-        error_message: String,
+    AccountFrozen,
+    DeviceLocked {
+        sms_phone: Option<String>,
+        verify_url: Option<String>,
+        message: Option<String>,
+        rand_seed: Option<Bytes>,
+        t104: Option<Bytes>,
+        t174: Option<Bytes>,
     },
-    SMSOrVerifyNeededError {
-        verify_url: String,
-        sms_phone: String,
-        error_message: String,
+    TooManySMSRequest,
+    DeviceLockLogin {
+        rand_seed: Option<Bytes>,
+        t104: Option<Bytes>,
     },
-    SMSNeededError {
-        sms_phone: String,
-        error_message: String,
+    UnknownLoginStatus {
+        status: u8,
+        tlv_map: HashMap<u16, Bytes>,
     },
-    UnsafeDeviceError {
-        verify_url: String,
-    },
-    TooManySMSRequestError,
-    OtherLoginError {
-        error_message: String,
-    },
-    NeedDeviceLockLogin,
+}
+
+impl LoginResponse {
+    pub fn decode(
+        status: u8,
+        mut tlv_map: HashMap<u16, Bytes>,
+        encrypt_key: &[u8],
+    ) -> RQResult<Self> {
+        let resp = match status {
+            0 => {
+                let mut t119 = tlv_map
+                    .remove(&0x119)
+                    .map(|v| decode_t119(&v, encrypt_key))
+                    .ok_or(RQError::Decode("missing 0x119".to_string()))?;
+                LoginResponse::Success {
+                    rollback_sig: tlv_map.remove(&0x161).map(decode_t161),
+                    rand_seed: tlv_map.remove(&0x403),
+                    ksid: t119.remove(&0x108),
+                    account_info: t119.remove(&0x11a).map(read_t11a),
+                    t512: t119.remove(&0x512).map(read_t512),
+                    wt_session_ticket_key: t119.remove(&0x134),
+                    srm_token: t119.remove(&0x16a),
+                    t133: t119.remove(&0x133),
+                    encrypt_a1: t119.remove(&0x106),
+                    tgt: t119.remove(&0x10a),
+                    tgt_key: t119.remove(&0x10d),
+                    user_st_key: t119.remove(&0x10e),
+                    user_st_web_sig: t119.remove(&0x103),
+                    s_key: t119.remove(&0x120),
+                    s_key_expired_time: chrono::Utc::now().timestamp() + 21600,
+                    d2: t119.remove(&0x143),
+                    d2key: t119.remove(&0x305),
+                    device_token: t119.remove(&0x322),
+                }
+            }
+            2 => LoginResponse::NeedCaptcha {
+                t104: tlv_map.remove(&0x104),
+                verify_url: tlv_map
+                    .remove(&0x192)
+                    .map(|v| String::from_utf8_lossy(&v).to_string()),
+                image_captcha: tlv_map.remove(&0x165).map(|mut img_data| {
+                    let sign_len = img_data.get_u16();
+                    img_data.get_u16();
+                    let image_sign = img_data.copy_to_bytes(sign_len as usize);
+                    ImageCaptcha {
+                        sign: image_sign,
+                        image: img_data.freeze(),
+                    }
+                }),
+            },
+            40 => LoginResponse::AccountFrozen,
+            160 | 239 => LoginResponse::DeviceLocked {
+                // TODO?
+                sms_phone: tlv_map.remove(&0x178).map(|_| "todo".into()),
+                verify_url: tlv_map
+                    .remove(&0x204)
+                    .map(|v| String::from_utf8_lossy(&v).to_string()),
+                message: tlv_map
+                    .remove(&0x17e)
+                    .map(|v| String::from_utf8_lossy(&v).to_string()),
+                rand_seed: tlv_map.remove(&0x403),
+                t104: tlv_map.remove(&0x104),
+                t174: tlv_map.remove(&0x174),
+            },
+            162 => LoginResponse::TooManySMSRequest,
+            204 => LoginResponse::DeviceLockLogin {
+                t104: tlv_map.remove(&0x104),
+                rand_seed: tlv_map.remove(&0x403),
+            },
+            _ => LoginResponse::UnknownLoginStatus { status, tlv_map },
+        };
+        Ok(resp)
+    }
 }
 
 pub async fn decode_trans_emp_response(
@@ -149,16 +244,16 @@ pub async fn decode_trans_emp_response(
     ));
 }
 
-pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<LoginResponse, RQError> {
+pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> RQResult<LoginResponse> {
     let mut transport = cli.transport.write().await;
     let mut reader = Bytes::from(payload.to_owned());
-    reader.get_u16(); // sub command
-    let t = reader.get_u8();
+    let _sub_command = reader.get_u16(); // sub command
+    let status = reader.get_u8();
     reader.get_u16();
-    let mut m = reader.read_tlv_map(2);
-    if m.contains_key(&0x402) {
+    let mut tlv_map = reader.read_tlv_map(2);
+    if tlv_map.contains_key(&0x402) {
         transport.sig.dpwd = random_string(16).into();
-        transport.sig.t402 = m
+        transport.sig.t402 = tlv_map
             .remove(&0x402)
             .ok_or(RQError::Decode("missing 0x402".to_string()))?;
         let mut v = Vec::new();
@@ -167,182 +262,29 @@ pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> Result<Login
         v.put_slice(&transport.sig.t402);
         transport.sig.g = md5::compute(&v).to_vec().into();
     }
-    if t == 0 {
-        let mut account_info = cli.account_info.write().await;
-        let mut codec = cli.oicq_codec.write().await;
-        // m.remove(&0x150).map(|v| transport.sig.t150 = v);
-        m.remove(&0x161).map(|v| decode_t161(&v));
-        m.remove(&0x403).map(|v| transport.sig.rand_seed = v);
-        decode_t119(
-            &m.remove(&0x119)
-                .ok_or(RQError::Decode("missing 0x119".to_string()))?,
-            &transport.sig.tgtgt_key.clone(),
-            &mut transport,
-            &mut account_info,
-            &mut codec,
-        )
-        .await?;
-        return Ok(LoginResponse::Success);
-    }
-    if t == 2 {
-        transport.sig.t104 = m
-            .remove(&0x104)
-            .ok_or(RQError::Decode("missing 0x104".to_string()))?;
-        if let Some(v) = m.remove(&0x192) {
-            return Ok(LoginResponse::SliderNeededError {
-                verify_url: String::from_utf8_lossy(&v).to_string(),
-            });
-        }
-        if m.contains_key(&0x165) {
-            let mut img_data = Bytes::from(
-                m.remove(&0x105)
-                    .ok_or(RQError::Decode("missing 0x105".to_string()))?,
-            );
-            let sign_len = img_data.get_u16();
-            img_data.get_u16();
-            let sign = img_data.copy_to_bytes(sign_len as usize);
-            return Ok(LoginResponse::NeedCaptcha {
-                captcha_sign: sign,
-                captcha_image: img_data,
-            });
-        } else {
-            return Ok(LoginResponse::UnknownLoginError {
-                error_message: "".to_string(),
-            });
-        }
-    } // need captcha
-
-    if t == 40 {
-        return Ok(LoginResponse::UnknownLoginError {
-            error_message: "账号被冻结".to_string(),
-        });
-    }
-
-    if t == 160 || t == 239 {
-        if m.contains_key(&0x174) {
-            transport.sig.t174 = m
-                .remove(&0x174)
-                .ok_or(RQError::Decode("missing 0x174".to_string()))?;
-            transport.sig.t104 = m
-                .remove(&0x104)
-                .ok_or(RQError::Decode("missing 0x104".to_string()))?;
-            transport.sig.rand_seed = m
-                .remove(&0x403)
-                .ok_or(RQError::Decode("missing 0x403".to_string()))?;
-            let phone = {
-                // let mut r = Bytes::from(m.remove(&0x178).unwrap());
-                // let len = r.get_i32() as usize;
-                // r.read_string_limit(len)
-                "phone_num".to_string() // 这里有问题
-            };
-            if let Some(v) = m.get(&0x204) {
-                return Ok(LoginResponse::SMSOrVerifyNeededError {
-                    verify_url: String::from_utf8_lossy(v).to_string(),
-                    sms_phone: phone,
-                    error_message: String::from_utf8_lossy(
-                        m.get(&0x17e)
-                            .ok_or(RQError::Decode("missing 0x17e".to_string()))?,
-                    )
-                    .to_string(),
-                });
-            }
-            return Ok(LoginResponse::SMSNeededError {
-                sms_phone: phone,
-                error_message: String::from_utf8_lossy(
-                    m.get(&0x17e)
-                        .ok_or(RQError::Decode("missing 0x17e".to_string()))?,
-                )
-                .to_string(),
-            });
-        }
-
-        if m.contains_key(&0x17b) {
-            transport.sig.t104 = m
-                .remove(&0x104)
-                .ok_or(RQError::Decode("missing 0x104".to_string()))?;
-            return Ok(LoginResponse::SMSNeededError {
-                sms_phone: "".to_string(),
-                error_message: "".to_string(),
-            });
-        }
-        if let Some(t204) = m.remove(&0x204) {
-            return Ok(LoginResponse::UnsafeDeviceError {
-                verify_url: String::from_utf8_lossy(&t204).to_string(),
-            });
-        }
-    }
-
-    if t == 162 {
-        return Ok(LoginResponse::TooManySMSRequestError);
-    }
-
-    if t == 204 {
-        {
-            transport.sig.t104 = m
-                .remove(&0x104)
-                .ok_or(RQError::Decode("missing 0x104".to_string()))?;
-            transport.sig.rand_seed = m
-                .remove(&0x403)
-                .ok_or(RQError::Decode("missing 0x403".to_string()))?;
-        }
-        return Ok(LoginResponse::NeedDeviceLockLogin);
-    } // drive lock
-
-    if let Some(mut t149r) = m.remove(&0x149) {
-        t149r.advance(2);
-        t149r.read_string_short(); //title
-        return Ok(LoginResponse::OtherLoginError {
-            error_message: t149r.read_string_short(),
-        });
-    }
-    if let Some(mut t146r) = m.remove(&0x146) {
-        t146r.advance(4); // ver and code
-        t146r.read_string_short(); // title
-        return Ok(LoginResponse::OtherLoginError {
-            error_message: t146r.read_string_short(),
-        });
-    }
-    return Err(RQError::Decode(
-        "decode_login_response unknown error".to_string(),
-    ));
+    LoginResponse::decode(status, tlv_map, &transport.sig.tgtgt_key)
 }
 
-pub async fn decode_exchange_emp_response(cli: &mut Client, payload: &[u8]) -> Result<(), RQError> {
-    let mut transport = cli.transport.write().await;
+pub async fn decode_exchange_emp_response(
+    cli: &mut Client,
+    payload: &[u8],
+) -> RQResult<LoginResponse> {
+    let transport = cli.transport.write().await;
     let mut payload = Bytes::from(payload.to_owned());
-    let cmd = payload.get_u16();
-    let t = payload.get_u8();
+    let sub_command = payload.get_u16();
+    let status = payload.get_u8();
     payload.get_u16();
-    let m = payload.read_tlv_map(2);
-    if t != 0 {
+    let tlv_map = payload.read_tlv_map(2);
+    if status != 0 {
         return Err(RQError::Decode(
             "decode_exchange_emp_response t != 0".to_string(),
         ));
     }
-    if cmd == 15 {
-        let mut account_info = cli.account_info.write().await;
-        decode_t119r(
-            m.get(&0x119)
-                .ok_or(RQError::Decode("missing 0x119".to_string()))?,
-            &transport.sig.tgtgt_key.clone(),
-            &mut transport,
-            &mut account_info,
-        )
-        .await;
-    }
-    if cmd == 11 {
-        let mut account_info = cli.account_info.write().await;
-        let mut codec = cli.oicq_codec.write().await;
-        let h = md5::compute(&transport.sig.d2key).to_vec();
-        decode_t119(
-            m.get(&0x119)
-                .ok_or(RQError::Decode("missing 0x119".to_string()))?,
-            &h,
-            &mut transport,
-            &mut account_info,
-            &mut codec,
-        )
-        .await?;
-    }
-    return Ok(());
+    let encrypt_key = if sub_command == 11 {
+        Bytes::from(md5::compute(&transport.sig.d2key).to_vec())
+    } else {
+        transport.sig.tgtgt_key.clone()
+    };
+
+    LoginResponse::decode(status, tlv_map, &encrypt_key)
 }

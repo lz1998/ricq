@@ -68,7 +68,7 @@ async fn main() -> Result<()> {
                             .qrcode_login(tmp_pwd, tmp_no_pic_sig, tgt_qr)
                             .await
                             .expect("failed to qrcode login");
-                        if let LoginResponse::NeedDeviceLockLogin = login_resp {
+                        if let LoginResponse::DeviceLockLogin { .. } = login_resp {
                             login_resp = client
                                 .device_lock_login()
                                 .await

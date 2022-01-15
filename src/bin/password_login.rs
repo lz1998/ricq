@@ -44,72 +44,45 @@ async fn main() -> Result<()> {
             .expect("failed to login with password");
         loop {
             match resp {
-                LoginResponse::Success => {
+                LoginResponse::Success { .. } => {
                     break;
                 }
-                LoginResponse::SMSOrVerifyNeededError {
-                    ref verify_url,
-                    ref sms_phone,
-                    ref error_message,
-                } => {
-                    println!("{}", error_message);
-                    println!("{}", sms_phone);
-                    println!("手机打开url，处理完成后重启程序");
-                    println!("{}", verify_url);
-                    std::process::exit(0);
+                LoginResponse::NeedCaptcha { .. } => {
+                    // println!("{}", error_message);
+                    // println!("{}", sms_phone);
+                    // println!("手机打开url，处理完成后重启程序");
+                    // println!("{}", verify_url);
+                    // std::process::exit(0);
 
                     // 也可以走短信验证
                     // resp = client.request_sms().await.expect("failed to request sms");
                 }
-                LoginResponse::SliderNeededError { ref verify_url } => {
-                    println!("滑块URL: {}", verify_url);
-                    println!("请输入ticket:");
-                    let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
-                    let ticket = reader
-                        .next()
-                        .await
-                        .transpose()
-                        .expect("failed to read ticket")
-                        .expect("failed to read ticket");
-                    resp = client
-                        .submit_ticket(&ticket)
-                        .await
-                        .expect("failed to submit ticket");
+                LoginResponse::AccountFrozen => {
+                    panic!("account frozen");
                 }
-                LoginResponse::SMSNeededError {
-                    ref sms_phone,
-                    ref error_message,
-                } => {
-                    println!("{}", sms_phone);
-                    println!("{}", error_message);
-                    println!("请输入短信验证码:");
-                    let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
-                    let sms_code = reader
-                        .next()
-                        .await
-                        .transpose()
-                        .expect("failed to read sms_code")
-                        .expect("failed to read sms_code");
-                    resp = client
-                        .submit_sms_code(&sms_code)
-                        .await
-                        .expect("failed to submit sms_code");
+                LoginResponse::DeviceLocked { .. } => {
+                    // println!("滑块URL: {}", verify_url);
+                    // println!("请输入ticket:");
+                    // let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
+                    // let ticket = reader
+                    //     .next()
+                    //     .await
+                    //     .transpose()
+                    //     .expect("failed to read ticket")
+                    //     .expect("failed to read ticket");
+                    // resp = client
+                    //     .submit_ticket(&ticket)
+                    //     .await
+                    //     .expect("failed to submit ticket");
                 }
-                LoginResponse::NeedDeviceLockLogin => {
+                LoginResponse::DeviceLockLogin { .. } => {
                     resp = client
                         .device_lock_login()
                         .await
                         .expect("failed to login with device lock");
                 }
-                LoginResponse::NeedCaptcha { .. } => {}
-                LoginResponse::UnsafeDeviceError { ref verify_url } => {
-                    println!("手机打开url，处理完成后重启程序");
-                    println!("{}", verify_url);
-                    std::process::exit(0);
-                }
-                LoginResponse::TooManySMSRequestError => {}
-                LoginResponse::OtherLoginError { .. } => {}
-                LoginResponse::UnknownLoginError { .. } => {}
+                LoginResponse::TooManySMSRequest => {}
+                LoginResponse::UnknownLoginStatus { .. } => {}
             }
         }
         println!("{:?}", resp);
