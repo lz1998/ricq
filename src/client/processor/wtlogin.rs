@@ -1,8 +1,18 @@
+use bytes::{BufMut, Bytes, BytesMut};
+
 use crate::client::income::decoder::wtlogin::LoginResponse;
-use crate::{Client, RQResult};
+use crate::client::protocol::device::random_string;
+use crate::client::protocol::transport::Transport;
+use crate::Client;
 
 impl Client {
-    pub async fn process_login_response(&self, login_response: LoginResponse) -> RQResult<()> {
+    pub async fn process_login_response(&self, login_response: LoginResponse) {
+        // merge transport
+        // merge account_info
+        // merge oicq_codec
+        let mut transport = self.transport.write().await;
+        let mut cli_account_info = self.account_info.write().await;
+        let mut codec = self.oicq_codec.write().await;
         match login_response {
             LoginResponse::Success {
                 rollback_sig: _,
@@ -10,6 +20,7 @@ impl Client {
                 ksid,
                 account_info,
                 t512,
+                t402,
                 wt_session_ticket_key,
                 srm_token,
                 t133,
@@ -24,12 +35,6 @@ impl Client {
                 d2key,
                 device_token,
             } => {
-                // merge transport
-                // merge account_info
-                // merge codec
-                let mut transport = self.transport.write().await;
-                let mut cli_account_info = self.account_info.write().await;
-                let mut codec = self.oicq_codec.write().await;
                 rand_seed.map(|v| transport.sig.rand_seed = v);
                 ksid.map(|v| transport.sig.ksid = v);
                 account_info.map(|v| {
@@ -54,30 +59,39 @@ impl Client {
                 d2.map(|v| transport.sig.d2 = v);
                 d2key.map(|v| transport.sig.d2key = v);
                 device_token.map(|v| transport.sig.device_token = v);
+                t402.map(|v| set_t402(&mut transport, v));
                 // TODO dispatch login success event
             }
-            LoginResponse::NeedCaptcha { .. } => {
-                // TODO dispatch need captcha event
+            LoginResponse::NeedCaptcha { t104, .. } => {
+                t104.map(|v| transport.sig.t104 = v);
             }
-            LoginResponse::DeviceLocked { .. } => {
-                // TODO dispatch device locked event
+            LoginResponse::DeviceLocked {
+                t104, t174, t402, ..
+            } => {
+                t104.map(|v| transport.sig.t104 = v);
+                t174.map(|v| transport.sig.t174 = v);
+                t402.map(|v| set_t402(&mut transport, v));
             }
-            LoginResponse::DeviceLockLogin { rand_seed, t104 } => {
-                {
-                    let mut transport = self.transport.write().await;
-                    rand_seed.map(|v| transport.sig.rand_seed = v);
-                    t104.map(|v| transport.sig.t104 = v);
-                }
-                // TODO dispatch device lock login event (internal)
+            LoginResponse::DeviceLockLogin {
+                rand_seed,
+                t104,
+                t402,
+            } => {
+                rand_seed.map(|v| transport.sig.rand_seed = v);
+                t104.map(|v| transport.sig.t104 = v);
+                t402.map(|v| set_t402(&mut transport, v));
             }
-            LoginResponse::AccountFrozen => {
-                // TODO dispatch account frozen event
-            }
-            LoginResponse::TooManySMSRequest => {
-                // TODO dispatch too many sms request event
-            }
-            LoginResponse::UnknownLoginStatus { .. } => {}
+            _ => {}
         }
-        Ok(())
     }
+}
+
+fn set_t402(transport: &mut Transport, t402: Bytes) {
+    transport.sig.dpwd = random_string(16).into();
+    transport.sig.t402 = t402;
+    let mut v = BytesMut::new();
+    v.put_slice(&transport.sig.guid);
+    v.put_slice(&transport.sig.dpwd);
+    v.put_slice(&transport.sig.t402);
+    transport.sig.g = Bytes::from(md5::compute(&v).to_vec())
 }

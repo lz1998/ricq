@@ -1,12 +1,11 @@
 use std::collections::HashMap;
 use std::sync::atomic::Ordering;
 
-use bytes::{Buf, BufMut, Bytes};
+use bytes::{Buf, Bytes};
 use jcers::JcePut;
 
 use crate::binary::BinaryReader;
 use crate::client::income::decoder::tlv::*;
-use crate::client::protocol::device::random_string;
 use crate::client::Client;
 use crate::{RQError, RQResult};
 
@@ -26,13 +25,13 @@ pub enum QRCodeState {
     },
     QRCodeCanceled,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ImageCaptcha {
     pub sign: Bytes,
     pub image: Bytes,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum LoginResponse {
     Success {
         rollback_sig: Option<T161>,
@@ -40,6 +39,8 @@ pub enum LoginResponse {
         ksid: Option<Bytes>,
         account_info: Option<T11A>,
         t512: Option<T512>,
+        // 不知道有没有 t402
+        t402: Option<Bytes>,
         wt_session_ticket_key: Option<Bytes>,
         srm_token: Option<Bytes>,
         t133: Option<Bytes>,
@@ -54,24 +55,29 @@ pub enum LoginResponse {
         d2key: Option<Bytes>,
         device_token: Option<Bytes>,
     },
+    // slider or image captcha
     NeedCaptcha {
         t104: Option<Bytes>,
         verify_url: Option<String>,
         image_captcha: Option<ImageCaptcha>,
     },
     AccountFrozen,
+    // sms or qrcode
     DeviceLocked {
+        t104: Option<Bytes>,
+        t174: Option<Bytes>,
+        t402: Option<Bytes>,
         sms_phone: Option<String>,
         verify_url: Option<String>,
         message: Option<String>,
         rand_seed: Option<Bytes>,
-        t104: Option<Bytes>,
-        t174: Option<Bytes>,
     },
     TooManySMSRequest,
+    // More login packet needed
     DeviceLockLogin {
-        rand_seed: Option<Bytes>,
         t104: Option<Bytes>,
+        t402: Option<Bytes>,
+        rand_seed: Option<Bytes>,
     },
     UnknownLoginStatus {
         status: u8,
@@ -97,6 +103,7 @@ impl LoginResponse {
                     ksid: t119.remove(&0x108),
                     account_info: t119.remove(&0x11a).map(read_t11a),
                     t512: t119.remove(&0x512).map(read_t512),
+                    t402: tlv_map.remove(&0x402),
                     wt_session_ticket_key: t119.remove(&0x134),
                     srm_token: t119.remove(&0x16a),
                     t133: t119.remove(&0x133),
@@ -140,10 +147,12 @@ impl LoginResponse {
                 rand_seed: tlv_map.remove(&0x403),
                 t104: tlv_map.remove(&0x104),
                 t174: tlv_map.remove(&0x174),
+                t402: tlv_map.remove(&0x402),
             },
             162 => LoginResponse::TooManySMSRequest,
             204 => LoginResponse::DeviceLockLogin {
                 t104: tlv_map.remove(&0x104),
+                t402: tlv_map.remove(&0x402),
                 rand_seed: tlv_map.remove(&0x403),
             },
             _ => LoginResponse::UnknownLoginStatus { status, tlv_map },
@@ -244,25 +253,13 @@ pub async fn decode_trans_emp_response(
     ));
 }
 
-pub async fn decode_login_response(cli: &Client, payload: &[u8]) -> RQResult<LoginResponse> {
-    let mut transport = cli.transport.write().await;
+pub fn decode_login_response(payload: &[u8], tgtgt_key: &[u8]) -> RQResult<LoginResponse> {
     let mut reader = Bytes::from(payload.to_owned());
     let _sub_command = reader.get_u16(); // sub command
     let status = reader.get_u8();
     reader.get_u16();
-    let mut tlv_map = reader.read_tlv_map(2);
-    if tlv_map.contains_key(&0x402) {
-        transport.sig.dpwd = random_string(16).into();
-        transport.sig.t402 = tlv_map
-            .remove(&0x402)
-            .ok_or(RQError::Decode("missing 0x402".to_string()))?;
-        let mut v = Vec::new();
-        v.put_slice(&transport.sig.guid);
-        v.put_slice(&transport.sig.dpwd);
-        v.put_slice(&transport.sig.t402);
-        transport.sig.g = md5::compute(&v).to_vec().into();
-    }
-    LoginResponse::decode(status, tlv_map, &transport.sig.tgtgt_key)
+    let tlv_map = reader.read_tlv_map(2);
+    LoginResponse::decode(status, tlv_map, tgtgt_key)
 }
 
 pub async fn decode_exchange_emp_response(

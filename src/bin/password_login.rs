@@ -44,39 +44,46 @@ async fn main() -> Result<()> {
             .expect("failed to login with password");
         loop {
             match resp {
-                LoginResponse::Success { .. } => {
+                LoginResponse::Success {
+                    ref account_info, ..
+                } => {
+                    println!("login success: {:?}", account_info);
                     break;
                 }
-                LoginResponse::NeedCaptcha { .. } => {
-                    // println!("{}", error_message);
-                    // println!("{}", sms_phone);
-                    // println!("手机打开url，处理完成后重启程序");
-                    // println!("{}", verify_url);
-                    // std::process::exit(0);
-
-                    // 也可以走短信验证
-                    // resp = client.request_sms().await.expect("failed to request sms");
+                LoginResponse::DeviceLocked {
+                    ref sms_phone,
+                    ref verify_url,
+                    ref message,
+                    ..
+                } => {
+                    println!("device locked: {:?}", message);
+                    println!("sms_phone: {:?}", sms_phone);
+                    println!("verify_url: {:?}", verify_url);
+                    println!("手机打开url，处理完成后重启程序");
+                    std::process::exit(0);
+                    //也可以走短信验证
+                    resp = client.request_sms().await.expect("failed to request sms");
                 }
-
-                LoginResponse::DeviceLocked { .. } => {
-                    // println!("滑块URL: {}", verify_url);
-                    // println!("请输入ticket:");
-                    // let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
-                    // let ticket = reader
-                    //     .next()
-                    //     .await
-                    //     .transpose()
-                    //     .expect("failed to read ticket")
-                    //     .expect("failed to read ticket");
-                    // resp = client
-                    //     .submit_ticket(&ticket)
-                    //     .await
-                    //     .expect("failed to submit ticket");
+                LoginResponse::NeedCaptcha {
+                    ref verify_url,
+                    ref image_captcha,
+                    ..
+                } => {
+                    println!("滑块URL: {:?}", verify_url);
+                    println!("请输入ticket:");
+                    let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
+                    let ticket = reader
+                        .next()
+                        .await
+                        .transpose()
+                        .expect("failed to read ticket")
+                        .expect("failed to read ticket");
+                    resp = client
+                        .submit_ticket(&ticket)
+                        .await
+                        .expect("failed to submit ticket");
                 }
-                LoginResponse::DeviceLockLogin { rand_seed, t104 } => {
-                    let mut transport = client.transport.write().await;
-                    rand_seed.map(|v| transport.sig.rand_seed = v);
-                    t104.map(|v| transport.sig.t104 = v);
+                LoginResponse::DeviceLockLogin { .. } => {
                     resp = client
                         .device_lock_login()
                         .await

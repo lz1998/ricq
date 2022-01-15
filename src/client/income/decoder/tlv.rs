@@ -5,45 +5,45 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 use crate::binary::BinaryReader;
 use crate::crypto::qqtea_decrypt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct T161 {
     // 172
     pub rollback_sig: Option<Bytes>,
     // 173
     // 17f
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct T113 {
     pub uin: i32,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct T125 {
     pub open_id: Bytes,
     pub open_key: Bytes,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct T11A {
     pub face: u16,
     pub gender: u8,
     pub age: u8,
     pub nick: String,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct T199 {
     pub open_id: Bytes,
     pub pay_token: Bytes,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct T200 {
     pub pf: Bytes,
     pub pf_key: Bytes,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct T512 {
     pub ps_key_map: HashMap<String, Bytes>,
     pub pt4_token_map: HashMap<String, Bytes>,
 }
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct T531 {
     pub a1: Bytes,
     pub no_pic_sig: Bytes,

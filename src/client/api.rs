@@ -41,7 +41,12 @@ impl super::Client {
                     .await,
             )
             .await?;
-        decode_login_response(self, &resp.body).await
+        let resp = decode_login_response(&resp.body, &{
+            let transport = self.transport.read().await;
+            transport.sig.tgtgt_key.clone()
+        })?;
+        self.process_login_response(resp.clone()).await;
+        Ok(resp)
     }
 
     /// 密码登录 - 提交密码md5
@@ -54,7 +59,12 @@ impl super::Client {
         let resp = self
             .send_and_wait(self.build_login_packet(password_md5, true).await)
             .await?;
-        decode_login_response(self, &resp.body).await
+        let resp = decode_login_response(&resp.body, &{
+            let transport = self.transport.read().await;
+            transport.sig.tgtgt_key.clone()
+        })?;
+        self.process_login_response(resp.clone()).await;
+        Ok(resp)
     }
 
     pub async fn password_login(&self, uin: i64, password: &str) -> Result<LoginResponse, RQError> {
@@ -67,7 +77,12 @@ impl super::Client {
         let resp = self
             .send_and_wait(self.build_sms_request_packet().await)
             .await?;
-        decode_login_response(self, &resp.body).await
+        let resp = decode_login_response(&resp.body, &{
+            let transport = self.transport.read().await;
+            transport.sig.tgtgt_key.clone()
+        })?;
+        self.process_login_response(resp.clone()).await;
+        Ok(resp)
     }
 
     /// 密码登录 - 提交短信验证码
@@ -75,7 +90,12 @@ impl super::Client {
         let resp = self
             .send_and_wait(self.build_sms_code_submit_packet(code.trim()).await)
             .await?;
-        decode_login_response(self, &resp.body).await
+        let resp = decode_login_response(&resp.body, &{
+            let transport = self.transport.read().await;
+            transport.sig.tgtgt_key.clone()
+        })?;
+        self.process_login_response(resp.clone()).await;
+        Ok(resp)
     }
 
     /// 密码登录 - 提交滑块ticket
@@ -83,7 +103,12 @@ impl super::Client {
         let resp = self
             .send_and_wait(self.build_ticket_submit_packet(ticket).await)
             .await?;
-        decode_login_response(self, &resp.body).await
+        let resp = decode_login_response(&resp.body, &{
+            let transport = self.transport.read().await;
+            transport.sig.tgtgt_key.clone()
+        })?;
+        self.process_login_response(resp.clone()).await;
+        Ok(resp)
     }
 
     /// 设备锁登录 - 二维码、密码登录都需要
@@ -91,7 +116,12 @@ impl super::Client {
         let resp = self
             .send_and_wait(self.build_device_lock_login_packet().await)
             .await?;
-        decode_login_response(self, &resp.body).await
+        let resp = decode_login_response(&resp.body, &{
+            let transport = self.transport.read().await;
+            transport.sig.tgtgt_key.clone()
+        })?;
+        self.process_login_response(resp.clone()).await;
+        Ok(resp)
     }
 
     /// token 登录
