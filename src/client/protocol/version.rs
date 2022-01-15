@@ -1,3 +1,5 @@
+use std::convert::TryFrom;
+
 #[derive(Debug, Clone, derivative::Derivative)]
 #[derivative(Default)]
 pub enum Protocol {
@@ -121,3 +123,34 @@ pub static QIDIAN: &'static Version = &Version {
     main_sig_map: 34869472,
     protocol: Protocol::QiDian,
 };
+
+impl TryFrom<&str> for Protocol {
+    type Error = ();
+
+    fn try_from(s: &str) -> Result<Self, Self::Error> {
+        match s {
+            "IPad" => Ok(Protocol::IPad),
+            "AndroidPhone" => Ok(Protocol::AndroidPhone),
+            "AndroidWatch" => Ok(Protocol::AndroidWatch),
+            "MacOS" => Ok(Protocol::MacOS),
+            "QiDian" => Ok(Protocol::QiDian),
+            _ => Err(()),
+        }
+    }
+}
+
+impl TryFrom<u8> for Protocol {
+    type Error = ();
+
+    fn try_from(u: u8) -> Result<Self, Self::Error> {
+        match u {
+            0 => Ok(Protocol::IPad), // default
+            1 => Ok(Protocol::AndroidPhone),
+            2 => Ok(Protocol::AndroidWatch),
+            3 => Ok(Protocol::MacOS),
+            4 => Ok(Protocol::QiDian),
+            5 => Ok(Protocol::IPad),
+            _ => Err(()),
+        }
+    }
+}

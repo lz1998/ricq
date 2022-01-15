@@ -15,10 +15,7 @@ impl super::Client {
     /// 二维码登录 - 获取二维码
     pub async fn fetch_qrcode(&self) -> Result<QRCodeState, RQError> {
         let resp = self
-            .send_and_wait(
-                self.build_qrcode_fetch_request_packet().await,
-                "wtlogin.trans_emp",
-            )
+            .send_and_wait(self.build_qrcode_fetch_request_packet().await)
             .await?;
         decode_trans_emp_response(self, &resp.body).await
     }
@@ -26,10 +23,7 @@ impl super::Client {
     /// 二维码登录 - 查询二维码状态
     pub async fn query_qrcode_result(&self, sig: &[u8]) -> Result<QRCodeState, RQError> {
         let resp = self
-            .send_and_wait(
-                self.build_qrcode_result_query_request_packet(sig).await,
-                "wtlogin.trans_emp",
-            )
+            .send_and_wait(self.build_qrcode_result_query_request_packet(sig).await)
             .await?;
         decode_trans_emp_response(self, &resp.body).await
     }
@@ -45,7 +39,6 @@ impl super::Client {
             .send_and_wait(
                 self.build_qrcode_login_packet(tmp_pwd, tmp_no_pic_sig, tgt_qr)
                     .await,
-                "wtlogin.login",
             )
             .await?;
         decode_login_response(self, &resp.body).await
@@ -59,10 +52,7 @@ impl super::Client {
     ) -> Result<LoginResponse, RQError> {
         self.uin.store(uin, Ordering::Relaxed);
         let resp = self
-            .send_and_wait(
-                self.build_login_packet(password_md5, true).await,
-                "wtlogin.login",
-            )
+            .send_and_wait(self.build_login_packet(password_md5, true).await)
             .await?;
         decode_login_response(self, &resp.body).await
     }
@@ -75,7 +65,7 @@ impl super::Client {
     /// 密码登录 - 请求短信验证码
     pub async fn request_sms(&self) -> Result<LoginResponse, RQError> {
         let resp = self
-            .send_and_wait(self.build_sms_request_packet().await, "wtlogin.login")
+            .send_and_wait(self.build_sms_request_packet().await)
             .await?;
         decode_login_response(self, &resp.body).await
     }
@@ -83,10 +73,7 @@ impl super::Client {
     /// 密码登录 - 提交短信验证码
     pub async fn submit_sms_code(&self, code: &str) -> Result<LoginResponse, RQError> {
         let resp = self
-            .send_and_wait(
-                self.build_sms_code_submit_packet(code.trim()).await,
-                "wtlogin.login",
-            )
+            .send_and_wait(self.build_sms_code_submit_packet(code.trim()).await)
             .await?;
         decode_login_response(self, &resp.body).await
     }
@@ -94,10 +81,7 @@ impl super::Client {
     /// 密码登录 - 提交滑块ticket
     pub async fn submit_ticket(&self, ticket: &str) -> Result<LoginResponse, RQError> {
         let resp = self
-            .send_and_wait(
-                self.build_ticket_submit_packet(ticket).await,
-                "wtlogin.login",
-            )
+            .send_and_wait(self.build_ticket_submit_packet(ticket).await)
             .await?;
         decode_login_response(self, &resp.body).await
     }
@@ -105,7 +89,7 @@ impl super::Client {
     /// 设备锁登录 - 二维码、密码登录都需要
     pub async fn device_lock_login(&self) -> Result<LoginResponse, RQError> {
         let resp = self
-            .send_and_wait(self.build_device_lock_login_packet().await, "wtlogin.login")
+            .send_and_wait(self.build_device_lock_login_packet().await)
             .await?;
         decode_login_response(self, &resp.body).await
     }
@@ -113,11 +97,8 @@ impl super::Client {
     /// token 登录
     pub async fn token_login(&self, mut token: impl Buf) -> RQResult<()> {
         self.load_token(&mut token).await;
-        self.send_and_wait(
-            self.build_request_change_sig_packet().await,
-            "wtlogin.exchange_emp",
-        )
-        .await?;
+        self.send_and_wait(self.build_request_change_sig_packet().await)
+            .await?;
         let r = tokio::join! {
             self.wait_packet("StatSvc.ReqMSFOffline", 1),
             self.wait_packet("MessageSvc.PushForceOffline", 1)
@@ -132,10 +113,7 @@ impl super::Client {
     /// 注册客户端，登录后必须注册
     pub async fn register_client(&self) -> Result<SvcRespRegister, RQError> {
         let resp = self
-            .send_and_wait(
-                self.build_client_register_packet().await,
-                "StatSvc.register",
-            )
+            .send_and_wait(self.build_client_register_packet().await)
             .await?;
         let resp = decode_client_register_response(&resp.body)?;
         if resp.result != "" || resp.reply_code != 0 {
@@ -154,10 +132,7 @@ impl super::Client {
         suspicious: bool,
     ) -> Result<GroupSystemMessages, RQError> {
         let resp = self
-            .send_and_wait(
-                self.build_system_msg_new_group_packet(suspicious).await,
-                "ProfileService.Pb.ReqSystemMsgNew.Group",
-            )
+            .send_and_wait(self.build_system_msg_new_group_packet(suspicious).await)
             .await?;
         decode_system_msg_group_packet(&resp.body)
     }
@@ -180,7 +155,6 @@ impl super::Client {
                     group_list_count,
                 )
                 .await,
-                "friendlist.getFriendGroupList",
             )
             .await?;
         decode_friend_group_list_response(&resp.body)
@@ -190,10 +164,7 @@ impl super::Client {
     /// 第一个参数offset，从0开始；第二个参数count，150，另外两个都是0
     pub async fn get_group_list(&self, vec_cookie: &[u8]) -> Result<GroupListResponse, RQError> {
         let resp = self
-            .send_and_wait(
-                self.build_group_list_request_packet(vec_cookie).await,
-                "friendlist.GetTroopListReqV2",
-            )
+            .send_and_wait(self.build_group_list_request_packet(vec_cookie).await)
             .await?;
         decode_group_list_response(&resp.body)
     }
@@ -222,7 +193,6 @@ impl super::Client {
             .send_and_wait(
                 self.build_group_member_info_request_packet(group_code, uin)
                     .await,
-                "group_member_card.get_group_member_card_info",
             )
             .await?;
         decode_group_member_info_response(&resp.body)
@@ -329,7 +299,6 @@ impl super::Client {
             .send_and_wait(
                 self.build_group_member_list_request_packet(group_uin, group_code, next_uin)
                     .await,
-                "friendlist.GetTroopMemberListReq",
             )
             .await?;
         decode_group_member_list_response(&resp.body)
@@ -365,10 +334,7 @@ impl super::Client {
     /// 刷新客户端状态
     pub async fn refresh_status(&self) -> Result<(), RQError> {
         let _resp = self
-            .send_and_wait(
-                self.build_get_offline_msg_request_packet().await,
-                "RegPrxySvc.getOffMsg",
-            )
+            .send_and_wait(self.build_get_offline_msg_request_packet().await)
             .await?;
         Ok(())
     }
@@ -380,10 +346,7 @@ impl super::Client {
         seq: i32,
     ) -> Result<(), RQError> {
         let _resp = self
-            .send_and_wait(
-                self.build_group_msg_read_packet(group_code, seq).await,
-                "PbMessageSvc.PbMsgReadedReport",
-            )
+            .send_and_wait(self.build_group_msg_read_packet(group_code, seq).await)
             .await?;
         Ok(())
     }
@@ -400,10 +363,7 @@ impl super::Client {
     /// 获取通过安全验证的设备
     pub async fn get_allowed_clients(&self) -> Result<Vec<SvcDevLoginInfo>, RQError> {
         let resp = self
-            .send_and_wait(
-                self.build_device_list_request_packet().await,
-                "StatSvc.GetDevLoginInfo",
-            )
+            .send_and_wait(self.build_device_list_request_packet().await)
             .await?;
         decode_dev_list_response(&resp.body)
     }

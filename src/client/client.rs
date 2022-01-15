@@ -103,12 +103,9 @@ impl super::Client {
             .map_err(|_| RQError::Other("failed to send out_pkt".into()))
     }
 
-    pub async fn send_and_wait(
-        &self,
-        pkt: Packet,
-        expected_command_name: &str,
-    ) -> Result<Packet, RQError> {
+    pub async fn send_and_wait(&self, pkt: Packet) -> Result<Packet, RQError> {
         let seq = pkt.seq_id;
+        let expect = pkt.command_name.clone();
         let (sender, receiver) = oneshot::channel();
         {
             let mut packet_promises = self.packet_promises.write().await;
@@ -123,7 +120,7 @@ impl super::Client {
             return Err(RQError::Network.into());
         }
         match tokio::time::timeout(std::time::Duration::from_secs(15), receiver).await {
-            Ok(p) => p.unwrap().check_command_name(expected_command_name),
+            Ok(p) => p.unwrap().check_command_name(&expect),
             Err(_) => {
                 self.packet_promises.write().await.remove(&seq);
                 Err(RQError::Timeout)
@@ -154,10 +151,7 @@ impl super::Client {
         while self.online.load(Ordering::SeqCst) {
             sleep(Duration::from_secs(30)).await;
             match self
-                .send_and_wait(
-                    self.build_heartbeat_packet().await.into(),
-                    "Heartbeat.Alive",
-                )
+                .send_and_wait(self.build_heartbeat_packet().await.into())
                 .await
             {
                 Err(_) => {
