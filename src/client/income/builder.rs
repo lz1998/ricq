@@ -1,4 +1,4 @@
-use super::decoder::online_push::GroupMessagePart;
+use crate::client::engine::decoder::online_push::GroupMessagePart;
 use std::collections::BTreeMap;
 
 #[derive(Debug)]

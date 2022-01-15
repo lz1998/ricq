@@ -1,9 +1,11 @@
+use std::sync::atomic::Ordering;
+
+use crate::client::engine::decoder::online_push::GroupMessagePart;
 use crate::client::handler::QEvent;
-use crate::client::income::{builder::GroupMessageBuilder, decoder::online_push::GroupMessagePart};
+use crate::client::income::builder::GroupMessageBuilder;
 use crate::client::msg::*;
 use crate::client::Client;
 use crate::{RQError, RQResult};
-use std::sync::atomic::Ordering;
 
 impl Client {
     pub async fn process_group_message_part(

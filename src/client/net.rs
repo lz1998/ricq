@@ -65,12 +65,11 @@ impl ClientNet {
                 let mut data = Bytes::from(data);
 
                 let pkt = {
-                    let transport = cli.transport.read().await;
-                    let mut pkt = transport.decode_packet(&mut data).unwrap();
+                    let engine = cli.engine.read().await;
+                    let mut pkt = engine.transport.decode_packet(&mut data).unwrap();
                     if pkt.encrypt_type == EncryptType::EmptyKey {
                         // decrypt with ecdh
-                        let codec = cli.oicq_codec.read().await;
-                        pkt.body = codec.decode(pkt.body).unwrap().body;
+                        pkt.body = engine.oicq_codec.decode(pkt.body).unwrap().body;
                     }
                     pkt
                 };

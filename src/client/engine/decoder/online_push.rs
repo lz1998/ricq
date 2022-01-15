@@ -1,7 +1,3 @@
-use crate::RQError;
-use crate::client::income::decoder::online_push::OnlinePushTrans::{
-    MemberKicked, MemberLeave, MemberPermissionChanged,
-};
 use crate::client::outcome::PbToBytes;
 use crate::client::structs::{FriendInfo, GroupMemberPermission};
 use crate::jce;
@@ -9,6 +5,7 @@ use crate::pb;
 use crate::pb::msg;
 use crate::pb::msg::{PushMessagePacket, TransMsgInfo};
 use crate::pb::notify::GeneralGrayTipInfo;
+use crate::RQError;
 use bytes::{Buf, Bytes};
 use jcers::Jce;
 
@@ -161,14 +158,14 @@ pub fn decode_online_push_trans_packet(payload: &[u8]) -> Result<OnlinePushTrans
             let operator = data.get_i32() as i64;
             match typ {
                 0x02 | 0x82 => {
-                    return Ok(MemberLeave {
+                    return Ok(OnlinePushTrans::MemberLeave {
                         msg_uid,
                         group_uin,
                         member_uin: target,
                     });
                 }
                 0x03 | 0x83 => {
-                    return Ok(MemberKicked {
+                    return Ok(OnlinePushTrans::MemberKicked {
                         msg_uid,
                         group_uin,
                         member_uin: target,
@@ -192,7 +189,7 @@ pub fn decode_online_push_trans_packet(payload: &[u8]) -> Result<OnlinePushTrans
                 } else {
                     GroupMemberPermission::Member
                 };
-                return Ok(MemberPermissionChanged {
+                return Ok(OnlinePushTrans::MemberPermissionChanged {
                     msg_uid,
                     group_uin,
                     member_uin: target,

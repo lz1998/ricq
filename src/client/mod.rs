@@ -6,12 +6,14 @@ use bytes::Bytes;
 use tokio::sync::oneshot;
 use tokio::sync::RwLock;
 
+use crate::client::engine::Engine;
 use crate::client::protocol::{oicq, packet::Packet, transport::Transport};
 use crate::client::structs::{FriendInfo, GroupInfo};
 use crate::jce::FileStoragePushFSSvcList;
 
 pub mod api;
 pub mod client;
+pub mod engine;
 pub mod handler;
 pub mod income;
 pub mod msg;
@@ -23,16 +25,9 @@ pub mod structs;
 
 pub struct Client {
     handler: Box<dyn handler::Handler + Sync + Send + 'static>,
-    seq_id: AtomicU16,
-    request_packet_request_id: AtomicI32,
-    group_seq: AtomicI32,
-    friend_seq: AtomicI32,
-    group_data_trans_seq: AtomicI32,
-    highway_apply_up_seq: AtomicI32,
 
-    pub transport: RwLock<Transport>,
     pub uin: AtomicI64,
-    pub oicq_codec: RwLock<oicq::Codec>,
+    pub engine: RwLock<Engine>,
     pub connected: AtomicBool,
     pub shutting_down: AtomicBool,
     pub heartbeat_enabled: AtomicBool,

@@ -1,7 +1,6 @@
 use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, AtomicU16, Ordering};
 use std::sync::Arc;
 
-use crate::binary::{BinaryReader, BinaryWriter};
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use rand::Rng;
 use tokio::sync::oneshot;
@@ -9,6 +8,8 @@ use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
 
+use crate::binary::{BinaryReader, BinaryWriter};
+use crate::client::engine::Engine;
 use crate::client::protocol::{
     device::Device,
     oicq,
@@ -30,15 +31,9 @@ impl super::Client {
         let (out_pkt_sender, out_pkt_receiver) = tokio::sync::mpsc::unbounded_channel();
 
         let cli = Client {
-            transport: RwLock::new(Transport::new(device, get_version(Protocol::IPad))),
             handler: Box::new(handler),
-            seq_id: AtomicU16::new(0x3635),
-            request_packet_request_id: AtomicI32::new(1921334513),
-            group_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),
-            friend_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),
-            group_data_trans_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),
-            highway_apply_up_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),
-            uin: AtomicI64::new(0),
+            uin: Default::default(),
+            engine: RwLock::new(Engine::new(device, get_version(Protocol::IPad))),
             connected: AtomicBool::new(false),
             shutting_down: AtomicBool::new(false),
             heartbeat_enabled: AtomicBool::new(false),
@@ -48,7 +43,6 @@ impl super::Client {
             // out_going_packet_session_id: RwLock::new(Bytes::from_static(&[0x02, 0xb0, 0x5b, 0x8b])),
             packet_promises: Default::default(),
             packet_waiters: Default::default(),
-            oicq_codec: RwLock::new(oicq::Codec::default()),
             account_info: Default::default(),
             address: Default::default(),
             friend_list: Default::default(),
@@ -72,49 +66,23 @@ impl super::Client {
         tokio::spawn(net)
     }
 
-    pub fn next_seq(&self) -> u16 {
-        self.seq_id.fetch_add(1, Ordering::Relaxed)
-    }
-
-    pub fn next_packet_seq(&self) -> i32 {
-        self.request_packet_request_id
-            .fetch_add(2, Ordering::Relaxed)
-    }
-
-    pub fn next_group_seq(&self) -> i32 {
-        self.group_seq.fetch_add(2, Ordering::Relaxed)
-    }
-
-    pub fn next_friend_seq(&self) -> i32 {
-        self.friend_seq.fetch_add(2, Ordering::Relaxed)
-    }
-
-    pub fn next_group_data_trans_seq(&self) -> i32 {
-        self.group_data_trans_seq.fetch_add(2, Ordering::Relaxed)
-    }
-
-    pub fn next_highway_apply_seq(&self) -> i32 {
-        self.highway_apply_up_seq.fetch_add(2, Ordering::Relaxed)
-    }
-
     pub async fn send(&self, pkt: Packet) -> Result<(), RQError> {
+        let data = self.engine.read().await.transport.encode_packet(pkt);
         self.out_pkt_sender
-            .send(self.transport.read().await.encode_packet(pkt))
+            .send(data)
             .map_err(|_| RQError::Other("failed to send out_pkt".into()))
     }
 
     pub async fn send_and_wait(&self, pkt: Packet) -> Result<Packet, RQError> {
         let seq = pkt.seq_id;
         let expect = pkt.command_name.clone();
+        let data = self.engine.read().await.transport.encode_packet(pkt);
         let (sender, receiver) = oneshot::channel();
         {
             let mut packet_promises = self.packet_promises.write().await;
             packet_promises.insert(seq, sender);
         }
-        if let Err(_) = self
-            .out_pkt_sender
-            .send(self.transport.read().await.encode_packet(pkt))
-        {
+        if let Err(_) = self.out_pkt_sender.send(data) {
             let mut packet_promises = self.packet_promises.write().await;
             packet_promises.remove(&seq);
             return Err(RQError::Network.into());
@@ -150,10 +118,7 @@ impl super::Client {
         let mut times = 0;
         while self.online.load(Ordering::SeqCst) {
             sleep(Duration::from_secs(30)).await;
-            match self
-                .send_and_wait(self.build_heartbeat_packet().await.into())
-                .await
-            {
+            match self.heartbeat().await {
                 Err(_) => {
                     continue;
                 }
@@ -173,31 +138,31 @@ impl super::Client {
 
     pub async fn gen_token(&self) -> Bytes {
         let mut token = BytesMut::with_capacity(1024); //todo
-        let sig = &self.transport.read().await.sig;
+        let engine = &self.engine.read().await;
         token.put_i64(self.uin.load(Ordering::SeqCst));
-        token.write_bytes_short(&sig.d2);
-        token.write_bytes_short(&sig.d2key);
-        token.write_bytes_short(&sig.tgt);
-        token.write_bytes_short(&sig.srm_token);
-        token.write_bytes_short(&sig.t133);
-        token.write_bytes_short(&sig.encrypted_a1);
-        token.write_bytes_short(&self.oicq_codec.read().await.wt_session_ticket_key);
-        token.write_bytes_short(&sig.out_packet_session_id);
-        token.write_bytes_short(&sig.tgtgt_key);
+        token.write_bytes_short(&engine.transport.sig.d2);
+        token.write_bytes_short(&engine.transport.sig.d2key);
+        token.write_bytes_short(&engine.transport.sig.tgt);
+        token.write_bytes_short(&engine.transport.sig.srm_token);
+        token.write_bytes_short(&engine.transport.sig.t133);
+        token.write_bytes_short(&engine.transport.sig.encrypted_a1);
+        token.write_bytes_short(&engine.oicq_codec.wt_session_ticket_key);
+        token.write_bytes_short(&engine.transport.sig.out_packet_session_id);
+        token.write_bytes_short(&engine.transport.sig.tgtgt_key);
         token.freeze()
     }
 
     pub async fn load_token(&self, token: &mut impl Buf) {
-        let sig = &mut self.transport.write().await.sig;
-        self.uin.store(token.get_i64(), Ordering::SeqCst);
-        sig.d2 = token.read_bytes_short();
-        sig.d2key = token.read_bytes_short();
-        sig.tgt = token.read_bytes_short();
-        sig.srm_token = token.read_bytes_short();
-        sig.t133 = token.read_bytes_short();
-        sig.encrypted_a1 = token.read_bytes_short();
-        self.oicq_codec.write().await.wt_session_ticket_key = token.read_bytes_short();
-        sig.out_packet_session_id = token.read_bytes_short();
-        sig.tgtgt_key = token.read_bytes_short();
+        let mut engine = self.engine.write().await;
+        engine.uin.store(token.get_i64(), Ordering::SeqCst);
+        engine.transport.sig.d2 = token.read_bytes_short();
+        engine.transport.sig.d2key = token.read_bytes_short();
+        engine.transport.sig.tgt = token.read_bytes_short();
+        engine.transport.sig.srm_token = token.read_bytes_short();
+        engine.transport.sig.t133 = token.read_bytes_short();
+        engine.transport.sig.encrypted_a1 = token.read_bytes_short();
+        engine.oicq_codec.wt_session_ticket_key = token.read_bytes_short();
+        engine.transport.sig.out_packet_session_id = token.read_bytes_short();
+        engine.transport.sig.tgtgt_key = token.read_bytes_short();
     }
 }
