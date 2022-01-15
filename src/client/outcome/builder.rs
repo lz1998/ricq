@@ -4,6 +4,7 @@ use std::sync::atomic::Ordering;
 use bytes::{BufMut, Bytes, BytesMut};
 use chrono::Utc;
 use jcers::JcePut;
+use prost::Message;
 
 use crate::binary::BinaryWriter;
 use crate::client::outcome::packet::*;
@@ -16,6 +17,7 @@ use crate::client::protocol::{
 };
 use crate::jce::*;
 use crate::pb;
+use crate::pb::msg::SyncCookie;
 
 fn pack_uni_request_data(data: &[u8]) -> Bytes {
     let mut r = BytesMut::new();
@@ -1371,6 +1373,38 @@ impl crate::client::Client {
             ..Default::default()
         };
         self.uni_packet("OidbSvc.0x88d_0", payload.to_bytes()).await
+    }
+
+    pub(crate) async fn build_get_message_request_packet(&self, flag: i32, time: i64) -> Packet {
+        let mut cook = { self.transport.read().await.sig.sync_cookie.to_vec() };
+        if cook.is_empty() {
+            cook = SyncCookie {
+                time: Some(time),
+                time1: None,
+                ran1: Some(758330138),
+                ran2: Some(2480149246),
+                const1: Some(1167238020),
+                const2: Some(3913056418),
+                const3: Some(0x1D),
+                const4: None,
+                last_sync_time: None,
+            }
+            .encode_to_vec();
+        }
+        let req = pb::msg::GetMessageRequest {
+            sync_flag: Some(flag),
+            sync_cookie: Some(cook),
+            latest_ramble_number: Some(20),
+            other_ramble_number: Some(3),
+            online_sync_flag: Some(1),
+            context_flag: Some(1),
+            msg_req_type: Some(1),
+            pubaccount_cookie: Some(vec![]),
+            msg_ctrl_buf: Some(vec![]),
+            server_buf: Some(vec![]),
+            ..Default::default()
+        };
+        self.uni_packet("MessageSvc.PbGetMsg", req.to_bytes()).await
     }
 }
 

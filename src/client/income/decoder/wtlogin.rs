@@ -6,7 +6,7 @@ use crate::binary::BinaryReader;
 use crate::client::income::decoder::tlv::*;
 use crate::client::protocol::device::random_string;
 use crate::client::Client;
-use crate::RQError;
+use crate::{QEvent, RQError};
 
 #[derive(Debug)]
 pub enum QRCodeState {
@@ -120,6 +120,9 @@ pub async fn decode_trans_emp_response(
             };
         }
         cli.uin.store(body.get_i64(), Ordering::SeqCst);
+        cli.handler
+            .handle(QEvent::UinChanged(cli.uin.load(Ordering::SeqCst)))
+            .await;
         body.get_i32(); // sig create time
         body.get_u16();
         let mut m = body.read_tlv_map(2);
