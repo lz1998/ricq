@@ -83,8 +83,8 @@ impl Password {
 #[derive(Default, Debug)]
 pub struct AccountInfo {
     pub nickname: String,
-    pub age: u16,
-    pub gender: u16,
+    pub age: u8,
+    pub gender: u8,
 }
 
 #[derive(Default, Debug)]

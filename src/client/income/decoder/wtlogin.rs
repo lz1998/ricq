@@ -277,7 +277,7 @@ pub async fn decode_exchange_emp_response(
     let tlv_map = payload.read_tlv_map(2);
     if status != 0 {
         return Err(RQError::Decode(
-            "decode_exchange_emp_response t != 0".to_string(),
+            "decode_exchange_emp_response status != 0".to_string(),
         ));
     }
     let encrypt_key = if sub_command == 11 {

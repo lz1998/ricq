@@ -8,6 +8,7 @@ use crate::client::protocol::packet::Packet;
 pub mod config_push_svc;
 pub mod online_push;
 pub mod reg_prxy_svc;
+pub mod wtlogin;
 
 impl super::Client {
     pub async fn process_income_packet(self: Arc<Self>, pkt: Packet) {

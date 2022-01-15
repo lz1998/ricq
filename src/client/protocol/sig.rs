@@ -21,9 +21,9 @@ pub struct Sig {
     pub d2: Bytes,
     pub d2key: Bytes,
     // TODO 是不是可能None？
-    pub device_token: Option<Bytes>,
+    pub device_token: Bytes,
     pub ps_key_map: HashMap<String, Bytes>,
-    pub pt4token_map: HashMap<String, Bytes>,
+    pub pt4_token_map: HashMap<String, Bytes>,
 
     pub out_packet_session_id: Bytes,
     pub dpwd: Bytes,
