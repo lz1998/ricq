@@ -62,11 +62,12 @@ async fn main() -> Result<()> {
                     println!("手机打开url，处理完成后重启程序");
                     std::process::exit(0);
                     //也可以走短信验证
-                    resp = client.request_sms().await.expect("failed to request sms");
+                    // resp = client.request_sms().await.expect("failed to request sms");
                 }
                 LoginResponse::NeedCaptcha {
                     ref verify_url,
-                    ref image_captcha,
+                    // 图片应该没了
+                    image_captcha: ref _image_captcha,
                     ..
                 } => {
                     println!("滑块URL: {:?}", verify_url);

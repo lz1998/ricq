@@ -1,15 +1,13 @@
 use std::collections::HashMap;
-use std::sync::atomic::Ordering;
 
 use bytes::{Buf, Bytes};
 use jcers::JcePut;
 
 use crate::binary::BinaryReader;
 use crate::client::income::decoder::tlv::*;
-use crate::client::Client;
 use crate::{RQError, RQResult};
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum QRCodeState {
     QRCodeImageFetch {
         image_data: Bytes,
@@ -19,9 +17,11 @@ pub enum QRCodeState {
     QRCodeWaitingForConfirm,
     QRCodeTimeout,
     QRCodeConfirmed {
+        uin: i64,
         tmp_pwd: Bytes,
         tmp_no_pic_sig: Bytes,
         tgt_qr: Bytes,
+        tgtgt_key: Bytes,
     },
     QRCodeCanceled,
 }
@@ -161,10 +161,7 @@ impl LoginResponse {
     }
 }
 
-pub async fn decode_trans_emp_response(
-    cli: &Client,
-    payload: &[u8],
-) -> Result<QRCodeState, RQError> {
+pub fn decode_trans_emp_response(payload: &[u8]) -> Result<QRCodeState, RQError> {
     if payload.len() < 48 {
         return Err(RQError::Decode("invalid payload length".to_string()).into());
     }
@@ -223,20 +220,12 @@ pub async fn decode_trans_emp_response(
                 _ => Err(RQError::Decode("invalid body code".to_string())),
             };
         }
-        cli.uin.store(body.get_i64(), Ordering::SeqCst);
+        let uin = body.get_i64();
         body.get_i32(); // sig create time
         body.get_u16();
         let mut m = body.read_tlv_map(2);
-        if !m.contains_key(&0x18) || !m.contains_key(&0x1e) || !m.contains_key(&0x19) {
-            return Err(RQError::Decode("invalid tlv map".to_string()));
-        }
-        {
-            let mut transport = cli.transport.write().await;
-            transport.sig.tgtgt_key = m
-                .remove(&0x1e)
-                .ok_or(RQError::Decode("missing 0x1e".into()))?;
-        }
         return Ok(QRCodeState::QRCodeConfirmed {
+            uin,
             tmp_pwd: m
                 .remove(&0x18)
                 .ok_or(RQError::Decode("missing 0x18".into()))?,
@@ -246,6 +235,9 @@ pub async fn decode_trans_emp_response(
             tgt_qr: m
                 .remove(&0x65)
                 .ok_or(RQError::Decode("missing 0x65".into()))?,
+            tgtgt_key: m
+                .remove(&0x1e)
+                .ok_or(RQError::Decode("missing 0x1e".into()))?,
         });
     }
     return Err(RQError::Decode(
@@ -262,11 +254,11 @@ pub fn decode_login_response(payload: &[u8], tgtgt_key: &[u8]) -> RQResult<Login
     LoginResponse::decode(status, tlv_map, tgtgt_key)
 }
 
-pub async fn decode_exchange_emp_response(
-    cli: &mut Client,
+pub fn decode_exchange_emp_response(
     payload: &[u8],
+    tgtgt_key: &[u8],
+    d2key: &[u8],
 ) -> RQResult<LoginResponse> {
-    let transport = cli.transport.write().await;
     let mut payload = Bytes::from(payload.to_owned());
     let sub_command = payload.get_u16();
     let status = payload.get_u8();
@@ -278,9 +270,9 @@ pub async fn decode_exchange_emp_response(
         ));
     }
     let encrypt_key = if sub_command == 11 {
-        Bytes::from(md5::compute(&transport.sig.d2key).to_vec())
+        md5::compute(d2key).to_vec()
     } else {
-        transport.sig.tgtgt_key.clone()
+        tgtgt_key.to_vec()
     };
 
     LoginResponse::decode(status, tlv_map, &encrypt_key)

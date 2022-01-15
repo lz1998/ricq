@@ -62,6 +62,7 @@ async fn main() -> Result<()> {
                         ref tmp_pwd,
                         ref tmp_no_pic_sig,
                         ref tgt_qr,
+                        ..
                     } => {
                         println!("二维码已确认");
                         let mut login_resp = client

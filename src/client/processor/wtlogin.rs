@@ -1,6 +1,8 @@
+use std::sync::atomic::Ordering;
+
 use bytes::{BufMut, Bytes, BytesMut};
 
-use crate::client::income::decoder::wtlogin::LoginResponse;
+use crate::client::income::decoder::wtlogin::{LoginResponse, QRCodeState};
 use crate::client::protocol::device::random_string;
 use crate::client::protocol::transport::Transport;
 use crate::Client;
@@ -82,6 +84,14 @@ impl Client {
                 t402.map(|v| set_t402(&mut transport, v));
             }
             _ => {}
+        }
+    }
+
+    pub async fn process_trans_emp_response(&self, qrcode_state: QRCodeState) {
+        if let QRCodeState::QRCodeConfirmed { uin, tgtgt_key, .. } = qrcode_state {
+            let mut transport = self.transport.write().await;
+            transport.sig.tgtgt_key = tgtgt_key;
+            self.uin.store(uin, Ordering::SeqCst);
         }
     }
 }

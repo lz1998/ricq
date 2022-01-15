@@ -17,7 +17,9 @@ impl super::Client {
         let resp = self
             .send_and_wait(self.build_qrcode_fetch_request_packet().await)
             .await?;
-        decode_trans_emp_response(self, &resp.body).await
+        let resp = decode_trans_emp_response(&resp.body)?;
+        self.process_trans_emp_response(resp.clone()).await;
+        Ok(resp)
     }
 
     /// 二维码登录 - 查询二维码状态
@@ -25,7 +27,9 @@ impl super::Client {
         let resp = self
             .send_and_wait(self.build_qrcode_result_query_request_packet(sig).await)
             .await?;
-        decode_trans_emp_response(self, &resp.body).await
+        let resp = decode_trans_emp_response(&resp.body)?;
+        self.process_trans_emp_response(resp.clone()).await;
+        Ok(resp)
     }
 
     /// 二维码登录 - 登录 ( 可能还需要 device_lock_login )
