@@ -11,6 +11,9 @@ pub mod decoder;
 
 // build_packet: param -> bytes
 // decode_packet: bytes -> struct
+// this should be wrapped in a rwlock (readonly after login)
+// TODO: build library for other language
+// no async and await
 pub struct Engine {
     pub uin: AtomicI64,
     pub transport: Transport,
