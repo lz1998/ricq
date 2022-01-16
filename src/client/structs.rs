@@ -48,17 +48,13 @@ pub struct GroupMemberInfo {
     pub permission: GroupMemberPermission,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, derivative::Derivative)]
+#[derivative(Default)]
 pub enum GroupMemberPermission {
     Owner = 1,
     Administrator = 2,
+    #[derivative(Default)]
     Member = 3,
-}
-
-impl Default for GroupMemberPermission {
-    fn default() -> Self {
-        Self::Member
-    }
 }
 
 #[derive(Debug, Default)]
