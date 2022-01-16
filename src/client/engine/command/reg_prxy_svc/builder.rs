@@ -10,6 +10,7 @@ use crate::client::protocol::packet::Packet;
 use crate::{jce, pb};
 
 impl super::super::super::Engine {
+    // RegPrxySvc.getOffMsg
     pub fn build_get_offline_msg_request_packet(&self, last_message_time: i64) -> Packet {
         let transport = &self.transport;
         let reg_req = jce::SvcReqRegisterNew {
@@ -75,6 +76,7 @@ impl super::super::super::Engine {
         self.uni_packet("RegPrxySvc.getOffMsg", pkt.freeze())
     }
 
+    // RegPrxySvc.infoSync
     pub fn build_sync_msg_request_packet(&self, last_message_time: i64) -> Packet {
         let transport = &self.transport;
         let oidb_req = pb::oidb::D769RspBody {

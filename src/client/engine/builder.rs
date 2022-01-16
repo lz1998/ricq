@@ -1,52 +1,8 @@
-use std::collections::HashMap;
-use std::sync::atomic::Ordering;
-
-use bytes::{BufMut, Bytes, BytesMut};
-use chrono::Utc;
-use jcers::JcePut;
-
 use crate::client::outcome::PbToBytes;
 use crate::client::protocol::packet::*;
-use crate::jce::*;
 use crate::pb;
 
-fn pack_uni_request_data(data: &[u8]) -> Bytes {
-    let mut r = BytesMut::new();
-    r.put_slice(&[0x0A]);
-    r.put_slice(data);
-    r.put_slice(&[0x0B]);
-    Bytes::from(r)
-}
-
 impl super::Engine {
-    pub fn build_group_msg_readed_packet(&self, group_code: i64, msg_seq: i32) -> Packet {
-        let req = pb::msg::PbMsgReadedReportReq {
-            grp_read_report: vec![pb::msg::PbGroupReadedReportReq {
-                group_code: Some(group_code as u64),
-                last_read_seq: Some(msg_seq as u64),
-            }],
-            ..Default::default()
-        };
-        self.uni_packet("PbMessageSvc.PbMsgReadedReport", req.to_bytes())
-    }
-
-    pub fn build_private_msg_readed_packet(&self, uin: i64, time: i64) -> Packet {
-        let transport = &self.transport;
-        let req = pb::msg::PbMsgReadedReportReq {
-            c2_c_read_report: Some(pb::msg::PbC2cReadedReportReq {
-                pair_info: vec![pb::msg::UinPairReadInfo {
-                    peer_uin: Some(uin as u64),
-                    last_read_time: Some(time as u32),
-                    ..Default::default()
-                }],
-                sync_cookie: Some(transport.sig.sync_cookie.to_vec()),
-                ..Default::default()
-            }),
-            ..Default::default()
-        };
-        self.uni_packet("PbMessageSvc.PbMsgReadedReport", req.to_bytes())
-    }
-
     pub fn build_group_info_request_packet(&self, group_code: i64) -> Packet {
         let transport = &self.transport;
         let body = pb::oidb::D88dReqBody {

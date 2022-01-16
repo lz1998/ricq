@@ -4,6 +4,7 @@ pub mod group_member_card;
 pub mod heartbeat;
 pub mod message_svc;
 pub mod online_push;
+pub mod pb_message_svc;
 pub mod profile_service;
 pub mod reg_prxy_svc;
 pub mod stat_svc;
