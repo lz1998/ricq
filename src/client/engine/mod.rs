@@ -7,7 +7,6 @@ use crate::client::protocol::oicq;
 use crate::client::protocol::transport::Transport;
 use crate::client::protocol::version::Version;
 
-pub mod builder;
 pub mod command;
 pub mod common;
 
