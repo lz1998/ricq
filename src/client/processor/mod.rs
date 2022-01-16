@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use crate::client::engine::decoder::config_push_svc::decode_push_req_packet;
 use crate::client::engine::decoder::online_push::decode_group_message_packet;
-use crate::client::engine::decoder::reg_prxy_svc::decode_push_param_packet;
 use crate::client::protocol::packet::Packet;
 
 pub mod config_push_svc;
@@ -38,7 +37,12 @@ impl super::Client {
                     }
                 }
                 "RegPrxySvc.PushParam" => {
-                    let other_clients = decode_push_param_packet(&pkt.body).unwrap();
+                    let other_clients = self
+                        .engine
+                        .read()
+                        .await
+                        .decode_push_param_packet(&pkt.body)
+                        .unwrap();
                     if let Err(e) = self.process_push_param(other_clients).await {
                         tracing::error!("process push param error: {:?}", e);
                     }
