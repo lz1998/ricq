@@ -1,12 +1,14 @@
+use std::collections::HashMap;
+
+use bytes::{Buf, Bytes};
+
+use crate::client::engine::command::wtlogin::tlv_reader::*;
+use crate::{RQError, RQResult};
+
 mod builder;
 mod decoder;
 pub mod tlv_reader;
 pub mod tlv_writer;
-
-use crate::client::engine::command::wtlogin::tlv_reader::*;
-use crate::{RQError, RQResult};
-use bytes::{Buf, Bytes};
-use std::collections::HashMap;
 
 #[derive(Debug, Clone)]
 pub enum QRCodeState {

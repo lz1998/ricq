@@ -1,6 +1,7 @@
-use crate::binary::BinaryWriter;
 use bytes::{BufMut, Bytes, BytesMut};
 use chrono::Utc;
+
+use crate::binary::BinaryWriter;
 
 pub fn t1(uin: u32, ip: &[u8]) -> Bytes {
     if ip.len() != 4 {
@@ -781,8 +782,10 @@ pub fn guid_flag() -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use crate::client::engine::command::wtlogin::tlv_writer::*;
     use lazy_static::*;
+
+    use crate::client::engine::command::wtlogin::tlv_writer::*;
+
     lazy_static! {
         static ref GUID: [u8; 16] =
             [142, 27, 163, 177, 172, 31, 181, 137, 118, 115, 8, 126, 24, 49, 54, 169];

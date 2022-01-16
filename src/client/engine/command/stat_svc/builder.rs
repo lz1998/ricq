@@ -1,9 +1,11 @@
-use crate::client::engine::common::pack_uni_request_data;
-use crate::client::protocol::packet::*;
-use crate::jce::{RequestDataVersion3, RequestPacket, SvcReqGetDevLoginInfo, SvcReqRegister};
+use std::collections::HashMap;
+
 use bytes::{BufMut, Bytes, BytesMut};
 use jcers::JcePut;
-use std::collections::HashMap;
+
+use crate::client::engine::common::pack_uni_request_data;
+use crate::client::protocol::packet::*;
+use crate::jce;
 
 impl super::super::super::Engine {
     // StatSvc.register
@@ -11,7 +13,7 @@ impl super::super::super::Engine {
         let seq = self.next_seq();
         let transport = &self.transport;
 
-        let svc = SvcReqRegister {
+        let svc = jce::SvcReqRegister {
             uin: self.uin(),
             bid: 1 | 2 | 4,
             conn_type: 0,
@@ -45,10 +47,10 @@ impl super::super::super::Engine {
         b.put_slice(&[0x0A]);
         b.put_slice(&svc.freeze());
         b.put_slice(&[0x0B]);
-        let buf = RequestDataVersion3 {
+        let buf = jce::RequestDataVersion3 {
             map: HashMap::from([("SvcReqRegister".to_string(), b.into())]),
         };
-        let pkt = RequestPacket {
+        let pkt = jce::RequestPacket {
             i_version: 3,
             s_servant_name: "PushService".to_string(),
             s_func_name: "SvcReqRegister".to_string(),
@@ -71,7 +73,7 @@ impl super::super::super::Engine {
     // StatSvc.GetDevLoginInfo
     pub fn build_device_list_request_packet(&self) -> Packet {
         let transport = &self.transport;
-        let req = SvcReqGetDevLoginInfo {
+        let req = jce::SvcReqGetDevLoginInfo {
             guid: transport.sig.guid.to_owned(),
             login_type: 1,
             app_name: "com.tencent.mobileqq".into(),
@@ -79,13 +81,13 @@ impl super::super::super::Engine {
             get_dev_list_type: 20,
             ..Default::default()
         };
-        let buf = RequestDataVersion3 {
+        let buf = jce::RequestDataVersion3 {
             map: HashMap::from([(
                 "SvcReqGetDevLoginInfo".to_string(),
                 pack_uni_request_data(&req.freeze()),
             )]),
         };
-        let pkt = RequestPacket {
+        let pkt = jce::RequestPacket {
             i_version: 3,
             s_servant_name: "StatSvc".to_string(),
             s_func_name: "SvcReqGetDevLoginInfo".to_string(),

@@ -1,5 +1,6 @@
-use rand::Rng;
 use std::sync::atomic::{AtomicI32, AtomicI64, AtomicU16, Ordering};
+
+use rand::Rng;
 
 use crate::client::protocol::device::Device;
 use crate::client::protocol::oicq;

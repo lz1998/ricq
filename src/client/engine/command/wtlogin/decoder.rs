@@ -1,7 +1,8 @@
+use bytes::{Buf, Bytes};
+
 use crate::binary::BinaryReader;
 use crate::client::engine::command::wtlogin::{LoginResponse, QRCodeState};
 use crate::{RQError, RQResult};
-use bytes::{Buf, Bytes};
 
 impl super::super::super::Engine {
     pub fn decode_trans_emp_response(&self, mut payload: Bytes) -> RQResult<QRCodeState> {
