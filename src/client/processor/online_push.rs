@@ -1,6 +1,6 @@
 use std::sync::atomic::Ordering;
 
-use crate::client::engine::decoder::online_push::GroupMessagePart;
+use crate::client::engine::command::online_push::GroupMessagePart;
 use crate::client::handler::QEvent;
 use crate::client::income::builder::GroupMessageBuilder;
 use crate::client::msg::*;

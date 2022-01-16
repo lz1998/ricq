@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use crate::client::engine::decoder::online_push::decode_group_message_packet;
 use crate::client::protocol::packet::Packet;
 
 pub mod config_push_svc;
@@ -24,7 +23,12 @@ impl super::Client {
         tokio::spawn(async move {
             match pkt.command_name.as_ref() {
                 "OnlinePush.PbPushGroupMsg" => {
-                    let p = decode_group_message_packet(&pkt.body).unwrap();
+                    let p = self
+                        .engine
+                        .read()
+                        .await
+                        .decode_group_message_packet(pkt.body)
+                        .unwrap();
                     if let Err(e) = self.process_group_message_part(p).await {
                         tracing::error!("process group message part error: {:?}", e);
                     }
