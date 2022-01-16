@@ -4,9 +4,7 @@ use std::sync::Arc;
 use bytes::{Buf, Bytes};
 
 use crate::client::engine::command::wtlogin::{LoginResponse, QRCodeState};
-use crate::client::engine::decoder::{
-    friendlist::*, group_member_card::*, profile_service::*, stat_svc::*,
-};
+use crate::client::engine::decoder::{friendlist::*, group_member_card::*, profile_service::*};
 use crate::client::msg::MsgElem;
 use crate::client::structs::{FriendInfo, GroupInfo, GroupMemberInfo};
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
@@ -145,7 +143,11 @@ impl super::Client {
     pub async fn register_client(&self) -> Result<SvcRespRegister, RQError> {
         let req = self.engine.read().await.build_client_register_packet();
         let resp = self.send_and_wait(req).await?;
-        let resp = decode_client_register_response(&resp.body)?;
+        let resp = self
+            .engine
+            .read()
+            .await
+            .decode_client_register_response(resp.body)?;
         if resp.result != "" || resp.reply_code != 0 {
             return Err(RQError::Other(resp.result + &resp.reply_code.to_string()));
         }
@@ -439,6 +441,6 @@ impl super::Client {
     pub async fn get_allowed_clients(&self) -> Result<Vec<SvcDevLoginInfo>, RQError> {
         let req = self.engine.read().await.build_device_list_request_packet();
         let resp = self.send_and_wait(req).await?;
-        decode_dev_list_response(&resp.body)
+        self.engine.read().await.decode_dev_list_response(resp.body)
     }
 }

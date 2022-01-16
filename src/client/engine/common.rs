@@ -1,6 +1,6 @@
 use crate::client::protocol::oicq;
 use crate::client::protocol::packet::*;
-use bytes::Bytes;
+use bytes::{BufMut, Bytes, BytesMut};
 
 impl super::Engine {
     pub fn build_oicq_request_packet(&self, uin: i64, command_id: u16, body: &[u8]) -> Bytes {
@@ -29,4 +29,12 @@ impl super::Engine {
         let seq = self.next_seq();
         self.uni_packet_with_seq(seq, command, body)
     }
+}
+
+pub fn pack_uni_request_data(data: &[u8]) -> Bytes {
+    let mut r = BytesMut::new();
+    r.put_slice(&[0x0A]);
+    r.put_slice(data);
+    r.put_slice(&[0x0B]);
+    Bytes::from(r)
 }
