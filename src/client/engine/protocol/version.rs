@@ -37,7 +37,7 @@ pub fn get_version(p: Protocol) -> &'static Version {
     }
 }
 
-pub static ANDROID_PHONE: &'static Version = &Version {
+pub static ANDROID_PHONE: &Version = &Version {
     apk_id: "com.tencent.mobileqq",
     app_id: 537066738,
     sub_app_id: 537066738,
@@ -55,7 +55,7 @@ pub static ANDROID_PHONE: &'static Version = &Version {
     protocol: Protocol::AndroidPhone,
 };
 
-pub static IPAD: &'static Version = &Version {
+pub static IPAD: &Version = &Version {
     apk_id: "com.tencent.minihd.qq",
     app_id: 537065739,
     sub_app_id: 537065739,
@@ -72,7 +72,7 @@ pub static IPAD: &'static Version = &Version {
     protocol: Protocol::IPad,
 };
 
-pub static ANDROID_WATCH: &'static Version = &Version {
+pub static ANDROID_WATCH: &Version = &Version {
     apk_id: "com.tencent.qqlite",
     app_id: 537064446,
     sub_app_id: 537064446,
@@ -90,7 +90,7 @@ pub static ANDROID_WATCH: &'static Version = &Version {
     protocol: Protocol::AndroidWatch,
 };
 
-pub static MACOS: &'static Version = &Version {
+pub static MACOS: &Version = &Version {
     apk_id: "com.tencent.minihd.qq",
     app_id: 537064315,
     sub_app_id: 537064315,
@@ -107,7 +107,7 @@ pub static MACOS: &'static Version = &Version {
     protocol: Protocol::MacOS,
 };
 
-pub static QIDIAN: &'static Version = &Version {
+pub static QIDIAN: &Version = &Version {
     apk_id: "com.tencent.qidian",
     app_id: 537061386,
     sub_app_id: 537036590,
