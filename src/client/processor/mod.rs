@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use crate::client::engine::decoder::config_push_svc::decode_push_req_packet;
 use crate::client::engine::decoder::online_push::decode_group_message_packet;
 use crate::client::protocol::packet::Packet;
 
@@ -31,7 +30,12 @@ impl super::Client {
                     }
                 }
                 "ConfigPushSvc.PushReq" => {
-                    let req = decode_push_req_packet(&pkt.body).unwrap();
+                    let req = self
+                        .engine
+                        .read()
+                        .await
+                        .decode_push_req_packet(pkt.body)
+                        .unwrap();
                     if let Err(e) = self.process_config_push_req(req).await {
                         tracing::error!("process config push req error: {:?}", e);
                     }

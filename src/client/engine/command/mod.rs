@@ -1,3 +1,4 @@
+pub mod config_push_svc;
 pub mod friendlist;
 pub mod group_member_card;
 pub mod heartbeat;
