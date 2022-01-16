@@ -6,14 +6,10 @@ use chrono::Utc;
 use jcers::JcePut;
 use prost::Message;
 
-use crate::binary::BinaryWriter;
-use crate::client::engine::command::wtlogin::tlv_writer::*;
-use crate::client::outcome::packet::*;
 use crate::client::outcome::PbToBytes;
 use crate::client::protocol::{
-    oicq::{self, EncryptionMethod},
+    oicq::{self},
     packet::{EncryptType, Packet, PacketType},
-    version::{get_version, Protocol},
 };
 use crate::jce::*;
 use crate::pb;
@@ -113,19 +109,6 @@ impl super::Engine {
             seq_id: seq as i32,
             body: pkt.freeze(),
             command_name: "StatSvc.register".into(),
-            uin: self.uin.load(Ordering::SeqCst),
-            ..Default::default()
-        }
-    }
-
-    // TODO 还没测试
-    pub fn build_heartbeat_packet(&self) -> Packet {
-        let seq = self.next_seq();
-        Packet {
-            packet_type: PacketType::Login,
-            encrypt_type: EncryptType::NoEncrypt,
-            seq_id: seq as i32,
-            command_name: "Heartbeat.Alive".into(),
             uin: self.uin.load(Ordering::SeqCst),
             ..Default::default()
         }

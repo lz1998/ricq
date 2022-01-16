@@ -1,8 +1,7 @@
-use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, AtomicU16, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
 use bytes::{Buf, BufMut, Bytes, BytesMut};
-use rand::Rng;
 use tokio::sync::oneshot;
 use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
@@ -12,9 +11,7 @@ use crate::binary::{BinaryReader, BinaryWriter};
 use crate::client::engine::Engine;
 use crate::client::protocol::{
     device::Device,
-    oicq,
     packet::Packet,
-    transport::Transport,
     version::{get_version, Protocol},
 };
 use crate::error::RQError;

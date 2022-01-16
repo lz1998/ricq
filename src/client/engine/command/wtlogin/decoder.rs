@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::binary::BinaryReader;
 use crate::client::engine::command::wtlogin::{LoginResponse, QRCodeState};
 use crate::{RQError, RQResult};

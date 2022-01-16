@@ -155,7 +155,7 @@ impl super::Client {
 
     pub async fn heartbeat(&self) -> RQResult<()> {
         let req = self.engine.read().await.build_heartbeat_packet();
-        let _resp = self.send_and_wait(req).await?;
+        let _ = self.send_and_wait(req).await?;
         Ok(())
     }
 }

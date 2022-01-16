@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, AtomicI32, AtomicI64, AtomicU16};
+use std::sync::atomic::{AtomicBool, AtomicI64};
 use std::sync::Arc;
 
 use bytes::Bytes;
@@ -7,7 +7,7 @@ use tokio::sync::oneshot;
 use tokio::sync::RwLock;
 
 use crate::client::engine::Engine;
-use crate::client::protocol::{oicq, packet::Packet, transport::Transport};
+use crate::client::protocol::packet::Packet;
 use crate::client::structs::{FriendInfo, GroupInfo};
 use crate::jce::FileStoragePushFSSvcList;
 
