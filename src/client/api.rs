@@ -2,6 +2,7 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 use bytes::{Buf, Bytes};
+use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
 use crate::client::msg::MsgElem;
@@ -309,44 +310,28 @@ impl super::Client {
             let resp = self.get_group_list(&vec_cookie).await?;
             vec_cookie = resp.vec_cookie;
             for g in resp.groups {
-                groups.push(Arc::new((g, RwLock::new(Vec::new()))));
+                groups.push(g);
             }
             if vec_cookie.is_empty() {
                 break;
             }
         }
 
-        // 对于每个群，获取群成员列表（最多10个群并发执行）
-        let semaphore = Arc::new(tokio::sync::Semaphore::new(50));
-        let mut handles = Vec::new();
-
-        for g in groups.iter_mut() {
-            let cli = self.clone();
-            let group = g.clone();
-            let permit = semaphore
-                .clone()
-                .acquire_owned()
-                .await
-                .map_err(|_| RQError::Other("semaphore acquire_owned err".into()))?;
-            handles.push(tokio::spawn(async move {
-                let mut mem_list = cli
-                    .get_group_member_list(group.0.code, group.0.uin)
+        let mut groups = stream::iter(groups)
+            .map(|g| async move {
+                let mem_list = self
+                    .get_group_member_list(g.code, g.uin)
                     .await
-                    .ok()?;
-                let mut members = group.1.write().await;
-                members.append(&mut mem_list);
-                drop(permit);
-                Some(())
-            }));
-        }
-        for h in handles {
-            h.await
-                .map_err(|_| RQError::Other("joinhandle err".into()))?; //todo
-        }
+                    .unwrap_or_default();
+                Arc::new((g, RwLock::new(mem_list)))
+            })
+            .buffered(10)
+            .collect()
+            .await;
 
         let mut group_list = self.group_list.write().await;
         group_list.clear();
-        group_list.append(&mut groups); // TODO 不知道会不会复制大量内存
+        group_list.append(&mut groups);
         Ok(())
     }
 
