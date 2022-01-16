@@ -3,8 +3,9 @@ use std::sync::Arc;
 
 use bytes::{Buf, Bytes};
 
+use crate::client::engine::command::wtlogin::{LoginResponse, QRCodeState};
 use crate::client::engine::decoder::{
-    friendlist::*, group_member_card::*, profile_service::*, stat_svc::*, wtlogin::*,
+    friendlist::*, group_member_card::*, profile_service::*, stat_svc::*,
 };
 use crate::client::msg::MsgElem;
 use crate::client::structs::{FriendInfo, GroupInfo, GroupMemberInfo};
@@ -17,7 +18,11 @@ impl super::Client {
     pub async fn fetch_qrcode(&self) -> Result<QRCodeState, RQError> {
         let req = self.engine.read().await.build_qrcode_fetch_request_packet();
         let resp = self.send_and_wait(req).await?;
-        let resp = decode_trans_emp_response(&resp.body)?;
+        let resp = self
+            .engine
+            .read()
+            .await
+            .decode_trans_emp_response(resp.body)?;
         self.process_trans_emp_response(resp.clone()).await;
         Ok(resp)
     }
@@ -30,7 +35,11 @@ impl super::Client {
             .await
             .build_qrcode_result_query_request_packet(sig);
         let resp = self.send_and_wait(req).await?;
-        let resp = decode_trans_emp_response(&resp.body)?;
+        let resp = self
+            .engine
+            .read()
+            .await
+            .decode_trans_emp_response(resp.body)?;
         self.process_trans_emp_response(resp.clone()).await;
         Ok(resp)
     }
@@ -48,9 +57,7 @@ impl super::Client {
                 .await
                 .build_qrcode_login_packet(tmp_pwd, tmp_no_pic_sig, tgt_qr);
         let resp = self.send_and_wait(req).await?;
-        let resp = decode_login_response(&resp.body, &{
-            self.engine.read().await.transport.sig.tgtgt_key.clone()
-        })?;
+        let resp = self.engine.read().await.decode_login_response(resp.body)?;
         self.process_login_response(resp.clone()).await;
         Ok(resp)
     }
@@ -68,9 +75,7 @@ impl super::Client {
             .await
             .build_login_packet(password_md5, true);
         let resp = self.send_and_wait(req).await?;
-        let resp = decode_login_response(&resp.body, &{
-            self.engine.read().await.transport.sig.tgtgt_key.clone()
-        })?;
+        let resp = self.engine.read().await.decode_login_response(resp.body)?;
         self.process_login_response(resp.clone()).await;
         Ok(resp)
     }
@@ -84,9 +89,7 @@ impl super::Client {
     pub async fn request_sms(&self) -> Result<LoginResponse, RQError> {
         let req = self.engine.read().await.build_sms_request_packet();
         let resp = self.send_and_wait(req).await?;
-        let resp = decode_login_response(&resp.body, &{
-            self.engine.read().await.transport.sig.tgtgt_key.clone()
-        })?;
+        let resp = self.engine.read().await.decode_login_response(resp.body)?;
         self.process_login_response(resp.clone()).await;
         Ok(resp)
     }
@@ -99,9 +102,7 @@ impl super::Client {
             .await
             .build_sms_code_submit_packet(code.trim());
         let resp = self.send_and_wait(req).await?;
-        let resp = decode_login_response(&resp.body, &{
-            self.engine.read().await.transport.sig.tgtgt_key.clone()
-        })?;
+        let resp = self.engine.read().await.decode_login_response(resp.body)?;
         self.process_login_response(resp.clone()).await;
         Ok(resp)
     }
@@ -110,9 +111,7 @@ impl super::Client {
     pub async fn submit_ticket(&self, ticket: &str) -> Result<LoginResponse, RQError> {
         let req = self.engine.read().await.build_ticket_submit_packet(ticket);
         let resp = self.send_and_wait(req).await?;
-        let resp = decode_login_response(&resp.body, &{
-            self.engine.read().await.transport.sig.tgtgt_key.clone()
-        })?;
+        let resp = self.engine.read().await.decode_login_response(resp.body)?;
         self.process_login_response(resp.clone()).await;
         Ok(resp)
     }
@@ -121,9 +120,7 @@ impl super::Client {
     pub async fn device_lock_login(&self) -> Result<LoginResponse, RQError> {
         let req = self.engine.read().await.build_device_lock_login_packet();
         let resp = self.send_and_wait(req).await?;
-        let resp = decode_login_response(&resp.body, &{
-            self.engine.read().await.transport.sig.tgtgt_key.clone()
-        })?;
+        let resp = self.engine.read().await.decode_login_response(resp.body)?;
         self.process_login_response(resp.clone()).await;
         Ok(resp)
     }

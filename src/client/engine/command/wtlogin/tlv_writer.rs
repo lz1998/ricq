@@ -781,7 +781,7 @@ pub fn guid_flag() -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use crate::client::outcome::tlv::*;
+    use crate::client::engine::command::wtlogin::tlv_writer::*;
     use lazy_static::*;
     lazy_static! {
         static ref GUID: [u8; 16] =
