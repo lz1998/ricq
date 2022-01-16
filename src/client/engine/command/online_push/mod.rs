@@ -1,6 +1,7 @@
 use crate::client::structs::{FriendInfo, GroupMemberPermission};
 use crate::{jce, pb};
 
+pub mod builder;
 pub mod decoder;
 
 #[derive(Debug, Default)]

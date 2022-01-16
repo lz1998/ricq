@@ -1,1 +1,2 @@
-mod decoder;
+pub mod builder;
+pub mod decoder;
