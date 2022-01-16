@@ -6,8 +6,9 @@ use bytes::Bytes;
 use tokio::sync::oneshot;
 use tokio::sync::RwLock;
 
+use engine::protocol::packet::Packet;
+
 use crate::client::engine::Engine;
-use crate::client::protocol::packet::Packet;
 use crate::client::structs::{FriendInfo, GroupInfo};
 use crate::jce::FileStoragePushFSSvcList;
 
@@ -19,7 +20,6 @@ pub mod income;
 pub mod msg;
 pub mod net;
 pub mod processor;
-pub mod protocol;
 pub mod structs;
 
 pub struct Client {

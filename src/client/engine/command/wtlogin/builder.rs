@@ -4,7 +4,7 @@ use chrono::Utc;
 use crate::binary::BinaryWriter;
 use crate::client::engine::command::wtlogin::builder::utils::*;
 use crate::client::engine::command::wtlogin::tlv_writer::*;
-use crate::client::protocol::{
+use crate::client::engine::protocol::{
     oicq::{self, EncryptionMethod},
     packet::{EncryptType, Packet, PacketType},
     version::{get_version, Protocol},
@@ -677,8 +677,8 @@ impl super::super::super::Engine {
 mod utils {
     use bytes::{BufMut, Bytes, BytesMut};
 
-    use crate::client::engine::common::PbToBytes;
-    use crate::client::protocol::device::Device;
+    use crate::client::engine::command::common::PbToBytes;
+    use crate::client::engine::protocol::device::Device;
     use crate::pb;
 
     pub fn build_code2d_request_packet(seq: u32, j: u64, cmd: u16, body: &[u8]) -> Bytes {

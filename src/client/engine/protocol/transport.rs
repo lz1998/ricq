@@ -4,7 +4,7 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 use flate2::read::ZlibDecoder;
 
 use crate::binary::{BinaryReader, BinaryWriter};
-use crate::client::protocol::{
+use crate::client::engine::protocol::{
     device::Device,
     packet::{EncryptType, Packet, PacketType},
     sig::Sig,

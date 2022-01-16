@@ -1,10 +1,11 @@
 use bytes::{BufMut, Bytes, BytesMut};
 use prost::{DecodeError, Message};
 
-use crate::client::protocol::oicq;
-use crate::client::protocol::packet::*;
+use crate::client::engine::protocol::oicq;
+use crate::client::engine::protocol::packet::*;
+use crate::client::engine::Engine;
 
-impl super::Engine {
+impl Engine {
     pub fn build_oicq_request_packet(&self, uin: i64, command_id: u16, body: &[u8]) -> Bytes {
         let req = oicq::Message {
             uin: uin as u32,

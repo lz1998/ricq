@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use bytes::Bytes;
 
-use crate::client::protocol::device::Device;
+use crate::client::engine::protocol::device::Device;
 
 #[derive(Default, Debug)]
 pub struct Sig {

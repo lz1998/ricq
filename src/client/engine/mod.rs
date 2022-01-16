@@ -2,13 +2,13 @@ use std::sync::atomic::{AtomicI32, AtomicI64, AtomicU16, Ordering};
 
 use rand::Rng;
 
-use crate::client::protocol::device::Device;
-use crate::client::protocol::oicq;
-use crate::client::protocol::transport::Transport;
-use crate::client::protocol::version::Version;
+use protocol::device::Device;
+use protocol::oicq;
+use protocol::transport::Transport;
+use protocol::version::Version;
 
 pub mod command;
-pub mod common;
+pub mod protocol;
 
 // build_packet: param -> bytes
 // decode_packet: bytes -> struct

@@ -1,5 +1,5 @@
-use crate::client::engine::common::PbToBytes;
-use crate::client::protocol::packet::Packet;
+use crate::client::engine::command::common::PbToBytes;
+use crate::client::engine::protocol::packet::Packet;
 use crate::pb;
 
 impl super::super::super::Engine {

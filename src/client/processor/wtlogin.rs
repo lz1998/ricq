@@ -3,8 +3,8 @@ use std::sync::atomic::Ordering;
 use bytes::{BufMut, Bytes, BytesMut};
 
 use crate::client::engine::command::wtlogin::*;
-use crate::client::protocol::device::random_string;
-use crate::client::protocol::transport::Transport;
+use crate::client::engine::protocol::device::random_string;
+use crate::client::engine::protocol::transport::Transport;
 use crate::Client;
 
 impl Client {

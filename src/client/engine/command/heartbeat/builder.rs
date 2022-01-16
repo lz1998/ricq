@@ -1,4 +1,4 @@
-use crate::client::protocol::packet::*;
+use crate::client::engine::protocol::packet::*;
 
 impl super::super::super::Engine {
     // Heartbeat.Alive

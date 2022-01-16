@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-use crate::client::protocol::{
+use crate::client::engine::protocol::{
     device::Device,
     version::Version,
     version::{get_version, Protocol},

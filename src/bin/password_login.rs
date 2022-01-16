@@ -6,9 +6,9 @@ use futures::StreamExt;
 use tokio_util::codec::{FramedRead, LinesCodec};
 
 use rs_qq::client::engine::command::wtlogin::LoginResponse;
+use rs_qq::client::engine::protocol::device::Device;
+use rs_qq::client::engine::protocol::version::{get_version, Protocol};
 use rs_qq::client::handler::DefaultHandler;
-use rs_qq::client::protocol::device::Device;
-use rs_qq::client::protocol::version::{get_version, Protocol};
 use rs_qq::client::Client;
 
 #[tokio::main]
