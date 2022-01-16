@@ -3,8 +3,8 @@ use std::sync::Arc;
 
 use bytes::{Buf, Bytes};
 
-use crate::client::engine::command::wtlogin::{LoginResponse, QRCodeState};
-use crate::client::engine::decoder::{friendlist::*, profile_service::*};
+use crate::client::engine::command::{friendlist::*, wtlogin::*};
+use crate::client::engine::decoder::profile_service::*;
 use crate::client::msg::MsgElem;
 use crate::client::structs::{FriendInfo, GroupInfo, GroupMemberInfo};
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
@@ -198,7 +198,10 @@ impl super::Client {
                 group_list_count,
             );
         let resp = self.send_and_wait(req).await?;
-        decode_friend_group_list_response(&resp.body)
+        self.engine
+            .read()
+            .await
+            .decode_friend_group_list_response(resp.body)
     }
 
     /// 获取群列表
@@ -210,7 +213,10 @@ impl super::Client {
             .await
             .build_group_list_request_packet(vec_cookie);
         let resp = self.send_and_wait(req).await?;
-        decode_group_list_response(&resp.body)
+        self.engine
+            .read()
+            .await
+            .decode_group_list_response(resp.body)
     }
 
     /// 发送群消息 TODO 切片, At预处理Display
@@ -375,7 +381,10 @@ impl super::Client {
             .await
             .build_group_member_list_request_packet(group_uin, group_code, next_uin);
         let resp = self.send_and_wait(req).await?;
-        decode_group_member_list_response(&resp.body)
+        self.engine
+            .read()
+            .await
+            .decode_group_member_list_response(resp.body)
     }
 
     /// 获取群成员列表
