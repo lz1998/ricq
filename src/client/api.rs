@@ -4,7 +4,7 @@ use std::sync::Arc;
 use bytes::{Buf, Bytes};
 
 use crate::client::engine::command::wtlogin::{LoginResponse, QRCodeState};
-use crate::client::engine::decoder::{friendlist::*, group_member_card::*, profile_service::*};
+use crate::client::engine::decoder::{friendlist::*, profile_service::*};
 use crate::client::msg::MsgElem;
 use crate::client::structs::{FriendInfo, GroupInfo, GroupMemberInfo};
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
@@ -241,7 +241,10 @@ impl super::Client {
             .await
             .build_group_member_info_request_packet(group_code, uin);
         let resp = self.send_and_wait(req).await?;
-        decode_group_member_info_response(&resp.body)
+        self.engine
+            .read()
+            .await
+            .decode_group_member_info_response(resp.body)
     }
 
     /// 通过群号获取群
