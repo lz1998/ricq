@@ -14,8 +14,7 @@ use crate::engine::protocol::{
     version::{get_version, Protocol},
 };
 use crate::engine::Engine;
-use crate::error::RQError;
-use crate::RQResult;
+use crate::{RQError, RQResult};
 
 use super::net;
 use super::Client;
@@ -63,14 +62,14 @@ impl super::Client {
         tokio::spawn(net)
     }
 
-    pub async fn send(&self, pkt: Packet) -> Result<(), RQError> {
+    pub async fn send(&self, pkt: Packet) -> RQResult<()> {
         let data = self.engine.read().await.transport.encode_packet(pkt);
         self.out_pkt_sender
             .send(data)
             .map_err(|_| RQError::Other("failed to send out_pkt".into()))
     }
 
-    pub async fn send_and_wait(&self, pkt: Packet) -> Result<Packet, RQError> {
+    pub async fn send_and_wait(&self, pkt: Packet) -> RQResult<Packet> {
         let seq = pkt.seq_id;
         let expect = pkt.command_name.clone();
         let data = self.engine.read().await.transport.encode_packet(pkt);

@@ -13,7 +13,7 @@ use crate::{RQError, RQResult};
 /// 登录相关
 impl super::Client {
     /// 二维码登录 - 获取二维码
-    pub async fn fetch_qrcode(&self) -> Result<QRCodeState, RQError> {
+    pub async fn fetch_qrcode(&self) -> RQResult<QRCodeState> {
         let req = self.engine.read().await.build_qrcode_fetch_request_packet();
         let resp = self.send_and_wait(req).await?;
         let resp = self
@@ -26,7 +26,7 @@ impl super::Client {
     }
 
     /// 二维码登录 - 查询二维码状态
-    pub async fn query_qrcode_result(&self, sig: &[u8]) -> Result<QRCodeState, RQError> {
+    pub async fn query_qrcode_result(&self, sig: &[u8]) -> RQResult<QRCodeState> {
         let req = self
             .engine
             .read()
@@ -48,7 +48,7 @@ impl super::Client {
         tmp_pwd: &[u8],
         tmp_no_pic_sig: &[u8],
         tgt_qr: &[u8],
-    ) -> Result<LoginResponse, RQError> {
+    ) -> RQResult<LoginResponse> {
         let req =
             self.engine
                 .read()
@@ -65,7 +65,7 @@ impl super::Client {
         &self,
         uin: i64,
         password_md5: &[u8],
-    ) -> Result<LoginResponse, RQError> {
+    ) -> RQResult<LoginResponse> {
         self.engine.read().await.uin.store(uin, Ordering::Relaxed);
         let req = self
             .engine
@@ -78,13 +78,13 @@ impl super::Client {
         Ok(resp)
     }
 
-    pub async fn password_login(&self, uin: i64, password: &str) -> Result<LoginResponse, RQError> {
+    pub async fn password_login(&self, uin: i64, password: &str) -> RQResult<LoginResponse> {
         self.password_md5_login(uin, &md5::compute(password).to_vec())
             .await
     }
 
     /// 密码登录 - 请求短信验证码
-    pub async fn request_sms(&self) -> Result<LoginResponse, RQError> {
+    pub async fn request_sms(&self) -> RQResult<LoginResponse> {
         let req = self.engine.read().await.build_sms_request_packet();
         let resp = self.send_and_wait(req).await?;
         let resp = self.engine.read().await.decode_login_response(resp.body)?;
@@ -93,7 +93,7 @@ impl super::Client {
     }
 
     /// 密码登录 - 提交短信验证码
-    pub async fn submit_sms_code(&self, code: &str) -> Result<LoginResponse, RQError> {
+    pub async fn submit_sms_code(&self, code: &str) -> RQResult<LoginResponse> {
         let req = self
             .engine
             .read()
@@ -106,7 +106,7 @@ impl super::Client {
     }
 
     /// 密码登录 - 提交滑块ticket
-    pub async fn submit_ticket(&self, ticket: &str) -> Result<LoginResponse, RQError> {
+    pub async fn submit_ticket(&self, ticket: &str) -> RQResult<LoginResponse> {
         let req = self.engine.read().await.build_ticket_submit_packet(ticket);
         let resp = self.send_and_wait(req).await?;
         let resp = self.engine.read().await.decode_login_response(resp.body)?;
@@ -115,7 +115,7 @@ impl super::Client {
     }
 
     /// 设备锁登录 - 二维码、密码登录都需要
-    pub async fn device_lock_login(&self) -> Result<LoginResponse, RQError> {
+    pub async fn device_lock_login(&self) -> RQResult<LoginResponse> {
         let req = self.engine.read().await.build_device_lock_login_packet();
         let resp = self.send_and_wait(req).await?;
         let resp = self.engine.read().await.decode_login_response(resp.body)?;
@@ -140,7 +140,7 @@ impl super::Client {
     }
 
     /// 注册客户端，登录后必须注册
-    pub async fn register_client(&self) -> Result<SvcRespRegister, RQError> {
+    pub async fn register_client(&self) -> RQResult<SvcRespRegister> {
         let req = self.engine.read().await.build_client_register_packet();
         let resp = self.send_and_wait(req).await?;
         let resp = self
@@ -168,7 +168,7 @@ impl super::Client {
     pub async fn get_group_system_messages(
         &self,
         suspicious: bool,
-    ) -> Result<GroupSystemMessages, RQError> {
+    ) -> RQResult<GroupSystemMessages> {
         let req = self
             .engine
             .read()
@@ -189,7 +189,7 @@ impl super::Client {
         friend_list_count: i16,
         group_start_index: i16,
         group_list_count: i16,
-    ) -> Result<FriendListResponse, RQError> {
+    ) -> RQResult<FriendListResponse> {
         let req = self
             .engine
             .read()
@@ -209,7 +209,7 @@ impl super::Client {
 
     /// 获取群列表
     /// 第一个参数offset，从0开始；第二个参数count，150，另外两个都是0
-    pub async fn get_group_list(&self, vec_cookie: &[u8]) -> Result<GroupListResponse, RQError> {
+    pub async fn get_group_list(&self, vec_cookie: &[u8]) -> RQResult<GroupListResponse> {
         let req = self
             .engine
             .read()
@@ -227,7 +227,7 @@ impl super::Client {
         &self,
         group_code: i64,
         message_chain: Vec<MsgElem>,
-    ) -> Result<(), RQError> {
+    ) -> RQResult<()> {
         let elems = crate::client::msg::into_elems(message_chain);
         let req = self
             .engine
@@ -243,7 +243,7 @@ impl super::Client {
         &self,
         group_code: i64,
         uin: i64,
-    ) -> Result<GroupMemberInfo, RQError> {
+    ) -> RQResult<GroupMemberInfo> {
         let req = self
             .engine
             .read()
@@ -301,7 +301,7 @@ impl super::Client {
     }
 
     /// 刷新群列表 TODO 获取群成员列表
-    pub async fn reload_group_list(self: &Arc<Self>) -> Result<(), RQError> {
+    pub async fn reload_group_list(self: &Arc<Self>) -> RQResult<()> {
         // 获取群列表
         let mut vec_cookie = Bytes::new();
         let mut groups = Vec::new();
@@ -351,7 +351,7 @@ impl super::Client {
     }
 
     /// 刷新好友列表
-    pub async fn reload_friend_list(&self) -> Result<(), RQError> {
+    pub async fn reload_friend_list(&self) -> RQResult<()> {
         let mut cur_friend_count = 0;
         let mut friends = Vec::new();
         loop {
@@ -386,7 +386,7 @@ impl super::Client {
         group_uin: i64,
         group_code: i64,
         next_uin: i64,
-    ) -> Result<GroupMemberListResponse, RQError> {
+    ) -> RQResult<GroupMemberListResponse> {
         let req = self
             .engine
             .read()
@@ -404,7 +404,7 @@ impl super::Client {
         &self,
         group_code: i64,
         group_uin: i64,
-    ) -> Result<Vec<GroupMemberInfo>, RQError> {
+    ) -> RQResult<Vec<GroupMemberInfo>> {
         let mut next_uin = 0;
         let mut list = Vec::new();
         loop {
@@ -427,7 +427,7 @@ impl super::Client {
     }
 
     /// 刷新客户端状态
-    pub async fn refresh_status(&self) -> Result<(), RQError> {
+    pub async fn refresh_status(&self) -> RQResult<()> {
         let req = self
             .engine
             .read()
@@ -438,11 +438,7 @@ impl super::Client {
     }
 
     /// 标记群消息已读
-    pub async fn mark_group_message_readed(
-        &self,
-        group_code: i64,
-        seq: i32,
-    ) -> Result<(), RQError> {
+    pub async fn mark_group_message_readed(&self, group_code: i64, seq: i32) -> RQResult<()> {
         let req = self
             .engine
             .read()
@@ -453,7 +449,7 @@ impl super::Client {
     }
 
     /// 标记私聊消息已读 TODO 待测试
-    pub async fn mark_private_message_readed(&self, _uin: i64, _time: i64) -> Result<(), RQError> {
+    pub async fn mark_private_message_readed(&self, _uin: i64, _time: i64) -> RQResult<()> {
         // let resp = self
         //     .send_and_wait(self.build_private_msg_read_packet(uin, time).await)
         //     .await?;
@@ -462,7 +458,7 @@ impl super::Client {
     }
 
     /// 获取通过安全验证的设备
-    pub async fn get_allowed_clients(&self) -> Result<Vec<SvcDevLoginInfo>, RQError> {
+    pub async fn get_allowed_clients(&self) -> RQResult<Vec<SvcDevLoginInfo>> {
         let req = self.engine.read().await.build_device_list_request_packet();
         let resp = self.send_and_wait(req).await?;
         self.engine.read().await.decode_dev_list_response(resp.body)

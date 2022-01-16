@@ -345,7 +345,7 @@ fn to_uuid(md5: &str) -> String {
 
 fn calculate_image_resource_id(md5: &[u8], no_dash: bool) -> String {
     let mut r = "{".to_owned();
-    let md5 = crate::hex::encode_hex(md5).to_uppercase();
+    let md5 = rq_engine::hex::encode_hex(md5).to_uppercase();
     if no_dash {
         r.push_str(&md5);
     } else {
