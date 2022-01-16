@@ -24,8 +24,10 @@ pub struct PushInfo {
     pub push_msg: PushMsg,
 }
 
-#[derive(Debug)]
+#[derive(Debug, derivative::Derivative)]
+#[derivative(Default)]
 pub enum PushMsg {
+    #[derivative(Default)]
     Unknown,
     T0x2dc {
         group_mute_events: Vec<GroupMuteEvent>,
@@ -34,12 +36,6 @@ pub enum PushMsg {
         group_digest_events: Vec<GroupDigestEvent>,
     },
     T0x210 {},
-}
-
-impl Default for PushMsg {
-    fn default() -> Self {
-        Self::Unknown
-    }
 }
 
 #[derive(Debug, Default)]

@@ -1,4 +1,4 @@
-use crate::client::outcome::PbToBytes;
+use crate::client::engine::common::PbToBytes;
 use crate::client::protocol::packet::*;
 use crate::pb;
 

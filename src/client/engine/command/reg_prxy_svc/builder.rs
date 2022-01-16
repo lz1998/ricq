@@ -5,7 +5,7 @@ use chrono::Utc;
 use jcers::JcePut;
 
 use crate::client::engine::common::pack_uni_request_data;
-use crate::client::outcome::PbToBytes;
+use crate::client::engine::common::PbToBytes;
 use crate::client::protocol::packet::Packet;
 use crate::{jce, pb};
 

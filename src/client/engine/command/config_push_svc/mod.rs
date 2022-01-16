@@ -11,8 +11,10 @@ pub struct ConfigPushReq {
     pub body: ConfigPushBody,
 }
 
-#[derive(Debug)]
+#[derive(Debug, derivative::Derivative)]
+#[derivative(Default)]
 pub enum ConfigPushBody {
+    #[derivative(Default)]
     Unknown,
     SsoServers {
         servers: Vec<jce::SsoServerInfo>,
@@ -21,12 +23,6 @@ pub enum ConfigPushBody {
         info: jce::FileStoragePushFSSvcList,
         rsp_body: Option<pb::cmd0x6ff::SubCmd0x501RspBody>,
     },
-}
-
-impl Default for ConfigPushBody {
-    fn default() -> Self {
-        Self::Unknown
-    }
 }
 
 #[derive(Default, Debug)]

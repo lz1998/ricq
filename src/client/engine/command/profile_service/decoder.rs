@@ -1,7 +1,7 @@
 use bytes::Bytes;
 
 use crate::client::engine::command::profile_service::*;
-use crate::client::outcome::PbToBytes;
+use crate::client::engine::common::PbToBytes;
 use crate::RQResult;
 use crate::{pb, RQError};
 

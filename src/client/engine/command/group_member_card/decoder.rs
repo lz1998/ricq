@@ -1,6 +1,6 @@
 use bytes::Bytes;
 
-use crate::client::outcome::PbToBytes;
+use crate::client::engine::common::PbToBytes;
 use crate::client::structs::{GroupMemberInfo, GroupMemberPermission};
 use crate::{pb, RQError, RQResult};
 

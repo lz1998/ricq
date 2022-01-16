@@ -2,8 +2,8 @@ use bytes::{BufMut, BytesMut};
 use chrono::Utc;
 
 use crate::binary::BinaryWriter;
+use crate::client::engine::command::wtlogin::builder::utils::*;
 use crate::client::engine::command::wtlogin::tlv_writer::*;
-use crate::client::outcome::packet::*;
 use crate::client::protocol::{
     oicq::{self, EncryptionMethod},
     packet::{EncryptType, Packet, PacketType},
@@ -670,6 +670,51 @@ impl super::super::super::Engine {
             command_name: "wtlogin.login".into(),
             uin: self.uin(),
             ..Default::default()
+        }
+    }
+}
+
+mod utils {
+    use bytes::{BufMut, Bytes, BytesMut};
+
+    use crate::client::engine::common::PbToBytes;
+    use crate::client::protocol::device::Device;
+    use crate::pb;
+
+    pub fn build_code2d_request_packet(seq: u32, j: u64, cmd: u16, body: &[u8]) -> Bytes {
+        let mut w = BytesMut::new();
+        w.put_u8(2);
+        w.put_u16((43 + body.len() + 1) as u16);
+        w.put_u16(cmd);
+        w.put_slice(&vec![0; 21]);
+        w.put_u8(3);
+        w.put_u16(0);
+        w.put_u16(50);
+        w.put_u32(seq);
+        w.put_u64(j);
+        w.put_slice(body);
+        w.put_u8(3);
+        w.into()
+    }
+
+    pub trait DeviceToPb {
+        fn gen_pb_data(&self) -> Bytes;
+    }
+
+    impl DeviceToPb for Device {
+        fn gen_pb_data(&self) -> Bytes {
+            pb::DeviceInfo {
+                bootloader: self.bootloader.to_owned(),
+                proc_version: self.proc_version.to_owned(),
+                codename: self.version.codename.to_owned(),
+                incremental: self.version.incremental.to_owned(),
+                fingerprint: self.finger_print.to_owned(),
+                boot_id: self.boot_id.to_owned(),
+                android_id: self.android_id.to_owned(),
+                base_band: self.base_band.to_owned(),
+                inner_version: self.version.incremental.to_owned(),
+            }
+            .to_bytes()
         }
     }
 }

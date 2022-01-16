@@ -18,7 +18,6 @@ pub mod handler;
 pub mod income;
 pub mod msg;
 pub mod net;
-pub mod outcome;
 pub mod processor;
 pub mod protocol;
 pub mod structs;

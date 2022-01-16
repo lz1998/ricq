@@ -1,10 +1,8 @@
-use crate::client::outcome::PbToBytes;
 use bytes::Bytes;
 use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 
 use crate::hex::encode_hex;
-use crate::pb;
 
 //系统版本
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -99,21 +97,6 @@ impl Device {
                 .as_bytes()
                 .to_vec(),
         )
-    }
-
-    pub fn gen_pb_data(&self) -> Bytes {
-        pb::DeviceInfo {
-            bootloader: self.bootloader.to_owned(),
-            proc_version: self.proc_version.to_owned(),
-            codename: self.version.codename.to_owned(),
-            incremental: self.version.incremental.to_owned(),
-            fingerprint: self.finger_print.to_owned(),
-            boot_id: self.boot_id.to_owned(),
-            android_id: self.android_id.to_owned(),
-            base_band: self.base_band.to_owned(),
-            inner_version: self.version.incremental.to_owned(),
-        }
-        .to_bytes()
     }
 }
 

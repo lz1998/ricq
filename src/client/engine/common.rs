@@ -1,6 +1,8 @@
+use bytes::{BufMut, Bytes, BytesMut};
+use prost::{DecodeError, Message};
+
 use crate::client::protocol::oicq;
 use crate::client::protocol::packet::*;
-use bytes::{BufMut, Bytes, BytesMut};
 
 impl super::Engine {
     pub fn build_oicq_request_packet(&self, uin: i64, command_id: u16, body: &[u8]) -> Bytes {
@@ -37,4 +39,26 @@ pub fn pack_uni_request_data(data: &[u8]) -> Bytes {
     r.put_slice(data);
     r.put_slice(&[0x0B]);
     Bytes::from(r)
+}
+
+pub trait PbToBytes<B>
+where
+    B: Message,
+{
+    fn to_bytes(&self) -> Bytes;
+    fn from_bytes(buf: &[u8]) -> Result<B, DecodeError>;
+}
+
+impl<B> PbToBytes<B> for B
+where
+    B: Message + Default,
+{
+    fn to_bytes(&self) -> Bytes {
+        let mut buf = BytesMut::new();
+        prost::Message::encode(self, &mut buf).unwrap();
+        buf.freeze()
+    }
+    fn from_bytes(buf: &[u8]) -> Result<Self, DecodeError> {
+        prost::Message::decode(buf)
+    }
 }
