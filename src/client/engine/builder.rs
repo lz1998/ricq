@@ -7,10 +7,7 @@ use jcers::JcePut;
 use prost::Message;
 
 use crate::client::outcome::PbToBytes;
-use crate::client::protocol::{
-    oicq::{self},
-    packet::{EncryptType, Packet, PacketType},
-};
+use crate::client::protocol::packet::*;
 use crate::jce::*;
 use crate::pb;
 use crate::pb::msg::SyncCookie;
@@ -21,35 +18,6 @@ fn pack_uni_request_data(data: &[u8]) -> Bytes {
     r.put_slice(data);
     r.put_slice(&[0x0B]);
     Bytes::from(r)
-}
-
-impl super::Engine {
-    pub fn build_oicq_request_packet(&self, uin: i64, command_id: u16, body: &[u8]) -> Bytes {
-        let req = oicq::Message {
-            uin: uin as u32,
-            command: command_id,
-            body: Bytes::from(body.to_vec()),
-            encryption_method: oicq::EncryptionMethod::ECDH,
-        };
-        self.oicq_codec.encode(req)
-    }
-
-    pub fn uni_packet_with_seq(&self, seq: u16, command: &str, body: Bytes) -> Packet {
-        Packet {
-            packet_type: PacketType::Simple,
-            encrypt_type: EncryptType::D2Key,
-            seq_id: seq as i32,
-            body,
-            command_name: command.to_owned(),
-            uin: self.uin.load(Ordering::Relaxed),
-            ..Default::default()
-        }
-    }
-
-    pub fn uni_packet(&self, command: &str, body: Bytes) -> Packet {
-        let seq = self.next_seq();
-        self.uni_packet_with_seq(seq, command, body)
-    }
 }
 
 impl super::Engine {

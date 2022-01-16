@@ -8,6 +8,7 @@ use crate::client::protocol::version::Version;
 
 pub mod builder;
 pub mod command;
+pub mod common;
 pub mod decoder;
 
 // build_packet: param -> bytes
