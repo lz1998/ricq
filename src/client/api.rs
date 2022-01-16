@@ -3,8 +3,7 @@ use std::sync::Arc;
 
 use bytes::{Buf, Bytes};
 
-use crate::client::engine::command::{friendlist::*, wtlogin::*};
-use crate::client::engine::decoder::profile_service::*;
+use crate::client::engine::command::{friendlist::*, profile_service::*, wtlogin::*};
 use crate::client::msg::MsgElem;
 use crate::client::structs::{FriendInfo, GroupInfo, GroupMemberInfo};
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
@@ -175,7 +174,10 @@ impl super::Client {
             .await
             .build_system_msg_new_group_packet(suspicious);
         let resp = self.send_and_wait(req).await?;
-        decode_system_msg_group_packet(&resp.body)
+        self.engine
+            .read()
+            .await
+            .decode_system_msg_group_packet(resp.body)
     }
 
     /// 获取好友列表
