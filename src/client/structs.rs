@@ -1,6 +1,30 @@
 use bytes::Bytes;
 use tokio::sync::RwLock;
 
+use crate::jce;
+
+#[derive(Default, Debug)]
+pub struct AccountInfo {
+    pub nickname: String,
+    pub age: u8,
+    pub gender: u8,
+}
+
+#[derive(Default, Debug)]
+pub struct AddressInfo {
+    pub srv_sso_addrs: Vec<String>,
+    pub other_srv_addrs: Vec<String>,
+    pub file_storage_info: jce::FileStoragePushFSSvcList,
+}
+
+#[derive(Debug, Default)]
+pub struct OtherClientInfo {
+    pub app_id: i64,
+    pub instance_id: i32,
+    pub sub_platform: String,
+    pub device_kind: String,
+}
+
 pub struct QiDianAccountInfo {
     pub master_uin: i64,
     pub ext_name: String,
@@ -10,6 +34,7 @@ pub struct QiDianAccountInfo {
     pub big_data_req_session: BigDataReqSessionInfo,
 }
 
+#[derive(Debug, Default)]
 pub struct BigDataReqSessionInfo {
     pub sig_session: Bytes,
     pub session_key: Bytes,

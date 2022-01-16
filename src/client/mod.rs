@@ -2,15 +2,13 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI64};
 use std::sync::Arc;
 
-use bytes::Bytes;
 use tokio::sync::oneshot;
 use tokio::sync::RwLock;
 
 use engine::protocol::packet::Packet;
 
 use crate::client::engine::Engine;
-use crate::client::structs::{FriendInfo, GroupInfo};
-use crate::jce::FileStoragePushFSSvcList;
+use crate::client::structs::{AccountInfo, AddressInfo, FriendInfo, GroupInfo, OtherClientInfo};
 
 pub mod api;
 pub mod client;
@@ -51,47 +49,4 @@ pub struct Client {
 
     /// 群消息 builder 寄存
     pub group_message_builder: RwLock<HashMap<i32, income::builder::GroupMessageBuilder>>,
-}
-
-/// Password enum
-pub enum Password {
-    String(String),
-    /// [u8; 16]
-    Md5(Bytes),
-}
-
-impl Password {
-    /// compute password md5(do nothing if already md5)
-    pub fn md5(&self) -> Bytes {
-        match self {
-            Self::String(s) => Bytes::copy_from_slice(&md5::compute(s).0),
-            Self::Md5(m) => m.clone(),
-        }
-    }
-
-    pub fn from_str(s: &str) -> Self {
-        Self::String(s.to_owned())
-    }
-}
-
-#[derive(Default, Debug)]
-pub struct AccountInfo {
-    pub nickname: String,
-    pub age: u8,
-    pub gender: u8,
-}
-
-#[derive(Default, Debug)]
-pub struct AddressInfo {
-    pub srv_sso_addrs: Vec<String>,
-    pub other_srv_addrs: Vec<String>,
-    pub file_storage_info: FileStoragePushFSSvcList,
-}
-
-#[derive(Debug, Default)]
-pub struct OtherClientInfo {
-    pub app_id: i64,
-    pub instance_id: i32,
-    pub sub_platform: String,
-    pub device_kind: String,
 }
