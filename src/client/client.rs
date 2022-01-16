@@ -7,13 +7,13 @@ use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
 
-use crate::binary::{BinaryReader, BinaryWriter};
-use crate::client::engine::protocol::{
+use crate::engine::binary::{BinaryReader, BinaryWriter};
+use crate::engine::protocol::{
     device::Device,
     packet::Packet,
     version::{get_version, Protocol},
 };
-use crate::client::engine::Engine;
+use crate::engine::Engine;
 use crate::error::RQError;
 use crate::RQResult;
 

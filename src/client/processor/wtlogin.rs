@@ -2,9 +2,9 @@ use std::sync::atomic::Ordering;
 
 use bytes::{BufMut, Bytes, BytesMut};
 
-use crate::client::engine::command::wtlogin::*;
-use crate::client::engine::protocol::device::random_string;
-use crate::client::engine::protocol::transport::Transport;
+use crate::engine::command::wtlogin::*;
+use crate::engine::protocol::device::random_string;
+use crate::engine::protocol::transport::Transport;
 use crate::Client;
 
 impl Client {

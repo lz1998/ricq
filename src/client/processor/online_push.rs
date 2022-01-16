@@ -1,10 +1,10 @@
 use std::sync::atomic::Ordering;
 
-use crate::client::engine::command::online_push::GroupMessagePart;
 use crate::client::handler::QEvent;
 use crate::client::income::builder::GroupMessageBuilder;
 use crate::client::msg::*;
 use crate::client::Client;
+use crate::engine::command::online_push::GroupMessagePart;
 use crate::{RQError, RQResult};
 
 impl Client {
@@ -66,14 +66,14 @@ impl Client {
     ) -> RQResult<GroupMessageEvent> {
         let group = match self.find_group(part.group_code).await {
             Some(group) => group,
-            None => self.get_group(part.group_code).await.unwrap(),
+            None => self.get_group(part.group_code).await.unwrap(), // TODO remove unwrap
         };
-        if group.member_count == 0 {
-            group
-                .members
-                .write()
-                .await
-                .append(&mut self.get_group_member_list(group.code, group.uin).await?)
+        if group.0.member_count == 0 {
+            group.1.write().await.append(
+                &mut self
+                    .get_group_member_list(group.0.code, group.0.uin)
+                    .await?,
+            )
         }
 
         let anon_info = part
@@ -91,7 +91,14 @@ impl Client {
                 card_name: "".to_string(),
             }
         } else {
-            let member = group.find_member(part.from_uin).await.unwrap(); //todo
+            let member = group
+                .1
+                .read()
+                .await
+                .iter()
+                .find(|m| m.uin == part.from_uin)
+                .unwrap()
+                .clone(); // todo
             Sender {
                 uin: member.uin,
                 nickname: member.nickname.clone(),
@@ -103,8 +110,8 @@ impl Client {
 
         let group_message = GroupMessageEvent {
             id: part.seq,
-            group_code: group.code,
-            group_name: group.name.clone(),
+            group_code: group.0.code,
+            group_name: group.0.name.clone(),
             sender,
             time: part.time,
             original_obj: part.clone(),

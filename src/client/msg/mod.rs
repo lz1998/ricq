@@ -6,7 +6,7 @@ mod from;
 mod into;
 pub use face::FACES_MAP;
 
-use crate::client::engine::command::online_push::GroupMessagePart;
+use crate::engine::command::online_push::GroupMessagePart;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct PrivateMessageEvent {

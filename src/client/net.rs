@@ -8,7 +8,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
 use tokio::sync::{mpsc, RwLock};
 
-use crate::client::engine::protocol::packet::EncryptType;
+use crate::engine::protocol::packet::EncryptType;
 
 use super::Client;
 

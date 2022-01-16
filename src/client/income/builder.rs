@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::client::engine::command::online_push::GroupMessagePart;
+use crate::engine::command::online_push::GroupMessagePart;
 
 #[derive(Debug)]
 pub struct GroupMessageBuilder(BTreeMap<i32, GroupMessagePart>);

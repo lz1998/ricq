@@ -2,10 +2,11 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 use bytes::{Buf, Bytes};
+use tokio::sync::RwLock;
 
-use crate::client::engine::command::{friendlist::*, profile_service::*, wtlogin::*};
 use crate::client::msg::MsgElem;
-use crate::client::structs::{FriendInfo, GroupInfo, GroupMemberInfo};
+use crate::engine::command::{friendlist::*, profile_service::*, wtlogin::*};
+use crate::engine::structs::{FriendInfo, GroupInfo, GroupMemberInfo};
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
 use crate::{RQError, RQResult};
 
@@ -256,9 +257,12 @@ impl super::Client {
     }
 
     /// 通过群号获取群
-    pub async fn find_group(&self, code: i64) -> Option<Arc<GroupInfo>> {
+    pub async fn find_group(
+        &self,
+        code: i64,
+    ) -> Option<Arc<(GroupInfo, RwLock<Vec<GroupMemberInfo>>)>> {
         for g in self.group_list.read().await.iter() {
-            if g.code == code {
+            if g.0.code == code {
                 return Some(g.clone());
             }
         }
@@ -266,7 +270,10 @@ impl super::Client {
     }
 
     /// 通过群号从服务器获取群，请先尝试 find_group
-    pub async fn get_group(&self, code: i64) -> Option<Arc<GroupInfo>> {
+    pub async fn get_group(
+        &self,
+        code: i64,
+    ) -> Option<Arc<(GroupInfo, RwLock<Vec<GroupMemberInfo>>)>> {
         let req = self
             .engine
             .read()
@@ -281,9 +288,12 @@ impl super::Client {
     }
 
     /// 通过uin获取群
-    pub async fn find_group_by_uin(&self, uin: i64) -> Option<Arc<GroupInfo>> {
+    pub async fn find_group_by_uin(
+        &self,
+        uin: i64,
+    ) -> Option<Arc<(GroupInfo, RwLock<Vec<GroupMemberInfo>>)>> {
         for g in self.group_list.read().await.iter() {
-            if g.uin == uin {
+            if g.0.uin == uin {
                 return Some(g.clone());
             }
         }
@@ -299,7 +309,7 @@ impl super::Client {
             let resp = self.get_group_list(&vec_cookie).await?;
             vec_cookie = resp.vec_cookie;
             for g in resp.groups {
-                groups.push(Arc::new(g));
+                groups.push(Arc::new((g, RwLock::new(Vec::new()))));
             }
             if vec_cookie.is_empty() {
                 break;
@@ -320,10 +330,10 @@ impl super::Client {
                 .map_err(|_| RQError::Other("semaphore acquire_owned err".into()))?;
             handles.push(tokio::spawn(async move {
                 let mut mem_list = cli
-                    .get_group_member_list(group.code, group.uin)
+                    .get_group_member_list(group.0.code, group.0.uin)
                     .await
                     .ok()?;
-                let mut members = group.members.write().await;
+                let mut members = group.1.write().await;
                 members.append(&mut mem_list);
                 drop(permit);
                 Some(())

@@ -1,13 +1,15 @@
+use std::io::Read;
+
 use bytes::{Buf, Bytes};
 use flate2::bufread::ZlibDecoder;
 use prost::Message;
-use std::io::Read;
 
-use super::AtSubType;
-use crate::binary::BinaryReader;
 use crate::client::msg::ImageBizType;
+use crate::engine::binary::BinaryReader;
 use crate::pb::msg::{AnonymousGroupMessage, Elem, ObjMsg};
 use crate::{AnonymousInfo, MsgElem};
+
+use super::AtSubType;
 
 impl From<Elem> for MsgElem {
     fn from(elem: Elem) -> Self {
@@ -138,7 +140,7 @@ impl From<Elem> for MsgElem {
                 } else {
                     format!(
                         "https://gchat.qpic.cn/gchatpic_new/0/0-0-{}{}",
-                        crate::binary::calculate_image_resource_id(&custom_face.md5()[1..37], true),
+                        calculate_image_resource_id(&custom_face.md5()[1..37], true),
                         "/0?term=2"
                     )
                 };
@@ -328,4 +330,27 @@ fn parse_magic_value(magic_value: &str) -> i32 {
     let mut value = magic_value.split("=");
     value.next();
     value.next().unwrap().parse::<i32>().unwrap()
+}
+
+fn to_uuid(md5: &str) -> String {
+    format!(
+        "{}-{}-{}-{}-{}",
+        &md5[0..8],
+        &md5[8..12],
+        &md5[12..16],
+        &md5[16..20],
+        &md5[20..32],
+    )
+}
+
+fn calculate_image_resource_id(md5: &[u8], no_dash: bool) -> String {
+    let mut r = "{".to_owned();
+    let md5 = crate::hex::encode_hex(md5).to_uppercase();
+    if no_dash {
+        r.push_str(&md5);
+    } else {
+        r.push_str(&to_uuid(&md5));
+    }
+    r.push_str("}.png");
+    r
 }

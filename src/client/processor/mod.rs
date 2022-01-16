@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use crate::client::engine::protocol::packet::Packet;
+use crate::engine::protocol::packet::Packet;
 
 pub mod config_push_svc;
 pub mod online_push;

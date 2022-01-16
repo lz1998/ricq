@@ -5,20 +5,19 @@ use std::sync::Arc;
 use tokio::sync::oneshot;
 use tokio::sync::RwLock;
 
-use engine::protocol::packet::Packet;
-
-use crate::client::engine::Engine;
-use crate::client::structs::{AccountInfo, AddressInfo, FriendInfo, GroupInfo, OtherClientInfo};
+use crate::engine::protocol::packet::Packet;
+use crate::engine::structs::{
+    AccountInfo, AddressInfo, FriendInfo, GroupInfo, GroupMemberInfo, OtherClientInfo,
+};
+use crate::engine::Engine;
 
 pub mod api;
 pub mod client;
-pub mod engine;
 pub mod handler;
 pub mod income;
 pub mod msg;
 pub mod net;
 pub mod processor;
-pub mod structs;
 
 pub struct Client {
     handler: Box<dyn handler::Handler + Sync + Send + 'static>,
@@ -41,7 +40,7 @@ pub struct Client {
     // address
     pub address: RwLock<AddressInfo>,
     pub friend_list: RwLock<Vec<Arc<FriendInfo>>>,
-    pub group_list: RwLock<Vec<Arc<GroupInfo>>>,
+    pub group_list: RwLock<Vec<Arc<(GroupInfo, RwLock<Vec<GroupMemberInfo>>)>>>,
     pub online_clients: RwLock<Vec<OtherClientInfo>>,
 
     // statics
