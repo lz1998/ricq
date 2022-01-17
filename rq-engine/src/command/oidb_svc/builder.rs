@@ -88,4 +88,30 @@ impl super::super::super::Engine {
         };
         self.build_group_operation_packet(body).await
     }
+
+    // OidbSvc.0x89a_0
+    pub async fn build_group_name_update_packet(&self, group_code: i64, name: String) -> Packet {
+        let body = pb::oidb::D89aReqBody {
+            group_code,
+            st_group_info: Some(pb::oidb::D89aGroupinfo {
+                ing_group_name: name.as_bytes().to_vec(),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        self.build_group_operation_packet(body).await
+    }
+
+    // OidbSvc.0x89a_0
+    pub async fn build_group_memo_update_packet(&self, group_code: i64, memo: String) -> Packet {
+        let body = pb::oidb::D89aReqBody {
+            group_code,
+            st_group_info: Some(pb::oidb::D89aGroupinfo {
+                ing_group_memo: memo.as_bytes().to_vec(),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        self.build_group_operation_packet(body).await
+    }
 }

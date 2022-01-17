@@ -479,4 +479,28 @@ impl super::Client {
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
+
+    // 修改群名称
+    pub async fn update_group_name(&self, group_code: i64, name: String) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_name_update_packet(group_code, name)
+            .await;
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
+    // 设置群公告
+    pub async fn update_group_memo(&self, group_code: i64, memo: String) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_memo_update_packet(group_code, memo)
+            .await;
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
 }
