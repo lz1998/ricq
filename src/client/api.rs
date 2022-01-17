@@ -452,20 +452,19 @@ impl super::Client {
         self.engine.read().await.decode_dev_list_response(resp.body)
     }
 
-    /// 群禁言
+    /// 群禁言 (解除禁言 duration=0)
     pub async fn group_mute(
         &self,
         group_code: i64,
         member_uin: i64,
-        duration: u32,
+        duration: std::time::Duration,
     ) -> RQResult<()> {
-        let req = self
-            .engine
-            .read()
-            .await
-            .build_group_mute_packet(group_code, member_uin, duration);
-        let resp = self.send_and_wait(req).await?;
-        println!("{:?}", resp);
+        let req = self.engine.read().await.build_group_mute_packet(
+            group_code,
+            member_uin,
+            duration.as_secs() as u32,
+        );
+        let _ = self.send_and_wait(req).await?;
         Ok(())
     }
 }
