@@ -99,7 +99,7 @@ impl LoginResponse {
                 let mut t119 = tlv_map
                     .remove(&0x119)
                     .map(|v| decode_t119(&v, encrypt_key))
-                    .ok_or(RQError::Decode("missing 0x119".to_string()))?;
+                    .ok_or_else(|| RQError::Decode("missing 0x119".to_string()))?;
                 LoginResponse::Success {
                     rollback_sig: tlv_map.remove(&0x161).map(decode_t161),
                     rand_seed: tlv_map.remove(&0x403),

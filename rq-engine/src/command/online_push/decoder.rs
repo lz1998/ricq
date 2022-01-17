@@ -12,56 +12,56 @@ impl super::super::super::Engine {
         let message = pb::msg::PushMessagePacket::from_bytes(&payload)
             .map_err(|_| RQError::Decode("PushMessagePacket".to_string()))?
             .message
-            .ok_or(RQError::Decode("message is none".to_string()))?;
+            .ok_or_else(|| RQError::Decode("message is none".to_string()))?;
 
         let head = message
             .head
             .as_ref()
-            .ok_or(RQError::Decode("head is none".to_string()))?;
+            .ok_or_else(|| RQError::Decode("head is none".to_string()))?;
         let body = message
             .body
             .as_ref()
-            .ok_or(RQError::Decode("body is none".to_string()))?;
+            .ok_or_else(|| RQError::Decode("body is none".to_string()))?;
         let content = message
             .content
             .as_ref()
-            .ok_or(RQError::Decode("content is none".to_string()))?;
+            .ok_or_else(|| RQError::Decode("content is none".to_string()))?;
         let rich_text = body
             .rich_text
             .as_ref()
-            .ok_or(RQError::Decode("rich_text is none".to_string()))?;
+            .ok_or_else(|| RQError::Decode("rich_text is none".to_string()))?;
         return Ok(GroupMessagePart {
             seq: head
                 .msg_seq
-                .ok_or(RQError::Decode("msg_seq is none".to_string()))?,
+                .ok_or_else(|| RQError::Decode("msg_seq is none".to_string()))?,
             rand: rich_text
                 .attr
                 .as_ref()
-                .ok_or(RQError::Decode("attr is none".into()))?
+                .ok_or_else(|| RQError::Decode("attr is none".into()))?
                 .random
-                .ok_or(RQError::Decode("attr.random is none".into()))?,
+                .ok_or_else(|| RQError::Decode("attr.random is none".into()))?,
             group_code: head
                 .group_info
                 .as_ref()
-                .ok_or(RQError::Decode("group_info is none".into()))?
+                .ok_or_else(|| RQError::Decode("group_info is none".into()))?
                 .group_code
-                .ok_or(RQError::Decode("group_info.group_code is none".into()))?,
+                .ok_or_else(|| RQError::Decode("group_info.group_code is none".into()))?,
             from_uin: head
                 .from_uin
-                .ok_or(RQError::Decode("from_uin is none".into()))?,
+                .ok_or_else(|| RQError::Decode("from_uin is none".into()))?,
             elems: rich_text.elems.clone(),
             time: head
                 .msg_time
-                .ok_or(RQError::Decode("msg_time is none".into()))?,
+                .ok_or_else(|| RQError::Decode("msg_time is none".into()))?,
             pkg_num: content
                 .pkg_num
-                .ok_or(RQError::Decode("pkg_num is none".into()))?,
+                .ok_or_else(|| RQError::Decode("pkg_num is none".into()))?,
             pkg_index: content
                 .pkg_index
-                .ok_or(RQError::Decode("pkg_index is none".into()))?,
+                .ok_or_else(|| RQError::Decode("pkg_index is none".into()))?,
             div_seq: content
                 .div_seq
-                .ok_or(RQError::Decode("div_seq is none".into()))?,
+                .ok_or_else(|| RQError::Decode("div_seq is none".into()))?,
             ptt: rich_text.ptt.clone(),
         });
     }
@@ -75,12 +75,10 @@ impl super::super::super::Engine {
         let mut req = data
             .map
             .remove("req")
-            .ok_or(RQError::Decode("req is none".into()))?;
+            .ok_or_else(|| RQError::Decode("req is none".into()))?;
         let mut msg = req
             .remove("OnlinePushPack.SvcReqPushMsg")
-            .ok_or(RQError::Decode(
-                "OnlinePushPack.SvcReqPushMsg is none".into(),
-            ))?;
+            .ok_or_else(|| RQError::Decode("OnlinePushPack.SvcReqPushMsg is none".into()))?;
         let mut jr = Jce::new(&mut msg);
         let uin: i64 = jr.get_by_tag(0).map_err(RQError::from)?;
         let msg_infos: Vec<jce::PushMessageInfo> = jr.get_by_tag(2).map_err(RQError::from)?;
@@ -115,7 +113,6 @@ impl super::super::super::Engine {
         Ok(ReqPush {
             resp: ReqPushResp { uin, msg_infos },
             push_infos: infos,
-            ..Default::default()
         })
     }
 
@@ -124,12 +121,12 @@ impl super::super::super::Engine {
         let info = pb::msg::TransMsgInfo::from_bytes(&payload)
             .map_err(|_| RQError::Decode("failed to decode TransMsgInfo".to_string()))?;
         let msg_uid = info.msg_uid.unwrap_or_default();
-        let group_uin = info.from_uin.ok_or(RQError::Decode(
-            "decode_online_push_trans_packet from_uin is 0".to_string(),
-        ))?;
+        let group_uin = info.from_uin.ok_or_else(|| {
+            RQError::Decode("decode_online_push_trans_packet from_uin is 0".to_string())
+        })?;
         let mut data = Bytes::from(
             info.msg_data
-                .ok_or(RQError::Decode("msg_data is none".into()))?,
+                .ok_or_else(|| RQError::Decode("msg_data is none".into()))?,
         );
         // 去重暂时不做
         match info.msg_type {
@@ -215,7 +212,7 @@ impl super::super::super::Engine {
         let msg_add_frd_notify = pb::SubB3::from_bytes(&protobuf)
             .map_err(|_| RQError::Decode("SubB3".to_string()))?
             .msg_add_frd_notify
-            .ok_or(RQError::Decode("msg_add_frd_notify is none".to_string()))?;
+            .ok_or_else(|| RQError::Decode("msg_add_frd_notify is none".to_string()))?;
         let friend = FriendInfo {
             uin: msg_add_frd_notify.uin,
             nick: msg_add_frd_notify.nick,
@@ -295,9 +292,9 @@ impl super::super::super::Engine {
             pb::Sub44::from_bytes(&protobuf).map_err(|_| RQError::Decode("Sub44".to_string()))?;
         let group_code = b44
             .group_sync_msg
-            .ok_or(RQError::Decode(
-                "msg_type_0x210_sub44_decoder group_sync_msg is None".to_string(),
-            ))?
+            .ok_or_else(|| {
+                RQError::Decode("msg_type_0x210_sub44_decoder group_sync_msg is None".to_string())
+            })?
             .grp_code;
         if group_code != 0 {
             return Ok(GroupMemberNeedSync { group_code });

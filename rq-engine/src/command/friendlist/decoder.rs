@@ -15,9 +15,9 @@ impl super::super::super::Engine {
             jcers::from_buf(&mut payload).map_err(RQError::from)?;
         let mut data: jce::RequestDataVersion3 =
             jcers::from_buf(&mut request.s_buffer).map_err(RQError::from)?;
-        let mut fl_resp = data.map.remove("FLRESP").ok_or(RQError::Decode(
-            "decode_friend_group_list_response FLRESP not found".to_string(),
-        ))?;
+        let mut fl_resp = data.map.remove("FLRESP").ok_or_else(|| {
+            RQError::Decode("decode_friend_group_list_response FLRESP not found".into())
+        })?;
         fl_resp.advance(1);
         let mut r = Jce::new(&mut fl_resp);
         let total_friend_count: i16 = r.get_by_tag(5).map_err(RQError::from)?;
@@ -42,12 +42,9 @@ impl super::super::super::Engine {
             jcers::from_buf(&mut payload).map_err(RQError::from)?;
         let mut data: jce::RequestDataVersion3 =
             jcers::from_buf(&mut request.s_buffer).map_err(RQError::from)?;
-        let mut fl_resp = data
-            .map
-            .remove("GetTroopListRespV2")
-            .ok_or(RQError::Decode(
-                "decode_group_list_response GetTroopListRespV2 not found".to_string(),
-            ))?;
+        let mut fl_resp = data.map.remove("GetTroopListRespV2").ok_or_else(|| {
+            RQError::Decode("decode_group_list_response GetTroopListRespV2 not found".into())
+        })?;
         fl_resp.advance(1);
         let mut r = Jce::new(&mut fl_resp);
         let vec_cookie: Bytes = r.get_by_tag(4).map_err(RQError::from)?;
@@ -80,9 +77,9 @@ impl super::super::super::Engine {
             jcers::from_buf(&mut payload).map_err(RQError::from)?;
         let mut data: jce::RequestDataVersion3 =
             jcers::from_buf(&mut request.s_buffer).map_err(RQError::from)?;
-        let mut fl_resp = data.map.remove("GTMLRESP").ok_or(RQError::Decode(
-            "decode_group_member_list_response GTMLRESP not found".to_string(),
-        ))?;
+        let mut fl_resp = data.map.remove("GTMLRESP").ok_or_else(|| {
+            RQError::Decode("decode_group_member_list_response GTMLRESP not found".into())
+        })?;
         fl_resp.advance(1);
         let mut r = Jce::new(&mut fl_resp);
         let members: Vec<jce::TroopMemberInfo> = r.get_by_tag(3).map_err(RQError::from)?;

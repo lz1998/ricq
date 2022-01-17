@@ -67,7 +67,7 @@ pub struct Packet {
 
 impl Packet {
     pub fn check_command_name(self, command_name: &str) -> RQResult<Self> {
-        if &self.command_name != command_name {
+        if self.command_name != command_name {
             Err(RQError::CommandNameMismatch(
                 command_name.to_owned(),
                 self.command_name,

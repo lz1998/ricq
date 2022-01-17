@@ -35,7 +35,7 @@ impl super::super::super::Engine {
                 return Ok(QRCodeState::QRCodeImageFetch {
                     image_data: m
                         .remove(&0x17)
-                        .ok_or(RQError::Decode("missing 0x17".into()))?,
+                        .ok_or_else(|| RQError::Decode("missing 0x17".into()))?,
                     sig,
                 });
             }
@@ -71,16 +71,16 @@ impl super::super::super::Engine {
                 uin,
                 tmp_pwd: m
                     .remove(&0x18)
-                    .ok_or(RQError::Decode("missing 0x18".into()))?,
+                    .ok_or_else(|| RQError::Decode("missing 0x18".into()))?,
                 tmp_no_pic_sig: m
                     .remove(&0x19)
-                    .ok_or(RQError::Decode("missing 0x19".into()))?,
+                    .ok_or_else(|| RQError::Decode("missing 0x19".into()))?,
                 tgt_qr: m
                     .remove(&0x65)
-                    .ok_or(RQError::Decode("missing 0x65".into()))?,
+                    .ok_or_else(|| RQError::Decode("missing 0x65".into()))?,
                 tgtgt_key: m
                     .remove(&0x1e)
-                    .ok_or(RQError::Decode("missing 0x1e".into()))?,
+                    .ok_or_else(|| RQError::Decode("missing 0x1e".into()))?,
             });
         }
         Err(RQError::Decode(

@@ -12,7 +12,7 @@ impl super::super::super::Engine {
         let group_code = resp.group_code;
         let mem_info = resp
             .mem_info
-            .ok_or(RQError::Decode("mem_info is none".to_string()))?;
+            .ok_or_else(|| RQError::Decode("mem_info is none".to_string()))?;
         Ok(GroupMemberInfo {
             group_code,
             uin: mem_info.uin,

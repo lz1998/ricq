@@ -14,12 +14,12 @@ impl super::super::super::Engine {
         let mut req = data
             .map
             .remove("SvcRespParam")
-            .ok_or(RQError::Decode("SvcRespParam is none".to_string()))?;
+            .ok_or_else(|| RQError::Decode("SvcRespParam is none".to_string()))?;
         let mut reader = req
             .remove("RegisterProxySvcPack.SvcRespParam")
-            .ok_or(RQError::Decode(
-                "RegisterProxySvcPack.SvcRespParam is none".to_string(),
-            ))?;
+            .ok_or_else(|| {
+                RQError::Decode("RegisterProxySvcPack.SvcRespParam is none".to_string())
+            })?;
         reader.advance(1);
         let rsp: jce::SvcRespParam = jcers::from_buf(&mut reader).map_err(RQError::from)?;
         Ok(rsp

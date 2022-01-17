@@ -16,10 +16,10 @@ impl super::super::super::Engine {
         let mut a = data
             .map
             .remove("SvcRespRegister")
-            .ok_or(RQError::Decode("missing SvcRespRegister".into()))?;
+            .ok_or_else(|| RQError::Decode("missing SvcRespRegister".into()))?;
         let mut b = a
             .remove("QQService.SvcRespRegister")
-            .ok_or(RQError::Decode("missing QQService.SvcRespRegister".into()))?;
+            .ok_or_else(|| RQError::Decode("missing QQService.SvcRespRegister".into()))?;
         b.advance(1);
         jcers::from_buf(&mut b).map_err(RQError::from)
     }
@@ -36,12 +36,10 @@ impl super::super::super::Engine {
         let mut req = data
             .map
             .remove("SvcRspGetDevLoginInfo")
-            .ok_or(RQError::Decode("missing SvcRspGetDevLoginInfo".into()))?;
+            .ok_or_else(|| RQError::Decode("missing SvcRspGetDevLoginInfo".into()))?;
         let mut msg = req
             .remove("QQService.SvcRspGetDevLoginInfo")
-            .ok_or(RQError::Decode(
-                "missing QQService.SvcRspGetDevLoginInfo".into(),
-            ))?;
+            .ok_or_else(|| RQError::Decode("missing QQService.SvcRspGetDevLoginInfo".into()))?;
         msg.advance(1);
         let mut rsp = Jce::new(&mut msg);
         let d: Vec<jce::SvcDevLoginInfo> = rsp.get_by_tag(4).map_err(RQError::from)?;

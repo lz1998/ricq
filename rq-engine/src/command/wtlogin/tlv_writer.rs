@@ -699,26 +699,23 @@ pub fn t511(domains: Vec<&str>) -> Bytes {
             } else {
                 let mut b: u8;
                 let z: bool;
-                match d[(index_of + 1) as usize..index_of2 as usize].parse::<i32>() {
-                    Ok(i) => {
-                        let z2 = (1048576 & i) > 0;
-                        if (i & 134217728) > 0 {
-                            z = true
-                        } else {
-                            z = false
-                        }
-                        if z2 {
-                            b = 1
-                        } else {
-                            b = 0
-                        }
-                        if z {
-                            b |= 2
-                        }
-                        w.put_u8(b);
-                        w.write_bytes_short(d[(index_of2 + 1) as usize..].as_bytes());
+                if let Ok(i) = d[(index_of + 1) as usize..index_of2 as usize].parse::<i32>() {
+                    let z2 = (1048576 & i) > 0;
+                    if (i & 134217728) > 0 {
+                        z = true
+                    } else {
+                        z = false
                     }
-                    Err(_) => {}
+                    if z2 {
+                        b = 1
+                    } else {
+                        b = 0
+                    }
+                    if z {
+                        b |= 2
+                    }
+                    w.put_u8(b);
+                    w.write_bytes_short(d[(index_of2 + 1) as usize..].as_bytes());
                 }
             }
         }

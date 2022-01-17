@@ -15,10 +15,10 @@ impl super::super::super::Engine {
         let mut a = data
             .map
             .remove("PushReq")
-            .ok_or(RQError::Decode("missing PushReq".into()))?;
+            .ok_or_else(|| RQError::Decode("missing PushReq".into()))?;
         let mut b = a
             .remove("ConfigPush.PushReq")
-            .ok_or(RQError::Decode("missing ConfigPush.PushReq".into()))?;
+            .ok_or_else(|| RQError::Decode("missing ConfigPush.PushReq".into()))?;
         let _ = b.split_to(1);
         let mut r = jcers::Jce::new(&mut b);
         let t: i32 = r.get_by_tag(1).map_err(RQError::Jce)?;

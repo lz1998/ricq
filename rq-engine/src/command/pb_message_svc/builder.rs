@@ -26,7 +26,6 @@ impl super::super::super::Engine {
                     ..Default::default()
                 }],
                 sync_cookie: Some(transport.sig.sync_cookie.to_vec()),
-                ..Default::default()
             }),
             ..Default::default()
         };
