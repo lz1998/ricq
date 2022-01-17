@@ -20,6 +20,7 @@ tracing = "0.1"
 lazy_static = "1.4.0"
 async-trait = "0.1"
 base64 = "0.13"
+cached = "0.29.0"
 
 jcers = { version = "0.1.0", features = ["derive"] }
 rq-engine = { path = "./rq-engine" }

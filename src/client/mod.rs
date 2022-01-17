@@ -1,9 +1,11 @@
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::sync::atomic::{AtomicBool, AtomicI64};
 use std::sync::Arc;
 
 use tokio::sync::oneshot;
 use tokio::sync::RwLock;
+
+use rq_engine::command::online_push::GroupMessagePart;
 
 use crate::engine::protocol::packet::Packet;
 use crate::engine::structs::{
@@ -14,7 +16,6 @@ use crate::engine::Engine;
 pub mod api;
 pub mod client;
 pub mod handler;
-pub mod income;
 pub mod msg;
 pub mod net;
 pub mod processor;
@@ -45,7 +46,7 @@ pub struct Client {
     // statics
     pub last_message_time: AtomicI64,
 
-    /// 群消息 builder 寄存
-    pub group_message_builder: RwLock<HashMap<i32, income::builder::GroupMessageBuilder>>,
+    /// 群消息 builder 寄存 <div_seq, parts> : parts is sorted by pkg_index
+    group_message_builder: RwLock<cached::TimedCache<i32, BTreeMap<i32, GroupMessagePart>>>,
     c2c_cache: crate::cache::TimeOutCache<()>,
 }

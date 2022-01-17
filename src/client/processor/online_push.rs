@@ -1,5 +1,8 @@
+use std::collections::BTreeMap;
+
+use cached::Cached;
+
 use crate::client::handler::QEvent;
-use crate::client::income::builder::GroupMessageBuilder;
 use crate::client::msg::*;
 use crate::client::Client;
 use crate::engine::command::online_push::GroupMessagePart;
@@ -25,21 +28,23 @@ impl Client {
         }
 
         // merge parts
-        let div_seq = group_message_part.div_seq;
-        let group_msg = if group_message_part.pkg_num > 1 {
+        let pkg_num = group_message_part.pkg_num;
+        let group_msg = if pkg_num > 1 {
+            let mut builder = self.group_message_builder.write().await;
             // muti-part
-            let mut map = self.group_message_builder.write().await;
-            let build_result = match map.remove(&div_seq) {
-                Some(builder) => builder.join(group_message_part), // have previous part
-                None => Err(GroupMessageBuilder::new(group_message_part)), // the first part
-            };
-            match build_result {
-                Ok(group_message) => Some(group_message), // message is finish
-                Err(builder) => {
-                    // message is not finish
-                    map.insert(div_seq, builder);
-                    None
+            let div_seq = group_message_part.div_seq;
+            let parts = builder.cache_get_or_set_with(div_seq, || BTreeMap::new());
+            parts.insert(group_message_part.pkg_index, group_message_part);
+            if parts.len() < pkg_num as usize {
+                // wait for more parts
+                None
+            } else {
+                let mut parts = builder.cache_remove(&div_seq).unwrap_or_default();
+                let mut merged = parts.pop_first().unwrap_or_default().1;
+                for (_, part) in parts.into_iter() {
+                    merged.elems.extend(part.elems);
                 }
+                Some(merged)
             }
         } else {
             // single-part
