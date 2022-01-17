@@ -7,12 +7,10 @@ use tokio::sync::RwLock;
 use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
 
+use rq_engine::protocol::version::Version;
+
 use crate::engine::binary::{BinaryReader, BinaryWriter};
-use crate::engine::protocol::{
-    device::Device,
-    packet::Packet,
-    version::{get_version, Protocol},
-};
+use crate::engine::protocol::{device::Device, packet::Packet};
 use crate::engine::Engine;
 use crate::{RQError, RQResult};
 
@@ -20,7 +18,7 @@ use super::net;
 use super::Client;
 
 impl super::Client {
-    pub async fn new<H>(device: Device, handler: H) -> Client
+    pub async fn new<H>(device: Device, version: &'static Version, handler: H) -> Client
     where
         H: crate::client::handler::Handler + 'static + Sync + Send,
     {
@@ -28,7 +26,7 @@ impl super::Client {
 
         let cli = Client {
             handler: Box::new(handler),
-            engine: RwLock::new(Engine::new(device, get_version(Protocol::IPad))),
+            engine: RwLock::new(Engine::new(device, version)),
             connected: AtomicBool::new(false),
             shutting_down: AtomicBool::new(false),
             heartbeat_enabled: AtomicBool::new(false),
@@ -56,7 +54,7 @@ impl super::Client {
     where
         H: crate::client::handler::Handler + 'static + Sync + Send,
     {
-        Self::new(config.device, handler).await
+        Self::new(config.device, config.version, handler).await
     }
 
     pub async fn uin(&self) -> i64 {

@@ -4,6 +4,7 @@ use bytes::{Buf, BufMut, Bytes, BytesMut};
 use flate2::read::ZlibDecoder;
 
 use crate::binary::{BinaryReader, BinaryWriter};
+use crate::command::common::PbToBytes;
 use crate::crypto::{qqtea_decrypt, qqtea_encrypt};
 use crate::protocol::{
     device::Device,
@@ -11,7 +12,7 @@ use crate::protocol::{
     sig::Sig,
     version::Version,
 };
-use crate::{RQError, RQResult};
+use crate::{pb, RQError, RQResult};
 
 pub struct Transport {
     pub sig: Sig,
@@ -183,5 +184,16 @@ impl Transport {
 
         pkt.body = body;
         Ok(())
+    }
+
+    pub fn encode_oidb_packet(&self, cmd: i32, service_type: i32, body: Bytes) -> Bytes {
+        pb::oidb::OidbssoPkg {
+            command: cmd,
+            service_type,
+            bodybuffer: body.to_vec(),
+            client_version: format!("Android {}", self.version.sort_version_name),
+            ..Default::default()
+        }
+        .to_bytes()
     }
 }

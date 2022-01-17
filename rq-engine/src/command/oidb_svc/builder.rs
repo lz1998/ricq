@@ -1,3 +1,5 @@
+use bytes::{BufMut, BytesMut};
+
 use crate::command::common::PbToBytes;
 use crate::pb;
 use crate::protocol::packet::Packet;
@@ -48,5 +50,22 @@ impl super::super::super::Engine {
             ..Default::default()
         };
         self.uni_packet("OidbSvc.0x88d_0", payload.to_bytes())
+    }
+
+    // OidbSvc.0x570_8
+    pub fn build_group_mute_packet(
+        &self,
+        group_code: i64,
+        member_uin: i64,
+        duration: u32,
+    ) -> Packet {
+        let mut w = BytesMut::new();
+        w.put_u32(group_code as u32);
+        w.put_u8(32);
+        w.put_u16(1);
+        w.put_u32(member_uin as u32);
+        w.put_u32(duration);
+        let payload = self.transport.encode_oidb_packet(1392, 8, w.freeze());
+        self.uni_packet("OidbSvc.0x570_8", payload)
     }
 }

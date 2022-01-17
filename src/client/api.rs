@@ -9,7 +9,7 @@ use crate::client::msg::MsgElem;
 use crate::engine::command::{friendlist::*, profile_service::*, wtlogin::*};
 use crate::engine::structs::{FriendInfo, GroupInfo, GroupMemberInfo};
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
-use crate::{RQError, RQResult, QEvent};
+use crate::{QEvent, RQError, RQResult};
 
 /// 登录相关
 impl super::Client {
@@ -134,7 +134,9 @@ impl super::Client {
             self.wait_packet("MessageSvc.PushForceOffline", 1)
         };
         if let (Err(RQError::Timeout), Err(RQError::Timeout)) = r {
-            self.handler.handle(QEvent::LoginEvent(self.uin().await)).await;
+            self.handler
+                .handle(QEvent::LoginEvent(self.uin().await))
+                .await;
             Ok(())
         } else {
             Err(RQError::TokenLoginFailed)
@@ -448,5 +450,22 @@ impl super::Client {
         let req = self.engine.read().await.build_device_list_request_packet();
         let resp = self.send_and_wait(req).await?;
         self.engine.read().await.decode_dev_list_response(resp.body)
+    }
+
+    /// 群禁言
+    pub async fn group_mute(
+        &self,
+        group_code: i64,
+        member_uin: i64,
+        duration: u32,
+    ) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_mute_packet(group_code, member_uin, duration);
+        let resp = self.send_and_wait(req).await?;
+        println!("{:?}", resp);
+        Ok(())
     }
 }
