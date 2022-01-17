@@ -82,10 +82,18 @@ async fn main() -> Result<()> {
                 }
             }
             client.register_client().await.unwrap();
-            let rsp = client.group_list.read().await;
-            println!("{:?}", rsp);
-            let rsp = client.friend_list.read().await;
-            println!("{:?}", rsp);
+            {
+                client
+                    .reload_friend_list()
+                    .await
+                    .expect("failed to reload friend list");
+                println!("{:?}", client.friend_list.read().await);
+                client
+                    .reload_group_list()
+                    .await
+                    .expect("failed to reload group list");
+                println!("{:?}", client.group_list.read().await);
+            }
         } else {
             panic!("error")
         }
