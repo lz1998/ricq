@@ -56,7 +56,7 @@ where
 {
     fn to_bytes(&self) -> Bytes {
         let mut buf = BytesMut::new();
-        prost::Message::encode(self, &mut buf).unwrap();
+        prost::Message::encode(self, &mut buf).expect("prost encode failed");
         buf.freeze()
     }
     fn from_bytes(buf: &[u8]) -> Result<Self, DecodeError> {

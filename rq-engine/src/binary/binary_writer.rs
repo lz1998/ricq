@@ -33,7 +33,7 @@ where
     }
 
     fn write_hex(&mut self, h: &str) {
-        let b = decode_hex(h).unwrap();
+        let b = decode_hex(h).expect("write_hex failed");
         self.put_slice(&b);
     }
 

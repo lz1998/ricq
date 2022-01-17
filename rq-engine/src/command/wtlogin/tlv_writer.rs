@@ -990,7 +990,7 @@ mod tests {
 
     #[test]
     fn test_t108() {
-        let result = t108(&IMEI);
+        let result = t108(IMEI.as_bytes());
         println!("{}", result.len());
         println!("{:?}", result);
     }

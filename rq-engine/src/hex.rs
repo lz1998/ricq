@@ -18,11 +18,11 @@ pub fn encode_hex(bytes: &[u8]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use rq_engine::hex::{decode_hex, encode_hex};
+    use super::*;
 
     #[test]
     fn test_decode() {
-        let h = decode_hex("04EBCA94D733E399B2DB96EACDD3F69A8BB0F74224E2B44E3357812211D2E62EFBC91BB553098E25E33A799ADC7F76FEB208DA7C6522CDB0719A305180CC54A82E").unwrap();
+        let h = decode_hex("04EBCA94D733E399B2DB96EACDD3F69A8BB0F74224E2B44E3357812211D2E62EFBC91BB553098E25E33A799ADC7F76FEB208DA7C6522CDB0719A305180CC54A82E");
         println!("{:?}", h)
     }
 

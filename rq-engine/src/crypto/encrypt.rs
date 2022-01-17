@@ -33,9 +33,9 @@ impl Default for EncryptECDH {
 
 impl EncryptECDH {
     pub fn generate_key(&mut self, s_pub_key: &str) {
-        let s_pub_key = decode_hex(s_pub_key).unwrap(); // decode pub key
+        let s_pub_key = decode_hex(s_pub_key).expect("failed to decode ecdh hex"); // decode pub key
         let secret = EphemeralSecret::random(rand::thread_rng()); // gen private key
-        let pub_key = PublicKey::from_sec1_bytes(&s_pub_key).unwrap(); // gen public key
+        let pub_key = PublicKey::from_sec1_bytes(&s_pub_key).expect("failed to get s_pub_key"); // gen public key
 
         let share = secret.diffie_hellman(&pub_key); // count public share
         let share_x = &share.as_bytes()[0..16];
