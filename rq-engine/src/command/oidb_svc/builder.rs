@@ -68,4 +68,24 @@ impl super::super::super::Engine {
         let payload = self.transport.encode_oidb_packet(1392, 8, w.freeze());
         self.uni_packet("OidbSvc.0x570_8", payload)
     }
+
+    // OidbSvc.0x89a_0
+    async fn build_group_operation_packet(&self, body: pb::oidb::D89aReqBody) -> Packet {
+        let payload = self.transport.encode_oidb_packet(2202, 0, body.to_bytes());
+        self.uni_packet("OidbSvc.0x89a_0", payload)
+    }
+
+    // OidbSvc.0x89a_0
+    pub async fn build_group_mute_all_packet(&self, group_code: i64, mute: bool) -> Packet {
+        let shut_up_time: i32 = if mute { 268435455 } else { 0 };
+        let body = pb::oidb::D89aReqBody {
+            group_code,
+            st_group_info: Some(pb::oidb::D89aGroupinfo {
+                shutup_time: Some(pb::oidb::d89a_groupinfo::ShutupTime::Val(shut_up_time)),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        self.build_group_operation_packet(body).await
+    }
 }

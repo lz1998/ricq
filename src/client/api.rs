@@ -467,4 +467,16 @@ impl super::Client {
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
+
+    // 全员禁言
+    pub async fn group_mute_all(&self, group_code: i64, mute: bool) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_mute_all_packet(group_code, mute)
+            .await;
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
 }
