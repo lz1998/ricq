@@ -45,6 +45,7 @@ impl super::Client {
             online_clients: Default::default(),
             last_message_time: Default::default(),
             group_message_builder: RwLock::default(),
+            c2c_cache: crate::cache::TimeOutCache::default(),
         };
         cli
     }

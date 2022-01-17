@@ -5,7 +5,7 @@ use bytes::{BufMut, Bytes, BytesMut};
 use crate::engine::command::wtlogin::*;
 use crate::engine::protocol::device::random_string;
 use crate::engine::protocol::transport::Transport;
-use crate::Client;
+use crate::{Client, QEvent};
 
 impl Client {
     pub async fn process_login_response(&self, login_response: LoginResponse) {
@@ -61,7 +61,7 @@ impl Client {
                 d2key.map(|v| engine.transport.sig.d2key = v);
                 device_token.map(|v| engine.transport.sig.device_token = v);
                 t402.map(|v| set_t402(&mut engine.transport, v));
-                // TODO dispatch login success event
+                self.handler.handle(QEvent::LoginEvent(engine.uin())).await;
             }
             LoginResponse::NeedCaptcha { t104, .. } => {
                 t104.map(|v| engine.transport.sig.t104 = v);

@@ -4,8 +4,8 @@ use async_trait::async_trait;
 /// 所有需要外发的数据的枚举打包
 #[derive(Debug)]
 pub enum QEvent {
-    /// Uin 改变事件
-    UinChanged(i64),
+    /// 登录成功事件
+    LoginEvent(i64),
     /// 群消息撤回
     GroupMessageReceipt(GroupMessageReceiptEvent),
     /// 群消息
@@ -21,7 +21,7 @@ pub enum QEvent {
 pub trait Handler: Sync {
     async fn handle(&self, msg: QEvent) {
         match msg {
-            QEvent::UinChanged(uin) => self.handle_uin_changed(uin).await,
+            QEvent::LoginEvent(uin) => self.handle_login_event(uin).await,
             QEvent::GroupMessageReceipt(group_message_receipt_event) => {
                 self.handle_group_message_receipt(group_message_receipt_event)
                     .await
@@ -32,7 +32,7 @@ pub trait Handler: Sync {
             }
         }
     }
-    async fn handle_uin_changed(&self, _uin: i64) {}
+    async fn handle_login_event(&self, _uin: i64) {}
     async fn handle_group_message_receipt(
         &self,
         _group_message_receipt_event: GroupMessageReceiptEvent,

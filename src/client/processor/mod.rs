@@ -3,6 +3,7 @@ use std::sync::Arc;
 use crate::engine::protocol::packet::Packet;
 
 pub mod config_push_svc;
+pub mod message_svc;
 pub mod online_push;
 pub mod reg_prxy_svc;
 pub mod wtlogin;
@@ -54,6 +55,33 @@ impl super::Client {
                     if let Err(e) = self.process_push_param(other_clients).await {
                         tracing::error!("process push param error: {:?}", e);
                     }
+                }
+                "MessageSvc.PushNotify" => {
+                    let notify = self
+                        .engine
+                        .read()
+                        .await
+                        .decode_svc_notify(pkt.body)
+                        .unwrap();
+                    match notify {
+                        None => {
+                            let _ = self
+                                .send_and_wait(
+                                    self.engine.read().await.build_get_message_request_packet(0),
+                                )
+                                .await;
+                        }
+                        Some(_notify) => unimplemented!(), // other req
+                    }
+                }
+                "MessageSvc.PbGetMsg" => {
+                    let resp = self
+                        .engine
+                        .read()
+                        .await
+                        .decode_message_svc_packet(pkt.body)
+                        .unwrap();
+                    self.process_message_sync(resp).await.unwrap();
                 }
                 _ => {
                     println!("unhandled pkt: {}", &pkt.command_name);

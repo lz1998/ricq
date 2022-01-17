@@ -9,7 +9,7 @@ use crate::client::msg::MsgElem;
 use crate::engine::command::{friendlist::*, profile_service::*, wtlogin::*};
 use crate::engine::structs::{FriendInfo, GroupInfo, GroupMemberInfo};
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
-use crate::{RQError, RQResult};
+use crate::{RQError, RQResult, QEvent};
 
 /// 登录相关
 impl super::Client {
@@ -128,18 +128,13 @@ impl super::Client {
     pub async fn token_login(&self, mut token: impl Buf) -> RQResult<()> {
         self.load_token(&mut token).await;
         let req = self.engine.read().await.build_request_change_sig_packet();
-        let resp = self.send_and_wait(req).await?;
-        let resp = self
-            .engine
-            .read()
-            .await
-            .decode_exchange_emp_response(resp.body)?;
-        self.process_login_response(resp).await;
+        self.send_and_wait(req).await?;
         let r = tokio::join! {
             self.wait_packet("StatSvc.ReqMSFOffline", 1),
             self.wait_packet("MessageSvc.PushForceOffline", 1)
         };
         if let (Err(RQError::Timeout), Err(RQError::Timeout)) = r {
+            self.handler.handle(QEvent::LoginEvent(self.uin().await)).await;
             Ok(())
         } else {
             Err(RQError::TokenLoginFailed)

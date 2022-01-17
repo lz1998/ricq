@@ -57,11 +57,15 @@ impl super::super::super::Engine {
     }
 
     // MessageSvc.PbGetMsg
-    pub fn build_get_message_request_packet(&self, flag: i32, time: i64) -> Packet {
+    pub fn build_get_message_request_packet(&self, flag: i32) -> Packet {
         let mut cook = { self.transport.sig.sync_cookie.to_vec() };
+        let time = std::time::SystemTime::now()
+            .duration_since(std::time::SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
         if cook.is_empty() {
             cook = pb::msg::SyncCookie {
-                time: Some(time),
+                time: Some(time as i64),
                 time1: None,
                 ran1: Some(758330138),
                 ran2: Some(2480149246),
@@ -87,5 +91,22 @@ impl super::super::super::Engine {
             ..Default::default()
         };
         self.uni_packet("MessageSvc.PbGetMsg", req.to_bytes())
+    }
+
+    pub fn build_delete_message_request_packet(&self, msgs: Vec<pb::msg::Message>) -> Packet {
+        let mut msg_items = vec![];
+        msgs.into_iter().for_each(|msg| {
+            let head = msg.head.unwrap();
+            msg_items.push(pb::MessageItem {
+                from_uin: head.from_uin.unwrap(),
+                to_uin: head.to_uin.unwrap(),
+                msg_type: head.msg_type.unwrap(),
+                msg_seq: head.msg_seq.unwrap(),
+                msg_uid: head.msg_uid.unwrap(),
+                sig: vec![],
+            })
+        });
+        let body = pb::DeleteMessageRequest { items: msg_items }.to_bytes();
+        self.uni_packet("MessageSvc.PbDeleteMsg", body)
     }
 }

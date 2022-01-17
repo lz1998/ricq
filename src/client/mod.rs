@@ -47,4 +47,5 @@ pub struct Client {
 
     /// 群消息 builder 寄存
     pub group_message_builder: RwLock<HashMap<i32, income::builder::GroupMessageBuilder>>,
+    c2c_cache: crate::cache::TimeOutCache<()>,
 }
