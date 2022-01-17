@@ -15,7 +15,7 @@ pub fn t1(uin: u32, ip: &[u8]) -> Bytes {
         w.put_u32(rand::random());
         w.put_u32(uin);
         w.put_u32(Utc::now().timestamp_millis() as u32);
-        w.put_slice(&ip);
+        w.put_slice(ip);
         w.put_u16(0);
         w.freeze()
     });
@@ -93,7 +93,7 @@ pub fn t2(result: String, sign: &[u8]) -> Bytes {
     buf.write_bytes_short(&{
         let mut w = BytesMut::new();
         w.put_u16(0);
-        w.write_bytes_short(&result.as_bytes());
+        w.write_bytes_short(result.as_bytes());
         w.write_bytes_short(sign);
         w.freeze()
     });
@@ -157,7 +157,7 @@ pub fn t16e(build_model: &[u8]) -> Bytes {
     buf.put_u16(0x16E);
     buf.write_bytes_short(&{
         let mut w = BytesMut::new();
-        w.put_slice(&build_model);
+        w.put_slice(build_model);
         w.freeze()
     });
     buf.freeze()
@@ -225,7 +225,7 @@ pub fn t52d(dev_info: &[u8]) -> Bytes {
     buf.put_u16(0x52d);
     buf.write_bytes_short(&{
         let mut w = BytesMut::new();
-        w.put_slice(&dev_info);
+        w.put_slice(dev_info);
         w.freeze()
     });
     buf.freeze()
@@ -250,7 +250,7 @@ pub fn t100(sso_version: u32, protocol: u32, main_sig_map: u32) -> Bytes {
 pub fn t104(data: &[u8]) -> Bytes {
     let mut buf = BytesMut::new();
     buf.put_u16(0x104);
-    buf.write_bytes_short(&data);
+    buf.write_bytes_short(data);
     buf.freeze()
 }
 
@@ -286,12 +286,12 @@ pub fn t106(
         w.put_slice(tgtgt_key);
         w.put_u32(wtf);
         w.put_u8(if guid_available { 1 } else { 0 });
-        if guid.len() == 0 {
+        if guid.is_empty() {
             for _ in 0..4 {
                 w.put_u32(rand::random::<u32>());
             }
         } else {
-            w.put_slice(&guid)
+            w.put_slice(guid)
         }
         w.put_u32(app_id);
         w.put_u32(1); // password login
@@ -336,7 +336,7 @@ pub fn t107(pic_type: u16) -> Bytes {
 pub fn t108(ksid: &[u8]) -> Bytes {
     let mut buf = BytesMut::new();
     buf.put_u16(0x108);
-    buf.write_bytes_short(&ksid);
+    buf.write_bytes_short(ksid);
     buf.freeze()
 }
 
@@ -489,7 +489,7 @@ pub fn t145(guid: &[u8]) -> Bytes {
     buf.put_u16(0x145);
     buf.write_bytes_short(&{
         let mut w = BytesMut::new();
-        w.put_slice(&guid);
+        w.put_slice(guid);
         w.freeze()
     });
     buf.freeze()
@@ -533,7 +533,7 @@ pub fn t166(image_type: u8) -> Bytes {
 pub fn t174(data: &[u8]) -> Bytes {
     let mut buf = BytesMut::new();
     buf.put_u16(0x174);
-    buf.write_bytes_short(&data);
+    buf.write_bytes_short(data);
     buf.freeze()
 }
 
@@ -666,14 +666,14 @@ pub fn t400(
 pub fn t401(d: &[u8]) -> Bytes {
     let mut buf = BytesMut::new();
     buf.put_u16(0x401);
-    buf.write_bytes_short(&d);
+    buf.write_bytes_short(d);
     buf.freeze()
 }
 
 pub fn t511(domains: Vec<&str>) -> Bytes {
     let mut arr2 = Vec::new();
     for d in domains {
-        if d != "" {
+        if !d.is_empty() {
             arr2.push(d)
         }
     }
@@ -756,7 +756,7 @@ pub fn t525(t536: &[u8]) -> Bytes {
     buf.write_bytes_short(&{
         let mut w = BytesMut::new();
         w.put_u16(1);
-        w.put_slice(&t536);
+        w.put_slice(t536);
         w.freeze()
     });
     buf.freeze()
@@ -767,7 +767,7 @@ pub fn t536(login_extra_data: &[u8]) -> Bytes {
     buf.put_u16(0x536);
     buf.write_bytes_short(&{
         let mut w = BytesMut::new();
-        w.put_slice(&login_extra_data);
+        w.put_slice(login_extra_data);
         w.freeze()
     });
     buf.freeze()
@@ -831,7 +831,7 @@ mod tests {
 
     #[test]
     fn test_t1() {
-        let result = t1(*UIN, &vec![192, 168, 1, 1]);
+        let result = t1(*UIN, &[192, 168, 1, 1]);
         println!("{:?}", result.len());
         println!("{:?}", result)
     }
@@ -1126,7 +1126,7 @@ mod tests {
 
     #[test]
     fn test_t191() {
-        let result = t191(127 as u8);
+        let result = t191(127_u8);
         println!("{}", result.len());
         println!("{:?}", result);
     }

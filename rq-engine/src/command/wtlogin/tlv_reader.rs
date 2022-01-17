@@ -116,11 +116,11 @@ pub fn read_t512(mut reader: Bytes) -> T512 {
         let ps_key = reader.read_bytes_short();
         let ps4_token = reader.read_bytes_short();
 
-        if ps_key.len() > 0 {
+        if !ps_key.is_empty() {
             ps_key_map.insert(domain.clone(), ps_key);
         }
 
-        if ps4_token.len() > 0 {
+        if !ps4_token.is_empty() {
             pt4_token_map.insert(domain, ps4_token);
         }
     }
@@ -137,7 +137,7 @@ pub fn read_t531(mut data: Bytes) -> T531 {
     if [0x16a, 0x16a, 0x10c].iter().all(|v| m.contains_key(v)) {
         a1.put_slice(&m.remove(&0x106).unwrap());
         a1.put_slice(&m.remove(&0x10c).unwrap());
-        no_pic_sig = Bytes::from(m.remove(&0x16a).unwrap());
+        no_pic_sig = m.remove(&0x16a).unwrap();
     }
     T531 {
         a1: a1.freeze(),
@@ -146,8 +146,8 @@ pub fn read_t531(mut data: Bytes) -> T531 {
 }
 
 pub fn select(a: Option<&Bytes>, b: &[u8]) -> Bytes {
-    return match a {
+    match a {
         None => Bytes::from(b.to_owned()),
         Some(a) => Bytes::from(a.to_vec()),
-    };
+    }
 }

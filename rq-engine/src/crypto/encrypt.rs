@@ -49,7 +49,7 @@ impl EncryptECDH {
 
 impl IEncryptMethod for EncryptECDH {
     fn id(&self) -> u8 {
-        return 0x87;
+        0x87
     }
 
     fn do_encrypt(&self, data: &[u8], key: &[u8]) -> Vec<u8> {
@@ -80,7 +80,7 @@ impl EncryptSession {
 
 impl IEncryptMethod for EncryptSession {
     fn id(&self) -> u8 {
-        return 69;
+        69
     }
 
     fn do_encrypt(&self, data: &[u8], key: &[u8]) -> Vec<u8> {

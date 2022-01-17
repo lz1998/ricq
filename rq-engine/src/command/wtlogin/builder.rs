@@ -26,7 +26,7 @@ impl super::super::super::Engine {
                 w.put_u32(16); // app id
                 w.put_u64(0); // const
                 w.put_u8(8); // const
-                w.write_bytes_short(&vec![]);
+                w.write_bytes_short(&[]);
 
                 w.put_u16(6);
                 w.put_slice(&t16(
@@ -34,9 +34,9 @@ impl super::super::super::Engine {
                     16,
                     watch.app_id,
                     &transport.sig.guid,
-                    &watch.apk_id,
-                    &watch.sort_version_name,
-                    &watch.apk_sign,
+                    watch.apk_id,
+                    watch.sort_version_name,
+                    watch.apk_sign,
                 ));
                 w.put_slice(&t1b(0, 0, 3, 4, 72, 2, 2));
                 w.put_slice(&t1d(watch.misc_bitmap));
@@ -80,7 +80,7 @@ impl super::super::super::Engine {
                 w.write_bytes_short(sig);
                 w.put_u64(0);
                 w.put_u8(8);
-                w.write_bytes_short(&vec![]);
+                w.write_bytes_short(&[]);
                 w.put_u16(0);
                 w
             }));
@@ -175,11 +175,11 @@ impl super::super::super::Engine {
             ]));
             w.put_slice(&t187(&transport.device.mac_address));
             w.put_slice(&t188(&transport.device.android_id));
-            if transport.device.imsi_md5.len() != 0 {
+            if !transport.device.imsi_md5.is_empty() {
                 w.put_slice(&t194(transport.device.imsi_md5.as_slice()))
             }
             w.put_slice(&t191(0x00));
-            if transport.device.wifi_bssid.len() != 0 && transport.device.wifi_ssid.len() != 0 {
+            if !transport.device.wifi_bssid.is_empty() && !transport.device.wifi_ssid.is_empty() {
                 w.put_slice(&t202(
                     &transport.device.wifi_bssid,
                     &transport.device.wifi_ssid,
@@ -455,7 +455,7 @@ impl super::super::super::Engine {
             ));
             w.put_slice(&t516());
             w.put_slice(&t521(0));
-            w.put_slice(&t525(&t536(&vec![0x01, 0x00])));
+            w.put_slice(&t525(&t536(&[0x01, 0x00])));
             w.freeze()
         };
         let m = oicq::Message {
@@ -639,14 +639,14 @@ impl super::super::super::Engine {
             w.put_slice(&t187(&transport.device.mac_address));
             w.put_slice(&t188(&transport.device.android_id));
 
-            if transport.device.imsi_md5.len() != 0 {
+            if !transport.device.imsi_md5.is_empty() {
                 w.put_slice(&t194(&transport.device.imsi_md5))
             }
 
             if allow_slider {
                 w.put_slice(&t191(0x82));
             }
-            if transport.device.wifi_bssid.len() != 0 && transport.device.wifi_ssid.len() != 0 {
+            if !transport.device.wifi_bssid.is_empty() && !transport.device.wifi_ssid.is_empty() {
                 w.put_slice(&t202(
                     &transport.device.wifi_bssid,
                     &transport.device.wifi_ssid,
@@ -686,7 +686,7 @@ mod utils {
         w.put_u8(2);
         w.put_u16((43 + body.len() + 1) as u16);
         w.put_u16(cmd);
-        w.put_slice(&vec![0; 21]);
+        w.put_slice(&[0; 21]);
         w.put_u8(3);
         w.put_u16(0);
         w.put_u16(50);

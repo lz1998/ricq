@@ -10,9 +10,9 @@ impl super::super::super::Engine {
         mut payload: Bytes,
     ) -> RQResult<jce::SvcRespRegister> {
         let mut request: jce::RequestPacket =
-            jcers::from_buf(&mut payload).map_err(|e| RQError::from(e))?;
+            jcers::from_buf(&mut payload).map_err(RQError::from)?;
         let mut data: jce::RequestDataVersion2 =
-            jcers::from_buf(&mut request.s_buffer).map_err(|e| RQError::from(e))?;
+            jcers::from_buf(&mut request.s_buffer).map_err(RQError::from)?;
         let mut a = data
             .map
             .remove("SvcRespRegister")
@@ -21,7 +21,7 @@ impl super::super::super::Engine {
             .remove("QQService.SvcRespRegister")
             .ok_or(RQError::Decode("missing QQService.SvcRespRegister".into()))?;
         b.advance(1);
-        jcers::from_buf(&mut b).map_err(|e| RQError::from(e))
+        jcers::from_buf(&mut b).map_err(RQError::from)
     }
 
     // StatSvc.GetDevLoginInfo
@@ -30,9 +30,9 @@ impl super::super::super::Engine {
         mut payload: Bytes,
     ) -> RQResult<Vec<jce::SvcDevLoginInfo>> {
         let mut request: jce::RequestPacket =
-            jcers::from_buf(&mut payload).map_err(|e| RQError::from(e))?;
+            jcers::from_buf(&mut payload).map_err(RQError::from)?;
         let mut data: jce::RequestDataVersion2 =
-            jcers::from_buf(&mut request.s_buffer).map_err(|e| RQError::from(e))?;
+            jcers::from_buf(&mut request.s_buffer).map_err(RQError::from)?;
         let mut req = data
             .map
             .remove("SvcRspGetDevLoginInfo")
@@ -44,18 +44,18 @@ impl super::super::super::Engine {
             ))?;
         msg.advance(1);
         let mut rsp = Jce::new(&mut msg);
-        let d: Vec<jce::SvcDevLoginInfo> = rsp.get_by_tag(4).map_err(|e| RQError::from(e))?;
-        if d.len() > 0 {
+        let d: Vec<jce::SvcDevLoginInfo> = rsp.get_by_tag(4).map_err(RQError::from)?;
+        if !d.is_empty() {
             return Ok(d);
         }
-        let d: Vec<jce::SvcDevLoginInfo> = rsp.get_by_tag(5).map_err(|e| RQError::from(e))?;
-        if d.len() > 0 {
+        let d: Vec<jce::SvcDevLoginInfo> = rsp.get_by_tag(5).map_err(RQError::from)?;
+        if !d.is_empty() {
             return Ok(d);
         }
-        let d: Vec<jce::SvcDevLoginInfo> = rsp.get_by_tag(6).map_err(|e| RQError::from(e))?;
-        if d.len() > 0 {
+        let d: Vec<jce::SvcDevLoginInfo> = rsp.get_by_tag(6).map_err(RQError::from)?;
+        if !d.is_empty() {
             return Ok(d);
         }
-        return Err(RQError::Decode("decode_dev_list_response".to_string()));
+        Err(RQError::Decode("decode_dev_list_response".into()))
     }
 }

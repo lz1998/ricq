@@ -65,8 +65,7 @@ impl Device {
             finger_print: format!(
                 "xiaomi/iarim/sagit:10/eomam.200122.001/{}:user/release-keys",
                 rng.gen_range(1000000..9999999)
-            )
-            .to_string(),
+            ),
             boot_id: random_uuid(),
             proc_version: format!(
                 "Linux 5.4.0-54-generic-{} (android-build@google.com)",
@@ -101,11 +100,11 @@ impl Device {
 }
 
 pub fn random_string(len: usize) -> String {
-    return rand::thread_rng()
+    rand::thread_rng()
         .sample_iter(&Alphanumeric)
         .take(len)
         .map(char::from)
-        .collect();
+        .collect()
 }
 
 pub fn random_uuid() -> String {

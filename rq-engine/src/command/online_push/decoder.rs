@@ -69,9 +69,9 @@ impl super::super::super::Engine {
     // todo decode_online_push_req_packet
     pub fn decode_online_push_req_packet(&self, mut payload: Bytes) -> RQResult<ReqPush> {
         let mut request: jce::RequestPacket =
-            jcers::from_buf(&mut payload).map_err(|e| RQError::from(e))?;
+            jcers::from_buf(&mut payload).map_err(RQError::from)?;
         let mut data: jce::RequestDataVersion2 =
-            jcers::from_buf(&mut request.s_buffer).map_err(|e| RQError::from(e))?;
+            jcers::from_buf(&mut request.s_buffer).map_err(RQError::from)?;
         let mut req = data
             .map
             .remove("req")
@@ -82,9 +82,8 @@ impl super::super::super::Engine {
                 "OnlinePushPack.SvcReqPushMsg is none".into(),
             ))?;
         let mut jr = Jce::new(&mut msg);
-        let uin: i64 = jr.get_by_tag(0).map_err(|e| RQError::from(e))?;
-        let msg_infos: Vec<jce::PushMessageInfo> =
-            jr.get_by_tag(2).map_err(|e| RQError::from(e))?;
+        let uin: i64 = jr.get_by_tag(0).map_err(RQError::from)?;
+        let msg_infos: Vec<jce::PushMessageInfo> = jr.get_by_tag(2).map_err(RQError::from)?;
 
         let infos: Vec<PushInfo> = msg_infos
             .iter()
@@ -162,7 +161,7 @@ impl super::super::super::Engine {
             Some(44) => {
                 data.advance(5);
                 let var4 = data.get_u8() as i32;
-                let mut var5 = 0 as i64;
+                let mut var5: i64 = 0;
                 let target = data.get_i32() as i64;
                 if var4 != 0 && var4 != 1 {
                     var5 = data.get_i32() as i64;
@@ -205,11 +204,11 @@ impl super::super::super::Engine {
                 })
             }
         }
-        return if events.len() > 0 {
+        if !events.is_empty() {
             Ok(events)
         } else {
             Err(RQError::Decode("events length is 0".to_string()))
-        };
+        }
     }
 
     pub fn msg_type_0x210_subb3_decoder(&self, protobuf: Bytes) -> RQResult<NewFriendEvent> {
@@ -282,13 +281,13 @@ impl super::super::super::Engine {
                 receiver = templ.value.parse::<i64>().unwrap_or_default()
             }
         }
-        return if sender == 0 {
+        if sender == 0 {
             Err(RQError::Decode(
                 "msg_type_0x210_sub122_decoder sender is 0".to_string(),
             ))
         } else {
             Ok(FriendPokeNotifyEvent { sender, receiver })
-        };
+        }
     }
 
     pub fn msg_type_0x210_sub44_decoder(&self, protobuf: Bytes) -> RQResult<GroupMemberNeedSync> {
@@ -303,8 +302,8 @@ impl super::super::super::Engine {
         if group_code != 0 {
             return Ok(GroupMemberNeedSync { group_code });
         }
-        return Err(RQError::Decode(
+        Err(RQError::Decode(
             "msg_type_0x210_sub44_decoder unknown error".to_string(),
-        ));
+        ))
     }
 }

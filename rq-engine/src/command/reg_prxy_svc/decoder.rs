@@ -8,9 +8,9 @@ impl super::super::super::Engine {
     pub fn decode_push_param_packet(&self, payload: &[u8]) -> RQResult<Vec<OtherClientInfo>> {
         let mut payload = Bytes::from(payload.to_owned());
         let mut request: jce::RequestPacket =
-            jcers::from_buf(&mut payload).map_err(|e| RQError::from(e))?;
+            jcers::from_buf(&mut payload).map_err(RQError::from)?;
         let mut data: jce::RequestDataVersion2 =
-            jcers::from_buf(&mut request.s_buffer).map_err(|e| RQError::from(e))?;
+            jcers::from_buf(&mut request.s_buffer).map_err(RQError::from)?;
         let mut req = data
             .map
             .remove("SvcRespParam")
@@ -21,7 +21,7 @@ impl super::super::super::Engine {
                 "RegisterProxySvcPack.SvcRespParam is none".to_string(),
             ))?;
         reader.advance(1);
-        let rsp: jce::SvcRespParam = jcers::from_buf(&mut reader).map_err(|e| RQError::from(e))?;
+        let rsp: jce::SvcRespParam = jcers::from_buf(&mut reader).map_err(RQError::from)?;
         Ok(rsp
             .online_infos
             .iter()

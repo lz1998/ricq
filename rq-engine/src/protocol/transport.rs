@@ -32,7 +32,7 @@ impl Transport {
 
 impl Transport {
     pub fn encode_packet(&self, mut pkt: Packet) -> Bytes {
-        if self.sig.d2.len() == 0 {
+        if self.sig.d2.is_empty() {
             pkt.encrypt_type = EncryptType::EmptyKey
         }
 
@@ -110,7 +110,7 @@ impl Transport {
                 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00,
             ]);
             let tgt = &self.sig.tgt;
-            if tgt.len() == 0 {
+            if tgt.is_empty() {
                 w.put_u32(0x04);
             } else {
                 w.put_u32(tgt.len() as u32 + 4);

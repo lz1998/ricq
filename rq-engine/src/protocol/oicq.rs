@@ -112,6 +112,6 @@ impl Codec {
             }
             _ => return Err(RQError::UnknownEncryptType),
         }
-        return Ok(m);
+        Ok(m)
     }
 }

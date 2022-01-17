@@ -28,7 +28,7 @@ mod tests {
 
     #[test]
     fn test_encode() {
-        let h = encode_hex(&vec![1, 2, 3]);
+        let h = encode_hex(&[1, 2, 3]);
         println!("{}", h)
     }
 }

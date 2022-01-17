@@ -25,7 +25,7 @@ where
 
     fn read_bytes_short(&mut self) -> Bytes {
         let len = self.get_u16() as usize;
-        return self.copy_to_bytes(len);
+        self.copy_to_bytes(len)
     }
 
     fn read_tlv_map(&mut self, tag_size: usize) -> HashMap<u16, Bytes> {

@@ -34,7 +34,7 @@ impl super::super::super::Engine {
         }
         let b = pack_uni_request_data(&req.freeze());
         let buf = jce::RequestDataVersion3 {
-            map: HashMap::from([("resp".to_string(), b.into())]),
+            map: HashMap::from([("resp".to_string(), b)]),
         };
         let pkt = jce::RequestPacket {
             i_version: 3,

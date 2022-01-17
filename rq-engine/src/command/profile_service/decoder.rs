@@ -28,7 +28,7 @@ impl super::super::super::Engine {
                                     checked: msg.sub_type == 2,
                                     actor_uin: msg.actor_uin,
                                     actor_nick: msg.actor_uin_nick.to_owned(),
-                                    suspicious: msg.warning_tips.len() > 0,
+                                    suspicious: !msg.warning_tips.is_empty(),
                                 }),
                                 2 => self_invited.push(SelfInvited {
                                     request_id: st.msg_seq,
@@ -49,7 +49,7 @@ impl super::super::super::Engine {
                                     group_name: msg.group_name.to_owned(),
                                     checked: msg.sub_type == 2,
                                     actor_uin: msg.actor_uin,
-                                    suspicious: msg.warning_tips.len() > 0,
+                                    suspicious: !msg.warning_tips.is_empty(),
                                     action_uin: msg.action_uin,
                                     action_uin_nick: msg.action_uin_qq_nick.to_owned(),
                                 }),

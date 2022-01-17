@@ -7,7 +7,7 @@ use crate::{RQError, RQResult};
 impl super::super::super::Engine {
     pub fn decode_trans_emp_response(&self, mut payload: Bytes) -> RQResult<QRCodeState> {
         if payload.len() < 48 {
-            return Err(RQError::Decode("invalid payload length".into()).into());
+            return Err(RQError::Decode("invalid payload length".into()));
         }
         payload.advance(5); // trans req head
         payload.get_u8();
@@ -20,7 +20,7 @@ impl super::super::super::Engine {
         payload.get_i32();
         payload.get_i64();
         let len = payload.remaining() - 1;
-        let mut body = Bytes::from(payload.copy_to_bytes(len));
+        let mut body = payload.copy_to_bytes(len);
         if cmd == 0x31 {
             body.get_u16();
             body.get_i32();
@@ -83,9 +83,9 @@ impl super::super::super::Engine {
                     .ok_or(RQError::Decode("missing 0x1e".into()))?,
             });
         }
-        return Err(RQError::Decode(
+        Err(RQError::Decode(
             "decode_trans_emp_response unknown error".to_string(),
-        ));
+        ))
     }
 
     pub fn decode_login_response(&self, mut reader: Bytes) -> RQResult<LoginResponse> {
@@ -112,6 +112,6 @@ impl super::super::super::Engine {
             &self.transport.sig.tgtgt_key
         };
 
-        LoginResponse::decode(status, tlv_map, &encrypt_key)
+        LoginResponse::decode(status, tlv_map, encrypt_key)
     }
 }

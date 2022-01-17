@@ -39,13 +39,13 @@ where
 
     fn write_int_lv_packet(&mut self, offset: usize, data: &[u8]) {
         self.put_u32((data.len() + offset) as u32);
-        self.put_slice(&data);
+        self.put_slice(data);
     }
 
     fn write_string(&mut self, v: &str) {
         let payload = v.as_bytes();
         self.put_u32((payload.len() + 4) as u32);
-        self.put_slice(&payload)
+        self.put_slice(payload)
     }
 
     fn write_uni_packet(
@@ -60,7 +60,7 @@ where
             w1.write_string(command_name);
             w1.put_u32(8);
             w1.put_slice(session_id);
-            if extra_data.len() == 0 {
+            if extra_data.is_empty() {
                 w1.put_u32(0x04)
             } else {
                 w1.put_u32((extra_data.len() + 4) as u32);

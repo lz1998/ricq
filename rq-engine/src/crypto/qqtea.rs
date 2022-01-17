@@ -27,14 +27,14 @@ pub fn qqtea_encrypt(text: &[u8], key: &[u8]) -> Vec<u8> {
     let mut iv2 = 0u64;
     let mut holder: u64;
 
-    let cipher = Tea16::new(GenericArray::from_slice(&key));
+    let cipher = Tea16::new(GenericArray::from_slice(key));
 
     for block in work_block.iter_mut() {
         holder = *block ^ iv1;
 
         iv1 = cipher.encrypt(holder);
 
-        iv1 = iv1 ^ iv2;
+        iv1 ^= iv2;
 
         iv2 = holder;
 
@@ -43,20 +43,20 @@ pub fn qqtea_encrypt(text: &[u8], key: &[u8]) -> Vec<u8> {
 
     BigEndian::write_u64_into(&work_block, &mut plaintext);
 
-    return plaintext;
+    plaintext
 }
 
 pub fn qqtea_decrypt(text: &[u8], key: &[u8]) -> Vec<u8> {
     let mut work_block: Vec<u64> = vec![0; text.len() / 8];
 
-    BigEndian::read_u64_into(&text, &mut work_block);
+    BigEndian::read_u64_into(text, &mut work_block);
 
     let mut iv1 = 0u64;
     let mut iv2 = 0u64;
     let mut holder: u64;
     let mut tmp_block: u64;
 
-    let cipher = Tea16::new(GenericArray::from_slice(&key));
+    let cipher = Tea16::new(GenericArray::from_slice(key));
 
     for block in work_block.iter_mut() {
         tmp_block = *block ^ iv2;
@@ -79,7 +79,7 @@ pub fn qqtea_decrypt(text: &[u8], key: &[u8]) -> Vec<u8> {
     let begin_pos = ((result[0] as usize) & 7) + 3;
     let end_pos = result.len() - 7;
 
-    return result[begin_pos..end_pos].to_owned();
+    result[begin_pos..end_pos].to_owned()
 }
 
 mod tea {
@@ -157,7 +157,7 @@ mod tea {
     pub fn tea16_encrypt(text: &mut [u8], key: &[u8]) {
         let key: &GenericArray<u8, U16> = GenericArray::from_slice(key);
 
-        let mut n = BigEndian::read_u64(&text);
+        let mut n = BigEndian::read_u64(text);
 
         n = Tea16::new(key).encrypt(n);
 
@@ -168,7 +168,7 @@ mod tea {
     pub fn tea16_decrypt(text: &mut [u8], key: &[u8]) {
         let key: &GenericArray<u8, U16> = GenericArray::from_slice(key);
 
-        let mut n = BigEndian::read_u64(&text);
+        let mut n = BigEndian::read_u64(text);
 
         n = Tea16::new(key).decrypt(n);
 

@@ -10,7 +10,7 @@ impl crate::Engine {
         payload.advance(4);
         let mut req: jce::RequestPacket = jcers::from_buf(&mut payload)?;
         let mut data: jce::RequestDataVersion2 = jcers::from_buf(&mut req.s_buffer)?;
-        if data.map.len() == 0 {
+        if data.map.is_empty() {
             return Ok(None);
         }
         let notify_data = data
