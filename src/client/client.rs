@@ -28,7 +28,6 @@ impl super::Client {
 
         let cli = Client {
             handler: Box::new(handler),
-            uin: Default::default(),
             engine: RwLock::new(Engine::new(device, get_version(Protocol::IPad))),
             connected: AtomicBool::new(false),
             shutting_down: AtomicBool::new(false),
@@ -55,6 +54,10 @@ impl super::Client {
         H: crate::client::handler::Handler + 'static + Sync + Send,
     {
         Self::new(config.device, handler).await
+    }
+
+    pub async fn uin(&self) -> i64 {
+        return self.engine.read().await.uin.load(Ordering::Relaxed);
     }
 
     pub async fn run(self: &Arc<Self>) -> JoinHandle<()> {
@@ -135,7 +138,7 @@ impl super::Client {
     pub async fn gen_token(&self) -> Bytes {
         let mut token = BytesMut::with_capacity(1024); //todo
         let engine = &self.engine.read().await;
-        token.put_i64(self.uin.load(Ordering::SeqCst));
+        token.put_i64(self.uin().await);
         token.write_bytes_short(&engine.transport.sig.d2);
         token.write_bytes_short(&engine.transport.sig.d2key);
         token.write_bytes_short(&engine.transport.sig.tgt);

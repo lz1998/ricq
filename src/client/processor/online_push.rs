@@ -1,5 +1,3 @@
-use std::sync::atomic::Ordering;
-
 use crate::client::handler::QEvent;
 use crate::client::income::builder::GroupMessageBuilder;
 use crate::client::msg::*;
@@ -15,7 +13,7 @@ impl Client {
         // self.mark_group_message_readed(group_message_part.group_code, group_message_part.seq).await;
 
         // receipt message
-        if group_message_part.from_uin == self.uin.load(Ordering::SeqCst) {
+        if group_message_part.from_uin == self.uin().await {
             self.handler
                 .handle(QEvent::GroupMessageReceipt(GroupMessageReceiptEvent {
                     rand: group_message_part.rand,

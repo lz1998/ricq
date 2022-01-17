@@ -22,7 +22,6 @@ pub mod processor;
 pub struct Client {
     handler: Box<dyn handler::Handler + Sync + Send + 'static>,
 
-    pub uin: AtomicI64,
     pub engine: RwLock<Engine>,
     pub connected: AtomicBool,
     pub shutting_down: AtomicBool,
