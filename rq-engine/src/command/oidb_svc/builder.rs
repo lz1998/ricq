@@ -170,4 +170,17 @@ impl super::super::super::Engine {
         let payload = self.transport.encode_oidb_packet(1372, 1, w.freeze());
         self.uni_packet("OidbSvc.0x55c_1", payload)
     }
+
+    pub fn build_group_invite_packet(&self, group_code: i64, uin: i64) -> Packet {
+        let body = pb::oidb::D758ReqBody {
+            join_group_code: Some(group_code as u64),
+            be_invited_uin_info: vec![pb::oidb::InviteUinInfo {
+                uin: Some(uin as u64),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let payload = self.transport.encode_oidb_packet(1880, 1, body.to_bytes());
+        self.uni_packet("OidbSvc.0x758", payload)
+    }
 }

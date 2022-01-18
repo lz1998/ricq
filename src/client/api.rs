@@ -546,4 +546,14 @@ impl super::Client {
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
+
+    pub async fn group_invite(&self, group_code: i64, uin: i64) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_invite_packet(group_code, uin);
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
 }
