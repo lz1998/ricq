@@ -1,11 +1,11 @@
 use std::time::{Duration, SystemTime};
 use std::vec;
 use std::{collections::HashMap, sync::Arc};
-use tokio::sync::RwLock;
+use tokio::sync::Mutex;
 use tokio::task::JoinHandle;
 
 pub struct TimeOutCache<T: Send + Sync + 'static> {
-    inner: Arc<RwLock<HashMap<String, (T, SystemTime)>>>,
+    inner: Arc<Mutex<HashMap<String, (T, SystemTime)>>>,
     join: JoinHandle<()>,
 }
 
@@ -15,19 +15,22 @@ where
 {
     pub fn new(duration: u64) -> Self {
         let duration = Duration::from_secs(duration);
-        let map: Arc<RwLock<HashMap<String, (T, SystemTime)>>> = Arc::default();
+        let map: Arc<Mutex<HashMap<String, (T, SystemTime)>>> = Arc::default();
         let inner = map.clone();
         let join = tokio::spawn(async move {
             loop {
                 tokio::time::sleep(duration).await;
                 let mut keys = vec![];
-                for (k, v) in map.write().await.iter_mut() {
-                    if let Ok(_) = v.1.elapsed() {
-                        keys.push(k.clone());
+                {
+                    let mut locked_map = map.lock().await;
+                    for (k, v) in locked_map.iter_mut() {
+                        if let Ok(_) = v.1.elapsed() {
+                            keys.push(k.clone());
+                        }
                     }
-                }
-                for k in keys {
-                    map.write().await.remove(&k);
+                    for k in keys {
+                        locked_map.remove(&k);
+                    }
                 }
             }
         });
@@ -36,11 +39,11 @@ where
 
     pub async fn insert(&self, key: String, value: T, delay: u64) {
         let time = SystemTime::now() + Duration::from_secs(delay);
-        self.inner.write().await.insert(key, (value, time));
+        self.inner.lock().await.insert(key, (value, time));
     }
 
     pub async fn update(&self, key: &str, delay: u64) -> bool {
-        if let Some((_, time)) = self.inner.write().await.get_mut(key) {
+        if let Some((_, time)) = self.inner.lock().await.get_mut(key) {
             *time = SystemTime::now() + Duration::from_secs(delay);
             true
         } else {

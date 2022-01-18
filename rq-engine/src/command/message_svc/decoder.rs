@@ -37,8 +37,7 @@ impl crate::Engine {
             msgs: resp
                 .uin_pair_msgs
                 .into_iter()
-                .map(|x| x.messages)
-                .flatten()
+                .flat_map(|x| x.messages)
                 .collect(),
         })
     }

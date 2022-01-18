@@ -683,16 +683,14 @@ pub fn t511(domains: Vec<&str>) -> Bytes {
         let mut w = BytesMut::new();
         w.put_u16(arr2.len() as u16);
         for d in arr2 {
-            let index_of: isize;
-            match d.find('(') {
-                None => index_of = -1,
-                Some(i) => index_of = i as isize,
-            }
-            let index_of2: isize;
-            match d.find(')') {
-                None => index_of2 = -1,
-                Some(i) => index_of2 = i as isize,
-            }
+            let index_of = match d.find('(') {
+                None => -1,
+                Some(i) => i as isize,
+            };
+            let index_of2 = match d.find(')') {
+                None => -1,
+                Some(i) => i as isize,
+            };
             if index_of != 0 || index_of2 <= 0 {
                 w.put_u8(0x01);
                 w.write_bytes_short(d.as_bytes())

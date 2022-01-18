@@ -962,6 +962,7 @@ dependencies = [
 name = "rq-engine"
 version = "0.1.0"
 dependencies = [
+ "base64",
  "byteorder",
  "bytes",
  "chrono",
@@ -986,7 +987,6 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "base64",
  "bytes",
  "cached",
  "flate2",

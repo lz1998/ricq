@@ -1,25 +1,28 @@
 use super::ImageBizType;
-use crate::pb::msg::{
-    AnimationImageShow, CommonElem, CustomFace, Elem, Face, LightAppElem, MsgElemInfoServtype3,
-    MsgElemInfoServtype33, MsgElemInfoServtype37, ResvAttr, RichMsg, Text,
+use crate::{
+    pb::msg::{
+        AnimationImageShow, CommonElem, CustomFace, Elem, Face, LightAppElem, MsgElemInfoServtype3,
+        MsgElemInfoServtype33, MsgElemInfoServtype37, ResvAttr, RichMsg, Text,
+    },
+    MsgElem,
 };
 use bytes::BufMut;
 use flate2::{bufread::ZlibEncoder, Compression};
 use prost::Message;
 use std::{io::Read, vec};
 
-impl Into<Vec<Elem>> for super::MsgElem {
-    fn into(self) -> Vec<Elem> {
-        match self {
-            Self::Text { content } => vec![Elem {
+impl From<MsgElem> for Vec<Elem> {
+    fn from(msg_elem: MsgElem) -> Vec<Elem> {
+        match msg_elem {
+            MsgElem::Text { content } => vec![Elem {
                 text: Some(crate::pb::msg::Text {
-                    str: Some(content.to_owned()),
+                    str: Some(content),
                     ..Default::default()
                 }),
                 ..Default::default()
             }],
 
-            Self::Face { index, name } => {
+            MsgElem::Face { index, name } => {
                 if index >= 260 {
                     let text = format!("/{}", name).as_bytes().to_vec();
                     let elem = MsgElemInfoServtype33 {
@@ -49,7 +52,7 @@ impl Into<Vec<Elem>> for super::MsgElem {
                 }
             }
 
-            Self::At {
+            MsgElem::At {
                 target,
                 display,
                 sub_type,
@@ -88,7 +91,7 @@ impl Into<Vec<Elem>> for super::MsgElem {
                 r
             }
 
-            Self::Service {
+            MsgElem::Service {
                 id,
                 content,
                 res_id,
@@ -114,7 +117,7 @@ impl Into<Vec<Elem>> for super::MsgElem {
                 }
             }
 
-            Self::LightApp { content } => {
+            MsgElem::LightApp { content } => {
                 vec![Elem {
                     light_app: Some(LightAppElem {
                         data: Some(zlib_encode(content.as_bytes())),
@@ -124,9 +127,9 @@ impl Into<Vec<Elem>> for super::MsgElem {
                 }]
             }
 
-            Self::ShortVideo { .. } => todo!(),
+            MsgElem::ShortVideo { .. } => todo!(),
 
-            Self::AnimatedSticker { id, mut name } => {
+            MsgElem::AnimatedSticker { id, mut name } => {
                 if name.is_empty() {
                     name = super::face::FACES_MAP.get(&id).unwrap().to_string();
                 }
@@ -178,7 +181,7 @@ impl Into<Vec<Elem>> for super::MsgElem {
                 ]
             }
 
-            Self::GroupImage {
+            MsgElem::GroupImage {
                 mut width,
                 mut height,
                 file_id,

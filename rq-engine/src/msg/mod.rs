@@ -257,9 +257,9 @@ impl From<u32> for ImageBizType {
     }
 }
 
-impl Into<u32> for ImageBizType {
-    fn into(self) -> u32 {
-        match self {
+impl From<ImageBizType> for u32 {
+    fn from(ty: ImageBizType) -> u32 {
+        match ty {
             ImageBizType::UnknownBizType => 0,
             ImageBizType::CustomFaceImage => 1,
             ImageBizType::HotImage => 2,

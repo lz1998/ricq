@@ -14,7 +14,7 @@ use super::AtSubType;
 impl From<Elem> for MsgElem {
     fn from(elem: Elem) -> Self {
         if let Some(Some(m)) = elem.src_msg.map(|m| {
-            if m.orig_seqs.len() == 0 {
+            if m.orig_seqs.is_empty() {
                 None
             } else {
                 Some(m)
@@ -36,7 +36,7 @@ impl From<Elem> for MsgElem {
                 if i3 > 3 && bytes.get_u8() == 1 {
                     let pb = bytes.read_bytes_short();
                     if let Ok(obj_msg) = ObjMsg::decode(pb) {
-                        if obj_msg.msg_content_info.len() > 0 {
+                        if !obj_msg.msg_content_info.is_empty() {
                             if let Some(info) = obj_msg.msg_content_info[0].msg_file.clone() {
                                 return Self::GroupFile {
                                     name: info.file_name,
@@ -62,7 +62,7 @@ impl From<Elem> for MsgElem {
                         .unwrap();
                     uncompressed
                 };
-                if content.len() > 0 && content.len() < 1024 ^ 3 {
+                if !content.is_empty() && content.len() < 1024 ^ 3 {
                     return Self::LightApp {
                         content: String::from_utf8(content).unwrap(),
                     };
@@ -84,7 +84,7 @@ impl From<Elem> for MsgElem {
         }
 
         if let Some(text) = elem.text {
-            if text.attr6_buf().len() > 0 {
+            if !text.attr6_buf().is_empty() {
                 let (_, mut attr6) = text.attr6_buf().split_at(7);
                 let target = attr6.get_i32();
                 return super::at(
@@ -92,7 +92,7 @@ impl From<Elem> for MsgElem {
                     text.str().to_owned(),
                     AtSubType::AtGroupMember,
                 );
-            } else if text.pb_reserve().len() > 0 {
+            } else if !text.pb_reserve().is_empty() {
                 if let Ok(resv) = crate::pb::msg::TextResvAttr::decode(text.pb_reserve()) {
                     if resv.at_type() == 2 {
                         return super::at(
@@ -134,7 +134,7 @@ impl From<Elem> for MsgElem {
         }
 
         if let Some(custom_face) = elem.custom_face {
-            if !(custom_face.md5().len() == 0) {
+            if !custom_face.md5().is_empty() {
                 let url = if let Some(orig_url) = &custom_face.orig_url {
                     format!("https://gchat.qpic.cn{}", orig_url)
                 } else {
@@ -152,7 +152,7 @@ impl From<Elem> for MsgElem {
                     width: custom_face.width(),
                     height: custom_face.height(),
                     url,
-                    image_biz_type: if custom_face.pb_reserve().len() == 0 {
+                    image_biz_type: if custom_face.pb_reserve().is_empty() {
                         ImageBizType::UnknownBizType
                     } else if let Ok(resv) =
                         crate::pb::msg::ResvAttr::decode(custom_face.pb_reserve())
@@ -223,7 +223,7 @@ impl From<Elem> for MsgElem {
                 };
                 format!(
                     "https://c2cpicdw.qpic.cn/offpic_new/0{}{}/0?term=3",
-                    if !download_path.starts_with("/") {
+                    if !download_path.starts_with('/') {
                         "/"
                     } else {
                         ""
@@ -301,7 +301,7 @@ impl From<Elem> for MsgElem {
                             name: {
                                 let mut s =
                                     String::from_utf8(animated_sticker.text().to_vec()).unwrap();
-                                if s.starts_with("/") {
+                                if s.starts_with('/') {
                                     let _ = s.split_off(1);
                                 }
                                 s
@@ -327,7 +327,7 @@ impl From<AnonymousGroupMessage> for AnonymousInfo {
 }
 
 fn parse_magic_value(magic_value: &str) -> i32 {
-    let mut value = magic_value.split("=");
+    let mut value = magic_value.split('=');
     value.next();
     value.next().unwrap().parse::<i32>().unwrap()
 }

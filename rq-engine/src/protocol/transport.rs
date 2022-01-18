@@ -80,9 +80,11 @@ impl Transport {
     where
         B: Buf,
     {
-        let mut pkt = Packet::default();
-        pkt.packet_type = PacketType::from_i32(r.get_i32())?;
-        pkt.encrypt_type = EncryptType::from_u8(r.get_u8())?;
+        let mut pkt = Packet {
+            packet_type: PacketType::from_i32(r.get_i32())?,
+            encrypt_type: EncryptType::from_u8(r.get_u8())?,
+            ..Default::default()
+        };
         r.get_u8(); // 0x00
 
         pkt.uin = r.read_string().parse().unwrap_or_default();
