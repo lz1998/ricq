@@ -5,7 +5,7 @@ use bytes::{Buf, Bytes};
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
-use crate::engine::command::{friendlist::*, profile_service::*, wtlogin::*};
+use crate::engine::command::{friendlist::*, oidb_svc::*, profile_service::*, wtlogin::*};
 use crate::engine::structs::{FriendInfo, GroupInfo, GroupMemberInfo};
 use crate::engine::MsgElem;
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
@@ -555,5 +555,19 @@ impl super::Client {
             .build_group_invite_packet(group_code, uin);
         let _ = self.send_and_wait(req).await?;
         Ok(())
+    }
+
+    /// 获取群 @全体成员 剩余次数
+    pub async fn group_at_all_remain(&self, group_code: i64) -> RQResult<GroupAtAllRemainInfo> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_at_all_remain_request_packet(group_code);
+        let resp = self.send_and_wait(req).await?;
+        self.engine
+            .read()
+            .await
+            .decode_group_at_all_remain_response(resp.body)
     }
 }

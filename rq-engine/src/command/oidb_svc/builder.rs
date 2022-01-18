@@ -171,6 +171,7 @@ impl super::super::super::Engine {
         self.uni_packet("OidbSvc.0x55c_1", payload)
     }
 
+    // OidbSvc.0x758
     pub fn build_group_invite_packet(&self, group_code: i64, uin: i64) -> Packet {
         let body = pb::oidb::D758ReqBody {
             join_group_code: Some(group_code as u64),
@@ -182,5 +183,18 @@ impl super::super::super::Engine {
         };
         let payload = self.transport.encode_oidb_packet(0x758, 1, body.to_bytes());
         self.uni_packet("OidbSvc.0x758", payload)
+    }
+
+    // OidbSvc.0x8a7_0
+    pub fn build_group_at_all_remain_request_packet(&self, group_code: i64) -> Packet {
+        let body = pb::oidb::D8a7ReqBody {
+            sub_cmd: Some(1),
+            limit_interval_type_for_uin: Some(2),
+            limit_interval_type_for_group: Some(1),
+            uin: Some(self.uin() as u64),
+            group_code: Some(group_code as u64),
+        };
+        let payload = self.transport.encode_oidb_packet(0x8a7, 0, body.to_bytes());
+        self.uni_packet("OidbSvc.0x8a7_0", payload)
     }
 }

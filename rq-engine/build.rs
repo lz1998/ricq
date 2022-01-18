@@ -16,6 +16,7 @@ fn main() -> Result<()> {
             "src/pb/msgtype0x210/subMsgType0x27.proto",
             "src/pb/oidb/oidb0x758.proto",
             "src/pb/oidb/oidb0x769.proto",
+            "src/pb/oidb/oidb0x8a7.proto",
             "src/pb/oidb/oidb0x88d.proto",
             "src/pb/oidb/oidb.proto",
             "src/pb/msf/register_proxy.proto",
