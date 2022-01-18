@@ -57,22 +57,15 @@ impl super::Client {
                     }
                 }
                 "MessageSvc.PushNotify" => {
-                    let notify = self
+                    let _notify_msg_type = self
                         .engine
                         .read()
                         .await
                         .decode_svc_notify(pkt.body)
                         .unwrap();
-                    match notify {
-                        None => {
-                            let _ = self
-                                .send_and_wait(
-                                    self.engine.read().await.build_get_message_request_packet(0),
-                                )
-                                .await;
-                        }
-                        Some(_notify) => unimplemented!(), // other req
-                    }
+                    let _ = self
+                        .send_and_wait(self.engine.read().await.build_get_message_request_packet(0))
+                        .await;
                 }
                 "MessageSvc.PbGetMsg" => {
                     let resp = self

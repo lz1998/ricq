@@ -74,3 +74,13 @@ qq-android协议的rust实现 移植于MiraiGo
 >     （9） **侵害QQ钱包支付服务系統；**
 
 - [ ] ~~QQ钱包协议(收款/付款等)~~
+
+
+## 如何使用
+
+本项目是协议 lib ，如果需要直接运行，请自行基于本项目构建 (当然，必须使用 AGPL-v3 协议开源)
+
+这里有一个可参考例子：[(WIP)Walle-Q](https://github.com/abrahum/walle-q)
+
+> 本项目是一个年轻的项目，请使用 nightly channel 构建本项目哦（正经人谁用 stable 啊）
+

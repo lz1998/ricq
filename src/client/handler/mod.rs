@@ -12,6 +12,8 @@ pub enum QEvent {
     GroupMessage(GroupMessageEvent),
     /// 群自身消息
     SelfGroupMessage(GroupMessageEvent),
+    /// 私聊消息
+    PrivateMessage(PrivateMessageEvent),
     // FriendList(decoder::friendlist::FriendListResponse),
     // GroupMemberInfo(structs::GroupMemberInfo),
 }
@@ -30,6 +32,9 @@ pub trait Handler: Sync {
             QEvent::SelfGroupMessage(group_message) => {
                 self.handle_self_group_message(group_message).await
             }
+            QEvent::PrivateMessage(private_message) => {
+                self.handle_private_message(private_message).await
+            }
         }
     }
     async fn handle_login_event(&self, _uin: i64) {}
@@ -40,6 +45,7 @@ pub trait Handler: Sync {
     }
     async fn handle_group_message(&self, _group_message: GroupMessageEvent) {}
     async fn handle_self_group_message(&self, _group_message: GroupMessageEvent) {}
+    async fn handle_private_message(&self, _private_message: PrivateMessageEvent) {}
 }
 
 /// 一个默认 Handler，只是把信息打印出来

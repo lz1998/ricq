@@ -120,7 +120,7 @@ pub struct GroupMessageReceiptEvent {
     pub msg_event: GroupMessageEvent,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Sender {
     pub uin: i64,
     pub nickname: String,
