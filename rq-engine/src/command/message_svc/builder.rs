@@ -58,6 +58,7 @@ impl super::super::super::Engine {
 
     // MessageSvc.PbGetMsg
     pub fn build_get_message_request_packet(&self, flag: i32) -> Packet {
+        // Strat = 0, continue = 1, stop = 2
         let mut cook = { self.transport.sig.sync_cookie.to_vec() };
         let time = std::time::SystemTime::now()
             .duration_since(std::time::SystemTime::UNIX_EPOCH)

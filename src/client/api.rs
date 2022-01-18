@@ -5,7 +5,7 @@ use bytes::{Buf, Bytes};
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
-use crate::client::msg::MsgElem;
+use crate::engine::MsgElem;
 use crate::engine::command::{friendlist::*, profile_service::*, wtlogin::*};
 use crate::engine::structs::{FriendInfo, GroupInfo, GroupMemberInfo};
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
@@ -232,7 +232,7 @@ impl super::Client {
         group_code: i64,
         message_chain: Vec<MsgElem>,
     ) -> RQResult<()> {
-        let elems = crate::client::msg::into_elems(message_chain);
+        let elems = crate::engine::msg::into_elems(message_chain);
         let req = self
             .engine
             .read()

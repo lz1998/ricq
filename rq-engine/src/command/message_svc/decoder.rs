@@ -31,6 +31,7 @@ impl crate::Engine {
         let resp = GetMessageResponse::from_bytes(&payload)
             .map_err(|_| RQError::Decode("GetMessageResponse".to_string()))?;
         Ok(super::MessageSyncResponse {
+            sync_flag: resp.sync_flag.unwrap(),
             sync_cookie: Bytes::copy_from_slice(resp.sync_cookie()),
             pub_account_cookie: Bytes::copy_from_slice(resp.pub_account_cookie()),
             msgs: resp

@@ -3,6 +3,8 @@ use std::sync::atomic::{AtomicI32, AtomicI64, AtomicU16, Ordering};
 use rand::Rng;
 
 pub use error::{RQError, RQResult};
+pub use msg::*;
+pub use structs::*;
 use protocol::device::Device;
 use protocol::oicq;
 use protocol::transport::Transport;
@@ -17,6 +19,7 @@ pub mod jce;
 pub mod pb;
 pub mod protocol;
 pub mod structs;
+pub mod msg;
 
 // build_packet: param -> bytes
 // decode_packet: bytes -> struct

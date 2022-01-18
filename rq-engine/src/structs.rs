@@ -1,4 +1,6 @@
 use bytes::Bytes;
+use crate::msg::MsgElem;
+use crate::command::online_push::GroupMessagePart;
 
 use crate::jce;
 
@@ -86,4 +88,49 @@ pub struct FriendInfo {
     pub nick: String,
     pub remark: String,
     pub face_id: i16,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct PrivateMessageEvent {
+    pub id: i32,
+    pub internal_id: i32,
+    pub self_id: i64, //?
+    pub target: i64,
+    pub time: i32,
+    pub sender: Sender,
+    pub elements: Vec<MsgElem>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct GroupMessageEvent {
+    pub id: i32,
+    pub internal_id: i32,
+    pub group_code: i64,
+    pub group_name: String,
+    pub sender: Sender,
+    pub time: i32,
+    pub elements: Vec<MsgElem>,
+    pub original_obj: GroupMessagePart,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct GroupMessageReceiptEvent {
+    pub rand: i32,
+    pub seq: i32,
+    pub msg_event: GroupMessageEvent,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Sender {
+    pub uin: i64,
+    pub nickname: String,
+    pub card_name: String,
+    pub anonymous_info: AnonymousInfo,
+    pub is_friend: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct AnonymousInfo {
+    pub anonymous_id: String,
+    pub anonymous_nick: String,
 }

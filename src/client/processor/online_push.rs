@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use cached::Cached;
 
 use crate::client::handler::QEvent;
-use crate::client::msg::*;
+use crate::engine::*;
 use crate::client::Client;
 use crate::engine::command::online_push::GroupMessagePart;
 use crate::{RQError, RQResult};
