@@ -5,9 +5,9 @@ use bytes::{Buf, Bytes};
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
-use crate::engine::MsgElem;
 use crate::engine::command::{friendlist::*, profile_service::*, wtlogin::*};
 use crate::engine::structs::{FriendInfo, GroupInfo, GroupMemberInfo};
+use crate::engine::MsgElem;
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
 use crate::{QEvent, RQError, RQResult};
 
@@ -468,86 +468,81 @@ impl super::Client {
         Ok(())
     }
 
-    // 全员禁言
+    /// 全员禁言
     pub async fn group_mute_all(&self, group_code: i64, mute: bool) -> RQResult<()> {
         let req = self
             .engine
             .read()
             .await
-            .build_group_mute_all_packet(group_code, mute)
-            .await;
+            .build_group_mute_all_packet(group_code, mute);
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
 
-    // 修改群名称
+    /// 修改群名称
     pub async fn update_group_name(&self, group_code: i64, name: String) -> RQResult<()> {
         let req = self
             .engine
             .read()
             .await
-            .build_group_name_update_packet(group_code, name)
-            .await;
+            .build_group_name_update_packet(group_code, name);
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
 
-    // 设置群公告
+    /// 设置群公告
     pub async fn update_group_memo(&self, group_code: i64, memo: String) -> RQResult<()> {
         let req = self
             .engine
             .read()
             .await
-            .build_group_memo_update_packet(group_code, memo)
-            .await;
+            .build_group_memo_update_packet(group_code, memo);
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
 
-    /// 设置群管理员 TODO 待测试
+    /// 设置群管理员
     pub async fn group_set_admin(&self, group_code: i64, member: i64, flag: bool) -> RQResult<()> {
         let req = self
             .engine
             .read()
             .await
-            .build_group_admin_set_packet(group_code, member, flag)
-            .await;
+            .build_group_admin_set_packet(group_code, member, flag);
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
 
-    /// 好友poke
+    /// 好友戳一戳
     pub async fn friend_poke(&self, target: i64) -> RQResult<()> {
-        let req = self
-            .engine
-            .read()
-            .await
-            .build_friend_poke_packet(target)
-            .await;
+        let req = self.engine.read().await.build_friend_poke_packet(target);
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
 
-    /// 群poke
-    pub async fn group_poke(&self, group_code:i64, target: i64) -> RQResult<()> {
+    /// 群戳一戳
+    pub async fn group_poke(&self, group_code: i64, target: i64) -> RQResult<()> {
         let req = self
             .engine
             .read()
             .await
-            .build_group_poke_packet(group_code, target)
-            .await;
+            .build_group_poke_packet(group_code, target);
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
 
-    // 踢人 TODO 待测试
-    pub async fn group_kick(&self, group_code: i64, member_uin: i64, kick_msg: String, block: bool) -> RQResult<()> {
+    /// 群踢人
+    pub async fn group_kick(
+        &self,
+        group_code: i64,
+        member_uin: i64,
+        kick_msg: &str,
+        block: bool,
+    ) -> RQResult<()> {
         let req = self
             .engine
             .read()
             .await
-            .build_group_kick_packet(group_code, member_uin, kick_msg, block)
-            .await;
+            .build_group_kick_packet(group_code, member_uin, kick_msg, block);
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }

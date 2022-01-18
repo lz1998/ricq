@@ -70,13 +70,13 @@ impl super::super::super::Engine {
     }
 
     // OidbSvc.0x89a_0
-    async fn build_group_operation_packet(&self, body: pb::oidb::D89aReqBody) -> Packet {
+    fn build_group_operation_packet(&self, body: pb::oidb::D89aReqBody) -> Packet {
         let payload = self.transport.encode_oidb_packet(2202, 0, body.to_bytes());
         self.uni_packet("OidbSvc.0x89a_0", payload)
     }
 
     // OidbSvc.0x89a_0
-    pub async fn build_group_mute_all_packet(&self, group_code: i64, mute: bool) -> Packet {
+    pub fn build_group_mute_all_packet(&self, group_code: i64, mute: bool) -> Packet {
         let shut_up_time: i32 = if mute { 268435455 } else { 0 };
         let body = pb::oidb::D89aReqBody {
             group_code,
@@ -86,11 +86,11 @@ impl super::super::super::Engine {
             }),
             ..Default::default()
         };
-        self.build_group_operation_packet(body).await
+        self.build_group_operation_packet(body)
     }
 
     // OidbSvc.0x89a_0
-    pub async fn build_group_name_update_packet(&self, group_code: i64, name: String) -> Packet {
+    pub fn build_group_name_update_packet(&self, group_code: i64, name: String) -> Packet {
         let body = pb::oidb::D89aReqBody {
             group_code,
             st_group_info: Some(pb::oidb::D89aGroupinfo {
@@ -99,11 +99,11 @@ impl super::super::super::Engine {
             }),
             ..Default::default()
         };
-        self.build_group_operation_packet(body).await
+        self.build_group_operation_packet(body)
     }
 
     // OidbSvc.0x89a_0
-    pub async fn build_group_memo_update_packet(&self, group_code: i64, memo: String) -> Packet {
+    pub fn build_group_memo_update_packet(&self, group_code: i64, memo: String) -> Packet {
         let body = pb::oidb::D89aReqBody {
             group_code,
             st_group_info: Some(pb::oidb::D89aGroupinfo {
@@ -112,11 +112,17 @@ impl super::super::super::Engine {
             }),
             ..Default::default()
         };
-        self.build_group_operation_packet(body).await
+        self.build_group_operation_packet(body)
     }
 
     // OidbSvc.0x8a0_0
-    pub async fn build_group_kick_packet(&self, group_code: i64, member_uin: i64, kick_msg: String, block: bool) -> Packet {
+    pub fn build_group_kick_packet(
+        &self,
+        group_code: i64,
+        member_uin: i64,
+        kick_msg: &str,
+        block: bool,
+    ) -> Packet {
         let flag_block = if block { 1 } else { 0 };
         let body = pb::oidb::D8a0ReqBody {
             opt_uint64_group_code: group_code,
@@ -134,39 +140,34 @@ impl super::super::super::Engine {
     }
 
     // OidbSvc.0xed3
-    async fn build_poke_operation_packet(&self, body: pb::oidb::Ded3ReqBody) -> Packet {
-        let payload = self.transport.encode_oidb_packet(3795, 1, body.to_bytes());
-        self.uni_packet("OidbSvc.0xed3", payload)
-    }
-
-    // OidbSvc.0xed3
-    pub async fn build_group_poke_packet(&self, group_code: i64, target: i64) -> Packet {
+    pub fn build_group_poke_packet(&self, group_code: i64, target: i64) -> Packet {
         let body = pb::oidb::Ded3ReqBody {
             to_uin: target,
             group_code,
             ..Default::default()
         };
-        self.build_poke_operation_packet(body).await
+        let payload = self.transport.encode_oidb_packet(3795, 1, body.to_bytes());
+        self.uni_packet("OidbSvc.0xed3", payload)
     }
 
     // OidbSvc.0xed3
-    pub async fn build_friend_poke_packet(&self, target: i64) -> Packet {
+    pub fn build_friend_poke_packet(&self, target: i64) -> Packet {
         let body = pb::oidb::Ded3ReqBody {
             to_uin: target,
             aio_uin: target,
             ..Default::default()
         };
-        self.build_poke_operation_packet(body).await
+        let payload = self.transport.encode_oidb_packet(3795, 1, body.to_bytes());
+        self.uni_packet("OidbSvc.0xed3", payload)
     }
 
     // OidbSvc.0x55c_1
-    pub async fn build_group_admin_set_packet(&self, group_code: i64, member: i64, flag: bool) -> Packet {
-        let mut b = BytesMut::new();
-        b.put_u32(group_code as u32);
-        b.put_u32(member as u32);
-        b.put_u8(if flag { 0x01 } else { 0x00 });
-        let payload = self.transport.encode_oidb_packet(1372, 1, b.freeze());
+    pub fn build_group_admin_set_packet(&self, group_code: i64, member: i64, flag: bool) -> Packet {
+        let mut w = BytesMut::new();
+        w.put_u32(group_code as u32);
+        w.put_u32(member as u32);
+        w.put_u8(if flag { 0x01 } else { 0x00 });
+        let payload = self.transport.encode_oidb_packet(1372, 1, w.freeze());
         self.uni_packet("OidbSvc.0x55c_1", payload)
     }
-
 }
