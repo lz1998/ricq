@@ -503,4 +503,52 @@ impl super::Client {
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
+
+    /// 设置群管理员 TODO 待测试
+    pub async fn group_set_admin(&self, group_code: i64, member: i64, flag: bool) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_admin_set_packet(group_code, member, flag)
+            .await;
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
+    /// 好友poke
+    pub async fn friend_poke(&self, target: i64) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_friend_poke_packet(target)
+            .await;
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
+    /// 群poke
+    pub async fn group_poke(&self, group_code:i64, target: i64) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_poke_packet(group_code, target)
+            .await;
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
+    // 踢人 TODO 待测试
+    pub async fn group_kick(&self, group_code: i64, member_uin: i64, kick_msg: String, block: bool) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_kick_packet(group_code, member_uin, kick_msg, block)
+            .await;
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
 }
