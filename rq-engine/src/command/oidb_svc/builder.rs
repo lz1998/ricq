@@ -65,13 +65,13 @@ impl super::super::super::Engine {
         w.put_u16(1);
         w.put_u32(member_uin as u32);
         w.put_u32(duration);
-        let payload = self.transport.encode_oidb_packet(1392, 8, w.freeze());
+        let payload = self.transport.encode_oidb_packet(0x570, 8, w.freeze());
         self.uni_packet("OidbSvc.0x570_8", payload)
     }
 
     // OidbSvc.0x89a_0
     fn build_group_operation_packet(&self, body: pb::oidb::D89aReqBody) -> Packet {
-        let payload = self.transport.encode_oidb_packet(2202, 0, body.to_bytes());
+        let payload = self.transport.encode_oidb_packet(0x89a, 0, body.to_bytes());
         self.uni_packet("OidbSvc.0x89a_0", payload)
     }
 
@@ -135,7 +135,7 @@ impl super::super::super::Engine {
             kick_msg: kick_msg.as_bytes().to_vec(),
             ..Default::default()
         };
-        let payload = self.transport.encode_oidb_packet(2208, 0, body.to_bytes());
+        let payload = self.transport.encode_oidb_packet(0x8a0, 0, body.to_bytes());
         self.uni_packet("OidbSvc.0x8a0_0", payload)
     }
 
@@ -146,7 +146,7 @@ impl super::super::super::Engine {
             group_code,
             ..Default::default()
         };
-        let payload = self.transport.encode_oidb_packet(3795, 1, body.to_bytes());
+        let payload = self.transport.encode_oidb_packet(0xed3, 1, body.to_bytes());
         self.uni_packet("OidbSvc.0xed3", payload)
     }
 
@@ -157,7 +157,7 @@ impl super::super::super::Engine {
             aio_uin: target,
             ..Default::default()
         };
-        let payload = self.transport.encode_oidb_packet(3795, 1, body.to_bytes());
+        let payload = self.transport.encode_oidb_packet(0xed3, 1, body.to_bytes());
         self.uni_packet("OidbSvc.0xed3", payload)
     }
 
@@ -167,7 +167,7 @@ impl super::super::super::Engine {
         w.put_u32(group_code as u32);
         w.put_u32(member as u32);
         w.put_u8(if flag { 0x01 } else { 0x00 });
-        let payload = self.transport.encode_oidb_packet(1372, 1, w.freeze());
+        let payload = self.transport.encode_oidb_packet(0x55c, 1, w.freeze());
         self.uni_packet("OidbSvc.0x55c_1", payload)
     }
 
@@ -180,7 +180,7 @@ impl super::super::super::Engine {
             }],
             ..Default::default()
         };
-        let payload = self.transport.encode_oidb_packet(1880, 1, body.to_bytes());
+        let payload = self.transport.encode_oidb_packet(0x758, 1, body.to_bytes());
         self.uni_packet("OidbSvc.0x758", payload)
     }
 }
