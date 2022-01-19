@@ -10,16 +10,22 @@ pub mod wtlogin;
 
 impl super::Client {
     pub async fn process_income_packet(self: Arc<Self>, pkt: Packet) {
+        tracing::trace!("received pkt: {}", &pkt.command_name);
         // response
-        if let Some(sender) = self.packet_promises.write().await.remove(&pkt.seq_id) {
-            sender.send(pkt).unwrap(); //todo response
-            return;
+        {
+            if let Some(sender) = self.packet_promises.write().await.remove(&pkt.seq_id) {
+                sender.send(pkt).unwrap(); //todo response
+                return;
+            }
         }
-
-        if let Some(tx) = self.packet_waiters.write().await.remove(&pkt.command_name) {
-            tx.send(pkt).unwrap();
-            return;
+        tracing::trace!("pkt: {} passed packet_promises", &pkt.command_name);
+        {
+            if let Some(tx) = self.packet_waiters.write().await.remove(&pkt.command_name) {
+                tx.send(pkt).unwrap();
+                return;
+            }
         }
+        tracing::trace!("pkt: {} passed packet_waiters", &pkt.command_name);
 
         tokio::spawn(async move {
             match pkt.command_name.as_ref() {

@@ -1,4 +1,4 @@
-use crate::pb::msg::Ptt;
+use crate::pb::{msg::Ptt, self};
 use bytes::Bytes;
 
 mod face;
@@ -153,6 +153,7 @@ pub enum MsgElem {
         value: i32,
         finger_guess_name: String,
     },
+    Other(pb::msg::elem::Elem),
     None,
 }
 

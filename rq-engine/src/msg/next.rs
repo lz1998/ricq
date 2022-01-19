@@ -9,17 +9,17 @@ pub enum MsgElem {
     None,
 }
 
-impl From<Elem> for MsgElem {
-    fn from(elem: Elem) -> Self {
-        if let Some(text) = elem.text {
-            return match text.try_into() {
-                Ok(at) => Self::At(at),
-                Err(text) => Self::Text(text.into()),
-            };
-        }
-        Self::None
-    }
-}
+// impl From<Elem> for MsgElem {
+//     fn from(elem: Elem) -> Self {
+//         if let Some(text) = elem.text {
+//             return match text.try_into() {
+//                 Ok(at) => Self::At(at),
+//                 Err(text) => Self::Text(text.into()),
+//             };
+//         }
+//         Self::None
+//     }
+// }
 
 impl From<MsgElem> for Vec<Elem> {
     fn from(elem: MsgElem) -> Self {
@@ -52,11 +52,10 @@ impl From<Text> for TextElem {
 impl From<TextElem> for Vec<Elem> {
     fn from(text: TextElem) -> Vec<Elem> {
         vec![Elem {
-            text: Some(Text {
+            elem: Some(elem::Elem::Text(Text {
                 str: Some(text.content),
                 ..Default::default()
-            }),
-            ..Default::default()
+            })),
         }]
     }
 }
@@ -101,7 +100,7 @@ impl From<AtElem> for Vec<Elem> {
         match at.sub_type {
             super::AtSubType::AtGroupMember => {
                 r.push(Elem {
-                    text: Some(crate::pb::msg::Text {
+                    elem: Some(elem::Elem::Text(Text {
                         str: Some(at.display.to_owned()),
                         attr6_buf: Some({
                             let mut w = Vec::new();
@@ -114,19 +113,17 @@ impl From<AtElem> for Vec<Elem> {
                             w
                         }),
                         ..Default::default()
-                    }),
-                    ..Default::default()
+                    })),
                 });
             }
             super::AtSubType::AtGuildMember => unimplemented!(),
             super::AtSubType::AtGuildChannel => unimplemented!(),
         }
         r.push(Elem {
-            text: Some(crate::pb::msg::Text {
+            elem: Some(elem::Elem::Text(Text {
                 str: Some(" ".to_string()),
                 ..Default::default()
-            }),
-            ..Default::default()
+            })),
         });
         r
     }

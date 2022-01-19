@@ -3,9 +3,9 @@ use std::collections::BTreeMap;
 use cached::Cached;
 
 use crate::client::handler::QEvent;
-use crate::engine::*;
 use crate::client::Client;
 use crate::engine::command::online_push::GroupMessagePart;
+use crate::engine::*;
 use crate::{RQError, RQResult};
 
 impl Client {
@@ -82,8 +82,15 @@ impl Client {
         let anon_info = part
             .elems
             .iter()
-            .find(|elem| elem.anon_group_msg.is_some())
-            .map(|e| e.anon_group_msg.as_ref().unwrap());
+            .find(|elem| matches!(elem.elem, Some(pb::msg::elem::Elem::AnonGroupMsg(..))))
+            .map(|elem| {
+                if let pb::msg::elem::Elem::AnonGroupMsg(anon_info) = elem.elem.as_ref().unwrap() {
+                    Some(anon_info.clone())
+                } else {
+                    None
+                }
+            })
+            .flatten();
         let sender = if let Some(anon_info) = anon_info {
             let anonymous_info: AnonymousInfo = anon_info.clone().into();
             Sender {

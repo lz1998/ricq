@@ -1,4 +1,5 @@
 use super::ImageBizType;
+use crate::pb::msg::*;
 use crate::{
     pb::msg::{
         AnimationImageShow, CommonElem, CustomFace, Elem, Face, LightAppElem, MsgElemInfoServtype3,
@@ -15,11 +16,10 @@ impl From<MsgElem> for Vec<Elem> {
     fn from(msg_elem: MsgElem) -> Vec<Elem> {
         match msg_elem {
             MsgElem::Text { content } => vec![Elem {
-                text: Some(crate::pb::msg::Text {
+                elem: Some(elem::Elem::Text(Text {
                     str: Some(content),
                     ..Default::default()
-                }),
-                ..Default::default()
+                })),
             }],
 
             MsgElem::Face { index, name } => {
@@ -33,21 +33,19 @@ impl From<MsgElem> for Vec<Elem> {
                     }
                     .encode_to_vec();
                     vec![Elem {
-                        common_elem: Some(CommonElem {
+                        elem: Some(elem::Elem::CommonElem(CommonElem {
                             service_type: Some(33),
                             pb_elem: Some(elem),
                             business_type: Some(1),
-                        }),
-                        ..Default::default()
+                        })),
                     }]
                 } else {
                     vec![Elem {
-                        face: Some(Face {
+                        elem: Some(elem::Elem::Face(Face {
                             index: Some(index),
                             old: Some(((0x1445 - 4 + index) as u16).to_be_bytes().to_vec()),
                             buf: Some(vec![0x00, 0x01, 0x00, 0x04, 0x52, 0xCC, 0xF5, 0xD0]),
-                        }),
-                        ..Default::default()
+                        })),
                     }]
                 }
             }
@@ -61,7 +59,7 @@ impl From<MsgElem> for Vec<Elem> {
                 match sub_type {
                     super::AtSubType::AtGroupMember => {
                         r.push(Elem {
-                            text: Some(crate::pb::msg::Text {
+                            elem: Some(elem::Elem::Text(crate::pb::msg::Text {
                                 str: Some(display.to_owned()),
                                 attr6_buf: Some({
                                     let mut w = Vec::new();
@@ -74,19 +72,17 @@ impl From<MsgElem> for Vec<Elem> {
                                     w
                                 }),
                                 ..Default::default()
-                            }),
-                            ..Default::default()
+                            })),
                         });
                     }
                     super::AtSubType::AtGuildMember => unimplemented!(),
                     super::AtSubType::AtGuildChannel => unimplemented!(),
                 }
                 r.push(Elem {
-                    text: Some(crate::pb::msg::Text {
+                    elem: Some(elem::Elem::Text(crate::pb::msg::Text {
                         str: Some(" ".to_string()),
                         ..Default::default()
-                    }),
-                    ..Default::default()
+                    })),
                 });
                 r
             }
@@ -99,31 +95,28 @@ impl From<MsgElem> for Vec<Elem> {
             } => {
                 if id == 1 {
                     vec![Elem {
-                        text: Some(Text {
+                        elem: Some(elem::Elem::Text(Text {
                             str: Some(res_id),
                             ..Default::default()
-                        }),
-                        ..Default::default()
+                        })),
                     }]
                 } else {
                     vec![Elem {
-                        rich_msg: Some(RichMsg {
+                        elem: Some(elem::Elem::RichMsg(RichMsg {
                             template1: Some(zlib_encode(content.as_bytes())),
                             service_id: Some(id),
                             ..Default::default()
-                        }),
-                        ..Default::default()
+                        })),
                     }]
                 }
             }
 
             MsgElem::LightApp { content } => {
                 vec![Elem {
-                    light_app: Some(LightAppElem {
+                    elem: Some(elem::Elem::LightApp(LightAppElem {
                         data: Some(zlib_encode(content.as_bytes())),
                         ..Default::default()
-                    }),
-                    ..Default::default()
+                    })),
                 }]
             }
 
@@ -154,29 +147,26 @@ impl From<MsgElem> for Vec<Elem> {
                 }
                 .encode_to_vec();
                 let pb_reverse = Elem {
-                    text: Some(Text {
+                    elem: Some(elem::Elem::Text(Text {
                         str: Some(format!("[{}]请使用最新版手机QQ体验新功能", name)),
                         ..Default::default()
-                    }),
-                    ..Default::default()
+                    })),
                 }
                 .encode_to_vec();
                 vec![
                     Elem {
-                        common_elem: Some(CommonElem {
+                        elem: Some(elem::Elem::CommonElem(CommonElem {
                             service_type: Some(37),
                             pb_elem: Some(pb_elem),
                             business_type: Some(business as i32),
-                        }),
-                        ..Default::default()
+                        })),
                     },
                     Elem {
-                        text: Some(Text {
+                        elem: Some(elem::Elem::Text(Text {
                             str: Some(name),
                             pb_reserve: Some(pb_reverse),
                             ..Default::default()
-                        }),
-                        ..Default::default()
+                        })),
                     },
                 ]
             }
@@ -223,19 +213,17 @@ impl From<MsgElem> for Vec<Elem> {
                     .encode_to_vec();
                     vec![
                         Elem {
-                            common_elem: Some(CommonElem {
+                            elem: Some(elem::Elem::CommonElem(CommonElem {
                                 service_type: Some(3),
                                 pb_elem: Some(flash),
                                 ..Default::default()
-                            }),
-                            ..Default::default()
+                            })),
                         },
                         Elem {
-                            text: Some(Text {
+                            elem: Some(elem::Elem::Text(Text {
                                 str: Some("[闪照]请使用新版手机QQ查看闪照。".to_string()),
                                 ..Default::default()
-                            }),
-                            ..Default::default()
+                            })),
                         },
                     ]
                 } else {
@@ -252,8 +240,7 @@ impl From<MsgElem> for Vec<Elem> {
                     }
                     face.pb_reserve = Some(res.encode_to_vec());
                     vec![Elem {
-                        custom_face: Some(face),
-                        ..Default::default()
+                        elem: Some(elem::Elem::CustomFace(face)),
                     }]
                 }
             }

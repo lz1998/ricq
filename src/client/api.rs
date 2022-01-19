@@ -129,6 +129,7 @@ impl super::Client {
         self.load_token(&mut token).await;
         let req = self.engine.read().await.build_request_change_sig_packet();
         self.send_and_wait(req).await?;
+        self.register_client().await?;
         let r = tokio::join! {
             self.wait_packet("StatSvc.ReqMSFOffline", 1),
             self.wait_packet("MessageSvc.PushForceOffline", 1)
