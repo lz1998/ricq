@@ -1,6 +1,7 @@
+use std::collections::HashMap;
+
 use bytes::Bytes;
 use jcers::{JceGet, JcePut};
-use std::collections::HashMap;
 
 macro_rules! JceStruct {
     ($struct_name: ident {$($tag: expr => $field: ident: $field_t: ty,)*}) => {
@@ -833,6 +834,36 @@ JceStruct!(DelFriendReq {
     2 => del_type: u8,
     3 => version: i32,
 });
+
+#[derive(Debug, Clone, JceGet, JcePut, Default)]
+pub struct QQServiceReqHead {
+    #[jce(0)]
+    pub l_uin: i64,
+    #[jce(1)]
+    pub sh_version: i16,
+    #[jce(2)]
+    pub i_seq: i32,
+    #[jce(3)]
+    pub b_req_type: u8,
+    #[jce(4)]
+    pub b_triggered: u8,
+    #[jce(5)]
+    pub v_cookies: Bytes,
+}
+
+#[derive(Debug, Clone, JceGet, JcePut, Default)]
+pub struct ReqFavorite {
+    #[jce(0)]
+    pub st_header: QQServiceReqHead,
+    #[jce(1)]
+    pub l_mid: i64,
+    #[jce(2)]
+    pub c_op_type: i32,
+    #[jce(3)]
+    pub em_source: i32,
+    #[jce(4)]
+    pub i_count: i32,
+}
 
 #[cfg(test)]
 mod tests {

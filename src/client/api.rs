@@ -627,4 +627,10 @@ impl super::Client {
         self.send(req).await?;
         Ok(())
     }
+
+    pub async fn send_like(&self, uin: i64, count: i32) -> RQResult<()> {
+        let req = self.engine.read().await.build_send_like_packet(uin, count);
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
 }
