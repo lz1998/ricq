@@ -197,4 +197,22 @@ impl super::super::super::Engine {
         let payload = self.transport.encode_oidb_packet(0x8a7, 0, body.to_bytes());
         self.uni_packet("OidbSvc.0x8a7_0", payload)
     }
+
+    // OidbSvc.0x990
+    pub fn build_translate_request_packet(
+        &self,
+        src_language: String,
+        dst_language: String,
+        src_text_list: Vec<String>,
+    ) -> Packet {
+        let body = pb::oidb::TranslateReqBody {
+            batch_translate_req: Some(pb::oidb::BatchTranslateReq {
+                src_language,
+                dst_language,
+                src_text_list,
+            }),
+        };
+        let payload = self.transport.encode_oidb_packet(0x990, 2, body.to_bytes());
+        self.uni_packet("OidbSvc.0x990", payload)
+    }
 }

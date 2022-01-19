@@ -571,4 +571,28 @@ impl super::Client {
             .await
             .decode_group_at_all_remain_response(resp.body)
     }
+
+    // 文本翻译
+    pub async fn translate(
+        &self,
+        src_language: String,
+        dst_language: String,
+        src_text_list: Vec<String>,
+    ) -> RQResult<Vec<String>> {
+        let req = self.engine.read().await.build_translate_request_packet(
+            src_language,
+            dst_language,
+            src_text_list.clone(),
+        );
+        let resp = self.send_and_wait(req).await?;
+        let translations = self
+            .engine
+            .read()
+            .await
+            .decode_translate_response(resp.body)?;
+        if translations.len() != src_text_list.len() {
+            return Err(RQError::Other("translate length error".into()));
+        }
+        Ok(translations)
+    }
 }
