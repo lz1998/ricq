@@ -4,6 +4,7 @@ use crate::command::common::PbToBytes;
 use crate::pb;
 use crate::protocol::packet::Packet;
 
+// TODO 待测试
 impl super::super::super::Engine {
     // MessageSvc.PbSendMsg
     pub fn build_group_sending_packet(
@@ -18,28 +19,23 @@ impl super::super::super::Engine {
     ) -> Packet {
         let req = pb::msg::SendMessageRequest {
             routing_head: Some(pb::msg::RoutingHead {
-                c2c: None,
                 grp: Some(pb::msg::Grp {
                     group_code: Some(group_code),
                 }),
-                grp_tmp: None,
-                wpa_tmp: None,
+                ..Default::default()
             }),
             content_head: Some(pb::msg::ContentHead {
                 pkg_num: Some(pkg_num),
                 pkg_index: Some(pkg_index),
                 div_seq: Some(pkg_div),
-                auto_reply: None,
+                ..Default::default()
             }),
             msg_body: Some(pb::msg::MessageBody {
                 rich_text: Some(pb::msg::RichText {
                     elems,
-                    attr: None,
-                    not_online_file: None,
-                    ptt: None,
+                    ..Default::default()
                 }),
-                msg_content: None,
-                msg_encrypt_content: None,
+                ..Default::default()
             }),
             msg_seq: Some(self.next_group_seq()),
             msg_rand: Some(r),
@@ -50,8 +46,7 @@ impl super::super::super::Engine {
             } else {
                 None
             },
-            data_statist: None,
-            multi_send_seq: None,
+            ..Default::default()
         };
         self.uni_packet("MessageSvc.PbSendMsg", req.to_bytes())
     }
@@ -135,45 +130,36 @@ impl super::super::super::Engine {
                 const1: Some(390939176),
                 const2: Some(315764147),
                 const3: Some(0x1d),
-                last_sync_time: None,
-                const4: None,
-            }.encode_to_vec();
+                ..Default::default()
+            }
+            .encode_to_vec();
         }
 
         let req = pb::msg::SendMessageRequest {
             routing_head: Some(pb::msg::RoutingHead {
                 c2c: Some(pb::msg::C2c {
-                    to_uin: Some(target)
+                    to_uin: Some(target),
                 }),
-                grp: None,
-                grp_tmp: None,
-                wpa_tmp: None,
+                ..Default::default()
             }),
             content_head: Some(pb::msg::ContentHead {
                 pkg_num: Some(pkg_num),
                 pkg_index: Some(pkg_index),
                 div_seq: Some(pkg_div),
-                auto_reply: None,
+                ..Default::default()
             }),
             msg_body: Some(pb::msg::MessageBody {
                 rich_text: Some(pb::msg::RichText {
                     elems,
-                    attr: None,
-                    not_online_file: None,
-                    ptt: None,
+                    ..Default::default()
                 }),
-                msg_content: None,
-                msg_encrypt_content: None,
+                ..Default::default()
             }),
             msg_seq: Some(self.next_friend_seq()),
             msg_rand: Some(r),
             sync_cookie: Some(cookie),
-            msg_via: None,
-            msg_ctrl: None,
-            data_statist: None,
-            multi_send_seq: None,
+            ..Default::default()
         };
         self.uni_packet("MessageSvc.PbSendMsg", req.to_bytes())
     }
-
 }
