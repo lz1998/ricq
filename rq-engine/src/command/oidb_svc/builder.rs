@@ -198,6 +198,23 @@ impl super::super::super::Engine {
         self.uni_packet("OidbSvc.0x8a7_0", payload)
     }
 
+    // OidbSvc.0x8fc_2
+    pub fn build_edit_special_title_packet(&self, group_code: i64, member_uin: i64, new_title: String) -> Packet {
+        let body = pb::oidb::D8fcReqBody {
+            group_code: Some(group_code),
+            mem_level_info: vec![pb::oidb::D8fcMemberInfo {
+                uin: Some(member_uin),
+                uin_name: Some(new_title.as_bytes().to_vec()),
+                special_title: Some(new_title.as_bytes().to_vec()),
+                special_title_expire_time: Some(-1),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let payload = self.transport.encode_oidb_packet(0x8fc, 2, body.to_bytes());
+        self.uni_packet("OidbSvc.0x8fc_2", payload)
+    }
+
     // OidbSvc.0x990
     pub fn build_translate_request_packet(
         &self,

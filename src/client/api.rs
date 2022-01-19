@@ -572,6 +572,17 @@ impl super::Client {
             .decode_group_at_all_remain_response(resp.body)
     }
 
+    /// 设置群头衔
+    pub async fn group_edit_special_title(&self, group_code: i64, member_uin: i64, new_title: String) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_edit_special_title_packet(group_code, member_uin, new_title);
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
     // 文本翻译
     pub async fn translate(
         &self,
