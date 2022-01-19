@@ -19,4 +19,13 @@ impl super::super::super::Engine {
             remain_at_all_count_for_uin: rsp.remain_at_all_count_for_uin(),
         })
     }
+
+    // OidbSvc.0x990
+    pub fn decode_translate_response(&self, payload: Bytes) -> RQResult<Vec<String>> {
+        let pkg = pb::oidb::OidbssoPkg::from_bytes(&payload)
+            .map_err(|_| RQError::Decode("OidbssoPkg".into()))?;
+        let rsp = pb::oidb::TranslateRspBody::from_bytes(&pkg.bodybuffer)
+            .map_err(|_| RQError::Decode("TranslateRspBody".into()))?;
+        Ok(rsp.batch_translate_rsp.unwrap_or_default().dst_text_list)
+    }
 }
