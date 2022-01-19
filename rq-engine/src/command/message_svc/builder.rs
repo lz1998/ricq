@@ -110,4 +110,70 @@ impl super::super::super::Engine {
         let body = pb::DeleteMessageRequest { items: msg_items }.to_bytes();
         self.uni_packet("MessageSvc.PbDeleteMsg", body)
     }
+
+    // MessageSvc.PbSendMsg
+    pub fn build_friend_sending_packet(
+        &self,
+        target: i64,
+        r: i32,
+        pkg_num: i32,
+        pkg_index: i32,
+        pkg_div: i32,
+        elems: Vec<pb::msg::Elem>,
+    ) -> Packet {
+        let mut cookie = { self.transport.sig.sync_cookie.to_vec() };
+        let time = std::time::SystemTime::now()
+            .duration_since(std::time::SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        if cookie.is_empty() {
+            cookie = pb::msg::SyncCookie {
+                time1: None,
+                time: Some(time as i64),
+                ran1: Some(884121413),
+                ran2: Some(852218874),
+                const1: Some(390939176),
+                const2: Some(315764147),
+                const3: Some(0x1d),
+                last_sync_time: None,
+                const4: None,
+            }.encode_to_vec();
+        }
+
+        let req = pb::msg::SendMessageRequest {
+            routing_head: Some(pb::msg::RoutingHead {
+                c2c: Some(pb::msg::C2c {
+                    to_uin: Some(target)
+                }),
+                grp: None,
+                grp_tmp: None,
+                wpa_tmp: None,
+            }),
+            content_head: Some(pb::msg::ContentHead {
+                pkg_num: Some(pkg_num),
+                pkg_index: Some(pkg_index),
+                div_seq: Some(pkg_div),
+                auto_reply: None,
+            }),
+            msg_body: Some(pb::msg::MessageBody {
+                rich_text: Some(pb::msg::RichText {
+                    elems,
+                    attr: None,
+                    not_online_file: None,
+                    ptt: None,
+                }),
+                msg_content: None,
+                msg_encrypt_content: None,
+            }),
+            msg_seq: Some(self.next_friend_seq()),
+            msg_rand: Some(r),
+            sync_cookie: Some(cookie),
+            msg_via: None,
+            msg_ctrl: None,
+            data_statist: None,
+            multi_send_seq: None,
+        };
+        self.uni_packet("MessageSvc.PbSendMsg", req.to_bytes())
+    }
+
 }
