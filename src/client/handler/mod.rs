@@ -6,7 +6,7 @@ use async_trait::async_trait;
 pub enum QEvent {
     /// 登录成功事件
     LoginEvent(i64),
-    /// 群消息撤回
+    /// 群消息发送成功事件
     GroupMessageReceipt(GroupMessageReceiptEvent),
     /// 群消息
     GroupMessage(GroupMessageEvent),
