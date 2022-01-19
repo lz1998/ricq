@@ -573,7 +573,12 @@ impl super::Client {
     }
 
     /// 设置群头衔
-    pub async fn group_edit_special_title(&self, group_code: i64, member_uin: i64, new_title: String) -> RQResult<()> {
+    pub async fn group_edit_special_title(
+        &self,
+        group_code: i64,
+        member_uin: i64,
+        new_title: String,
+    ) -> RQResult<()> {
         let req = self
             .engine
             .read()
@@ -583,7 +588,7 @@ impl super::Client {
         Ok(())
     }
 
-    // 文本翻译
+    /// 文本翻译
     pub async fn translate(
         &self,
         src_language: String,
@@ -608,7 +613,11 @@ impl super::Client {
     }
 
     /// 发送好友消息
-    pub async fn send_private_message(&self, target: i64, message_chain: Vec<MsgElem>) -> RQResult<()> {
+    pub async fn send_private_message(
+        &self,
+        target: i64,
+        message_chain: Vec<MsgElem>,
+    ) -> RQResult<()> {
         let elems = crate::engine::msg::into_elems(message_chain);
         let req = self
             .engine
@@ -618,5 +627,4 @@ impl super::Client {
         self.send(req).await?;
         Ok(())
     }
-
 }
