@@ -595,4 +595,17 @@ impl super::Client {
         }
         Ok(translations)
     }
+
+    /// 发送好友消息
+    pub async fn send_private_message(&self, target: i64, message_chain: Vec<MsgElem>) -> RQResult<()> {
+        let elems = crate::engine::msg::into_elems(message_chain);
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_friend_sending_packet(target, 495, 1, 0, 0, elems);
+        self.send(req).await?;
+        Ok(())
+    }
+
 }
