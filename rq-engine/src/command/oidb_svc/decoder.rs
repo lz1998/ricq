@@ -5,6 +5,19 @@ use crate::command::oidb_svc::GroupAtAllRemainInfo;
 use crate::{pb, RQError, RQResult};
 
 impl super::super::super::Engine {
+    // OidbSvc.0x88d_0
+    pub fn decode_group_info_response(
+        &self,
+        payload: Bytes,
+    ) -> RQResult<Vec<pb::oidb::RspGroupInfo>> {
+        let pkg = pb::oidb::OidbssoPkg::from_bytes(&payload)
+            .map_err(|_| RQError::Decode("OidbssoPkg".into()))?;
+        pb::oidb::D88dRspBody::from_bytes(&pkg.bodybuffer)
+            .map(|rsp| rsp.rsp_group_info)
+            .map_err(|_| RQError::Decode("D8a7RspBody".into()))
+    }
+
+    // // OidbSvc.0x8a7_0
     pub fn decode_group_at_all_remain_response(
         &self,
         payload: Bytes,

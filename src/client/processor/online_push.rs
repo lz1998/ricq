@@ -70,7 +70,7 @@ impl Client {
     ) -> RQResult<GroupMessageEvent> {
         let group = match self.find_group(part.group_code).await {
             Some(group) => group,
-            None => self.get_group(part.group_code).await.unwrap(), // TODO remove unwrap
+            None => todo!(), // TODO get group from server
         };
         if group.0.member_count == 0 {
             group.1.write().await.append(

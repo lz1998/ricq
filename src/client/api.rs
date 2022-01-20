@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use bytes::{Buf, Bytes};
 use futures::{stream, StreamExt};
-use rq_engine::GroupMessageEvent;
+use rq_engine::{pb, GroupMessageEvent};
 use tokio::sync::RwLock;
 
 use crate::engine::command::{friendlist::*, oidb_svc::*, profile_service::*, wtlogin::*};
@@ -302,21 +302,20 @@ impl super::Client {
     }
 
     /// 通过群号从服务器获取群，请先尝试 find_group
-    pub async fn get_group(
+    pub async fn get_group_infos(
         &self,
-        code: i64,
-    ) -> Option<Arc<(GroupInfo, RwLock<Vec<GroupMemberInfo>>)>> {
+        group_codes: Vec<i64>,
+    ) -> RQResult<Vec<pb::oidb::RspGroupInfo>> {
         let req = self
             .engine
             .read()
             .await
-            .build_group_info_request_packet(code);
-        if let Ok(_resp) = self.send_and_wait(req).await {
-            // decode_group_info_response(&resp.body)
-            todo!()
-        } else {
-            None
-        }
+            .build_group_info_request_packet(group_codes);
+        let resp = self.send_and_wait(req).await?;
+        self.engine
+            .read()
+            .await
+            .decode_group_info_response(resp.body)
     }
 
     /// 通过uin获取群
