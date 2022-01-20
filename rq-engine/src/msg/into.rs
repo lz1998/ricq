@@ -2,7 +2,7 @@ use super::ImageBizType;
 use crate::pb::msg::*;
 use crate::{
     pb::msg::{
-        AnimationImageShow, CommonElem, CustomFace, Elem, Face, LightAppElem, MsgElemInfoServtype3,
+        AnimationImageShow, CommonElem, CustomFace, Elem, Face, LightApp, MsgElemInfoServtype3,
         MsgElemInfoServtype33, MsgElemInfoServtype37, ResvAttr, RichMsg, Text,
     },
     MsgElem,
@@ -113,7 +113,7 @@ impl From<MsgElem> for Vec<Elem> {
 
             MsgElem::LightApp { content } => {
                 vec![Elem {
-                    elem: Some(elem::Elem::LightApp(LightAppElem {
+                    elem: Some(elem::Elem::LightApp(LightApp {
                         data: Some(zlib_encode(content.as_bytes())),
                         ..Default::default()
                     })),

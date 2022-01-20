@@ -2,6 +2,7 @@ use crate::AtSubType;
 use crate::{pb::msg::*, FACES_MAP};
 use bytes::{Buf, BufMut};
 use prost::Message;
+use std::io::Read;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum MsgElem {
@@ -9,14 +10,15 @@ pub enum MsgElem {
     At(AtElem),
     Reply(ReplyElem),
     Face(FaceElem),
+    LightApp(LightAppElem),
     Other(elem::Elem),
-    None,
+    // None,
 }
 
 impl From<Elem> for MsgElem {
     fn from(elem: Elem) -> Self {
         if elem.elem.is_none() {
-            return Self::None;
+            unreachable!()
         }
         let elem = elem.elem.unwrap();
 
@@ -25,14 +27,18 @@ impl From<Elem> for MsgElem {
                 Ok(at) => Self::At(at),
                 Err(text) => Self::Text(text.into()),
             },
+            elem::Elem::Face(face) => Self::Face(face.into()),
             elem::Elem::SrcMsg(src_msg) => match src_msg.try_into() {
                 Ok(reply) => Self::Reply(reply),
                 Err(src_msg) => Self::Other(elem::Elem::SrcMsg(src_msg)),
             },
-            elem::Elem::Face(face) => Self::Face(face.into()),
             elem::Elem::CommonElem(common_elem) => match common_elem.try_into() {
                 Ok(face) => Self::Face(face),
                 Err(common_elem) => Self::Other(elem::Elem::CommonElem(common_elem)),
+            },
+            elem::Elem::LightApp(light_app) => match light_app.try_into() {
+                Ok(light_app) => Self::LightApp(light_app),
+                Err(light_app) => Self::Other(elem::Elem::LightApp(light_app)),
             },
             _ => Self::Other(elem),
         }
@@ -46,8 +52,8 @@ impl From<MsgElem> for Vec<Elem> {
             MsgElem::At(at) => at.into(),
             MsgElem::Reply(reply) => reply.into(),
             MsgElem::Face(face) => face.into(),
+            MsgElem::LightApp(light_app) => light_app.into(),
             MsgElem::Other(elem) => vec![Elem { elem: Some(elem) }],
-            MsgElem::None => Default::default(),
         }
     }
 }
@@ -248,4 +254,85 @@ impl From<FaceElem> for Vec<Elem> {
             }]
         }
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LightAppElem {
+    pub content: String,
+}
+
+impl TryFrom<LightApp> for LightAppElem {
+    type Error = LightApp;
+
+    fn try_from(app: LightApp) -> Result<Self, LightApp> {
+        let mut data = app.data.clone().unwrap();
+        if !data.is_empty() {
+            let content = if data[0] == 0 {
+                data.split_off(1)
+            } else {
+                let mut uncompressed = Vec::new();
+                flate2::read::ZlibDecoder::new(&data[1..])
+                    .read_to_end(&mut uncompressed)
+                    .unwrap();
+                uncompressed
+            };
+            if !content.is_empty() && content.len() < 1024 ^ 3 {
+                return Ok(Self {
+                    content: String::from_utf8(content).unwrap(),
+                });
+            }
+        }
+
+        Err(app)
+    }
+}
+
+impl From<LightAppElem> for Vec<Elem> {
+    fn from(app: LightAppElem) -> Self {
+        vec![Elem {
+            elem: Some(elem::Elem::LightApp(LightApp {
+                data: Some(zlib_encode(app.content.as_bytes())),
+                ..Default::default()
+            })),
+        }]
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ServiceElem {
+    pub id: i32,
+    pub content: String,
+    pub res_id: String,
+    pub sub_type: String,
+}
+
+impl From<ServiceElem> for Vec<Elem> {
+    fn from(s: ServiceElem) -> Self {
+        let mut v = vec![];
+        if s.id == 1 {
+            v.push(Elem {
+                elem: Some(elem::Elem::Text(Text {
+                    str: Some(s.res_id.clone()),
+                    ..Default::default()
+                })),
+            })
+        }
+        v.push(Elem {
+            elem: Some(elem::Elem::RichMsg(RichMsg {
+                template1: Some(zlib_encode(s.content.as_bytes())),
+                service_id: Some(s.id),
+                ..Default::default()
+            })),
+        });
+        v
+    }
+}
+
+fn zlib_encode(content: &[u8]) -> Vec<u8> {
+    let mut buf = Vec::new();
+    flate2::read::ZlibEncoder::new(content, flate2::Compression::default())
+        .read_to_end(&mut buf)
+        .unwrap();
+    buf.insert(0, 1);
+    buf
 }

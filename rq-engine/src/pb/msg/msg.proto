@@ -242,7 +242,7 @@ message Elem {
     //WorkflowNotifyMsg? msgWorkflowNotify = 48;
     //PatsElem? patElem = 49;
     //GroupPostElem? groupPostElem = 50;
-    LightAppElem lightApp = 51;
+    LightApp lightApp = 51;
     //EIMInfo? eimInfo = 52;
     CommonElem commonElem = 53;
   }
@@ -565,7 +565,7 @@ message Face {
   optional bytes buf = 11;
 }
 
-message LightAppElem {
+message LightApp {
   optional bytes data = 1;
   optional bytes msgResid = 2;
 }
