@@ -244,16 +244,16 @@ impl super::super::super::Engine {
         group_code: i64,
         msg_seq: i32,
         msg_rand: i32,
-        opt_type: i32, // 1 设置群精华消息 ｜ 2 移除群精华消息
+        flag: bool,
     ) -> Packet {
         let body = pb::oidb::EacReqBody {
             group_code: Some(group_code as u64),
             seq: Some(msg_seq as u32),
             random: Some(msg_rand as u32),
         };
-        let payload = self
-            .transport
-            .encode_oidb_packet(0xeac, opt_type, body.to_bytes());
+        let payload =
+            self.transport
+                .encode_oidb_packet(0xeac, if flag { 1 } else { 2 }, body.to_bytes());
         self.uni_packet("OidbSvc.0xeac", payload)
     }
 }

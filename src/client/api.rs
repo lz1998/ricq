@@ -678,35 +678,20 @@ impl super::Client {
         Ok(())
     }
 
-    // 设置群精华消息
-    pub async fn set_essence_message(
+    // 群精华消息操作
+    // flag true 设置群精华消息 ｜ false 移除群精华消息
+    pub async fn set_essence_operation(
         &self,
         group_code: i64,
         message_id: i32,
         msg_internal_id: i32,
+        flag: bool,
     ) -> RQResult<()> {
         let req = self.engine.read().await.build_essence_msg_operate_packet(
             group_code,
             message_id,
             msg_internal_id,
-            1,
-        );
-        let _ = self.send_and_wait(req).await?;
-        Ok(())
-    }
-
-    // 移除群精华消息
-    pub async fn delete_essence_message(
-        &self,
-        group_code: i64,
-        message_id: i32,
-        msg_internal_id: i32,
-    ) -> RQResult<()> {
-        let req = self.engine.read().await.build_essence_msg_operate_packet(
-            group_code,
-            message_id,
-            msg_internal_id,
-            2,
+            flag,
         );
         let _ = self.send_and_wait(req).await?;
         Ok(())
