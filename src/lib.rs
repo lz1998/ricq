@@ -9,6 +9,5 @@ pub use rq_engine as engine;
 pub use rq_engine::error::{RQError, RQResult};
 pub use rq_engine::hex;
 
-pub mod cache;
 pub mod client;
 mod config;

@@ -1,9 +1,11 @@
-use crate::engine::*;
-use crate::QEvent;
-use crate::RQResult;
+use cached::Cached;
+
 use rq_engine::command::message_svc::MessageSyncResponse;
 
+use crate::engine::*;
 use crate::Client;
+use crate::QEvent;
+use crate::RQResult;
 
 impl Client {
     pub(crate) async fn process_message_sync(&self, resp: MessageSyncResponse) -> RQResult<()> {
@@ -14,19 +16,19 @@ impl Client {
         }
         for msg in &resp.msgs {
             let head = msg.head.as_ref().unwrap();
-            let str_msg = format!(
-                "{}{}{}{}",
-                head.from_uin.unwrap(),
-                head.to_uin.unwrap(),
-                head.msg_seq(),
-                head.msg_uid()
-            );
-            if self.c2c_cache.update(&str_msg, 60 * 60).await {
-                break;
-            } else {
-                self.c2c_cache.insert(str_msg, (), 60 * 60).await;
-            }
 
+            // 消息去重
+            if let Some(_) = self.c2c_cache.write().await.cache_set(
+                (
+                    head.from_uin(),
+                    head.to_uin(),
+                    head.msg_seq(),
+                    head.msg_uid(),
+                ),
+                (),
+            ) {
+                break;
+            }
             //todo
 
             match msg.head.as_ref().unwrap().msg_type() {
