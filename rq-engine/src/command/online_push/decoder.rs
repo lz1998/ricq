@@ -66,12 +66,11 @@ impl super::super::super::Engine {
         });
     }
 
+    // OnlinePush.ReqPush
     // todo decode_online_push_req_packet
     pub fn decode_online_push_req_packet(&self, mut payload: Bytes) -> RQResult<ReqPush> {
-        let mut request: jce::RequestPacket =
-            jcers::from_buf(&mut payload).map_err(RQError::from)?;
-        let mut data: jce::RequestDataVersion2 =
-            jcers::from_buf(&mut request.s_buffer).map_err(RQError::from)?;
+        let mut request: jce::RequestPacket = jcers::from_buf(&mut payload)?;
+        let mut data: jce::RequestDataVersion2 = jcers::from_buf(&mut request.s_buffer)?;
         let mut req = data
             .map
             .remove("req")
@@ -79,41 +78,49 @@ impl super::super::super::Engine {
         let mut msg = req
             .remove("OnlinePushPack.SvcReqPushMsg")
             .ok_or_else(|| RQError::Decode("OnlinePushPack.SvcReqPushMsg is none".into()))?;
+        msg.advance(1);
         let mut jr = Jce::new(&mut msg);
-        let uin: i64 = jr.get_by_tag(0).map_err(RQError::from)?;
-        let msg_infos: Vec<jce::PushMessageInfo> = jr.get_by_tag(2).map_err(RQError::from)?;
+        let uin: i64 = jr.get_by_tag(0)?;
+        let msg_infos: Vec<jce::PushMessageInfo> = jr.get_by_tag(2)?;
 
         let infos: Vec<PushInfo> = msg_infos
             .iter()
-            .map(|m| {
-                let info = PushInfo {
-                    msg_seq: m.msg_seq,
-                    msg_time: m.msg_time,
-                    msg_uid: m.msg_uid,
-                    ..Default::default()
-                };
-                match m.msg_type {
-                    732 => {
-                        let mut r = m.v_msg.clone();
-                        let _group_code = r.get_i32() as i64;
-                        let i_type = r.get_u8();
-                        r.get_u8();
-                        match i_type {
-                            0x0c => {}
-                            0x10 | 0x11 | 0x14 | 0x15 => {}
-                            _ => {}
-                        }
-                    }
-                    528 => {}
-                    _ => {}
-                }
-                info
-            })
-            .collect();
+            .map(|info| self.parse_push_info(info))
+            .collect::<RQResult<_>>()?;
         Ok(ReqPush {
             resp: ReqPushResp { uin, msg_infos },
             push_infos: infos,
         })
+    }
+
+    fn parse_push_info(&self, raw: &jce::PushMessageInfo) -> RQResult<PushInfo> {
+        let info = PushInfo {
+            msg_seq: raw.msg_seq,
+            msg_time: raw.msg_time,
+            msg_uid: raw.msg_uid,
+            ..Default::default()
+        };
+        match raw.msg_type {
+            732 => {
+                let mut r = raw.v_msg.clone();
+                let _group_code = r.get_i32() as i64;
+                let i_type = r.get_u8();
+                r.get_u8();
+                match i_type {
+                    0x0c => {}
+                    0x10 | 0x11 | 0x14 | 0x15 => {}
+                    _ => {}
+                }
+            }
+            528 => {
+                let mut v_msg = raw.v_msg.clone();
+                let mut jr = jcers::Jce::new(&mut v_msg);
+                let sub_type: i64 = jr.get_by_tag(0)?;
+                println!("sub_type: {}", sub_type);
+            }
+            _ => {}
+        }
+        Ok(info)
     }
 
     // TODO 还没测试

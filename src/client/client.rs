@@ -68,6 +68,7 @@ impl super::Client {
     }
 
     pub async fn send(&self, pkt: Packet) -> RQResult<()> {
+        tracing::trace!(target: "rs_qq", "sending pkt {}-{},", pkt.command_name, pkt.seq_id);
         let data = self.engine.read().await.transport.encode_packet(pkt);
         self.out_pkt_sender
             .send(data)
@@ -75,6 +76,7 @@ impl super::Client {
     }
 
     pub async fn send_and_wait(&self, pkt: Packet) -> RQResult<Packet> {
+        tracing::trace!(target: "rs_qq", "send_and_waitting pkt {}-{},", pkt.command_name, pkt.seq_id);
         let seq = pkt.seq_id;
         let expect = pkt.command_name.clone();
         let data = self.engine.read().await.transport.encode_packet(pkt);
@@ -91,6 +93,7 @@ impl super::Client {
         match tokio::time::timeout(std::time::Duration::from_secs(15), receiver).await {
             Ok(p) => p.unwrap().check_command_name(&expect),
             Err(_) => {
+                tracing::trace!(target: "rs_qq", "waitting pkt {}-{} timeout", expect, seq);
                 self.packet_promises.write().await.remove(&seq);
                 Err(RQError::Timeout)
             }
@@ -98,6 +101,7 @@ impl super::Client {
     }
 
     pub async fn wait_packet(&self, pkt_name: &str, delay: u64) -> RQResult<Packet> {
+        tracing::trace!(target: "rs_qq", "waitting pkt {}", pkt_name);
         let (tx, rx) = oneshot::channel();
         {
             self.packet_waiters
@@ -108,6 +112,7 @@ impl super::Client {
         match tokio::time::timeout(std::time::Duration::from_secs(delay), rx).await {
             Ok(i) => Ok(i.unwrap()),
             Err(_) => {
+                tracing::trace!(target: "rs_qq", "waitting pkt {} timeout", pkt_name);
                 self.packet_waiters.write().await.remove(pkt_name);
                 Err(RQError::Timeout)
             }
