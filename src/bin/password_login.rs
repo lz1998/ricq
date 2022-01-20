@@ -134,10 +134,7 @@ async fn main() -> Result<()> {
         let d = client.get_allowed_clients().await;
         println!("{:?}", d);
 
-        // client.send_group_message(335783090, vec![
-        //     Msg::At { target: 875543533, display: "@lz1998".to_string() },
-        //     Msg::Text { content: "xxx".to_string() },
-        // ]).await;
+        // client.delete_essence_message(1095020555, 8114, 2107692422).await
         // let mem_info = client.get_group_member_info(335783090, 875543543).await;
         // println!("{:?}", mem_info);
         // let mem_list = client.get_group_member_list(335783090).await;
