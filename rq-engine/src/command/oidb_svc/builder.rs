@@ -199,7 +199,12 @@ impl super::super::super::Engine {
     }
 
     // OidbSvc.0x8fc_2
-    pub fn build_edit_special_title_packet(&self, group_code: i64, member_uin: i64, new_title: String) -> Packet {
+    pub fn build_edit_special_title_packet(
+        &self,
+        group_code: i64,
+        member_uin: i64,
+        new_title: String,
+    ) -> Packet {
         let body = pb::oidb::D8fcReqBody {
             group_code: Some(group_code),
             mem_level_info: vec![pb::oidb::D8fcMemberInfo {
@@ -231,5 +236,24 @@ impl super::super::super::Engine {
         };
         let payload = self.transport.encode_oidb_packet(0x990, 2, body.to_bytes());
         self.uni_packet("OidbSvc.0x990", payload)
+    }
+
+    // OidbSvc.0xeac
+    pub fn build_essence_msg_operate_packet(
+        &self,
+        group_code: i64,
+        msg_seq: i32,
+        msg_rand: i32,
+        opt_type: i32, // 1 设置群精华消息 ｜ 2 移除群精华消息
+    ) -> Packet {
+        let body = pb::oidb::EacReqBody {
+            group_code: Some(group_code as u64),
+            seq: Some(msg_seq as u32),
+            random: Some(msg_rand as u32),
+        };
+        let payload = self
+            .transport
+            .encode_oidb_packet(0xeac, opt_type, body.to_bytes());
+        self.uni_packet("OidbSvc.0xeac", payload)
     }
 }

@@ -180,19 +180,17 @@ impl super::super::super::Engine {
         self.uni_packet("MessageSvc.PbGetGroupMsg", req.to_bytes())
     }
 
-    pub fn build_private_recall_packet(
-        &self,
-        uin: i64,
-        ts: i64,
-        msg_seq: i32,
-        random: i32,
-    ) -> Packet {
+    pub fn build_private_recall_packet(&self, uin: i64, msg_seq: i32, random: i32) -> Packet {
+        let time = std::time::SystemTime::now()
+            .duration_since(std::time::SystemTime::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
         let req = pb::msg::MsgWithDrawReq {
             c2c_with_draw: vec![pb::msg::C2cMsgWithDrawReq {
                 msg_info: vec![pb::msg::C2cMsgInfo {
                     from_uin: Some(self.uin()),
                     to_uin: Some(uin),
-                    msg_time: Some(ts),
+                    msg_time: Some(time as i64),
                     msg_uid: Some(0x0100_0000_0000_0000),
                     msg_seq: Some(msg_seq),
                     msg_random: Some(random),

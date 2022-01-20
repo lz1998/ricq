@@ -666,7 +666,6 @@ impl super::Client {
     pub async fn recall_private_message(
         &self,
         uin: i64,
-        ts: i64,
         msg_id: i32,
         msg_internal_id: i32,
     ) -> RQResult<()> {
@@ -674,7 +673,41 @@ impl super::Client {
             self.engine
                 .read()
                 .await
-                .build_private_recall_packet(uin, ts, msg_id, msg_internal_id);
+                .build_private_recall_packet(uin, msg_id, msg_internal_id);
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
+    // 设置群精华消息
+    pub async fn set_essence_message(
+        &self,
+        group_code: i64,
+        message_id: i32,
+        msg_internal_id: i32,
+    ) -> RQResult<()> {
+        let req = self.engine.read().await.build_essence_msg_operate_packet(
+            group_code,
+            message_id,
+            msg_internal_id,
+            1,
+        );
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
+    // 移除群精华消息
+    pub async fn delete_essence_message(
+        &self,
+        group_code: i64,
+        message_id: i32,
+        msg_internal_id: i32,
+    ) -> RQResult<()> {
+        let req = self.engine.read().await.build_essence_msg_operate_packet(
+            group_code,
+            message_id,
+            msg_internal_id,
+            2,
+        );
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
