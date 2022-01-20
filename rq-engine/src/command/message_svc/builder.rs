@@ -179,4 +179,35 @@ impl super::super::super::Engine {
         };
         self.uni_packet("MessageSvc.PbGetGroupMsg", req.to_bytes())
     }
+
+    pub fn build_private_recall_packet(
+        &self,
+        uin: i64,
+        ts: i64,
+        msg_seq: i32,
+        random: i32,
+    ) -> Packet {
+        let req = pb::msg::MsgWithDrawReq {
+            c2c_with_draw: vec![pb::msg::C2cMsgWithDrawReq {
+                msg_info: vec![pb::msg::C2cMsgInfo {
+                    from_uin: Some(self.uin()),
+                    to_uin: Some(uin),
+                    msg_time: Some(ts),
+                    msg_uid: Some(0x0100_0000_0000_0000),
+                    msg_seq: Some(msg_seq),
+                    msg_random: Some(random),
+                    routing_head: Some(pb::msg::RoutingHead {
+                        c2c: Some(pb::msg::C2c { to_uin: Some(uin) }),
+                        ..Default::default()
+                    }),
+                    ..Default::default()
+                }],
+                long_message_flag: Some(0),
+                reserved: Some(vec![0x08, 0x00]),
+                sub_cmd: Some(1),
+            }],
+            ..Default::default()
+        };
+        self.uni_packet("PbMessageSvc.PbMsgWithDraw", req.to_bytes())
+    }
 }
