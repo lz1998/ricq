@@ -660,4 +660,22 @@ impl super::Client {
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
+
+    // TODO 待测试
+    // 撤回私聊消息
+    pub async fn recall_private_message(
+        &self,
+        uin: i64,
+        ts: i64,
+        msg_id: i32,
+        msg_internal_id: i32,
+    ) -> RQResult<()> {
+        let req =
+            self.engine
+                .read()
+                .await
+                .build_private_recall_packet(uin, ts, msg_id, msg_internal_id);
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
 }
