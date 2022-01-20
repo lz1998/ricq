@@ -6,6 +6,7 @@ pub use face::*;
 mod from;
 mod into;
 mod next;
+mod chain;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum MsgElem {
