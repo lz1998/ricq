@@ -17,13 +17,14 @@ impl Client {
 
         // receipt message
         if group_message_part.from_uin == self.uin().await {
-            self.handler
-                .handle(QEvent::GroupMessageReceipt(GroupMessageReceiptEvent {
-                    rand: group_message_part.rand,
-                    seq: group_message_part.seq,
-                    msg_event: self.parse_group_message(group_message_part).await?,
-                }))
-                .await;
+            if let Some(tx) = self
+                .receipt_waiters
+                .lock()
+                .await
+                .remove(&group_message_part.seq)
+            {
+                let _ = tx.send(group_message_part.seq);
+            }
             return Ok(());
         }
 

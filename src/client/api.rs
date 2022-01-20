@@ -1,8 +1,10 @@
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use std::time::Duration;
 
 use bytes::{Buf, Bytes};
 use futures::{stream, StreamExt};
+use rq_engine::GroupMessageEvent;
 use tokio::sync::RwLock;
 
 use crate::engine::command::{friendlist::*, oidb_svc::*, profile_service::*, wtlogin::*};
@@ -232,15 +234,40 @@ impl super::Client {
         &self,
         group_code: i64,
         message_chain: Vec<MsgElem>,
-    ) -> RQResult<()> {
-        let elems = crate::engine::msg::into_elems(message_chain);
+    ) -> RQResult<GroupMessageEvent> {
+        let elems = crate::engine::msg::into_elems(message_chain.clone());
+        let r: i32 = rand::random();
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        {
+            self.receipt_waiters.lock().await.insert(r, tx);
+        }
         let req = self
             .engine
             .read()
             .await
-            .build_group_sending_packet(group_code, 383, 1, 0, 0, false, elems);
+            .build_group_sending_packet(group_code, r, 1, 0, 0, false, elems);
         self.send(req).await?;
-        Ok(())
+        let mut event = GroupMessageEvent {
+            id: -1, // -1 for failed send
+            internal_id: r,
+            group_code,
+            sender: rq_engine::Sender {
+                uin: self.uin().await,
+                nickname: "".to_owned(), //todo self.engine.read().await.nickname.clone(),
+                ..Default::default()
+            },
+            time: chrono::Utc::now().timestamp() as i32,
+            elements: message_chain,
+            ..Default::default()
+        };
+        match tokio::time::timeout(Duration::from_secs(5), rx).await {
+            Ok(Ok(seq)) => {
+                event.id = seq;
+            }
+            Ok(Err(_)) => {} //todo
+            Err(_) => {}
+        }
+        Ok(event)
     }
 
     /// 获取群成员信息

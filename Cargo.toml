@@ -20,6 +20,8 @@ tracing = "0.1"
 lazy_static = "1.4.0"
 async-trait = "0.1"
 cached = "0.29.0"
+rand = "0.8.4"
+chrono = "0.4"
 
 jcers = { version = "0.1.0", features = ["derive"] }
 rq-engine = { path = "./rq-engine" }

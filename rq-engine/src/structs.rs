@@ -1,6 +1,6 @@
-use bytes::Bytes;
-use crate::msg::MsgElem;
 use crate::command::online_push::GroupMessagePart;
+use crate::msg::MsgElem;
+use bytes::Bytes;
 
 use crate::jce;
 
@@ -101,7 +101,7 @@ pub struct PrivateMessageEvent {
     pub elements: Vec<MsgElem>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct GroupMessageEvent {
     pub id: i32,
     pub internal_id: i32,
@@ -113,12 +113,12 @@ pub struct GroupMessageEvent {
     pub original_obj: GroupMessagePart,
 }
 
-#[derive(Debug, Clone, PartialEq)]
-pub struct GroupMessageReceiptEvent {
-    pub rand: i32,
-    pub seq: i32,
-    pub msg_event: GroupMessageEvent,
-}
+// #[derive(Debug, Clone, PartialEq)]
+// pub struct GroupMessageReceiptEvent {
+//     pub rand: i32,
+//     pub seq: i32,
+//     pub msg_event: GroupMessageEvent,
+// }
 
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct Sender {

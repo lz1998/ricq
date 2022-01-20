@@ -36,6 +36,7 @@ impl super::Client {
             // out_going_packet_session_id: RwLock::new(Bytes::from_static(&[0x02, 0xb0, 0x5b, 0x8b])),
             packet_promises: Default::default(),
             packet_waiters: Default::default(),
+            receipt_waiters: Default::default(),
             account_info: Default::default(),
             address: Default::default(),
             friend_list: Default::default(),

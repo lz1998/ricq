@@ -162,4 +162,21 @@ impl super::super::super::Engine {
         };
         self.uni_packet("MessageSvc.PbSendMsg", req.to_bytes())
     }
+
+    // MessageSvc.PbGetGroupMsg
+    pub fn build_get_group_msg_request(
+        &self,
+        group_code: i64,
+        begin_seq: i64,
+        end_seq: i64,
+    ) -> Packet {
+        let req = pb::msg::GetGroupMsgReq {
+            group_code: Some(group_code as u64),
+            begin_seq: Some(begin_seq as u64),
+            end_seq: Some(end_seq as u64),
+            public_group: Some(false),
+            ..Default::default()
+        };
+        self.uni_packet("MessageSvc.PbGetGroupMsg", req.to_bytes())
+    }
 }

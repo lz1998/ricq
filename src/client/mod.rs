@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, HashMap};
 use std::sync::atomic::{AtomicBool, AtomicI64};
 use std::sync::Arc;
 
-use tokio::sync::oneshot;
+use tokio::sync::{oneshot, Mutex};
 use tokio::sync::RwLock;
 
 use rq_engine::command::online_push::GroupMessagePart;
@@ -32,6 +32,7 @@ pub struct Client {
     pub out_pkt_sender: net::OutPktSender,
     pub packet_promises: RwLock<HashMap<i32, oneshot::Sender<Packet>>>,
     packet_waiters: RwLock<HashMap<String, oneshot::Sender<Packet>>>,
+    receipt_waiters: Mutex<HashMap<i32, oneshot::Sender<i32>>>,
 
     // account info
     pub account_info: RwLock<AccountInfo>,
