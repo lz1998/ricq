@@ -685,14 +685,44 @@ impl super::Client {
         message_id: i32,
         msg_internal_id: i32,
         flag: bool,
-    ) -> RQResult<()> {
+    ) -> RQResult<pb::oidb::EacRspBody> {
         let req = self.engine.read().await.build_essence_msg_operate_packet(
             group_code,
             message_id,
             msg_internal_id,
             flag,
         );
-        let _ = self.send_and_wait(req).await?;
-        Ok(())
+        let resp = self.send_and_wait(req).await?;
+        let decode = self
+            .engine
+            .read()
+            .await
+            .decode_essence_msg_response(resp.body)?;
+        Ok(decode)
+    }
+
+    // TODO 待完善
+    // 图片 OCR
+    pub async fn image_ocr(
+        &self,
+        img_url: String,
+        md5: String,
+        size: i32,
+        wight: i32,
+        height: i32,
+    ) -> RQResult<OcrResponse> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_image_ocr_request_packet(img_url, md5, size, wight, height);
+        let resp = self.send_and_wait(req).await?;
+
+        let decode = self
+            .engine
+            .read()
+            .await
+            .decode_image_ocr_response(resp.body)?;
+        Ok(decode)
     }
 }

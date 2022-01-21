@@ -21,6 +21,7 @@ fn main() -> Result<()> {
             "src/pb/oidb/oidb0x8fc.proto",
             "src/pb/oidb/oidb0x990.proto",
             "src/pb/oidb/oidb0xeac.proto",
+            "src/pb/oidb/oidb0xe07.proto",
             "src/pb/oidb/oidb.proto",
             "src/pb/msf/register_proxy.proto",
         ],
