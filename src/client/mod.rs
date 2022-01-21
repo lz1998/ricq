@@ -47,7 +47,7 @@ pub struct Client {
     pub last_message_time: AtomicI64,
 
     /// 群消息 builder 寄存 <div_seq, parts> : parts is sorted by pkg_index
-    group_message_builder: RwLock<cached::SizedCache<i32, BTreeMap<i32, GroupMessagePart>>>,
+    group_message_builder: RwLock<cached::TimedCache<i32, BTreeMap<i32, GroupMessagePart>>>,
     /// 每个 28 Byte
-    c2c_cache: RwLock<cached::SizedCache<(i64, i64, i32, i64), ()>>,
+    c2c_cache: RwLock<cached::TimedCache<(i64, i64, i32, i64), ()>>,
 }

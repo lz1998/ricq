@@ -29,6 +29,10 @@ impl Client {
             ) {
                 break;
             }
+            if builder.cache_misses().unwrap_or_default() > 100 {
+                builder.flush();
+                builder.cache_reset_metrics();
+            }
             //todo
 
             match msg.head.as_ref().unwrap().msg_type() {
