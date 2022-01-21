@@ -4,22 +4,23 @@ use rand::Rng;
 
 pub use error::{RQError, RQResult};
 pub use msg::*;
-pub use structs::*;
 use protocol::device::Device;
 use protocol::oicq;
 use protocol::transport::Transport;
 use protocol::version::Version;
+pub use structs::*;
 
 pub mod binary;
 pub mod command;
+pub mod common;
 pub mod crypto;
 pub mod error;
 pub mod hex;
 pub mod jce;
+pub mod msg;
 pub mod pb;
 pub mod protocol;
 pub mod structs;
-pub mod msg;
 
 // build_packet: param -> bytes
 // decode_packet: bytes -> struct

@@ -50,6 +50,15 @@ impl Client {
                             self.handler.handle(QEvent::PrivateMessage(event)).await
                         }
                     }
+                    33 => {
+                        // troop add member broadcast
+                    }
+                    140 | 141 => {
+                        // temp session
+                    }
+                    208 => {
+                        // private ptt
+                    }
                     _ => tracing::warn!("unhandled sync message type"),
                 }
             })

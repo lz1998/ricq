@@ -127,7 +127,8 @@ async fn main() -> Result<()> {
                 .reload_group_list()
                 .await
                 .expect("failed to reload group list");
-            let _group_list = client.group_list.read().await;
+            let group_list = client.group_list.read().await;
+            println!("{:?}", group_list);
         }
         let r = client.refresh_status().await;
         println!("{:?}", r);
