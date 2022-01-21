@@ -1,4 +1,5 @@
 use cached::Cached;
+use futures::{stream, StreamExt};
 
 use rq_engine::command::message_svc::MessageSyncResponse;
 
@@ -13,47 +14,75 @@ impl Client {
             let mut engine = self.engine.write().await;
             engine.transport.sig.sync_cookie = resp.sync_cookie;
             engine.transport.sig.pub_account_cookie = resp.pub_account_cookie;
-        }
-        for msg in &resp.msgs {
-            let head = msg.head.as_ref().unwrap();
+        };
 
-            {
-                // 消息去重
-                let mut c2c_cache = self.c2c_cache.write().await;
-                if let Some(_) = c2c_cache.cache_set(
-                    (
-                        head.from_uin(),
-                        head.to_uin(),
-                        head.msg_seq(),
-                        head.msg_uid(),
-                    ),
-                    (),
-                ) {
-                    break;
-                }
-                if c2c_cache.cache_misses().unwrap_or_default() > 100 {
-                    c2c_cache.flush();
-                    c2c_cache.cache_reset_metrics();
-                }
-            }
+        self.delete_message(
+            resp.msgs
+                .iter()
+                .map(|m| {
+                    let head = m.head.as_ref().unwrap();
+                    pb::MessageItem {
+                        from_uin: head.from_uin(),
+                        to_uin: head.to_uin(),
+                        msg_type: head.msg_type(),
+                        msg_seq: head.msg_seq(),
+                        msg_uid: head.msg_uid(),
+                        ..Default::default()
+                    }
+                })
+                .collect(),
+        )
+        .await?;
 
-            //todo
-
-            match msg.head.as_ref().unwrap().msg_type() {
-                9 | 10 | 31 | 79 | 97 | 120 | 132 | 133 | 166 | 167 => {
-                    let private_message = self.parse_private_message(msg.clone()).await?;
-                    self.handler
-                        .handle(QEvent::PrivateMessage(private_message))
-                        .await;
+        stream::iter(resp.msgs)
+            .filter_map(|msg| async {
+                let head = msg.head.clone().unwrap();
+                if self.msg_exists(&head).await {
+                    None
+                } else {
+                    Some(msg)
                 }
-                _ => tracing::warn!("unhandled sync message type"),
-            }
-        }
-        self.delete_message(resp.msgs).await?;
+            })
+            .for_each(|msg| async {
+                match msg.head.as_ref().unwrap().msg_type() {
+                    9 | 10 | 31 | 79 | 97 | 120 | 132 | 133 | 166 | 167 => {
+                        if let Ok(event) = self.parse_private_message(msg).await {
+                            self.handler.handle(QEvent::PrivateMessage(event)).await
+                        }
+                    }
+                    _ => tracing::warn!("unhandled sync message type"),
+                }
+            })
+            .await;
+
         if resp.sync_flag != 2 {
             self.get_sync_message(resp.sync_flag).await?;
         }
         Ok(())
+    }
+
+    async fn msg_exists(&self, head: &pb::msg::MessageHead) -> bool {
+        let now = chrono::Utc::now().timestamp() as i32;
+        let msg_time = head.msg_time.unwrap_or_default();
+        if now - msg_time > 60 || self.start_time > msg_time {
+            return true;
+        }
+        let mut c2c_cache = self.c2c_cache.write().await;
+        let key = (
+            head.from_uin(),
+            head.to_uin(),
+            head.msg_seq(),
+            head.msg_uid(),
+        );
+        if let Some(_) = c2c_cache.cache_get(&key) {
+            return true;
+        }
+        c2c_cache.cache_set(key, ());
+        if c2c_cache.cache_misses().unwrap_or_default() > 100 {
+            c2c_cache.flush();
+            c2c_cache.cache_reset_metrics();
+        }
+        return false;
     }
 
     pub async fn parse_private_message(

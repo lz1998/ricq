@@ -51,28 +51,33 @@ impl super::super::super::Engine {
         self.uni_packet("MessageSvc.PbSendMsg", req.to_bytes())
     }
 
+    // build sync_cookie
+    fn sync_cookie(&self) -> Vec<u8> {
+        if !self.transport.sig.sync_cookie.is_empty() {
+            return self.transport.sig.sync_cookie.to_vec();
+        }
+        let time = chrono::Utc::now().timestamp() as i64;
+        pb::msg::SyncCookie {
+            time1: Some(time),
+            time: Some(time),
+            last_sync_time: Some(time),
+            ran1: Some(rand::random::<u32>() as i64),
+            ran2: Some(rand::random::<u32>() as i64),
+            const1: Some(self.transport.sig.sync_const1 as i64),
+            const2: Some(self.transport.sig.sync_const2 as i64),
+            const3: Some(self.transport.sig.sync_const3 as i64),
+            ..Default::default()
+        }
+        .encode_to_vec()
+    }
+
     // MessageSvc.PbGetMsg
     pub fn build_get_message_request_packet(&self, flag: i32) -> Packet {
         // start = 0, continue = 1, stop = 2
-        let mut cook = { self.transport.sig.sync_cookie.to_vec() };
-        let time = chrono::Utc::now().timestamp() as i64;
-        if cook.is_empty() {
-            cook = pb::msg::SyncCookie {
-                time: Some(time),
-                time1: None,
-                ran1: Some(758330138),
-                ran2: Some(2480149246),
-                const1: Some(1167238020),
-                const2: Some(3913056418),
-                const3: Some(0x1D),
-                const4: None,
-                last_sync_time: None,
-            }
-            .encode_to_vec();
-        }
+        let sync_cookie = self.sync_cookie();
         let req = pb::msg::GetMessageRequest {
             sync_flag: Some(flag),
-            sync_cookie: Some(cook),
+            sync_cookie: Some(sync_cookie),
             latest_ramble_number: Some(20),
             other_ramble_number: Some(3),
             online_sync_flag: Some(1),
@@ -86,20 +91,9 @@ impl super::super::super::Engine {
         self.uni_packet("MessageSvc.PbGetMsg", req.to_bytes())
     }
 
-    pub fn build_delete_message_request_packet(&self, msgs: Vec<pb::msg::Message>) -> Packet {
-        let mut msg_items = vec![];
-        msgs.into_iter().for_each(|msg| {
-            let head = msg.head.unwrap();
-            msg_items.push(pb::MessageItem {
-                from_uin: head.from_uin.unwrap(),
-                to_uin: head.to_uin.unwrap(),
-                msg_type: head.msg_type.unwrap(),
-                msg_seq: head.msg_seq.unwrap(),
-                msg_uid: head.msg_uid.unwrap(),
-                sig: vec![],
-            })
-        });
-        let body = pb::DeleteMessageRequest { items: msg_items }.to_bytes();
+    // MessageSvc.PbDeleteMsg
+    pub fn build_delete_message_request_packet(&self, items: Vec<pb::MessageItem>) -> Packet {
+        let body = pb::DeleteMessageRequest { items }.to_bytes();
         self.uni_packet("MessageSvc.PbDeleteMsg", body)
     }
 
@@ -113,24 +107,7 @@ impl super::super::super::Engine {
         pkg_div: i32,
         elems: Vec<pb::msg::Elem>,
     ) -> Packet {
-        let mut cookie = { self.transport.sig.sync_cookie.to_vec() };
-        let time = std::time::SystemTime::now()
-            .duration_since(std::time::SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
-        if cookie.is_empty() {
-            cookie = pb::msg::SyncCookie {
-                time1: None,
-                time: Some(time as i64),
-                ran1: Some(884121413),
-                ran2: Some(852218874),
-                const1: Some(390939176),
-                const2: Some(315764147),
-                const3: Some(0x1d),
-                ..Default::default()
-            }
-            .encode_to_vec();
-        }
+        let sync_cookie = self.sync_cookie();
 
         let req = pb::msg::SendMessageRequest {
             routing_head: Some(pb::msg::RoutingHead {
@@ -154,7 +131,7 @@ impl super::super::super::Engine {
             }),
             msg_seq: Some(self.next_friend_seq()),
             msg_rand: Some(r),
-            sync_cookie: Some(cookie),
+            sync_cookie: Some(sync_cookie),
             ..Default::default()
         };
         self.uni_packet("MessageSvc.PbSendMsg", req.to_bytes())

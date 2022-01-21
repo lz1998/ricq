@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI64};
 use std::sync::Arc;
 
@@ -45,9 +45,10 @@ pub struct Client {
 
     // statics
     pub last_message_time: AtomicI64,
+    pub start_time: i32,
 
     /// 群消息 builder 寄存 <div_seq, parts> : parts is sorted by pkg_index
-    group_message_builder: RwLock<cached::TimedCache<i32, BTreeMap<i32, GroupMessagePart>>>,
+    group_message_builder: RwLock<cached::TimedCache<i32, Vec<GroupMessagePart>>>,
     /// 每个 28 Byte
     c2c_cache: RwLock<cached::TimedCache<(i64, i64, i32, i64), ()>>,
 }

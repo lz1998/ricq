@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use cached::Cached;
 
 use crate::client::handler::QEvent;
@@ -38,15 +36,16 @@ impl Client {
             }
             // muti-part
             let div_seq = group_message_part.div_seq;
-            let parts = builder.cache_get_or_set_with(div_seq, || BTreeMap::new());
-            parts.insert(group_message_part.pkg_index, group_message_part);
+            let parts = builder.cache_get_or_set_with(div_seq, || Vec::new());
+            parts.push(group_message_part);
             if parts.len() < pkg_num as usize {
                 // wait for more parts
                 None
             } else {
                 let mut parts = builder.cache_remove(&div_seq).unwrap_or_default();
-                let mut merged = parts.pop_first().unwrap_or_default().1;
-                for (_, part) in parts.into_iter() {
+                parts.sort_by(|a, b| a.pkg_index.cmp(&b.pkg_index));
+                let mut merged = parts.remove(0);
+                for part in parts.into_iter() {
                     merged.elems.extend(part.elems);
                 }
                 Some(merged)

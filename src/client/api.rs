@@ -698,12 +698,12 @@ impl super::Client {
     }
 
     // 标记消息已收到，server 不再重复推送
-    pub async fn delete_message(&self, messages: Vec<pb::msg::Message>) -> RQResult<()> {
+    pub async fn delete_message(&self, items: Vec<pb::MessageItem>) -> RQResult<()> {
         let req = self
             .engine
             .read()
             .await
-            .build_delete_message_request_packet(messages);
+            .build_delete_message_request_packet(items);
         let _ = self.send_and_wait(req).await?;
         return Ok(());
     }
