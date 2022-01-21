@@ -43,8 +43,8 @@ impl super::Client {
             group_list: Default::default(),
             online_clients: Default::default(),
             last_message_time: Default::default(),
-            group_message_builder: RwLock::new(cached::SizedCache::with_size(128)),
-            c2c_cache: RwLock::new(cached::SizedCache::with_size(128)),
+            group_message_builder: RwLock::new(cached::TimedCache::with_size(600)),
+            c2c_cache: RwLock::new(cached::TimedCache::with_size(3600)),
         };
         cli
     }

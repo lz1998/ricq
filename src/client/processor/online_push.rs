@@ -32,6 +32,10 @@ impl Client {
         let pkg_num = group_message_part.pkg_num;
         let group_msg = if pkg_num > 1 {
             let mut builder = self.group_message_builder.write().await;
+            if builder.cache_misses().unwrap_or_default() > 100 {
+                builder.flush();
+                builder.cache_reset_metrics();
+            }
             // muti-part
             let div_seq = group_message_part.div_seq;
             let parts = builder.cache_get_or_set_with(div_seq, || BTreeMap::new());
