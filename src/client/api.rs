@@ -679,7 +679,7 @@ impl super::Client {
 
     // 群精华消息操作
     // flag true 设置群精华消息 ｜ false 移除群精华消息
-    pub async fn set_essence_operation(
+    pub async fn group_essence_operation(
         &self,
         group_code: i64,
         message_id: i32,
