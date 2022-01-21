@@ -49,13 +49,9 @@ impl Client {
                 _ => tracing::warn!("unhandled sync message type"),
             }
         }
-        let engine = self.engine.read().await;
-        let pkt = engine.build_delete_message_request_packet(resp.msgs);
-        let _ = self.send_and_wait(pkt).await?; // delete message
+        self.delete_message(resp.msgs).await?;
         if resp.sync_flag != 2 {
-            tracing::debug!("continue sync with flag: {}", resp.sync_flag);
-            let pkt = engine.build_get_message_request_packet(resp.sync_flag);
-            let _ = self.send_and_wait(pkt).await?; // continue sync message
+            self.get_sync_message(resp.sync_flag).await?;
         }
         Ok(())
     }

@@ -53,15 +53,12 @@ impl super::super::super::Engine {
 
     // MessageSvc.PbGetMsg
     pub fn build_get_message_request_packet(&self, flag: i32) -> Packet {
-        // Strat = 0, continue = 1, stop = 2
+        // start = 0, continue = 1, stop = 2
         let mut cook = { self.transport.sig.sync_cookie.to_vec() };
-        let time = std::time::SystemTime::now()
-            .duration_since(std::time::SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
+        let time = chrono::Utc::now().timestamp() as i64;
         if cook.is_empty() {
             cook = pb::msg::SyncCookie {
-                time: Some(time as i64),
+                time: Some(time),
                 time1: None,
                 ran1: Some(758330138),
                 ran2: Some(2480149246),

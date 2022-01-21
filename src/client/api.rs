@@ -4,8 +4,9 @@ use std::time::Duration;
 
 use bytes::{Buf, Bytes};
 use futures::{stream, StreamExt};
-use rq_engine::{pb, GroupMessageEvent};
 use tokio::sync::RwLock;
+
+use rq_engine::{pb, GroupMessageEvent};
 
 use crate::engine::command::{friendlist::*, oidb_svc::*, profile_service::*, wtlogin::*};
 use crate::engine::structs::{FriendInfo, GroupInfo, GroupMemberInfo};
@@ -692,6 +693,28 @@ impl super::Client {
             msg_internal_id,
             flag,
         );
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
+    // 标记消息已收到，server 不再重复推送
+    pub async fn delete_message(&self, messages: Vec<pb::msg::Message>) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_delete_message_request_packet(messages);
+        let _ = self.send_and_wait(req).await?;
+        return Ok(());
+    }
+
+    // sync message
+    pub async fn get_sync_message(&self, sync_flag: i32) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_get_message_request_packet(sync_flag);
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
