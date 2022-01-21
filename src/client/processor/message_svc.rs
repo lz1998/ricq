@@ -17,22 +17,26 @@ impl Client {
         for msg in &resp.msgs {
             let head = msg.head.as_ref().unwrap();
 
-            // 消息去重
-            if let Some(_) = self.c2c_cache.write().await.cache_set(
-                (
-                    head.from_uin(),
-                    head.to_uin(),
-                    head.msg_seq(),
-                    head.msg_uid(),
-                ),
-                (),
-            ) {
-                break;
+            {
+                // 消息去重
+                let mut c2c_cache = self.c2c_cache.write().await;
+                if let Some(_) = c2c_cache.cache_set(
+                    (
+                        head.from_uin(),
+                        head.to_uin(),
+                        head.msg_seq(),
+                        head.msg_uid(),
+                    ),
+                    (),
+                ) {
+                    break;
+                }
+                if c2c_cache.cache_misses().unwrap_or_default() > 100 {
+                    c2c_cache.flush();
+                    c2c_cache.cache_reset_metrics();
+                }
             }
-            if builder.cache_misses().unwrap_or_default() > 100 {
-                builder.flush();
-                builder.cache_reset_metrics();
-            }
+
             //todo
 
             match msg.head.as_ref().unwrap().msg_type() {
