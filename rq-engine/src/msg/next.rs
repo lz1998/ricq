@@ -95,7 +95,7 @@ impl TryFrom<Text> for AtElem {
     fn try_from(text: Text) -> Result<Self, Text> {
         if !text.attr6_buf().is_empty() {
             let (_, mut attr6) = text.attr6_buf().split_at(7);
-            let target = attr6.get_i32();
+            let target = attr6.get_u32();
             return Ok(Self {
                 target: target as i64,
                 display: text.str().to_owned(),

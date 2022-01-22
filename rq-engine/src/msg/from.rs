@@ -82,7 +82,7 @@ impl From<Text> for MsgElem {
     fn from(text: Text) -> Self {
         if !text.attr6_buf().is_empty() {
             let (_, mut attr6) = text.attr6_buf().split_at(7);
-            let target = attr6.get_i32();
+            let target = attr6.get_u32();
             return super::at(
                 target as i64,
                 text.str().to_owned(),
