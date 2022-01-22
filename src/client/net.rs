@@ -4,9 +4,11 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 use bytes::Bytes;
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use futures::StreamExt;
+use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 use tokio::sync::{mpsc, RwLock};
+use tokio_util::codec::LengthDelimitedCodec;
 
 use crate::engine::protocol::packet::EncryptType;
 
@@ -51,19 +53,17 @@ impl ClientNet {
     }
 
     pub fn net_loop(&self, client: &Arc<Client>, stream: TcpStream) -> impl Future<Output = ()> {
-        let (mut read_half, mut write_half) = stream.into_split();
+        let (read_half, mut write_half) = stream.into_split();
         let cli = client.clone();
         let a = tokio::spawn(async move {
+            let mut read_half = LengthDelimitedCodec::builder()
+                .length_field_length(4)
+                .length_adjustment(-4)
+                .new_read(read_half);
+
             loop {
                 let cli = cli.clone();
-                let len = read_half.read_i32().await.unwrap();
-                if len - 4 < 0 {
-                    panic!("invalid packet length: {}", len);
-                }
-                let mut data = vec![0; len as usize - 4];
-                read_half.read_exact(&mut data).await.unwrap();
-                let mut data = Bytes::from(data);
-
+                let mut data = read_half.next().await.unwrap().unwrap();
                 let pkt = {
                     let engine = cli.engine.read().await;
                     let mut pkt = engine.transport.decode_packet(&mut data).unwrap();
