@@ -76,11 +76,11 @@ impl Client {
             None => todo!(), // TODO get group from server
         };
         if group.0.member_count == 0 {
-            group.1.write().await.append(
-                &mut self
-                    .get_group_member_list(group.0.code, group.0.uin)
-                    .await?,
-            )
+            group
+                .1
+                .write()
+                .await
+                .append(&mut self.get_group_member_list(group.0.code).await?)
         }
 
         let anon_info = part

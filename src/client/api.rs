@@ -319,19 +319,6 @@ impl super::Client {
             .decode_group_info_response(resp.body)
     }
 
-    /// 通过uin获取群
-    pub async fn find_group_by_uin(
-        &self,
-        uin: i64,
-    ) -> Option<Arc<(GroupInfo, RwLock<Vec<GroupMemberInfo>>)>> {
-        for g in self.group_list.read().await.iter() {
-            if g.0.uin == uin {
-                return Some(g.clone());
-            }
-        }
-        None
-    }
-
     /// 刷新群列表 TODO 获取群成员列表
     pub async fn reload_group_list(self: &Arc<Self>) -> RQResult<()> {
         // 获取群列表
@@ -350,10 +337,7 @@ impl super::Client {
 
         let mut groups = stream::iter(groups)
             .map(|g| async move {
-                let mem_list = self
-                    .get_group_member_list(g.code, g.uin)
-                    .await
-                    .unwrap_or_default();
+                let mem_list = self.get_group_member_list(g.code).await.unwrap_or_default();
                 Arc::new((g, RwLock::new(mem_list)))
             })
             .buffered(10)
@@ -399,7 +383,6 @@ impl super::Client {
     /// 获取群成员列表 (low level api)
     async fn _get_group_member_list(
         &self,
-        group_uin: i64,
         group_code: i64,
         next_uin: i64,
     ) -> RQResult<GroupMemberListResponse> {
@@ -407,7 +390,7 @@ impl super::Client {
             .engine
             .read()
             .await
-            .build_group_member_list_request_packet(group_uin, group_code, next_uin);
+            .build_group_member_list_request_packet(group_code, next_uin);
         let resp = self.send_and_wait(req).await?;
         self.engine
             .read()
@@ -416,17 +399,11 @@ impl super::Client {
     }
 
     /// 获取群成员列表
-    pub async fn get_group_member_list(
-        &self,
-        group_code: i64,
-        group_uin: i64,
-    ) -> RQResult<Vec<GroupMemberInfo>> {
+    pub async fn get_group_member_list(&self, group_code: i64) -> RQResult<Vec<GroupMemberInfo>> {
         let mut next_uin = 0;
         let mut list = Vec::new();
         loop {
-            let mut resp = self
-                ._get_group_member_list(group_uin, group_code, next_uin)
-                .await?;
+            let mut resp = self._get_group_member_list(group_code, next_uin).await?;
             if resp.list.is_empty() {
                 return Err(RQError::Other("member list is empty".to_string()));
             }

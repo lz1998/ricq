@@ -4,6 +4,7 @@ use bytes::{BufMut, Bytes, BytesMut};
 use jcers::JcePut;
 
 use crate::command::common::pack_uni_request_data;
+use crate::common::group_code2uin;
 use crate::protocol::packet::*;
 use crate::{jce, pb};
 
@@ -103,17 +104,12 @@ impl super::super::super::Engine {
     }
 
     // friendlist.GetTroopMemberListReq
-    pub fn build_group_member_list_request_packet(
-        &self,
-        group_uin: i64,
-        group_code: i64,
-        next_uin: i64,
-    ) -> Packet {
+    pub fn build_group_member_list_request_packet(&self, group_code: i64, next_uin: i64) -> Packet {
         let payload = jce::TroopMemberListRequest {
             uin: self.uin(),
             group_code,
             next_uin,
-            group_uin,
+            group_uin: group_code2uin(group_code),
             version: 2,
             ..Default::default()
         };
