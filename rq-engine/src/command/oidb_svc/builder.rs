@@ -254,4 +254,31 @@ impl super::super::super::Engine {
                 .encode_oidb_packet(0xeac, if flag { 1 } else { 2 }, body.to_bytes());
         self.uni_packet("OidbSvc.0xeac", payload)
     }
+
+    // OidbSvc.0xe07_0
+    pub fn build_image_ocr_request_packet(
+        &self,
+        url: String,
+        md5: String,
+        size: i32,
+        wight: i32,
+        height: i32,
+    ) -> Packet {
+        let body = pb::oidb::De07ReqBody {
+            version: 1,
+            entrance: 3,
+            ocr_req_body: Some(pb::oidb::OcrReqBody {
+                image_url: url,
+                origin_md5: md5.clone(),
+                after_compress_md5: md5.clone(),
+                after_compress_file_size: size,
+                after_compress_height: height,
+                after_compress_weight: wight,
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let payload = self.transport.encode_oidb_packet(0xe07, 0, body.to_bytes());
+        self.uni_packet("OidbSvc.0xe07_0", payload)
+    }
 }
