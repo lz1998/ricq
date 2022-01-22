@@ -4,8 +4,7 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 use bytes::Bytes;
-use futures::StreamExt;
-use tokio::io::AsyncWriteExt;
+use futures::{SinkExt, StreamExt};
 use tokio::net::TcpStream;
 use tokio::sync::{mpsc, RwLock};
 use tokio_util::codec::LengthDelimitedCodec;
@@ -53,7 +52,7 @@ impl ClientNet {
     }
 
     pub fn net_loop(&self, client: &Arc<Client>, stream: TcpStream) -> impl Future<Output = ()> {
-        let (read_half, mut write_half) = stream.into_split();
+        let (read_half, write_half) = stream.into_split();
         let cli = client.clone();
         let a = tokio::spawn(async move {
             let mut read_half = LengthDelimitedCodec::builder()
@@ -76,12 +75,17 @@ impl ClientNet {
                 cli.process_income_packet(pkt).await;
             }
         });
+
+        let mut write_half = LengthDelimitedCodec::builder()
+            .length_field_length(4)
+            .length_adjustment(-4)
+            .new_write(write_half);
         let cli = client.clone();
         let rx = self.receiver.clone();
         async move {
             while !cli.shutting_down.load(Ordering::SeqCst) {
                 let sending = rx.write().await.recv().await.unwrap();
-                if write_half.write_all(&sending).await.is_err() {
+                if write_half.send(sending).await.is_err() {
                     break;
                 }
             }

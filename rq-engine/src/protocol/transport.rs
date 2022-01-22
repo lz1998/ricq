@@ -37,8 +37,8 @@ impl Transport {
         }
 
         let mut w = BytesMut::new();
-        let pos = w.len();
-        w.put_u32(0);
+        // let pos = w.len();
+        // w.put_u32(0);
 
         // vvv w.Write(head) vvv
         w.put_u32(pkt.packet_type.value());
@@ -71,8 +71,8 @@ impl Transport {
         }
         w.put_slice(&body);
 
-        let len = w.len();
-        w[pos..pos + 4].as_mut().put_u32(len as u32);
+        // let len = w.len();
+        // w[pos..pos + 4].as_mut().put_u32(len as u32);
         w.freeze()
     }
 
