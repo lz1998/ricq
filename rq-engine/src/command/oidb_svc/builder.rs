@@ -117,19 +117,22 @@ impl super::super::super::Engine {
     pub fn build_group_kick_packet(
         &self,
         group_code: i64,
-        member_uin: i64,
+        member_uins: Vec<i64>,
         kick_msg: &str,
         block: bool,
     ) -> Packet {
         let flag_block = if block { 1 } else { 0 };
         let body = pb::oidb::D8a0ReqBody {
             opt_uint64_group_code: group_code,
-            msg_kick_list: vec![pb::oidb::D8a0KickMemberInfo {
-                opt_uint32_operate: 5,
-                opt_uint64_member_uin: member_uin,
-                opt_uint32_flag: flag_block,
-                ..Default::default()
-            }],
+            msg_kick_list: member_uins
+                .into_iter()
+                .map(|member_uin| pb::oidb::D8a0KickMemberInfo {
+                    opt_uint32_operate: 5,
+                    opt_uint64_member_uin: member_uin,
+                    opt_uint32_flag: flag_block,
+                    ..Default::default()
+                })
+                .collect(),
             kick_msg: kick_msg.as_bytes().to_vec(),
             ..Default::default()
         };

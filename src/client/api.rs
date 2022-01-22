@@ -539,15 +539,16 @@ impl super::Client {
     pub async fn group_kick(
         &self,
         group_code: i64,
-        member_uin: i64,
+        member_uins: Vec<i64>,
         kick_msg: &str,
         block: bool,
     ) -> RQResult<()> {
-        let req = self
-            .engine
-            .read()
-            .await
-            .build_group_kick_packet(group_code, member_uin, kick_msg, block);
+        let req = self.engine.read().await.build_group_kick_packet(
+            group_code,
+            member_uins,
+            kick_msg,
+            block,
+        );
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
