@@ -20,6 +20,7 @@ pub type Connection = JoinHandle<()>;
 
 impl crate::Client {
     pub async fn run(self: &Arc<Self>) -> io::Result<()> {
+        self.shutting_down.store(false, Ordering::Relaxed);
         let addr = "42.81.176.211:443"
             .parse::<SocketAddr>()
             .expect("failed to parse addr");
@@ -30,6 +31,7 @@ impl crate::Client {
     }
 
     pub fn disconnect(&self) {
+        self.shutting_down.store(true, Ordering::Relaxed);
         let mut conns = self.connection.lock().unwrap();
         if let Some(conn) = conns.take() {
             conn.abort()
