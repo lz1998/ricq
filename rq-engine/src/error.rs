@@ -1,3 +1,5 @@
+use std::io;
+
 use thiserror::Error;
 
 pub type RQResult<T> = Result<T, RQError>;
@@ -21,6 +23,8 @@ pub enum RQError {
 
     #[error("jce error, {0}")]
     Jce(#[from] jcers::JceError),
+    #[error("io error, {0}")]
+    IO(#[from] io::Error),
 
     #[error("unknown flag")]
     UnknownFlag,

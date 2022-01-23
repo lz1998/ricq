@@ -1,5 +1,6 @@
 use std::path::Path;
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::Result;
 use futures::StreamExt;
@@ -36,7 +37,11 @@ async fn main() -> Result<()> {
     let config = rs_qq::Config::new(device, get_version(Protocol::IPad));
     let cli = Client::new_with_config(config, DefaultHandler).await;
     let client = Arc::new(cli);
-    client.start().await.expect("failed to run client");
+    let c = client.clone();
+    let handle = tokio::spawn(async move {
+        c.start().await.expect("failed to run client");
+    });
+    tokio::time::sleep(Duration::from_millis(200)).await; // 等一下，确保连上了
     let mut resp = client
         .password_login(uin, &password)
         .await
@@ -139,6 +144,6 @@ async fn main() -> Result<()> {
     // println!("{:?}", mem_info);
     // let mem_list = client.get_group_member_list(335783090).await;
     // println!("{:?}", mem_list);
-
+    handle.await.unwrap();
     Ok(())
 }

@@ -28,7 +28,12 @@ async fn main() -> Result<()> {
     let config = rs_qq::Config::new(device, get_version(Protocol::IPad));
     let cli = Client::new_with_config(config, DefaultHandler).await;
     let client = Arc::new(cli);
-    client.start().await.expect("failed to run client");
+    let c = client.clone();
+    let c = client.clone();
+    let handle = tokio::spawn(async move {
+        c.start().await.expect("failed to run client");
+    });
+    tokio::time::sleep(Duration::from_millis(200)).await; // 等一下，确保连上了
     let resp = client.fetch_qrcode().await.expect("failed to fetch qrcode");
 
     if let QRCodeState::QRCodeImageFetch {
@@ -96,6 +101,6 @@ async fn main() -> Result<()> {
     } else {
         panic!("error")
     }
-
+    handle.await.unwrap();
     Ok(())
 }

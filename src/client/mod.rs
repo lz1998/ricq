@@ -2,12 +2,11 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI64};
 use std::sync::Arc;
 
-use tokio::sync::RwLock;
+use tokio::sync::{broadcast, RwLock};
 use tokio::sync::{oneshot, Mutex};
 
 use rq_engine::command::online_push::GroupMessagePart;
 
-use crate::client::net::Connection;
 use crate::engine::protocol::packet::Packet;
 use crate::engine::structs::{
     AccountInfo, AddressInfo, FriendInfo, GroupInfo, GroupMemberInfo, OtherClientInfo,
@@ -24,10 +23,13 @@ pub struct Client {
     handler: Box<dyn handler::Handler + Sync + Send + 'static>,
     engine: RwLock<Engine>,
 
-    connection: Mutex<Option<Connection>>,
+    // 是否正在运行（是否需要快速重连）
     pub running: AtomicBool,
-    pub heartbeat_enabled: AtomicBool,
+    // 是否在线（是否可以快速重连）
     pub online: AtomicBool,
+    // 停止网络
+    pub disconnect_signal: broadcast::Sender<()>,
+    pub heartbeat_enabled: AtomicBool,
 
     pub out_pkt_sender: net::OutPktSender,
     pub packet_promises: RwLock<HashMap<i32, oneshot::Sender<Packet>>>,

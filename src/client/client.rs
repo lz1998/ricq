@@ -20,15 +20,16 @@ impl super::Client {
         H: crate::client::handler::Handler + 'static + Sync + Send,
     {
         let (out_pkt_sender, _) = tokio::sync::broadcast::channel(1024);
+        let (disconnect_signal, _) = tokio::sync::broadcast::channel(1024);
 
         let cli = Client {
             handler: Box::new(handler),
             engine: RwLock::new(Engine::new(device, version)),
-            connection: Default::default(),
             running: AtomicBool::new(false),
             heartbeat_enabled: AtomicBool::new(false),
             online: AtomicBool::new(false),
             out_pkt_sender,
+            disconnect_signal,
             // out_going_packet_session_id: RwLock::new(Bytes::from_static(&[0x02, 0xb0, 0x5b, 0x8b])),
             packet_promises: Default::default(),
             packet_waiters: Default::default(),
@@ -166,5 +167,6 @@ impl super::Client {
 impl Drop for Client {
     fn drop(&mut self) {
         self.running.store(false, Ordering::Relaxed);
+        self.disconnect_signal.send(()).unwrap();
     }
 }

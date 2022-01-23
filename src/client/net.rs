@@ -1,4 +1,3 @@
-use std::io;
 use std::net::SocketAddr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -10,6 +9,8 @@ use tokio::sync::broadcast;
 use tokio::task::JoinHandle;
 use tokio_util::codec::LengthDelimitedCodec;
 
+use rq_engine::{RQError, RQResult};
+
 use crate::engine::protocol::packet::EncryptType;
 
 use super::Client;
@@ -19,32 +20,44 @@ pub type OutPktReceiver = broadcast::Receiver<Bytes>;
 pub type Connection = JoinHandle<()>;
 
 impl crate::Client {
-    pub async fn start(self: &Arc<Self>) -> io::Result<()> {
+    pub async fn start(self: &Arc<Self>) -> RQResult<()> {
         self.running.store(true, Ordering::Relaxed);
         let addr = "42.81.176.211:443"
             .parse::<SocketAddr>()
             .expect("failed to parse addr");
 
-        let mut conn = self.connection.lock().await;
-        *conn = Some(self.connect(&addr).await?);
+        let conn = self.connect(&addr).await?;
+        conn.await.unwrap();
+        while self.running.load(Ordering::Relaxed) {
+            if self.online.load(Ordering::Relaxed) {
+                // 登录过，快速重连，恢复登录
+                if let Err(_) = self.quick_reconnect(&addr).await {
+                    // TODO dispatch disconnect event
+                    break;
+                }
+            } else {
+                // 没登录过，重连
+                self.reconnect(&addr).await;
+            }
+        }
+        self.online.store(false, Ordering::Relaxed);
+        self.disconnect();
         Ok(())
     }
 
-    pub async fn stop(self: &Arc<Self>) {
+    pub fn stop(self: &Arc<Self>) {
         self.running.store(false, Ordering::Relaxed);
-        self.disconnect().await;
+        self.disconnect();
     }
 
-    async fn disconnect(&self) {
-        self.running.store(false, Ordering::Relaxed);
-        let mut conns = self.connection.lock().await;
-        if let Some(conn) = conns.take() {
-            conn.abort()
-        }
+    fn disconnect(&self) {
+        self.disconnect_signal
+            .send(())
+            .expect("failed to send disconnect_signal");
     }
 
-    async fn connect(self: &Arc<Self>, addr: &SocketAddr) -> io::Result<Connection> {
-        let stream = TcpStream::connect(&addr).await?;
+    async fn connect(self: &Arc<Self>, addr: &SocketAddr) -> RQResult<Connection> {
+        let stream = TcpStream::connect(&addr).await.map_err(RQError::IO)?;
         let cli = self.clone();
         Ok(tokio::spawn(async move { cli.net_loop(stream).await }))
     }
@@ -57,7 +70,8 @@ impl crate::Client {
             .split();
         let cli = self.clone();
         let mut rx = self.out_pkt_sender.subscribe();
-        while cli.running.load(Ordering::Relaxed) {
+        let mut disconnect_signal = self.disconnect_signal.subscribe();
+        loop {
             tokio::select! {
                 input = read_half.next() => {
                     if let Some(Ok(mut input)) = input {
@@ -80,7 +94,23 @@ impl crate::Client {
                         }
                     }
                 }
+                _ = disconnect_signal.recv() => {
+                    break;
+                }
             }
         }
+    }
+
+    async fn quick_reconnect(self: &Arc<Self>, addr: &SocketAddr) -> RQResult<Connection> {
+        self.disconnect();
+        tokio::time::sleep(tokio::time::Duration::from_millis(200)).await;
+        let conn = self.connect(addr).await?;
+        self.register_client().await?;
+        Ok(conn)
+    }
+
+    async fn reconnect(self: &Arc<Self>, addr: &SocketAddr) -> RQResult<Connection> {
+        self.disconnect();
+        self.connect(addr).await
     }
 }
