@@ -47,7 +47,8 @@ impl Client {
                     engine.transport.sig.ps_key_map = v.ps_key_map;
                     engine.transport.sig.pt4_token_map = v.pt4_token_map;
                 });
-                wt_session_ticket_key.map(|v| engine.oicq_codec.wt_session_ticket_key = v);
+                wt_session_ticket_key
+                    .map(|v| engine.transport.oicq_codec.wt_session_ticket_key = v);
                 srm_token.map(|v| engine.transport.sig.srm_token = v);
                 t133.map(|v| engine.transport.sig.t133 = v);
                 encrypt_a1.map(|v| engine.transport.sig.encrypted_a1 = v);

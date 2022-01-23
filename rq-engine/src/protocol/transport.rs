@@ -12,12 +12,13 @@ use crate::protocol::{
     sig::Sig,
     version::Version,
 };
-use crate::{pb, RQError, RQResult};
+use crate::{oicq, pb, RQError, RQResult};
 
 pub struct Transport {
     pub sig: Sig,
     pub device: Device,
     pub version: &'static Version,
+    pub oicq_codec: oicq::Codec,
 }
 
 impl Transport {
@@ -26,6 +27,7 @@ impl Transport {
             sig: Sig::new(&device),
             device,
             version,
+            oicq_codec: Default::default(),
         }
     }
 }
@@ -97,6 +99,10 @@ impl Transport {
         }
 
         self.decode_sso_frame(&mut pkt, body)?;
+        if pkt.encrypt_type == EncryptType::EmptyKey {
+            // decrypt oicq_codec
+            pkt.body = self.oicq_codec.decode(pkt.body).unwrap().body;
+        }
         Ok(pkt)
     }
 

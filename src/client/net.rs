@@ -11,8 +11,6 @@ use tokio_util::codec::LengthDelimitedCodec;
 
 use rq_engine::{RQError, RQResult};
 
-use crate::engine::protocol::packet::EncryptType;
-
 use super::Client;
 
 pub type OutPktSender = broadcast::Sender<Bytes>;
@@ -32,15 +30,15 @@ impl crate::Client {
             if self.online.load(Ordering::Relaxed) {
                 // 登录过，快速重连，恢复登录
                 if let Err(_) = self.quick_reconnect(&addr).await {
-                    // TODO dispatch disconnect event
-                    break;
+                    self.online.store(false, Ordering::Relaxed);
+                    // TODO dispatch offline event
+                    // break;
                 }
             } else {
                 // 没登录过，重连
-                self.reconnect(&addr).await;
+                self.reconnect(&addr).await?;
             }
         }
-        self.online.store(false, Ordering::Relaxed);
         self.disconnect();
         Ok(())
     }
@@ -51,6 +49,7 @@ impl crate::Client {
     }
 
     fn disconnect(&self) {
+        // TODO dispatch disconnect event
         self.disconnect_signal
             .send(())
             .expect("failed to send disconnect_signal");
@@ -75,16 +74,13 @@ impl crate::Client {
             tokio::select! {
                 input = read_half.next() => {
                     if let Some(Ok(mut input)) = input {
-                        let pkt = {
-                            let engine = cli.engine.read().await;
-                            let mut pkt = engine.transport.decode_packet(&mut input).unwrap();
-                            if pkt.encrypt_type == EncryptType::EmptyKey {
-                                // decrypt with ecdh
-                                pkt.body = engine.oicq_codec.decode(pkt.body).unwrap().body;
-                            }
-                            pkt
-                        };
-                        cli.process_income_packet(pkt).await;
+                        if let Ok(pkt)=cli.engine.read().await.transport.decode_packet(&mut input){
+                            cli.process_income_packet(pkt).await;
+                        }else {
+                            break;
+                        }
+                    }else {
+                        break;
                     }
                 }
                 output = rx.recv() => {

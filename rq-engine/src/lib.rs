@@ -30,7 +30,6 @@ pub mod structs;
 pub struct Engine {
     pub uin: AtomicI64,
     pub transport: Transport,
-    pub oicq_codec: oicq::Codec,
     pub seq_id: AtomicU16,
     pub request_packet_request_id: AtomicI32,
     pub group_seq: AtomicI32,
@@ -44,7 +43,6 @@ impl Engine {
         Self {
             uin: AtomicI64::new(0),
             transport: Transport::new(device, version),
-            oicq_codec: oicq::Codec::default(),
             seq_id: AtomicU16::new(0x3635),
             request_packet_request_id: AtomicI32::new(1921334513),
             group_seq: AtomicI32::new(rand::thread_rng().gen_range(0..20000)),

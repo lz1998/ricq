@@ -143,7 +143,7 @@ impl super::Client {
         token.write_bytes_short(&engine.transport.sig.srm_token);
         token.write_bytes_short(&engine.transport.sig.t133);
         token.write_bytes_short(&engine.transport.sig.encrypted_a1);
-        token.write_bytes_short(&engine.oicq_codec.wt_session_ticket_key);
+        token.write_bytes_short(&engine.transport.oicq_codec.wt_session_ticket_key);
         token.write_bytes_short(&engine.transport.sig.out_packet_session_id);
         token.write_bytes_short(&engine.transport.sig.tgtgt_key);
         token.freeze()
@@ -158,7 +158,7 @@ impl super::Client {
         engine.transport.sig.srm_token = token.read_bytes_short();
         engine.transport.sig.t133 = token.read_bytes_short();
         engine.transport.sig.encrypted_a1 = token.read_bytes_short();
-        engine.oicq_codec.wt_session_ticket_key = token.read_bytes_short();
+        engine.transport.oicq_codec.wt_session_ticket_key = token.read_bytes_short();
         engine.transport.sig.out_packet_session_id = token.read_bytes_short();
         engine.transport.sig.tgtgt_key = token.read_bytes_short();
     }

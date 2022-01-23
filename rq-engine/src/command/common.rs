@@ -13,7 +13,7 @@ impl Engine {
             body: Bytes::from(body.to_vec()),
             encryption_method: oicq::EncryptionMethod::ECDH,
         };
-        self.oicq_codec.encode(req)
+        self.transport.oicq_codec.encode(req)
     }
 
     pub fn uni_packet_with_seq(&self, seq: u16, command: &str, body: Bytes) -> Packet {

@@ -1,9 +1,17 @@
-use crate::engine::*;
 use async_trait::async_trait;
+use tokio::sync::{
+    broadcast::Sender as BroadcastSender,
+    mpsc::{Sender as MpscSender, UnboundedSender},
+    watch::Sender as WatchSender,
+};
+
+use crate::engine::*;
 
 /// 所有需要外发的数据的枚举打包
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum QEvent {
+    TcpConnect,
+    TcpDisconnect,
     /// 登录成功事件
     LoginEvent(i64),
     /// 群消息
@@ -32,9 +40,13 @@ pub trait Handler: Sync {
             QEvent::PrivateMessage(private_message) => {
                 self.handle_private_message(private_message).await
             }
+            QEvent::TcpConnect => self.handle_tcp_connect_event().await,
+            QEvent::TcpDisconnect => self.handle_tcp_connect_event().await,
         }
     }
     async fn handle_login_event(&self, _uin: i64) {}
+    async fn handle_tcp_connect_event(&self) {}
+    async fn handle_tcp_disconnect_event(&self) {}
     async fn handle_group_message(&self, _group_message: GroupMessageEvent) {}
     async fn handle_self_group_message(&self, _group_message: GroupMessageEvent) {}
     async fn handle_private_message(&self, _private_message: PrivateMessageEvent) {}
@@ -49,12 +61,6 @@ impl Handler for DefaultHandler {
         println!("{:?}", msgs);
     }
 }
-
-use tokio::sync::{
-    broadcast::Sender as BroadcastSender,
-    mpsc::{Sender as MpscSender, UnboundedSender},
-    watch::Sender as WatchSender,
-};
 
 #[async_trait]
 impl Handler for BroadcastSender<QEvent> {

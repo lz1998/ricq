@@ -367,7 +367,7 @@ impl super::super::super::Engine {
     pub fn build_request_tgtgt_no_pic_sig_packet(&self) -> Packet {
         let seq = self.next_seq();
         let transport = &self.transport;
-        let codec = &self.oicq_codec;
+        let codec = &self.transport.oicq_codec;
         let req = {
             let mut w = BytesMut::new();
             w.put_u16(15);
