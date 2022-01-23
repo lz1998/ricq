@@ -58,7 +58,6 @@ impl crate::Client {
         let cli = self.clone();
         let mut rx = self.out_pkt_sender.subscribe();
         while cli.running.load(Ordering::Relaxed) {
-            let cli = cli.clone();
             tokio::select! {
                 input = read_half.next() => {
                     if let Some(Ok(mut input)) = input {

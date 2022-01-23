@@ -19,7 +19,7 @@ macro_rules! log_error {
 }
 
 impl super::Client {
-    pub async fn process_income_packet(self: Arc<Self>, pkt: Packet) {
+    pub async fn process_income_packet(self: &Arc<Self>, pkt: Packet) {
         tracing::trace!(target: "rs_qq", "received pkt: {}", &pkt.command_name);
         // response
         {
@@ -37,65 +37,66 @@ impl super::Client {
         }
         tracing::trace!(target: "rs_qq", "pkt: {} passed packet_waiters", &pkt.command_name);
 
+        let cli = self.clone();
         tokio::spawn(async move {
             match pkt.command_name.as_ref() {
                 "OnlinePush.PbPushGroupMsg" => {
-                    let p = self
+                    let p = cli
                         .engine
                         .read()
                         .await
                         .decode_group_message_packet(pkt.body)
                         .unwrap();
                     log_error!(
-                        self.process_group_message_part(p).await,
+                        cli.process_group_message_part(p).await,
                         "process group message part error: {:?}"
                     )
                 }
                 "ConfigPushSvc.PushReq" => {
-                    let req = self
+                    let req = cli
                         .engine
                         .read()
                         .await
                         .decode_push_req_packet(pkt.body)
                         .unwrap();
                     log_error!(
-                        self.process_config_push_req(req).await,
+                        cli.process_config_push_req(req).await,
                         "process config push req error: {:?}"
                     )
                 }
                 "RegPrxySvc.PushParam" => {
-                    let other_clients = self
+                    let other_clients = cli
                         .engine
                         .read()
                         .await
                         .decode_push_param_packet(&pkt.body)
                         .unwrap();
                     log_error!(
-                        self.process_push_param(other_clients).await,
+                        cli.process_push_param(other_clients).await,
                         "process push param error: {:?}"
                     )
                 }
                 "MessageSvc.PushNotify" => {
-                    let engine = self.engine.read().await;
+                    let engine = cli.engine.read().await;
                     let _notify_msg_type = engine.decode_svc_notify(pkt.body).unwrap();
                     log_error!(
-                        self.send(engine.build_get_message_request_packet(0)).await,
+                        cli.send(engine.build_get_message_request_packet(0)).await,
                         "process message svc notify error: {:?}"
                     )
                 }
                 "MessageSvc.PbGetMsg" => {
-                    let resp = self
+                    let resp = cli
                         .engine
                         .read()
                         .await
                         .decode_message_svc_packet(pkt.body)
                         .unwrap();
-                    self.process_message_sync(resp).await.unwrap();
+                    cli.process_message_sync(resp).await.unwrap();
                 }
                 "OnlinePush.ReqPush" => {
-                    let engine = self.engine.read().await;
+                    let engine = cli.engine.read().await;
                     let resp = engine.decode_online_push_req_packet(pkt.body).unwrap();
-                    let _ = self
+                    let _ = cli
                         .send(engine.build_delete_online_push_packet(
                             resp.resp.uin,
                             0,
