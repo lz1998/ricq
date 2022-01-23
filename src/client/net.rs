@@ -48,18 +48,14 @@ impl crate::Client {
         }
     }
 
-    async fn net_loop(
-        self: &Arc<Client>,
-        stream: TcpStream,
-    ) -> (JoinHandle<()>, JoinHandle<()>) {
-        let (read_half, write_half) = stream.into_split();
+    async fn net_loop(self: &Arc<Client>, stream: TcpStream) -> (JoinHandle<()>, JoinHandle<()>) {
+        let (mut write_half, mut read_half) = LengthDelimitedCodec::builder()
+            .length_field_length(4)
+            .length_adjustment(-4)
+            .new_framed(stream)
+            .split();
         let cli = self.clone();
         let r = tokio::spawn(async move {
-            let mut read_half = LengthDelimitedCodec::builder()
-                .length_field_length(4)
-                .length_adjustment(-4)
-                .new_read(read_half);
-
             loop {
                 let cli = cli.clone();
                 let mut data = read_half.next().await.unwrap().unwrap();
@@ -75,11 +71,6 @@ impl crate::Client {
                 cli.process_income_packet(pkt).await;
             }
         });
-
-        let mut write_half = LengthDelimitedCodec::builder()
-            .length_field_length(4)
-            .length_adjustment(-4)
-            .new_write(write_half);
         let cli = self.clone();
         let mut rx = self.out_pkt_sender.subscribe();
         let w = tokio::spawn(async move {
