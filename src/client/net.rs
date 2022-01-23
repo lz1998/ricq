@@ -50,9 +50,8 @@ impl crate::Client {
 
     fn disconnect(&self) {
         // TODO dispatch disconnect event
-        self.disconnect_signal
-            .send(())
-            .expect("failed to send disconnect_signal");
+        // don't unwrap (Err means there is no receiver.)
+        self.disconnect_signal.send(()).ok();
     }
 
     async fn connect(self: &Arc<Self>, addr: &SocketAddr) -> RQResult<Connection> {
