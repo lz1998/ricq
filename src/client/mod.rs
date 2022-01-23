@@ -25,7 +25,7 @@ pub struct Client {
     handler: Box<dyn handler::Handler + Sync + Send + 'static>,
     engine: RwLock<Engine>,
 
-    connects: StdMutex<Option<(JoinHandle<()>, JoinHandle<()>)>>,
+    connects: StdMutex<Option<JoinHandle<()>>>,
     pub shutting_down: AtomicBool,
     pub heartbeat_enabled: AtomicBool,
     pub online: AtomicBool,

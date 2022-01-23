@@ -1,5 +1,4 @@
 use std::net::SocketAddr;
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 use bytes::Bytes;
@@ -27,9 +26,8 @@ impl crate::Client {
 
     pub fn disconnect(&self) {
         let mut conns = self.connects.lock().unwrap();
-        if let Some((r, w)) = conns.take() {
-            w.abort();
-            r.abort();
+        if let Some(conn) = conns.take() {
+            conn.abort()
         }
     }
 
@@ -48,40 +46,39 @@ impl crate::Client {
         }
     }
 
-    async fn net_loop(self: &Arc<Client>, stream: TcpStream) -> (JoinHandle<()>, JoinHandle<()>) {
+    async fn net_loop(self: &Arc<Client>, stream: TcpStream) -> JoinHandle<()> {
         let (mut write_half, mut read_half) = LengthDelimitedCodec::builder()
             .length_field_length(4)
             .length_adjustment(-4)
             .new_framed(stream)
             .split();
         let cli = self.clone();
-        let r = tokio::spawn(async move {
+        let mut rx = self.out_pkt_sender.subscribe();
+        tokio::spawn(async move {
             loop {
                 let cli = cli.clone();
-                let mut data = read_half.next().await.unwrap().unwrap();
-                let pkt = {
-                    let engine = cli.engine.read().await;
-                    let mut pkt = engine.transport.decode_packet(&mut data).unwrap();
-                    if pkt.encrypt_type == EncryptType::EmptyKey {
-                        // decrypt with ecdh
-                        pkt.body = engine.oicq_codec.decode(pkt.body).unwrap().body;
+                tokio::select! {
+                    input = read_half.next() => {
+                        if let Some(Ok(mut input)) = input {
+                            let pkt = {
+                                let engine = cli.engine.read().await;
+                                let mut pkt = engine.transport.decode_packet(&mut input).unwrap();
+                                if pkt.encrypt_type == EncryptType::EmptyKey {
+                                    // decrypt with ecdh
+                                    pkt.body = engine.oicq_codec.decode(pkt.body).unwrap().body;
+                                }
+                                pkt
+                            };
+                            cli.process_income_packet(pkt).await;
+                        }
                     }
-                    pkt
-                };
-                cli.process_income_packet(pkt).await;
-            }
-        });
-        let cli = self.clone();
-        let mut rx = self.out_pkt_sender.subscribe();
-        let w = tokio::spawn(async move {
-            while !cli.shutting_down.load(Ordering::SeqCst) {
-                let sending = rx.recv().await.unwrap();
-                if write_half.send(sending).await.is_err() {
-                    break;
+                    output = rx.recv() => {
+                        if let Ok(output) = output {
+                            write_half.send(output).await;
+                        }
+                    }
                 }
             }
-            // TODO dispatch disconnect event
-        });
-        (r, w)
+        })
     }
 }
