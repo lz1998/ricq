@@ -36,112 +36,109 @@ async fn main() -> Result<()> {
     let config = rs_qq::Config::new(device, get_version(Protocol::IPad));
     let cli = Client::new_with_config(config, DefaultHandler).await;
     let client = Arc::new(cli);
-    let net = client.run().await;
-    tokio::spawn(async move {
-        let mut resp = client
-            .password_login(uin, &password)
-            .await
-            .expect("failed to login with password");
-        loop {
-            match resp {
-                LoginResponse::Success {
-                    ref account_info, ..
-                } => {
-                    println!("login success: {:?}", account_info);
-                    break;
-                }
-                LoginResponse::DeviceLocked {
-                    ref sms_phone,
-                    ref verify_url,
-                    ref message,
-                    ..
-                } => {
-                    println!("device locked: {:?}", message);
-                    println!("sms_phone: {:?}", sms_phone);
-                    println!("verify_url: {:?}", verify_url);
-                    println!("手机打开url，处理完成后重启程序");
-                    std::process::exit(0);
-                    //也可以走短信验证
-                    // resp = client.request_sms().await.expect("failed to request sms");
-                }
-                LoginResponse::NeedCaptcha {
-                    ref verify_url,
-                    // 图片应该没了
-                    image_captcha: ref _image_captcha,
-                    ..
-                } => {
-                    println!("滑块URL: {:?}", verify_url);
-                    println!("请输入ticket:");
-                    let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
-                    let ticket = reader
-                        .next()
-                        .await
-                        .transpose()
-                        .expect("failed to read ticket")
-                        .expect("failed to read ticket");
-                    resp = client
-                        .submit_ticket(&ticket)
-                        .await
-                        .expect("failed to submit ticket");
-                }
-                LoginResponse::DeviceLockLogin { .. } => {
-                    resp = client
-                        .device_lock_login()
-                        .await
-                        .expect("failed to login with device lock");
-                }
-                LoginResponse::AccountFrozen => {
-                    panic!("account frozen");
-                }
-                LoginResponse::TooManySMSRequest => {
-                    panic!("too many sms request");
-                }
-                LoginResponse::UnknownLoginStatus {
-                    ref status,
-                    ref tlv_map,
-                } => {
-                    panic!("unknown login status: {:?}, {:?}", status, tlv_map);
-                }
+    client.connect().await;
+    let mut resp = client
+        .password_login(uin, &password)
+        .await
+        .expect("failed to login with password");
+    loop {
+        match resp {
+            LoginResponse::Success {
+                ref account_info, ..
+            } => {
+                println!("login success: {:?}", account_info);
+                break;
+            }
+            LoginResponse::DeviceLocked {
+                ref sms_phone,
+                ref verify_url,
+                ref message,
+                ..
+            } => {
+                println!("device locked: {:?}", message);
+                println!("sms_phone: {:?}", sms_phone);
+                println!("verify_url: {:?}", verify_url);
+                println!("手机打开url，处理完成后重启程序");
+                std::process::exit(0);
+                //也可以走短信验证
+                // resp = client.request_sms().await.expect("failed to request sms");
+            }
+            LoginResponse::NeedCaptcha {
+                ref verify_url,
+                // 图片应该没了
+                image_captcha: ref _image_captcha,
+                ..
+            } => {
+                println!("滑块URL: {:?}", verify_url);
+                println!("请输入ticket:");
+                let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
+                let ticket = reader
+                    .next()
+                    .await
+                    .transpose()
+                    .expect("failed to read ticket")
+                    .expect("failed to read ticket");
+                resp = client
+                    .submit_ticket(&ticket)
+                    .await
+                    .expect("failed to submit ticket");
+            }
+            LoginResponse::DeviceLockLogin { .. } => {
+                resp = client
+                    .device_lock_login()
+                    .await
+                    .expect("failed to login with device lock");
+            }
+            LoginResponse::AccountFrozen => {
+                panic!("account frozen");
+            }
+            LoginResponse::TooManySMSRequest => {
+                panic!("too many sms request");
+            }
+            LoginResponse::UnknownLoginStatus {
+                ref status,
+                ref tlv_map,
+            } => {
+                panic!("unknown login status: {:?}, {:?}", status, tlv_map);
             }
         }
-        println!("{:?}", resp);
-        client
-            .register_client()
-            .await
-            .expect("failed to register client");
-        client
-            .refresh_status()
-            .await
-            .expect("failed to refresh status");
-        let c = client.clone();
-        tokio::spawn(async move {
-            c.do_heartbeat().await;
-        });
-        {
-            client
-                .reload_friend_list()
-                .await
-                .expect("failed to reload friend list");
-            println!("{:?}", client.friend_list.read().await);
-            client
-                .reload_group_list()
-                .await
-                .expect("failed to reload group list");
-            let group_list = client.group_list.read().await;
-            println!("{:?}", group_list);
-        }
-        let r = client.refresh_status().await;
-        println!("{:?}", r);
-        let d = client.get_allowed_clients().await;
-        println!("{:?}", d);
-
-        // client.delete_essence_message(1095020555, 8114, 2107692422).await
-        // let mem_info = client.get_group_member_info(335783090, 875543543).await;
-        // println!("{:?}", mem_info);
-        // let mem_list = client.get_group_member_list(335783090).await;
-        // println!("{:?}", mem_list);
+    }
+    println!("{:?}", resp);
+    client
+        .register_client()
+        .await
+        .expect("failed to register client");
+    client
+        .refresh_status()
+        .await
+        .expect("failed to refresh status");
+    let c = client.clone();
+    tokio::spawn(async move {
+        c.do_heartbeat().await;
     });
-    net.await.expect("network error1");
+    {
+        client
+            .reload_friend_list()
+            .await
+            .expect("failed to reload friend list");
+        println!("{:?}", client.friend_list.read().await);
+        client
+            .reload_group_list()
+            .await
+            .expect("failed to reload group list");
+        let group_list = client.group_list.read().await;
+        println!("{:?}", group_list);
+    }
+    let r = client.refresh_status().await;
+    println!("{:?}", r);
+    let d = client.get_allowed_clients().await;
+    println!("{:?}", d);
+
+    // client.delete_essence_message(1095020555, 8114, 2107692422).await
+    // let mem_info = client.get_group_member_info(335783090, 875543543).await;
+    // println!("{:?}", mem_info);
+    // let mem_list = client.get_group_member_list(335783090).await;
+    // println!("{:?}", mem_list);
 
     Ok(())
 }

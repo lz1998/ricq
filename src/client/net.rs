@@ -1,4 +1,3 @@
-use std::future::Future;
 use std::net::SocketAddr;
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
@@ -6,34 +5,35 @@ use std::sync::Arc;
 use bytes::Bytes;
 use futures::{SinkExt, StreamExt};
 use tokio::net::TcpStream;
-use tokio::sync::{mpsc, RwLock};
+use tokio::sync::broadcast;
+use tokio::task::JoinHandle;
 use tokio_util::codec::LengthDelimitedCodec;
 
 use crate::engine::protocol::packet::EncryptType;
 
 use super::Client;
 
-pub type OutPktSender = mpsc::UnboundedSender<Bytes>;
-pub type OutPktReceiver = mpsc::UnboundedReceiver<Bytes>;
+pub type OutPktSender = broadcast::Sender<Bytes>;
+pub type OutPktReceiver = broadcast::Receiver<Bytes>;
 
-pub struct ClientNet {
-    // client: Arc<Client>,
-    receiver: Arc<RwLock<OutPktReceiver>>,
-}
-
-impl ClientNet {
-    pub fn new(receiver: OutPktReceiver) -> Self {
-        Self {
-            receiver: Arc::new(RwLock::new(receiver)),
+impl crate::Client {
+    pub async fn connect(self: &Arc<Self>) {
+        let mut conns = self.connects.lock().unwrap();
+        if conns.is_none() {
+            let stream = self.connect_tcp().await;
+            *conns = Some(self.net_loop(stream).await);
         }
     }
 
-    pub async fn run(&self, client: &Arc<Client>) -> impl Future<Output = ()> {
-        let stream = self.connect_tcp(client).await;
-        self.net_loop(client, stream)
+    pub fn disconnect(&self) {
+        let mut conns = self.connects.lock().unwrap();
+        if let Some((r, w)) = conns.take() {
+            w.abort();
+            r.abort();
+        }
     }
 
-    pub async fn connect_tcp(&self, client: &Arc<Client>) -> TcpStream {
+    async fn connect_tcp(self: &Arc<Self>) -> TcpStream {
         match TcpStream::connect(
             "42.81.176.211:443"
                 .parse::<SocketAddr>()
@@ -41,20 +41,20 @@ impl ClientNet {
         )
         .await
         {
-            Ok(stream) => {
-                client.connected.swap(true, Ordering::SeqCst);
-                stream
-            }
+            Ok(stream) => stream,
             Err(_) => {
                 panic!("Tcp connect error") // todo
             }
         }
     }
 
-    pub fn net_loop(&self, client: &Arc<Client>, stream: TcpStream) -> impl Future<Output = ()> {
+    async fn net_loop(
+        self: &Arc<Client>,
+        stream: TcpStream,
+    ) -> (JoinHandle<()>, JoinHandle<()>) {
         let (read_half, write_half) = stream.into_split();
-        let cli = client.clone();
-        let a = tokio::spawn(async move {
+        let cli = self.clone();
+        let r = tokio::spawn(async move {
             let mut read_half = LengthDelimitedCodec::builder()
                 .length_field_length(4)
                 .length_adjustment(-4)
@@ -80,17 +80,17 @@ impl ClientNet {
             .length_field_length(4)
             .length_adjustment(-4)
             .new_write(write_half);
-        let cli = client.clone();
-        let rx = self.receiver.clone();
-        async move {
+        let cli = self.clone();
+        let mut rx = self.out_pkt_sender.subscribe();
+        let w = tokio::spawn(async move {
             while !cli.shutting_down.load(Ordering::SeqCst) {
-                let sending = rx.write().await.recv().await.unwrap();
+                let sending = rx.recv().await.unwrap();
                 if write_half.send(sending).await.is_err() {
                     break;
                 }
             }
             // TODO dispatch disconnect event
-            a.abort();
-        }
+        });
+        (r, w)
     }
 }

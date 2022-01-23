@@ -1,10 +1,8 @@
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::Arc;
 
 use bytes::{Buf, BufMut, Bytes, BytesMut};
 use tokio::sync::oneshot;
 use tokio::sync::RwLock;
-use tokio::task::JoinHandle;
 use tokio::time::{sleep, Duration};
 
 use rq_engine::protocol::version::Version;
@@ -14,7 +12,6 @@ use crate::engine::protocol::{device::Device, packet::Packet};
 use crate::engine::Engine;
 use crate::{RQError, RQResult};
 
-use super::net;
 use super::Client;
 
 impl super::Client {
@@ -22,16 +19,15 @@ impl super::Client {
     where
         H: crate::client::handler::Handler + 'static + Sync + Send,
     {
-        let (out_pkt_sender, out_pkt_receiver) = tokio::sync::mpsc::unbounded_channel();
+        let (out_pkt_sender, _) = tokio::sync::broadcast::channel(1024);
 
         let cli = Client {
             handler: Box::new(handler),
             engine: RwLock::new(Engine::new(device, version)),
-            connected: AtomicBool::new(false),
+            connects: Default::default(),
             shutting_down: AtomicBool::new(false),
             heartbeat_enabled: AtomicBool::new(false),
             online: AtomicBool::new(false),
-            net: net::ClientNet::new(out_pkt_receiver),
             out_pkt_sender,
             // out_going_packet_session_id: RwLock::new(Bytes::from_static(&[0x02, 0xb0, 0x5b, 0x8b])),
             packet_promises: Default::default(),
@@ -61,12 +57,7 @@ impl super::Client {
         return self.engine.read().await.uin.load(Ordering::Relaxed);
     }
 
-    pub async fn run(self: &Arc<Self>) -> JoinHandle<()> {
-        let net = self.net.run(self).await;
-        tokio::spawn(net)
-    }
-
-    pub async fn send(&self, pkt: Packet) -> RQResult<()> {
+    pub async fn send(&self, pkt: Packet) -> RQResult<usize> {
         tracing::trace!(target: "rs_qq", "sending pkt {}-{},", pkt.command_name, pkt.seq_id);
         let data = self.engine.read().await.transport.encode_packet(pkt);
         self.out_pkt_sender
@@ -169,5 +160,11 @@ impl super::Client {
         engine.oicq_codec.wt_session_ticket_key = token.read_bytes_short();
         engine.transport.sig.out_packet_session_id = token.read_bytes_short();
         engine.transport.sig.tgtgt_key = token.read_bytes_short();
+    }
+}
+
+impl Drop for Client {
+    fn drop(&mut self) {
+        self.disconnect();
     }
 }

@@ -1,11 +1,13 @@
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI64};
 use std::sync::Arc;
+use std::sync::Mutex as StdMutex;
 
 use tokio::sync::RwLock;
 use tokio::sync::{oneshot, Mutex};
 
 use rq_engine::command::online_push::GroupMessagePart;
+use tokio::task::JoinHandle;
 
 use crate::engine::protocol::packet::Packet;
 use crate::engine::structs::{
@@ -21,13 +23,12 @@ pub mod processor;
 
 pub struct Client {
     handler: Box<dyn handler::Handler + Sync + Send + 'static>,
+    engine: RwLock<Engine>,
 
-    pub engine: RwLock<Engine>,
-    pub connected: AtomicBool,
+    connects: StdMutex<Option<(JoinHandle<()>, JoinHandle<()>)>>,
     pub shutting_down: AtomicBool,
     pub heartbeat_enabled: AtomicBool,
     pub online: AtomicBool,
-    pub(crate) net: net::ClientNet,
 
     pub out_pkt_sender: net::OutPktSender,
     pub packet_promises: RwLock<HashMap<i32, oneshot::Sender<Packet>>>,
