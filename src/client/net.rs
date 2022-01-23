@@ -1,5 +1,6 @@
 use std::io;
 use std::net::SocketAddr;
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
 use bytes::Bytes;
@@ -49,7 +50,7 @@ impl crate::Client {
             .split();
         let cli = self.clone();
         let mut rx = self.out_pkt_sender.subscribe();
-        loop {
+        while !cli.shutting_down.load(Ordering::Relaxed) {
             let cli = cli.clone();
             tokio::select! {
                 input = read_half.next() => {
