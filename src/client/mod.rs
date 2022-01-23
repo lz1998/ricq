@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI64};
 use std::sync::Arc;
-use std::sync::Mutex as StdMutex;
 
 use tokio::sync::RwLock;
 use tokio::sync::{oneshot, Mutex};
@@ -25,8 +24,8 @@ pub struct Client {
     handler: Box<dyn handler::Handler + Sync + Send + 'static>,
     engine: RwLock<Engine>,
 
-    connection: StdMutex<Option<Connection>>,
-    pub shutting_down: AtomicBool,
+    connection: Mutex<Option<Connection>>,
+    pub running: AtomicBool,
     pub heartbeat_enabled: AtomicBool,
     pub online: AtomicBool,
 

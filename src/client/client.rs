@@ -25,7 +25,7 @@ impl super::Client {
             handler: Box::new(handler),
             engine: RwLock::new(Engine::new(device, version)),
             connection: Default::default(),
-            shutting_down: AtomicBool::new(false),
+            running: AtomicBool::new(false),
             heartbeat_enabled: AtomicBool::new(false),
             online: AtomicBool::new(false),
             out_pkt_sender,
@@ -165,6 +165,6 @@ impl super::Client {
 
 impl Drop for Client {
     fn drop(&mut self) {
-        self.disconnect();
+        self.running.store(false, Ordering::Relaxed);
     }
 }

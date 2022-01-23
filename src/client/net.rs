@@ -19,20 +19,25 @@ pub type OutPktReceiver = broadcast::Receiver<Bytes>;
 pub type Connection = JoinHandle<()>;
 
 impl crate::Client {
-    pub async fn run(self: &Arc<Self>) -> io::Result<()> {
-        self.shutting_down.store(false, Ordering::Relaxed);
+    pub async fn start(self: &Arc<Self>) -> io::Result<()> {
+        self.running.store(true, Ordering::Relaxed);
         let addr = "42.81.176.211:443"
             .parse::<SocketAddr>()
             .expect("failed to parse addr");
 
-        let mut conn = self.connection.lock().unwrap();
+        let mut conn = self.connection.lock().await;
         *conn = Some(self.connect(&addr).await?);
         Ok(())
     }
 
-    pub fn disconnect(&self) {
-        self.shutting_down.store(true, Ordering::Relaxed);
-        let mut conns = self.connection.lock().unwrap();
+    pub async fn stop(self: &Arc<Self>) {
+        self.running.store(false, Ordering::Relaxed);
+        self.disconnect().await;
+    }
+
+    async fn disconnect(&self) {
+        self.running.store(false, Ordering::Relaxed);
+        let mut conns = self.connection.lock().await;
         if let Some(conn) = conns.take() {
             conn.abort()
         }
@@ -52,7 +57,7 @@ impl crate::Client {
             .split();
         let cli = self.clone();
         let mut rx = self.out_pkt_sender.subscribe();
-        while !cli.shutting_down.load(Ordering::Relaxed) {
+        while cli.running.load(Ordering::Relaxed) {
             let cli = cli.clone();
             tokio::select! {
                 input = read_half.next() => {
