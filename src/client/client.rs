@@ -24,7 +24,7 @@ impl super::Client {
         let cli = Client {
             handler: Box::new(handler),
             engine: RwLock::new(Engine::new(device, version)),
-            connects: Default::default(),
+            connection: Default::default(),
             shutting_down: AtomicBool::new(false),
             heartbeat_enabled: AtomicBool::new(false),
             online: AtomicBool::new(false),

@@ -7,8 +7,8 @@ use tokio::sync::RwLock;
 use tokio::sync::{oneshot, Mutex};
 
 use rq_engine::command::online_push::GroupMessagePart;
-use tokio::task::JoinHandle;
 
+use crate::client::net::Connection;
 use crate::engine::protocol::packet::Packet;
 use crate::engine::structs::{
     AccountInfo, AddressInfo, FriendInfo, GroupInfo, GroupMemberInfo, OtherClientInfo,
@@ -25,7 +25,7 @@ pub struct Client {
     handler: Box<dyn handler::Handler + Sync + Send + 'static>,
     engine: RwLock<Engine>,
 
-    connects: StdMutex<Option<JoinHandle<()>>>,
+    connection: StdMutex<Option<Connection>>,
     pub shutting_down: AtomicBool,
     pub heartbeat_enabled: AtomicBool,
     pub online: AtomicBool,
