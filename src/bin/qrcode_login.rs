@@ -2,6 +2,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::Result;
+use bytes::Bytes;
 use tokio::time::{sleep, Duration};
 
 use rs_qq::client::handler::DefaultHandler;
@@ -29,78 +30,88 @@ async fn main() -> Result<()> {
     let cli = Client::new_with_config(config, DefaultHandler).await;
     let client = Arc::new(cli);
     let c = client.clone();
-    let c = client.clone();
     let handle = tokio::spawn(async move {
         c.start().await.expect("failed to run client");
     });
     tokio::time::sleep(Duration::from_millis(200)).await; // 等一下，确保连上了
-    let resp = client.fetch_qrcode().await.expect("failed to fetch qrcode");
-
-    if let QRCodeState::QRCodeImageFetch {
-        ref image_data,
-        ref sig,
-    } = resp
-    {
-        tokio::fs::write("qrcode.png", &image_data)
-            .await
-            .expect("failed to write file");
-        println!("二维码: qrcode.png");
-        loop {
-            sleep(Duration::from_secs(5)).await;
-            let resp = client
-                .query_qrcode_result(sig)
-                .await
-                .expect("failed to query qrcode result");
-            match resp {
-                QRCodeState::QRCodeImageFetch { .. } => {}
-                QRCodeState::QRCodeWaitingForScan => {
-                    println!("二维码待扫描")
-                }
-                QRCodeState::QRCodeWaitingForConfirm => {
-                    println!("二维码待确认")
-                }
-                QRCodeState::QRCodeTimeout => {
-                    println!("二维码超时")
-                }
-                QRCodeState::QRCodeConfirmed {
-                    ref tmp_pwd,
-                    ref tmp_no_pic_sig,
-                    ref tgt_qr,
-                    ..
-                } => {
-                    println!("二维码已确认");
-                    let mut login_resp = client
-                        .qrcode_login(tmp_pwd, tmp_no_pic_sig, tgt_qr)
+    let mut resp = client.fetch_qrcode().await.expect("failed to fetch qrcode");
+    let mut image_sig = Bytes::new();
+    loop {
+        match resp {
+            QRCodeState::QRCodeImageFetch {
+                ref image_data,
+                ref sig,
+            } => {
+                tokio::fs::write("qrcode.png", &image_data)
+                    .await
+                    .expect("failed to write file");
+                image_sig = sig.clone();
+                println!("二维码: qrcode.png");
+            }
+            QRCodeState::QRCodeWaitingForScan => {
+                println!("二维码待扫描")
+            }
+            QRCodeState::QRCodeWaitingForConfirm => {
+                println!("二维码待确认")
+            }
+            QRCodeState::QRCodeTimeout => {
+                println!("二维码已超时，重新获取");
+                if let QRCodeState::QRCodeImageFetch {
+                    ref image_data,
+                    ref sig,
+                } = client.fetch_qrcode().await.expect("failed to fetch qrcode")
+                {
+                    tokio::fs::write("qrcode.png", &image_data)
                         .await
-                        .expect("failed to qrcode login");
-                    if let LoginResponse::DeviceLockLogin { .. } = login_resp {
-                        login_resp = client
-                            .device_lock_login()
-                            .await
-                            .expect("failed to device lock login");
-                    }
-                    println!("{:?}", login_resp);
-                    break;
+                        .expect("failed to write file");
+                    image_sig = sig.clone();
+                    println!("二维码: qrcode.png");
                 }
-                QRCodeState::QRCodeCanceled => {}
+            }
+            QRCodeState::QRCodeConfirmed {
+                ref tmp_pwd,
+                ref tmp_no_pic_sig,
+                ref tgt_qr,
+                ..
+            } => {
+                println!("二维码已确认");
+                let mut login_resp = client
+                    .qrcode_login(tmp_pwd, tmp_no_pic_sig, tgt_qr)
+                    .await
+                    .expect("failed to qrcode login");
+                if let LoginResponse::DeviceLockLogin { .. } = login_resp {
+                    login_resp = client
+                        .device_lock_login()
+                        .await
+                        .expect("failed to device lock login");
+                }
+                println!("{:?}", login_resp);
+                break;
+            }
+            QRCodeState::QRCodeCanceled => {
+                panic!("二维码已取消")
             }
         }
-        client.register_client().await.unwrap();
-        {
-            client
-                .reload_friend_list()
-                .await
-                .expect("failed to reload friend list");
-            println!("{:?}", client.friend_list.read().await);
-            client
-                .reload_group_list()
-                .await
-                .expect("failed to reload group list");
-            println!("{:?}", client.group_list.read().await);
-        }
-    } else {
-        panic!("error")
+        sleep(Duration::from_secs(5)).await;
+        resp = client
+            .query_qrcode_result(&image_sig)
+            .await
+            .expect("failed to query qrcode result");
     }
+    client.register_client().await.unwrap();
+    {
+        client
+            .reload_friend_list()
+            .await
+            .expect("failed to reload friend list");
+        println!("{:?}", client.friend_list.read().await);
+        client
+            .reload_group_list()
+            .await
+            .expect("failed to reload group list");
+        println!("{:?}", client.group_list.read().await);
+    }
+
     handle.await.unwrap();
     Ok(())
 }
