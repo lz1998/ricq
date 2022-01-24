@@ -18,6 +18,7 @@ pub mod client;
 pub mod handler;
 pub mod net;
 pub mod processor;
+pub mod service;
 
 pub struct Client {
     handler: Box<dyn handler::Handler + Sync + Send + 'static>,

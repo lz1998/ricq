@@ -25,6 +25,7 @@ chrono = "0.4"
 
 jcers = { version = "0.1.0", features = ["derive"] }
 rq-engine = { path = "./rq-engine" }
+tower = { version = "0.4.11", default-features = false, features = ["util", "buffer", "make"] }
 
 [workspace]
 members = []
