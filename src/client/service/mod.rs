@@ -1,4 +1,5 @@
-use std::any::TypeId;
+use std::any::{Any, TypeId};
+use std::collections::HashMap;
 use std::convert::Infallible;
 use std::fmt;
 use std::future::Future;
@@ -7,6 +8,7 @@ use std::pin::Pin;
 use std::task::{Context, Poll};
 
 use async_trait::async_trait;
+use cached::{Cached, CachedAsync};
 use futures::FutureExt;
 use tower::util::BoxCloneService;
 use tower::{Service, ServiceBuilder};
@@ -17,46 +19,42 @@ pub struct Body;
 pub struct Request<B>(B);
 pub type Response = ();
 
-pub fn new_service<F, Fut, E>(f: F) -> BoxCloneService<E, (), Infallible>
-where
-    F: FnOnce(E) -> Fut + Copy + Send + 'static + Sync,
-    Fut: Future<Output = ()> + Send,
-    E: Send + 'static,
-{
-    let service = ServiceBuilder::new().service_fn(move |req| async move {
-        f(req).await;
-        Ok(())
-    });
-    BoxCloneService::new(service)
-}
-
+#[derive(Default)]
 pub struct Handlers {
-    pub private_message_handlers: Vec<BoxCloneService<PrivateMessageEvent, (), Infallible>>,
-    pub group_message_handlers: Vec<BoxCloneService<GroupMessageEvent, (), Infallible>>,
+    handlers: HashMap<TypeId, Vec<BoxCloneService<Box<dyn Any>, (), Infallible>>>,
 }
 
-pub trait AddHandler<E> {
-    fn add_handler<F, Fut>(&mut self, f: F)
+impl Handlers {
+    fn add<E, F, Fut>(&mut self, f: F)
     where
         F: FnOnce(E) -> Fut + Copy + Send + 'static + Sync,
-        Fut: Future<Output = ()> + Send;
-    // E: Send + 'static;
-}
-
-impl AddHandler<GroupMessageEvent> for Handlers {
-    fn add_handler<F, Fut>(&mut self, f: F)
-    where
-        F: FnOnce(GroupMessageEvent) -> Fut + Copy + Send + 'static + Sync,
         Fut: Future<Output = ()> + Send,
-        GroupMessageEvent: Send + 'static,
+        E: Send + 'static,
     {
-        // TypeId::of::<E>();
-        let service = ServiceBuilder::new().service_fn(move |req| async move {
-            f(req).await;
-            Ok(())
-        });
-        let service = BoxCloneService::new(service);
-        self.group_message_handlers.push(service);
+        let key = TypeId::of::<E>();
+        let handlers = self.handlers.entry(key).or_insert_with(|| Vec::new());
+
+        let s: BoxCloneService<Box<dyn Any>, (), Infallible> = BoxCloneService::new(
+            ServiceBuilder::new()
+                .map_request(|req: Box<dyn Any>| {
+                    let req: E = req.downcast().ok().map(|boxed| *boxed).unwrap();
+                    req
+                })
+                .service_fn(move |req| async move {
+                    f(req).await;
+                    Ok(())
+                }),
+        );
+        handlers.push(s);
+    }
+
+    async fn handle<E: 'static + Clone>(&self, e: E) {
+        let k = TypeId::of::<E>();
+        if let Some(handlers) = self.handlers.get(&k) {
+            for h in handlers {
+                h.clone().call(Box::new(e.clone())).await;
+            }
+        }
     }
 }
 
@@ -66,22 +64,23 @@ mod tests {
 
     #[tokio::test]
     async fn test() {
-        let mut router = Handlers {
-            private_message_handlers: vec![],
-            group_message_handlers: vec![],
-        };
-        router.add_handler(process_group1);
-        router.add_handler(process_group2);
+        let mut h = Handlers::default();
+        h.add(process_group1);
+        h.add(process_group2);
+        h.add(process_private);
         let g = GroupMessageEvent::default();
-        for mut r in router.group_message_handlers {
-            r.call(g.clone()).await;
-        }
+        h.handle(g).await;
+        let p = PrivateMessageEvent::default();
+        h.handle(p).await;
     }
 
     async fn process_group1(e: GroupMessageEvent) {
-        println!("1: {:?}", e)
+        println!("group1: {:?}", e)
     }
     async fn process_group2(e: GroupMessageEvent) {
-        println!("2: {:?}", e)
+        println!("group2: {:?}", e)
+    }
+    async fn process_private(e: PrivateMessageEvent) {
+        println!("private: {:?}", e)
     }
 }

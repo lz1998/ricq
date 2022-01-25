@@ -90,7 +90,7 @@ pub struct FriendInfo {
     pub face_id: i16,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct PrivateMessageEvent {
     pub id: i32,
     pub internal_id: i32,
