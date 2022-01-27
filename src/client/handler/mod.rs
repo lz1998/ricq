@@ -29,7 +29,7 @@ pub enum QEvent {
 
 /// 处理外发数据的接口
 #[async_trait]
-pub trait Handler: Sync {
+pub trait Handler {
     async fn handle(&self, msg: QEvent) {
         match msg {
             QEvent::LoginEvent(uin) => self.handle_login_event(uin).await,
