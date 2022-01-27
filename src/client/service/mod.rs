@@ -11,7 +11,7 @@ use async_trait::async_trait;
 use cached::{Cached, CachedAsync};
 use futures::FutureExt;
 use tower::util::BoxCloneService;
-use tower::{Service, ServiceBuilder};
+use tower::{Service, ServiceBuilder, ServiceExt};
 
 use rq_engine::{GroupMessageEvent, PrivateMessageEvent};
 
@@ -34,17 +34,16 @@ impl Handlers {
         let key = TypeId::of::<E>();
         let handlers = self.handlers.entry(key).or_insert_with(|| Vec::new());
 
-        let s: BoxCloneService<Box<dyn Any>, (), Infallible> = BoxCloneService::new(
-            ServiceBuilder::new()
-                .map_request(|req: Box<dyn Any>| {
-                    let req: E = req.downcast().ok().map(|boxed| *boxed).unwrap();
-                    req
-                })
-                .service_fn(move |req| async move {
-                    f(req).await;
-                    Ok(())
-                }),
-        );
+        let s: BoxCloneService<Box<dyn Any>, (), Infallible> = ServiceBuilder::new()
+            .boxed_clone()
+            .map_request(|req: Box<dyn Any>| {
+                let req: E = req.downcast().ok().map(|boxed| *boxed).unwrap();
+                req
+            })
+            .service_fn(move |req| async move {
+                f(req).await;
+                Ok(())
+            });
         handlers.push(s);
     }
 
