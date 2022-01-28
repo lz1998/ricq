@@ -52,7 +52,7 @@ impl Client {
                     9 | 10 | 31 | 79 | 97 | 120 | 132 | 133 | 166 | 167 => {
                         if let Ok(event) = self.parse_private_message(msg).await {
                             self.handler
-                                .handle(self.clone(), QEvent::PrivateMessage(event))
+                                .handle(QEvent::PrivateMessage(self.clone(), event))
                                 .await
                         }
                     }

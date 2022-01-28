@@ -143,7 +143,7 @@ impl super::Client {
         };
         if let (Err(RQError::Timeout), Err(RQError::Timeout)) = r {
             self.handler
-                .handle(self.clone(), QEvent::LoginEvent(self.uin().await))
+                .handle(QEvent::LoginEvent(self.uin().await))
                 .await;
             Ok(())
         } else {

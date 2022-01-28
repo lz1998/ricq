@@ -63,9 +63,7 @@ impl Client {
                 d2key.map(|v| engine.transport.sig.d2key = v);
                 device_token.map(|v| engine.transport.sig.device_token = v);
                 t402.map(|v| set_t402(&mut engine.transport, v));
-                self.handler
-                    .handle(self.clone(), QEvent::LoginEvent(engine.uin()))
-                    .await;
+                self.handler.handle(QEvent::LoginEvent(engine.uin())).await;
             }
             LoginResponse::NeedCaptcha { t104, .. } => {
                 t104.map(|v| engine.transport.sig.t104 = v);

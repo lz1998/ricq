@@ -990,6 +990,7 @@ dependencies = [
  "bytes",
  "cached",
  "chrono",
+ "derivative",
  "flate2",
  "futures",
  "jcers",

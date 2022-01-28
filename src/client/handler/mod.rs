@@ -11,18 +11,28 @@ use crate::engine::*;
 use crate::Client;
 
 /// 所有需要外发的数据的枚举打包
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone, derivative::Derivative)]
+#[derivative(Debug)]
 pub enum QEvent {
     TcpConnect,
     TcpDisconnect,
     /// 登录成功事件
     LoginEvent(i64),
     /// 群消息
-    GroupMessage(GroupMessageEvent),
+    GroupMessage(
+        #[derivative(Debug = "ignore")] Arc<Client>,
+        GroupMessageEvent,
+    ),
     /// 群自身消息
-    SelfGroupMessage(GroupMessageEvent),
+    SelfGroupMessage(
+        #[derivative(Debug = "ignore")] Arc<Client>,
+        GroupMessageEvent,
+    ),
     /// 私聊消息
-    PrivateMessage(PrivateMessageEvent),
+    PrivateMessage(
+        #[derivative(Debug = "ignore")] Arc<Client>,
+        PrivateMessageEvent,
+    ),
     // FriendList(decoder::friendlist::FriendListResponse),
     // GroupMemberInfo(structs::GroupMemberInfo),
 
@@ -33,14 +43,16 @@ pub enum QEvent {
 /// 处理外发数据的接口
 #[async_trait]
 pub trait Handler: Sync {
-    async fn handle(&self, _: Arc<Client>, msg: QEvent) {
+    async fn handle(&self, msg: QEvent) {
         match msg {
             QEvent::LoginEvent(uin) => self.handle_login_event(uin).await,
-            QEvent::GroupMessage(group_message) => self.handle_group_message(group_message).await,
-            QEvent::SelfGroupMessage(group_message) => {
+            QEvent::GroupMessage(_, group_message) => {
+                self.handle_group_message(group_message).await
+            }
+            QEvent::SelfGroupMessage(_, group_message) => {
                 self.handle_self_group_message(group_message).await
             }
-            QEvent::PrivateMessage(private_message) => {
+            QEvent::PrivateMessage(_, private_message) => {
                 self.handle_private_message(private_message).await
             }
             QEvent::TcpConnect => self.handle_tcp_connect_event().await,
@@ -60,35 +72,35 @@ pub struct DefaultHandler;
 
 #[async_trait]
 impl Handler for DefaultHandler {
-    async fn handle(&self, _: Arc<Client>, msgs: QEvent) {
+    async fn handle(&self, msgs: QEvent) {
         println!("{:?}", msgs);
     }
 }
 
 #[async_trait]
 impl Handler for BroadcastSender<QEvent> {
-    async fn handle(&self, _: Arc<Client>, msg: QEvent) {
+    async fn handle(&self, msg: QEvent) {
         self.send(msg).unwrap();
     }
 }
 
 #[async_trait]
 impl Handler for MpscSender<QEvent> {
-    async fn handle(&self, _: Arc<Client>, msg: QEvent) {
+    async fn handle(&self, msg: QEvent) {
         self.send(msg).await.unwrap();
     }
 }
 
 #[async_trait]
 impl Handler for UnboundedSender<QEvent> {
-    async fn handle(&self, _: Arc<Client>, msg: QEvent) {
+    async fn handle(&self, msg: QEvent) {
         self.send(msg).unwrap();
     }
 }
 
 #[async_trait]
 impl Handler for WatchSender<QEvent> {
-    async fn handle(&self, _: Arc<Client>, msg: QEvent) {
+    async fn handle(&self, msg: QEvent) {
         self.send(msg).unwrap();
     }
 }

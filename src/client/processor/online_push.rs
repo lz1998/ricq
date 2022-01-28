@@ -1,5 +1,6 @@
-use cached::Cached;
 use std::sync::Arc;
+
+use cached::Cached;
 
 use crate::client::handler::QEvent;
 use crate::client::Client;
@@ -60,10 +61,10 @@ impl Client {
         if let Some(group_msg) = group_msg {
             // message is finish
             self.handler
-                .handle(
+                .handle(QEvent::GroupMessage(
                     self.clone(),
-                    QEvent::GroupMessage(self.parse_group_message(group_msg).await?),
-                )
+                    self.parse_group_message(group_msg).await?,
+                ))
                 .await; //todo
         }
         Ok(())
