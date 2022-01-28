@@ -1,4 +1,5 @@
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 
 use bytes::{BufMut, Bytes, BytesMut};
 
@@ -8,7 +9,7 @@ use crate::engine::protocol::transport::Transport;
 use crate::{Client, QEvent};
 
 impl Client {
-    pub async fn process_login_response(&self, login_response: LoginResponse) {
+    pub async fn process_login_response(self: &Arc<Self>, login_response: LoginResponse) {
         // merge transport
         // merge account_info
         // merge oicq_codec
@@ -62,7 +63,9 @@ impl Client {
                 d2key.map(|v| engine.transport.sig.d2key = v);
                 device_token.map(|v| engine.transport.sig.device_token = v);
                 t402.map(|v| set_t402(&mut engine.transport, v));
-                self.handler.handle(QEvent::LoginEvent(engine.uin())).await;
+                self.handler
+                    .handle(self.clone(), QEvent::LoginEvent(engine.uin()))
+                    .await;
             }
             LoginResponse::NeedCaptcha { t104, .. } => {
                 t104.map(|v| engine.transport.sig.t104 = v);

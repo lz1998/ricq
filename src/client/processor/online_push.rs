@@ -1,4 +1,5 @@
 use cached::Cached;
+use std::sync::Arc;
 
 use crate::client::handler::QEvent;
 use crate::client::Client;
@@ -8,7 +9,7 @@ use crate::{RQError, RQResult};
 
 impl Client {
     pub async fn process_group_message_part(
-        &self,
+        self: &Arc<Self>,
         group_message_part: GroupMessagePart,
     ) -> Result<(), RQError> {
         // self.mark_group_message_readed(group_message_part.group_code, group_message_part.seq).await;
@@ -59,9 +60,10 @@ impl Client {
         if let Some(group_msg) = group_msg {
             // message is finish
             self.handler
-                .handle(QEvent::GroupMessage(
-                    self.parse_group_message(group_msg).await?,
-                ))
+                .handle(
+                    self.clone(),
+                    QEvent::GroupMessage(self.parse_group_message(group_msg).await?),
+                )
                 .await; //todo
         }
         Ok(())

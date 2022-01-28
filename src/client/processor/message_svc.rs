@@ -1,5 +1,6 @@
 use cached::Cached;
 use futures::{stream, StreamExt};
+use std::sync::Arc;
 
 use rq_engine::command::message_svc::MessageSyncResponse;
 
@@ -9,7 +10,10 @@ use crate::QEvent;
 use crate::RQResult;
 
 impl Client {
-    pub(crate) async fn process_message_sync(&self, resp: MessageSyncResponse) -> RQResult<()> {
+    pub(crate) async fn process_message_sync(
+        self: &Arc<Self>,
+        resp: MessageSyncResponse,
+    ) -> RQResult<()> {
         {
             let mut engine = self.engine.write().await;
             engine.transport.sig.sync_cookie = resp.sync_cookie;
@@ -47,7 +51,9 @@ impl Client {
                 match msg.head.as_ref().unwrap().msg_type() {
                     9 | 10 | 31 | 79 | 97 | 120 | 132 | 133 | 166 | 167 => {
                         if let Ok(event) = self.parse_private_message(msg).await {
-                            self.handler.handle(QEvent::PrivateMessage(event)).await
+                            self.handler
+                                .handle(self.clone(), QEvent::PrivateMessage(event))
+                                .await
                         }
                     }
                     33 => {
