@@ -167,6 +167,6 @@ impl super::Client {
 impl Drop for Client {
     fn drop(&mut self) {
         self.running.store(false, Ordering::Relaxed);
-        self.disconnect_signal.send(()).unwrap();
+        self.disconnect_signal.send(()).ok();
     }
 }
