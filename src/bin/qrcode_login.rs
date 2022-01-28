@@ -27,7 +27,7 @@ async fn main() -> Result<()> {
         .expect("failed to write device.json"); //todo
 
     let config = rs_qq::Config::new(device, get_version(Protocol::IPad));
-    let cli = Client::new_with_config(config, DefaultHandler).await;
+    let cli = Client::new_with_config(config, DefaultHandler);
     let client = Arc::new(cli);
     let c = client.clone();
     let handle = tokio::spawn(async move {

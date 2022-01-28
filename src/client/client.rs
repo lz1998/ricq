@@ -15,7 +15,7 @@ use crate::{RQError, RQResult};
 use super::Client;
 
 impl super::Client {
-    pub async fn new<H>(device: Device, version: &'static Version, handler: H) -> Client
+    pub fn new<H>(device: Device, version: &'static Version, handler: H) -> Client
     where
         H: crate::client::handler::Handler + 'static + Sync + Send,
     {
@@ -47,11 +47,11 @@ impl super::Client {
         cli
     }
 
-    pub async fn new_with_config<H>(config: crate::Config, handler: H) -> Self
+    pub fn new_with_config<H>(config: crate::Config, handler: H) -> Self
     where
         H: crate::client::handler::Handler + 'static + Sync + Send,
     {
-        Self::new(config.device, config.version, handler).await
+        Self::new(config.device, config.version, handler)
     }
 
     pub async fn uin(&self) -> i64 {
