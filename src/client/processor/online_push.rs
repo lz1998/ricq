@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use bytes::Bytes;
 use cached::Cached;
 
 use crate::client::handler::QEvent;
@@ -99,7 +100,10 @@ impl Client {
             })
             .flatten();
         let sender = if let Some(anon_info) = anon_info {
-            let anonymous_info: AnonymousInfo = anon_info.clone().into();
+            let anonymous_info = AnonymousInfo {
+                anonymous_nick: String::from_utf8_lossy(anon_info.anon_nick()).to_string(),
+                anonymous_id: Bytes::from(anon_info.anon_id.unwrap_or_default()),
+            };
             Sender {
                 uin: 80000000,
                 nickname: anonymous_info.anonymous_nick.clone(),
@@ -132,7 +136,7 @@ impl Client {
             sender,
             time: part.time,
             original_obj: part.clone(),
-            elements: parse_elems(part.elems),
+            elements: MessageChain(part.elems),
             internal_id: part.rand,
         };
         //todo extInfo

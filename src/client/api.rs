@@ -6,11 +6,10 @@ use bytes::{Buf, Bytes};
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
-use rq_engine::{pb, GroupMessageEvent};
+use rq_engine::{pb, GroupMessageEvent, MessageChain};
 
 use crate::engine::command::{friendlist::*, oidb_svc::*, profile_service::*, wtlogin::*};
 use crate::engine::structs::{FriendInfo, GroupInfo, GroupMemberInfo};
-use crate::engine::MsgElem;
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
 use crate::{QEvent, RQError, RQResult};
 
@@ -238,19 +237,22 @@ impl super::Client {
     pub async fn send_group_message(
         &self,
         group_code: i64,
-        message_chain: Vec<MsgElem>,
+        message_chain: MessageChain,
     ) -> RQResult<GroupMessageEvent> {
-        let elems = crate::engine::msg::into_elems(message_chain.clone());
         let r: i32 = rand::random();
         let (tx, rx) = tokio::sync::oneshot::channel();
         {
             self.receipt_waiters.lock().await.insert(r, tx);
         }
-        let req = self
-            .engine
-            .read()
-            .await
-            .build_group_sending_packet(group_code, r, 1, 0, 0, false, elems);
+        let req = self.engine.read().await.build_group_sending_packet(
+            group_code,
+            r,
+            1,
+            0,
+            0,
+            false,
+            message_chain.clone().into(),
+        );
         self.send(req).await?;
         let mut event = GroupMessageEvent {
             id: -1, // -1 for failed send
@@ -625,14 +627,16 @@ impl super::Client {
     pub async fn send_private_message(
         &self,
         target: i64,
-        message_chain: Vec<MsgElem>,
+        message_chain: MessageChain,
     ) -> RQResult<()> {
-        let elems = crate::engine::msg::into_elems(message_chain);
-        let req = self
-            .engine
-            .read()
-            .await
-            .build_friend_sending_packet(target, 495, 1, 0, 0, elems);
+        let req = self.engine.read().await.build_friend_sending_packet(
+            target,
+            495,
+            1,
+            0,
+            0,
+            message_chain.into(),
+        );
         self.send(req).await?;
         Ok(())
     }

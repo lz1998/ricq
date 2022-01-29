@@ -130,7 +130,7 @@ impl Client {
             } else {
                 0
             },
-            elements: parse_elems(msg.body.unwrap().rich_text.unwrap().elems), //ptt todo
+            elements: MessageChain(msg.body.unwrap().rich_text.unwrap().elems), //ptt todo
         })
     }
 }
