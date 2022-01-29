@@ -186,8 +186,9 @@ impl TryFrom<SourceMsg> for ReplyElem {
 }
 
 impl From<ReplyElem> for Vec<Elem> {
-    fn from(_: ReplyElem) -> Self {
-        todo!()
+    fn from(reply_elem: ReplyElem) -> Self {
+        // TODO
+        return vec![];
     }
 }
 

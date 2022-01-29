@@ -127,7 +127,8 @@ impl From<RichMsg> for MsgElem {
         };
 
         if !content.is_empty() {
-            todo!();
+            // TODO ...
+            return Self::Other(elem::Elem::RichMsg(rich_msg));
         }
         Self::Other(elem::Elem::RichMsg(rich_msg))
     }

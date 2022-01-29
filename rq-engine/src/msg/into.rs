@@ -120,8 +120,6 @@ impl From<MsgElem> for Vec<Elem> {
                 }]
             }
 
-            MsgElem::ShortVideo { .. } => todo!(),
-
             MsgElem::AnimatedSticker { id, mut name } => {
                 if name.is_empty() {
                     name = super::face::FACES_MAP.get(&id).unwrap().to_string();
@@ -245,7 +243,7 @@ impl From<MsgElem> for Vec<Elem> {
                 }
             }
 
-            _ => todo!(),
+            _ => vec![], // TODO
         }
     }
 }

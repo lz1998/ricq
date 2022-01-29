@@ -76,7 +76,7 @@ impl Client {
     ) -> RQResult<GroupMessageEvent> {
         let group = match self.find_group(part.group_code).await {
             Some(group) => group,
-            None => todo!(), // TODO get group from server
+            None => return Err(RQError::Other("TODO: load group from server".into())), // TODO get group from server
         };
         if group.0.member_count == 0 {
             group
