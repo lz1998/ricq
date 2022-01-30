@@ -58,6 +58,8 @@ mod tests {
         chain.push(elem::at::At::new(12345));
         chain.push(elem::text::Text::new("world".into()));
         chain.push(elem::face::Face::new(1));
+        chain.push(elem::market_face::Dice::new(1));
+        chain.push(elem::market_face::FingerGuessing::Rock);
         chain.push(elem::market_face::MarketFace {
             name: "xx".into(),
             ..Default::default()
