@@ -24,6 +24,7 @@ impl MessageChain {
 }
 
 impl Into<Vec<msg::Elem>> for MessageChain {
+    // TODO https://github.com/mamoe/mirai/blob/f95482989d7a27cfe62004276601f616ccb55cf8/mirai-core/src/commonMain/kotlin/message/messageToElems.kt#L261
     fn into(self) -> Vec<msg::Elem> {
         self.0
     }
