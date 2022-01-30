@@ -11,9 +11,9 @@ pub struct Reply {
     pub elements: MessageChain,
 }
 
-impl Into<msg::Elem> for Reply {
-    fn into(self) -> msg::Elem {
-        msg::Elem {
+impl Into<Vec<msg::Elem>> for Reply {
+    fn into(self) -> Vec<msg::Elem> {
+        vec![msg::Elem {
             elem: Some(msg::elem::Elem::SrcMsg(msg::SourceMsg {
                 orig_seqs: vec![self.reply_seq],
                 sender_uin: Some(self.sender),
@@ -26,7 +26,7 @@ impl Into<msg::Elem> for Reply {
                 troop_name: Some(vec![]),
                 ..Default::default()
             })),
-        }
+        }]
     }
 }
 

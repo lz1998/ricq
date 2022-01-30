@@ -18,8 +18,8 @@ impl MessageChain {
         self.0.into_iter().map(|e| RQElem::from(e.to_owned()))
     }
 
-    pub fn push<E: Into<msg::Elem>>(&mut self, e: E) {
-        self.0.push(e.into())
+    pub fn push<E: Into<Vec<msg::Elem>>>(&mut self, e: E) {
+        self.0.extend(e.into())
     }
 }
 
@@ -58,6 +58,10 @@ mod tests {
         chain.push(elem::at::At::new(12345));
         chain.push(elem::text::Text::new("world".into()));
         chain.push(elem::face::Face::new(1));
+        chain.push(elem::market_face::MarketFace {
+            name: "xx".into(),
+            ..Default::default()
+        });
         println!("{}", chain)
     }
 }

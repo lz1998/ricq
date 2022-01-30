@@ -1,17 +1,15 @@
-use bytes::Bytes;
-
 use crate::pb::msg;
 
 #[derive(Default, Debug, Clone)]
 pub struct MarketFace {
-    name: String,
-    face_id: Vec<u8>,
-    tab_id: i32,
-    item_type: i32,
-    sub_type: i32,
-    media_type: i32,
-    encrypt_key: Vec<u8>,
-    magic_value: String,
+    pub name: String,
+    pub face_id: Vec<u8>,
+    pub tab_id: i32,
+    pub item_type: i32,
+    pub sub_type: i32,
+    pub media_type: i32,
+    pub encrypt_key: Vec<u8>,
+    pub magic_value: String,
 }
 
 // TODO fix push message chain

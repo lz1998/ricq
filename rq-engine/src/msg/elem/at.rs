@@ -18,9 +18,9 @@ impl At {
     }
 }
 
-impl Into<msg::Elem> for At {
-    fn into(self) -> msg::Elem {
-        msg::Elem {
+impl Into<Vec<msg::Elem>> for At {
+    fn into(self) -> Vec<msg::Elem> {
+        vec![msg::Elem {
             elem: Some(msg::elem::Elem::Text(msg::Text {
                 attr6_buf: Some({
                     let mut w = Vec::new();
@@ -35,7 +35,7 @@ impl Into<msg::Elem> for At {
                 str: Some(self.display),
                 ..Default::default()
             })),
-        }
+        }]
     }
 }
 

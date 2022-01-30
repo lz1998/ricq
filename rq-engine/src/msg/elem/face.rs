@@ -28,9 +28,9 @@ impl Face {
     }
 }
 
-impl Into<msg::Elem> for Face {
-    fn into(self) -> msg::Elem {
-        if self.index >= 260 {
+impl Into<Vec<msg::Elem>> for Face {
+    fn into(self) -> Vec<msg::Elem> {
+        vec![if self.index >= 260 {
             let text = format!("/{}", self.name).as_bytes().to_vec();
             let elem = msg::MsgElemInfoServtype33 {
                 index: Some(self.index as u32),
@@ -54,7 +54,7 @@ impl Into<msg::Elem> for Face {
                     buf: Some(vec![0x00, 0x01, 0x00, 0x04, 0x52, 0xCC, 0xF5, 0xD0]),
                 })),
             }
-        }
+        }]
     }
 }
 
