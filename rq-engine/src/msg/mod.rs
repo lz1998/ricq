@@ -1,6 +1,9 @@
+use std::fmt;
+
+use elem::RQElem;
+
 use crate::pb::msg;
 use crate::pb::msg::Elem;
-use elem::RQElem;
 
 pub mod elem;
 
@@ -27,6 +30,15 @@ impl Into<Vec<msg::Elem>> for MessageChain {
     }
 }
 
+impl fmt::Display for MessageChain {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for x in self.iter() {
+            fmt::Display::fmt(&x, f)?
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -38,5 +50,15 @@ mod tests {
         for e in chain.into_iter() {
             println!("{:?}", e)
         }
+    }
+
+    #[test]
+    fn test_display() {
+        let mut chain = MessageChain::default();
+        chain.push(elem::text::Text::new("hello".into()));
+        chain.push(elem::at::At::new(12345));
+        chain.push(elem::text::Text::new("world".into()));
+        chain.push(elem::face::Face::new(1));
+        println!("{}", chain)
     }
 }

@@ -1,5 +1,6 @@
 use super::super::MessageChain;
 use crate::pb::msg;
+use std::fmt;
 
 #[derive(Default, Debug, Clone)]
 pub struct Reply {
@@ -38,5 +39,11 @@ impl From<msg::SourceMsg> for Reply {
             group_id: e.to_uin(),
             elements: MessageChain(e.elems),
         }
+    }
+}
+
+impl fmt::Display for Reply {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[Reply: {}]", self.reply_seq)
     }
 }

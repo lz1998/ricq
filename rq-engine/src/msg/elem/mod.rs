@@ -1,3 +1,5 @@
+use std::fmt;
+
 use prost::Message;
 
 use crate::pb::msg;
@@ -44,7 +46,20 @@ impl From<msg::Elem> for RQElem {
                 }
                 _ => RQElem::Other(elem),
             },
+            msg::elem::Elem::SrcMsg(e) => RQElem::Reply(reply::Reply::from(e)),
             _ => RQElem::Other(elem),
+        }
+    }
+}
+
+impl fmt::Display for RQElem {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            RQElem::At(e) => fmt::Display::fmt(e, f),
+            RQElem::Text(e) => fmt::Display::fmt(e, f),
+            RQElem::Face(e) => fmt::Display::fmt(e, f),
+            RQElem::Reply(e) => fmt::Display::fmt(e, f),
+            _ => write!(f, ""),
         }
     }
 }

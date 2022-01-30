@@ -1,4 +1,5 @@
 use bytes::{Buf, BufMut};
+use std::fmt;
 
 use crate::pb::msg;
 
@@ -6,6 +7,15 @@ use crate::pb::msg;
 pub struct At {
     pub target: i64,
     pub display: String,
+}
+
+impl At {
+    pub fn new(target: i64) -> Self {
+        Self {
+            target,
+            display: format!("@{}", target),
+        }
+    }
 }
 
 impl Into<msg::Elem> for At {
@@ -37,5 +47,11 @@ impl From<msg::Text> for At {
             target,
             display: e.str.unwrap_or_default(),
         }
+    }
+}
+
+impl fmt::Display for At {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[{}]", self.display)
     }
 }

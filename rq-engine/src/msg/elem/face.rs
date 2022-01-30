@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt;
 
 use lazy_static::lazy_static;
 use prost::Message;
@@ -9,6 +10,22 @@ use crate::pb::msg;
 pub struct Face {
     pub index: i32,
     pub name: String,
+}
+
+impl Face {
+    pub fn new(id: i32) -> Self {
+        Self {
+            index: id,
+            name: Self::name(id).into(),
+        }
+    }
+
+    pub fn name(id: i32) -> &'static str {
+        (*FACES_MAP)
+            .get(&id)
+            .map(|name| *name)
+            .unwrap_or("未知表情")
+    }
 }
 
 impl Into<msg::Elem> for Face {
@@ -53,19 +70,9 @@ impl From<msg::MsgElemInfoServtype33> for Face {
     }
 }
 
-impl Face {
-    pub fn new(id: i32) -> Self {
-        Self {
-            index: id,
-            name: Self::name(id).into(),
-        }
-    }
-
-    pub fn name(id: i32) -> &'static str {
-        (*FACES_MAP)
-            .get(&id)
-            .map(|name| *name)
-            .unwrap_or("未知表情")
+impl fmt::Display for Face {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[{}]", self.name)
     }
 }
 

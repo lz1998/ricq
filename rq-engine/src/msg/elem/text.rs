@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::pb::msg;
 
 #[derive(Default, Debug, Clone)]
@@ -27,5 +29,11 @@ impl From<msg::Text> for Text {
         Self {
             content: e.str.unwrap_or_default(),
         }
+    }
+}
+
+impl fmt::Display for Text {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.content)
     }
 }

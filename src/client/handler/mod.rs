@@ -72,8 +72,16 @@ pub struct DefaultHandler;
 
 #[async_trait]
 impl Handler for DefaultHandler {
-    async fn handle(&self, msgs: QEvent) {
-        println!("{:?}", msgs);
+    async fn handle(&self, e: QEvent) {
+        match e {
+            QEvent::GroupMessage(_, m) => {
+                println!("MESSAGE (GROUP={}): {}", m.group_code, m.elements)
+            }
+            QEvent::PrivateMessage(_, m) => {
+                println!("MESSAGE (FRIEND={}): {}", m.sender.uin, m.elements)
+            }
+            _ => println!("{:?}", e),
+        }
     }
 }
 
