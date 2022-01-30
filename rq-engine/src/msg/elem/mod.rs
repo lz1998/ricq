@@ -6,6 +6,7 @@ use crate::pb::msg;
 
 pub mod at;
 pub mod face;
+pub mod market_face;
 pub mod reply;
 pub mod text;
 
@@ -15,6 +16,7 @@ pub enum RQElem {
     Text(text::Text),
     Face(face::Face),
     Reply(reply::Reply),
+    MarketFace(market_face::MarketFace),
     Other(msg::elem::Elem),
     Unknown,
 }
@@ -47,6 +49,7 @@ impl From<msg::Elem> for RQElem {
                 _ => RQElem::Other(elem),
             },
             msg::elem::Elem::SrcMsg(e) => RQElem::Reply(reply::Reply::from(e)),
+            msg::elem::Elem::MarketFace(e) => RQElem::MarketFace(market_face::MarketFace::from(e)),
             _ => RQElem::Other(elem),
         }
     }

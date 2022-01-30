@@ -3,7 +3,6 @@ use std::fmt;
 use elem::RQElem;
 
 use crate::pb::msg;
-use crate::pb::msg::Elem;
 
 pub mod elem;
 
@@ -25,7 +24,7 @@ impl MessageChain {
 }
 
 impl Into<Vec<msg::Elem>> for MessageChain {
-    fn into(self) -> Vec<Elem> {
+    fn into(self) -> Vec<msg::Elem> {
         self.0
     }
 }
