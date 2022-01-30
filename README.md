@@ -88,7 +88,9 @@ qq-android协议的rust实现 移植于MiraiGo
 
 本项目是协议 lib ，如果需要直接运行，请自行基于本项目构建 (当然，必须使用 AGPL-v3 协议开源)
 
-这里有一个可参考例子：[(WIP)Walle-Q](https://github.com/abrahum/walle-q)
+这里有几个可参考例子：
+- [(WIP)Walle-Q](https://github.com/abrahum/walle-q) OneBot 协议
+- [rq-tower-demo](https://github.com/lz1998/rq-tower/tree/main/examples/demo) 直接使用 Rust 开发
 
 > 本项目是一个年轻的项目，请使用 nightly channel 构建本项目哦（正经人谁用 stable 啊）
 
