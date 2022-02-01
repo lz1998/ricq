@@ -5,6 +5,7 @@ use elem::RQElem;
 use crate::pb::msg;
 
 pub mod elem;
+pub mod fragment;
 
 #[derive(Debug, Default, Clone)]
 pub struct MessageChain(pub Vec<msg::elem::Elem>);
