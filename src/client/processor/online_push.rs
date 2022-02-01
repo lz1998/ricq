@@ -136,7 +136,7 @@ impl Client {
             sender,
             time: part.time,
             original_obj: part.clone(),
-            elements: MessageChain(part.elems),
+            elements: MessageChain::from(part.elems),
             internal_id: part.rand,
         };
         //todo extInfo

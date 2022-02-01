@@ -20,15 +20,10 @@ pub enum RQElem {
     Dice(market_face::Dice),
     FingerGuessing(market_face::FingerGuessing),
     Other(msg::elem::Elem),
-    Unknown,
 }
 
-impl From<msg::Elem> for RQElem {
-    fn from(e: msg::Elem) -> Self {
-        if e.elem.is_none() {
-            return RQElem::Unknown;
-        }
-        let elem = e.elem.unwrap();
+impl From<msg::elem::Elem> for RQElem {
+    fn from(elem: msg::elem::Elem) -> Self {
         match elem.clone() {
             msg::elem::Elem::Text(e) => {
                 // TODO guild at

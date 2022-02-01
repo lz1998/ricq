@@ -15,31 +15,27 @@ pub struct MarketFace {
     pub magic_value: String,
 }
 
-impl Into<Vec<msg::Elem>> for MarketFace {
-    fn into(self) -> Vec<msg::Elem> {
+impl Into<Vec<msg::elem::Elem>> for MarketFace {
+    fn into(self) -> Vec<msg::elem::Elem> {
         vec![
-            msg::Elem {
-                elem: Some(msg::elem::Elem::MarketFace(msg::MarketFace {
-                    face_name: Some(self.name.as_bytes().to_vec()),
-                    item_type: Some(self.item_type as u32),
-                    face_info: Some(1),
-                    face_id: Some(self.face_id),
-                    tab_id: Some(self.tab_id as u32),
-                    sub_type: Some(self.sub_type as u32),
-                    key: Some(self.encrypt_key),
-                    media_type: Some(self.media_type as u32),
-                    image_width: Some(200),
-                    image_height: Some(200),
-                    mobileparam: Some(self.magic_value.as_bytes().to_vec()),
-                    ..Default::default()
-                })),
-            },
-            msg::Elem {
-                elem: Some(msg::elem::Elem::Text(msg::Text {
-                    str: Some(self.name),
-                    ..Default::default()
-                })),
-            },
+            msg::elem::Elem::MarketFace(msg::MarketFace {
+                face_name: Some(self.name.as_bytes().to_vec()),
+                item_type: Some(self.item_type as u32),
+                face_info: Some(1),
+                face_id: Some(self.face_id),
+                tab_id: Some(self.tab_id as u32),
+                sub_type: Some(self.sub_type as u32),
+                key: Some(self.encrypt_key),
+                media_type: Some(self.media_type as u32),
+                image_width: Some(200),
+                image_height: Some(200),
+                mobileparam: Some(self.magic_value.as_bytes().to_vec()),
+                ..Default::default()
+            }),
+            msg::elem::Elem::Text(msg::Text {
+                str: Some(self.name),
+                ..Default::default()
+            }),
         ]
     }
 }
@@ -100,8 +96,8 @@ impl From<MarketFace> for Dice {
     }
 }
 
-impl Into<Vec<msg::Elem>> for Dice {
-    fn into(self) -> Vec<msg::Elem> {
+impl Into<Vec<msg::elem::Elem>> for Dice {
+    fn into(self) -> Vec<msg::elem::Elem> {
         let f: MarketFace = self.into();
         f.into()
     }
@@ -140,8 +136,8 @@ impl Into<MarketFace> for FingerGuessing {
     }
 }
 
-impl Into<Vec<msg::Elem>> for FingerGuessing {
-    fn into(self) -> Vec<msg::Elem> {
+impl Into<Vec<msg::elem::Elem>> for FingerGuessing {
+    fn into(self) -> Vec<msg::elem::Elem> {
         let f: MarketFace = self.into();
         f.into()
     }

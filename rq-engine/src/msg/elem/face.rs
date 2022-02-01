@@ -28,8 +28,8 @@ impl Face {
     }
 }
 
-impl Into<Vec<msg::Elem>> for Face {
-    fn into(self) -> Vec<msg::Elem> {
+impl Into<Vec<msg::elem::Elem>> for Face {
+    fn into(self) -> Vec<msg::elem::Elem> {
         vec![if self.index >= 260 {
             let text = format!("/{}", self.name).as_bytes().to_vec();
             let elem = msg::MsgElemInfoServtype33 {
@@ -39,21 +39,17 @@ impl Into<Vec<msg::Elem>> for Face {
                 buf: None,
             }
             .encode_to_vec();
-            msg::Elem {
-                elem: Some(msg::elem::Elem::CommonElem(msg::CommonElem {
-                    service_type: Some(33),
-                    pb_elem: Some(elem),
-                    business_type: Some(1),
-                })),
-            }
+            msg::elem::Elem::CommonElem(msg::CommonElem {
+                service_type: Some(33),
+                pb_elem: Some(elem),
+                business_type: Some(1),
+            })
         } else {
-            msg::Elem {
-                elem: Some(msg::elem::Elem::Face(msg::Face {
-                    index: Some(self.index),
-                    old: Some(((0x1445 - 4 + self.index) as u16).to_be_bytes().to_vec()),
-                    buf: Some(vec![0x00, 0x01, 0x00, 0x04, 0x52, 0xCC, 0xF5, 0xD0]),
-                })),
-            }
+            msg::elem::Elem::Face(msg::Face {
+                index: Some(self.index),
+                old: Some(((0x1445 - 4 + self.index) as u16).to_be_bytes().to_vec()),
+                buf: Some(vec![0x00, 0x01, 0x00, 0x04, 0x52, 0xCC, 0xF5, 0xD0]),
+            })
         }]
     }
 }

@@ -1,6 +1,7 @@
+use std::sync::Arc;
+
 use cached::Cached;
 use futures::{stream, StreamExt};
-use std::sync::Arc;
 
 use rq_engine::command::message_svc::MessageSyncResponse;
 
@@ -130,7 +131,7 @@ impl Client {
             } else {
                 0
             },
-            elements: MessageChain(msg.body.unwrap().rich_text.unwrap().elems), //ptt todo
+            elements: MessageChain::from(msg.body.unwrap().rich_text.unwrap().elems), // todo ptt
         })
     }
 }

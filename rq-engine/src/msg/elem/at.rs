@@ -18,24 +18,22 @@ impl At {
     }
 }
 
-impl Into<Vec<msg::Elem>> for At {
-    fn into(self) -> Vec<msg::Elem> {
-        vec![msg::Elem {
-            elem: Some(msg::elem::Elem::Text(msg::Text {
-                attr6_buf: Some({
-                    let mut w = Vec::new();
-                    w.put_u16(1);
-                    w.put_u16(0);
-                    w.put_u16(self.display.chars().count() as u16);
-                    w.put_u8(if self.target == 0 { 1 } else { 0 });
-                    w.put_u32(self.target as u32);
-                    w.put_u16(0);
-                    w
-                }),
-                str: Some(self.display),
-                ..Default::default()
-            })),
-        }]
+impl Into<Vec<msg::elem::Elem>> for At {
+    fn into(self) -> Vec<msg::elem::Elem> {
+        vec![msg::elem::Elem::Text(msg::Text {
+            attr6_buf: Some({
+                let mut w = Vec::new();
+                w.put_u16(1);
+                w.put_u16(0);
+                w.put_u16(self.display.chars().count() as u16);
+                w.put_u8(if self.target == 0 { 1 } else { 0 });
+                w.put_u32(self.target as u32);
+                w.put_u16(0);
+                w
+            }),
+            str: Some(self.display),
+            ..Default::default()
+        })]
     }
 }
 
