@@ -19,7 +19,7 @@ pub enum RQElem {
     MarketFace(market_face::MarketFace),
     Dice(market_face::Dice),
     FingerGuessing(market_face::FingerGuessing),
-    Other(msg::elem::Elem),
+    Other(Box<msg::elem::Elem>),
 }
 
 impl From<msg::elem::Elem> for RQElem {
@@ -40,10 +40,10 @@ impl From<msg::elem::Elem> for RQElem {
                     if let Ok(new_face) = msg::MsgElemInfoServtype33::decode(e.pb_elem()) {
                         RQElem::Face(face::Face::from(new_face))
                     } else {
-                        RQElem::Other(elem)
+                        RQElem::Other(Box::new(elem))
                     }
                 }
-                _ => RQElem::Other(elem),
+                _ => RQElem::Other(Box::new(elem)),
             },
             msg::elem::Elem::SrcMsg(e) => RQElem::Reply(reply::Reply::from(e)),
             msg::elem::Elem::MarketFace(e) => {
@@ -56,7 +56,7 @@ impl From<msg::elem::Elem> for RQElem {
                     RQElem::MarketFace(f)
                 }
             }
-            _ => RQElem::Other(elem),
+            _ => RQElem::Other(Box::new(elem)),
         }
     }
 }

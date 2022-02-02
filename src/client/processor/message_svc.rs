@@ -90,7 +90,7 @@ impl Client {
             head.msg_seq(),
             head.msg_uid(),
         );
-        if let Some(_) = c2c_cache.cache_get(&key) {
+        if c2c_cache.cache_get(&key).is_some() {
             return true;
         }
         c2c_cache.cache_set(key, ());
@@ -98,7 +98,7 @@ impl Client {
             c2c_cache.flush();
             c2c_cache.cache_reset_metrics();
         }
-        return false;
+        false
     }
 
     pub async fn parse_private_message(

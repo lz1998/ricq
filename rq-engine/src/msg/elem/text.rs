@@ -13,10 +13,10 @@ impl Text {
     }
 }
 
-impl Into<Vec<msg::elem::Elem>> for Text {
-    fn into(self) -> Vec<msg::elem::Elem> {
+impl From<Text> for Vec<msg::elem::Elem> {
+    fn from(e: Text) -> Self {
         vec![msg::elem::Elem::Text(msg::Text {
-            str: Some(self.content),
+            str: Some(e.content),
             ..Default::default()
         })]
     }

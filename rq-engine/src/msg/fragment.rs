@@ -32,22 +32,20 @@ impl MessageChain {
                     txt_add = true;
                     last.push(element.clone());
                 } else {
-                    let split = t
-                        .str
+                    flush(&mut txt_add, &mut last, &mut results);
+                    t.str
                         .clone()
                         .unwrap_or_default()
                         .chars()
                         .collect::<Vec<char>>()
-                        .chunks(4)
+                        .chunks(80)
                         .map(|c| c.iter().collect::<String>())
-                        .collect::<Vec<String>>();
-                    flush(&mut txt_add, &mut last, &mut results);
-                    split.into_iter().for_each(|s| {
-                        results.push(MessageChain(vec![msg::elem::Elem::Text(msg::Text {
-                            str: Some(s),
-                            ..Default::default()
-                        })]))
-                    });
+                        .for_each(|s| {
+                            results.push(MessageChain(vec![msg::elem::Elem::Text(msg::Text {
+                                str: Some(s),
+                                ..Default::default()
+                            })]))
+                        });
                 }
             } else {
                 last.push(element.clone());

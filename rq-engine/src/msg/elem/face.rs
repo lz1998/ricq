@@ -21,19 +21,16 @@ impl Face {
     }
 
     pub fn name(id: i32) -> &'static str {
-        (*FACES_MAP)
-            .get(&id)
-            .map(|name| *name)
-            .unwrap_or("未知表情")
+        (*FACES_MAP).get(&id).copied().unwrap_or("未知表情")
     }
 }
 
-impl Into<Vec<msg::elem::Elem>> for Face {
-    fn into(self) -> Vec<msg::elem::Elem> {
-        vec![if self.index >= 260 {
-            let text = format!("/{}", self.name).as_bytes().to_vec();
+impl From<Face> for Vec<msg::elem::Elem> {
+    fn from(e: Face) -> Self {
+        vec![if e.index >= 260 {
+            let text = format!("/{}", e.name).as_bytes().to_vec();
             let elem = msg::MsgElemInfoServtype33 {
-                index: Some(self.index as u32),
+                index: Some(e.index as u32),
                 text: Some(text.clone()),
                 compat: Some(text),
                 buf: None,
@@ -46,8 +43,8 @@ impl Into<Vec<msg::elem::Elem>> for Face {
             })
         } else {
             msg::elem::Elem::Face(msg::Face {
-                index: Some(self.index),
-                old: Some(((0x1445 - 4 + self.index) as u16).to_be_bytes().to_vec()),
+                index: Some(e.index),
+                old: Some(((0x1445 - 4 + e.index) as u16).to_be_bytes().to_vec()),
                 buf: Some(vec![0x00, 0x01, 0x00, 0x04, 0x52, 0xCC, 0xF5, 0xD0]),
             })
         }]

@@ -15,25 +15,25 @@ pub struct MarketFace {
     pub magic_value: String,
 }
 
-impl Into<Vec<msg::elem::Elem>> for MarketFace {
-    fn into(self) -> Vec<msg::elem::Elem> {
+impl From<MarketFace> for Vec<msg::elem::Elem> {
+    fn from(e: MarketFace) -> Self {
         vec![
             msg::elem::Elem::MarketFace(msg::MarketFace {
-                face_name: Some(self.name.as_bytes().to_vec()),
-                item_type: Some(self.item_type as u32),
+                face_name: Some(e.name.as_bytes().to_vec()),
+                item_type: Some(e.item_type as u32),
                 face_info: Some(1),
-                face_id: Some(self.face_id),
-                tab_id: Some(self.tab_id as u32),
-                sub_type: Some(self.sub_type as u32),
-                key: Some(self.encrypt_key),
-                media_type: Some(self.media_type as u32),
+                face_id: Some(e.face_id),
+                tab_id: Some(e.tab_id as u32),
+                sub_type: Some(e.sub_type as u32),
+                key: Some(e.encrypt_key),
+                media_type: Some(e.media_type as u32),
                 image_width: Some(200),
                 image_height: Some(200),
-                mobileparam: Some(self.magic_value.as_bytes().to_vec()),
+                mobileparam: Some(e.magic_value.as_bytes().to_vec()),
                 ..Default::default()
             }),
             msg::elem::Elem::Text(msg::Text {
-                str: Some(self.name),
+                str: Some(e.name),
                 ..Default::default()
             }),
         ]
@@ -65,10 +65,9 @@ impl Dice {
         Self { value }
     }
 }
-
-impl Into<MarketFace> for Dice {
-    fn into(self) -> MarketFace {
-        MarketFace {
+impl From<Dice> for MarketFace {
+    fn from(e: Dice) -> Self {
+        Self {
             name: "[骰子]".into(),
             face_id: vec![
                 72, 35, 211, 173, 177, 93, 240, 128, 20, 206, 93, 103, 150, 183, 110, 225,
@@ -80,7 +79,7 @@ impl Into<MarketFace> for Dice {
             encrypt_key: vec![
                 52, 48, 57, 101, 50, 97, 54, 57, 98, 49, 54, 57, 49, 56, 102, 57,
             ],
-            magic_value: format!("rscType?1;value={}", self.value - 1),
+            magic_value: format!("rscType?1;value={}", e.value - 1),
         }
     }
 }
@@ -96,10 +95,9 @@ impl From<MarketFace> for Dice {
     }
 }
 
-impl Into<Vec<msg::elem::Elem>> for Dice {
-    fn into(self) -> Vec<msg::elem::Elem> {
-        let f: MarketFace = self.into();
-        f.into()
+impl From<Dice> for Vec<msg::elem::Elem> {
+    fn from(e: Dice) -> Self {
+        MarketFace::from(e).into()
     }
 }
 
@@ -111,10 +109,9 @@ pub enum FingerGuessing {
     Scissors,
     Paper,
 }
-
-impl Into<MarketFace> for FingerGuessing {
-    fn into(self) -> MarketFace {
-        let value = match self {
+impl From<FingerGuessing> for MarketFace {
+    fn from(e: FingerGuessing) -> Self {
+        let value = match e {
             FingerGuessing::Rock => 0,
             FingerGuessing::Scissors => 1,
             FingerGuessing::Paper => 2,
@@ -136,10 +133,9 @@ impl Into<MarketFace> for FingerGuessing {
     }
 }
 
-impl Into<Vec<msg::elem::Elem>> for FingerGuessing {
-    fn into(self) -> Vec<msg::elem::Elem> {
-        let f: MarketFace = self.into();
-        f.into()
+impl From<FingerGuessing> for Vec<msg::elem::Elem> {
+    fn from(e: FingerGuessing) -> Self {
+        MarketFace::from(e).into()
     }
 }
 

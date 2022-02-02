@@ -22,7 +22,8 @@ impl super::Client {
         let (out_pkt_sender, _) = tokio::sync::broadcast::channel(1024);
         let (disconnect_signal, _) = tokio::sync::broadcast::channel(1024);
 
-        let cli = Client {
+        
+        Client {
             handler: Box::new(handler),
             engine: RwLock::new(Engine::new(device, version)),
             running: AtomicBool::new(false),
@@ -43,8 +44,7 @@ impl super::Client {
             start_time: chrono::Utc::now().timestamp() as i32,
             group_message_builder: RwLock::new(cached::TimedCache::with_lifespan(600)),
             c2c_cache: RwLock::new(cached::TimedCache::with_lifespan(3600)),
-        };
-        cli
+        }
     }
 
     pub fn new_with_config<H>(config: crate::Config, handler: H) -> Self
@@ -79,7 +79,7 @@ impl super::Client {
         if let Err(_) = self.out_pkt_sender.send(data) {
             let mut packet_promises = self.packet_promises.write().await;
             packet_promises.remove(&seq);
-            return Err(RQError::Network.into());
+            return Err(RQError::Network);
         }
         match tokio::time::timeout(std::time::Duration::from_secs(15), receiver).await {
             Ok(p) => p.unwrap().check_command_name(&expect),

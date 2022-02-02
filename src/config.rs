@@ -23,9 +23,6 @@ impl Default for Config {
 
 impl Config {
     pub fn new(device: Device, version: &'static Version) -> Self {
-        let mut config = Self::default();
-        config.device = device;
-        config.version = version;
-        config
+        Self { device, version }
     }
 }

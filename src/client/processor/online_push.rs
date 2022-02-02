@@ -39,7 +39,7 @@ impl Client {
             }
             // muti-part
             let div_seq = group_message_part.div_seq;
-            let parts = builder.cache_get_or_set_with(div_seq, || Vec::new());
+            let parts = builder.cache_get_or_set_with(div_seq, Vec::new);
             parts.push(group_message_part);
             if parts.len() < pkg_num as usize {
                 // wait for more parts
@@ -142,6 +142,6 @@ impl Client {
         //todo extInfo
         //todo group_card_update
         //todo ptt
-        return Ok(group_message);
+        Ok(group_message)
     }
 }

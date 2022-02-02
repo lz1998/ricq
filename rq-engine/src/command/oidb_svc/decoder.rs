@@ -65,7 +65,7 @@ impl super::super::super::Engine {
                 .clone()
                 .unwrap_or_default()
                 .text_detections,
-            language: resp.ocr_rsp_body.clone().unwrap_or_default().language,
+            language: resp.ocr_rsp_body.unwrap_or_default().language,
         })
     }
 }

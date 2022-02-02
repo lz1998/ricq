@@ -1,48 +1,48 @@
 pub fn group_code2uin(code: i64) -> i64 {
     let mut left = code / 1000000;
-    if left >= 0 && left <= 10 {
+    if (0..=10).contains(&left) {
         left += 202
-    } else if left >= 11 && left <= 19 {
+    } else if (11..=19).contains(&left) {
         left += 469
-    } else if left >= 20 && left <= 66 {
+    } else if (20..=66).contains(&left) {
         left += 2080
-    } else if left >= 67 && left <= 156 {
+    } else if (67..=156).contains(&left) {
         left += 1943
-    } else if left >= 157 && left <= 209 {
+    } else if (157..=209).contains(&left) {
         left += 1990
-    } else if left >= 210 && left <= 309 {
+    } else if (210..=309).contains(&left) {
         left += 3890
-    } else if left >= 310 && left <= 335 {
+    } else if (310..=335).contains(&left) {
         left += 3490
-    } else if left >= 336 && left <= 386 {
+    } else if (336..=386).contains(&left) {
         //335 336不确定
         left += 2265
-    } else if left >= 387 && left <= 499 {
+    } else if (387..=499).contains(&left) {
         left += 3490
     }
-    return left * 1000000 + code % 1000000;
+    left * 1000000 + code % 1000000
 }
 
 pub fn group_uin2code(uin: i64) -> i64 {
     let mut left = uin / 1000000;
-    if left >= 202 && left <= 212 {
+    if (202..=212).contains(&left) {
         left -= 202
-    } else if left >= 480 && left <= 488 {
+    } else if (480..=488).contains(&left) {
         left -= 469
-    } else if left >= 2100 && left <= 2146 {
+    } else if (2100..=2146).contains(&left) {
         left -= 2080
-    } else if left >= 2010 && left <= 2099 {
+    } else if (2010..=2099).contains(&left) {
         left -= 1943
-    } else if left >= 2147 && left <= 2199 {
+    } else if (2147..=2199).contains(&left) {
         left -= 1990
-    } else if left >= 2600 && left <= 2651 {
+    } else if (2600..=2651).contains(&left) {
         left -= 2265
-    } else if left >= 3800 && left <= 3989 {
+    } else if (3800..=3989).contains(&left) {
         left -= 3490
-    } else if left >= 4100 && left <= 4199 {
+    } else if (4100..=4199).contains(&left) {
         left -= 3890
     }
-    return left * 1000000 + uin % 1000000;
+    left * 1000000 + uin % 1000000
 }
 
 #[cfg(test)]

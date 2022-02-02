@@ -15,12 +15,17 @@ impl MessageChain {
         self.0.iter().map(|e| RQElem::from(e.to_owned()))
     }
 
-    pub fn into_iter(self) -> impl Iterator<Item = RQElem> + 'static {
-        self.0.into_iter().map(|e| RQElem::from(e.to_owned()))
-    }
-
     pub fn push<E: Into<Vec<msg::elem::Elem>>>(&mut self, e: E) {
         self.0.extend(e.into())
+    }
+}
+
+impl IntoIterator for MessageChain {
+    type Item = RQElem;
+    type IntoIter = impl Iterator<Item = RQElem> + 'static;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.0.into_iter().map(RQElem::from)
     }
 }
 
@@ -30,11 +35,9 @@ impl From<Vec<msg::Elem>> for MessageChain {
     }
 }
 
-impl Into<Vec<msg::Elem>> for MessageChain {
-    // TODO https://github.com/mamoe/mirai/blob/f95482989d7a27cfe62004276601f616ccb55cf8/mirai-core/src/commonMain/kotlin/message/messageToElems.kt#L261
-    fn into(self) -> Vec<msg::Elem> {
-        self.0
-            .into_iter()
+impl From<MessageChain> for Vec<msg::Elem> {
+    fn from(e: MessageChain) -> Self {
+        e.0.into_iter()
             .map(|e| msg::Elem { elem: Some(e) })
             .collect()
     }

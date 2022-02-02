@@ -62,7 +62,9 @@ impl Client {
                 d2.map(|v| engine.transport.sig.d2 = v);
                 d2key.map(|v| engine.transport.sig.d2key = v);
                 device_token.map(|v| engine.transport.sig.device_token = v);
-                t402.map(|v| set_t402(&mut engine.transport, v));
+                if let Some(v) = t402 {
+                    set_t402(&mut engine.transport, v)
+                }
                 self.handler.handle(QEvent::LoginEvent(engine.uin())).await;
             }
             LoginResponse::NeedCaptcha { t104, .. } => {
@@ -72,8 +74,12 @@ impl Client {
                 t104, t174, t402, ..
             } => {
                 t104.map(|v| engine.transport.sig.t104 = v);
-                t174.map(|v| engine.transport.sig.t174 = v);
-                t402.map(|v| set_t402(&mut engine.transport, v));
+                if let Some(v) = t174 {
+                    engine.transport.sig.t174 = v
+                }
+                if let Some(v) = t402 {
+                    set_t402(&mut engine.transport, v)
+                }
             }
             LoginResponse::DeviceLockLogin {
                 rand_seed,
@@ -82,7 +88,9 @@ impl Client {
             } => {
                 rand_seed.map(|v| engine.transport.sig.rand_seed = v);
                 t104.map(|v| engine.transport.sig.t104 = v);
-                t402.map(|v| set_t402(&mut engine.transport, v));
+                if let Some(v) = t402 {
+                    set_t402(&mut engine.transport, v)
+                }
             }
             _ => {}
         }

@@ -273,7 +273,7 @@ impl super::super::super::Engine {
             ocr_req_body: Some(pb::oidb::OcrReqBody {
                 image_url: url,
                 origin_md5: md5.clone(),
-                after_compress_md5: md5.clone(),
+                after_compress_md5: md5,
                 after_compress_file_size: size,
                 after_compress_height: height,
                 after_compress_weight: wight,

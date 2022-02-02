@@ -159,7 +159,7 @@ impl super::Client {
             .read()
             .await
             .decode_client_register_response(resp.body)?;
-        if resp.result != "" || resp.reply_code != 0 {
+        if !resp.result.is_empty() || resp.reply_code != 0 {
             return Err(RQError::Other(resp.result + &resp.reply_code.to_string()));
         }
         self.online.store(true, Ordering::SeqCst);
@@ -721,7 +721,7 @@ impl super::Client {
             .await
             .build_delete_message_request_packet(items);
         let _ = self.send_and_wait(req).await?;
-        return Ok(());
+        Ok(())
     }
 
     // sync message

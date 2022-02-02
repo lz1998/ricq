@@ -13,14 +13,14 @@ pub struct Reply {
     pub elements: MessageChain,
 }
 
-impl Into<Vec<msg::elem::Elem>> for Reply {
-    fn into(self) -> Vec<msg::elem::Elem> {
+impl From<Reply> for Vec<msg::elem::Elem> {
+    fn from(e: Reply) -> Self {
         vec![msg::elem::Elem::SrcMsg(msg::SourceMsg {
-            orig_seqs: vec![self.reply_seq],
-            sender_uin: Some(self.sender),
-            time: Some(self.time),
+            orig_seqs: vec![e.reply_seq],
+            sender_uin: Some(e.sender),
+            time: Some(e.time),
             flag: Some(1),
-            elems: self.elements.into(),
+            elems: e.elements.into(),
             rich_msg: Some(vec![]),
             pb_reserve: Some(vec![]),
             src_msg: Some(vec![]),

@@ -115,7 +115,7 @@ impl super::super::super::Engine {
             528 => {
                 let mut v_msg = raw.v_msg.clone();
                 let mut jr = jcers::Jce::new(&mut v_msg);
-                let sub_type: i64 = jr.get_by_tag(0)?;
+                let _sub_type: i64 = jr.get_by_tag(0)?;
                 // println!("sub_type: {}", sub_type);
                 // TODO ...
             }
