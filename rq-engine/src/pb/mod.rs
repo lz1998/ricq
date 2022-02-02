@@ -1,3 +1,5 @@
+#![allow(clippy::all)]
+
 include!(concat!(env!("OUT_DIR"), "/pb.rs"));
 
 pub mod structmsg {

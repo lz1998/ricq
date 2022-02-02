@@ -1,3 +1,5 @@
+#![allow(clippy::too_many_arguments)]
+
 use bytes::{BufMut, Bytes, BytesMut};
 use chrono::Utc;
 
