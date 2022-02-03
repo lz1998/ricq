@@ -1,6 +1,7 @@
 pub mod common;
 pub mod config_push_svc;
 pub mod friendlist;
+pub mod group_anonymous_generate_nick;
 pub mod group_member_card;
 pub mod heartbeat;
 pub mod message_svc;

@@ -100,7 +100,8 @@ pub struct PrivateMessageEvent {
     pub self_id: i64, //?
     pub target: i64,
     pub time: i32,
-    pub sender: Sender,
+    pub from_uin: i64,
+    pub from_nick: String,
     pub elements: MessageChain,
 }
 
@@ -110,30 +111,14 @@ pub struct GroupMessageEvent {
     pub internal_id: i32,
     pub group_code: i64,
     pub group_name: String,
-    pub sender: Sender,
+    pub from_uin: i64,
     pub time: i32,
     pub elements: MessageChain,
     pub original_obj: GroupMessagePart,
 }
 
-// #[derive(Debug, Clone, PartialEq)]
-// pub struct GroupMessageReceiptEvent {
-//     pub rand: i32,
-//     pub seq: i32,
-//     pub msg_event: GroupMessageEvent,
-// }
-
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct Sender {
-    pub uin: i64,
-    pub nickname: String,
-    pub card_name: String,
-    pub anonymous_info: AnonymousInfo,
-    pub is_friend: bool,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Default)]
-pub struct AnonymousInfo {
-    pub anonymous_id: Bytes,
-    pub anonymous_nick: String,
+#[derive(Debug, Clone, Default)]
+pub struct GroupMessageReceipt {
+    pub rand: i32,
+    pub seq: i32,
 }

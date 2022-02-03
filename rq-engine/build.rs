@@ -10,6 +10,7 @@ fn main() -> Result<()> {
             "src/pb/msg/report.proto",
             "src/pb/msg/TextMsgExt.proto",
             "src/pb/structmsg/structmsg.proto",
+            "src/pb/cmd0x3bb/cmd0x3bb.proto",
             "src/pb/cmd0x6ff/smbcmd0x519.proto",
             "src/pb/cmd0x6ff/subcmd0x501.proto",
             "src/pb/notify/group0x857.proto",

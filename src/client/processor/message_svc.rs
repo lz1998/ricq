@@ -106,23 +106,12 @@ impl Client {
         msg: pb::msg::Message,
     ) -> RQResult<PrivateMessageEvent> {
         let head = msg.head.unwrap();
-        let sender = match self.find_friend(head.from_uin.unwrap()).await {
-            Some(friend) => Sender {
-                uin: friend.uin,
-                nickname: friend.nick.clone(),
-                ..Default::default()
-            },
-            None => Sender {
-                uin: head.from_uin.unwrap(),
-                nickname: head.from_nick.as_ref().unwrap().clone(),
-                ..Default::default()
-            },
-        };
         Ok(PrivateMessageEvent {
             id: head.msg_seq(),
             target: head.to_uin.unwrap(),
             time: head.msg_time.unwrap(),
-            sender,
+            from_uin: head.from_uin.unwrap_or_default(),
+            from_nick: head.from_nick.unwrap_or_default(),
             self_id: self.uin().await,
             internal_id: if let Some(attr) =
                 &msg.body.as_ref().unwrap().rich_text.as_ref().unwrap().attr

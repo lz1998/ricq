@@ -10,6 +10,10 @@ pub mod msg {
     include!(concat!(env!("OUT_DIR"), "/msg.rs"));
 }
 
+pub mod cmd0x3bb {
+    include!(concat!(env!("OUT_DIR"), "/cmd0x3bb.rs"));
+}
+
 pub mod cmd0x6ff {
     include!(concat!(env!("OUT_DIR"), "/cmd0x6ff.rs"));
 }

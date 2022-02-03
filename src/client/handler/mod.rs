@@ -78,7 +78,7 @@ impl Handler for DefaultHandler {
                 println!("MESSAGE (GROUP={}): {}", m.group_code, m.elements)
             }
             QEvent::PrivateMessage(_, m) => {
-                println!("MESSAGE (FRIEND={}): {}", m.sender.uin, m.elements)
+                println!("MESSAGE (FRIEND={}): {}", m.from_uin, m.elements)
             }
             _ => println!("{:?}", e),
         }

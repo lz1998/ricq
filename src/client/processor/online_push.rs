@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use bytes::Bytes;
 use cached::Cached;
 
 use crate::client::handler::QEvent;
@@ -87,53 +86,11 @@ impl Client {
                 .append(&mut self.get_group_member_list(group.info.code).await?)
         }
 
-        let anon_info = part
-            .elems
-            .iter()
-            .find(|elem| matches!(elem.elem, Some(pb::msg::elem::Elem::AnonGroupMsg(..))))
-            .map(|elem| {
-                if let pb::msg::elem::Elem::AnonGroupMsg(anon_info) = elem.elem.as_ref().unwrap() {
-                    Some(anon_info.clone())
-                } else {
-                    None
-                }
-            })
-            .flatten();
-        let sender = if let Some(anon_info) = anon_info {
-            let anonymous_info = AnonymousInfo {
-                anonymous_nick: String::from_utf8_lossy(anon_info.anon_nick()).to_string(),
-                anonymous_id: Bytes::from(anon_info.anon_id.unwrap_or_default()),
-            };
-            Sender {
-                uin: 80000000,
-                nickname: anonymous_info.anonymous_nick.clone(),
-                anonymous_info,
-                is_friend: false,
-                card_name: "".to_string(),
-            }
-        } else {
-            let member = group
-                .members
-                .read()
-                .await
-                .iter()
-                .find(|m| m.uin == part.from_uin)
-                .unwrap()
-                .clone(); // todo
-            Sender {
-                uin: member.uin,
-                nickname: member.nickname.clone(),
-                card_name: member.card_name.clone(),
-                is_friend: self.find_friend(member.uin).await.is_some(),
-                anonymous_info: AnonymousInfo::default(),
-            }
-        };
-
         let group_message = GroupMessageEvent {
             id: part.seq,
             group_code: group.info.code,
             group_name: group.info.name.clone(),
-            sender,
+            from_uin: part.from_uin,
             time: part.time,
             original_obj: part.clone(),
             elements: MessageChain::from(part.elems),

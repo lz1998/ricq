@@ -2,8 +2,10 @@ use std::fmt;
 
 use prost::Message;
 
+use crate::elem::anonymous::Anonymous;
 use crate::pb::msg;
 
+pub mod anonymous;
 pub mod at;
 pub mod face;
 pub mod market_face;
@@ -19,6 +21,7 @@ pub enum RQElem {
     MarketFace(market_face::MarketFace),
     Dice(market_face::Dice),
     FingerGuessing(market_face::FingerGuessing),
+    Anonymous(anonymous::Anonymous),
     Other(Box<msg::elem::Elem>),
 }
 
@@ -56,6 +59,7 @@ impl From<msg::elem::Elem> for RQElem {
                     RQElem::MarketFace(f)
                 }
             }
+            msg::elem::Elem::AnonGroupMsg(e) => RQElem::Anonymous(Anonymous::from(e)),
             _ => RQElem::Other(Box::new(elem)),
         }
     }

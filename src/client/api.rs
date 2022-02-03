@@ -6,7 +6,8 @@ use bytes::{Buf, Bytes};
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
-use rq_engine::{pb, GroupMessageEvent, MessageChain};
+use rq_engine::elem::anonymous::Anonymous;
+use rq_engine::{pb, GroupMessageReceipt, MessageChain};
 
 use crate::client::Group;
 use crate::engine::command::{friendlist::*, oidb_svc::*, profile_service::*, wtlogin::*};
@@ -239,7 +240,7 @@ impl super::Client {
         &self,
         group_code: i64,
         message_chain: MessageChain,
-    ) -> RQResult<GroupMessageEvent> {
+    ) -> RQResult<GroupMessageReceipt> {
         let r: i32 = rand::random();
         let (tx, rx) = tokio::sync::oneshot::channel();
         {
@@ -255,27 +256,18 @@ impl super::Client {
             message_chain.clone().into(),
         );
         self.send(req).await?;
-        let mut event = GroupMessageEvent {
-            id: -1, // -1 for failed send
-            internal_id: r,
-            group_code,
-            sender: rq_engine::Sender {
-                uin: self.uin().await,
-                nickname: "".to_owned(), //todo self.engine.read().await.nickname.clone(),
-                ..Default::default()
-            },
-            time: chrono::Utc::now().timestamp() as i32,
-            elements: message_chain,
+        let mut receipt = GroupMessageReceipt {
+            rand: r,
             ..Default::default()
         };
         match tokio::time::timeout(Duration::from_secs(5), rx).await {
             Ok(Ok(seq)) => {
-                event.id = seq;
+                receipt.seq = seq;
             }
             Ok(Err(_)) => {} //todo
             Err(_) => {}
         }
-        Ok(event)
+        Ok(receipt)
     }
 
     /// 获取群成员信息
@@ -747,5 +739,19 @@ impl super::Client {
             .build_get_message_request_packet(sync_flag);
         let _ = self.send_and_wait(req).await?;
         Ok(())
+    }
+
+    /// 获取自己的匿名信息（用于发送群消息）
+    pub async fn get_anony_info(&self, group_code: i64) -> RQResult<Option<Anonymous>> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_get_anony_info_request(group_code);
+        let resp = self.send_and_wait(req).await?;
+        self.engine
+            .read()
+            .await
+            .decode_get_anony_info_response(resp.body)
     }
 }
