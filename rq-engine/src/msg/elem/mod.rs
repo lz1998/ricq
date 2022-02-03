@@ -2,7 +2,6 @@ use std::fmt;
 
 use prost::Message;
 
-use crate::elem::anonymous::Anonymous;
 use crate::pb::msg;
 
 pub mod anonymous;
@@ -17,11 +16,9 @@ pub enum RQElem {
     At(at::At),
     Text(text::Text),
     Face(face::Face),
-    Reply(reply::Reply),
     MarketFace(market_face::MarketFace),
     Dice(market_face::Dice),
     FingerGuessing(market_face::FingerGuessing),
-    Anonymous(anonymous::Anonymous),
     Other(Box<msg::elem::Elem>),
 }
 
@@ -48,7 +45,6 @@ impl From<msg::elem::Elem> for RQElem {
                 }
                 _ => RQElem::Other(Box::new(elem)),
             },
-            msg::elem::Elem::SrcMsg(e) => RQElem::Reply(reply::Reply::from(e)),
             msg::elem::Elem::MarketFace(e) => {
                 let f = market_face::MarketFace::from(e);
                 if f.name == "[骰子]" || f.name == "[随机骰子]" {
@@ -59,7 +55,6 @@ impl From<msg::elem::Elem> for RQElem {
                     RQElem::MarketFace(f)
                 }
             }
-            msg::elem::Elem::AnonGroupMsg(e) => RQElem::Anonymous(Anonymous::from(e)),
             _ => RQElem::Other(Box::new(elem)),
         }
     }
@@ -71,7 +66,6 @@ impl fmt::Display for RQElem {
             RQElem::At(e) => fmt::Display::fmt(e, f),
             RQElem::Text(e) => fmt::Display::fmt(e, f),
             RQElem::Face(e) => fmt::Display::fmt(e, f),
-            RQElem::Reply(e) => fmt::Display::fmt(e, f),
             _ => write!(f, ""),
         }
     }

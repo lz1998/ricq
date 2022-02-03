@@ -12,9 +12,9 @@ pub struct Anonymous {
     pub color: String,
 }
 
-impl From<Anonymous> for Vec<msg::elem::Elem> {
+impl From<Anonymous> for msg::elem::Elem {
     fn from(e: Anonymous) -> Self {
-        vec![msg::elem::Elem::AnonGroupMsg(msg::AnonymousGroupMessage {
+        msg::elem::Elem::AnonGroupMsg(msg::AnonymousGroupMessage {
             flags: Some(2),
             anon_id: None,
             anon_nick: Some(e.nick.into_bytes()),
@@ -22,7 +22,7 @@ impl From<Anonymous> for Vec<msg::elem::Elem> {
             expire_time: Some(e.expire_time),
             bubble_id: Some(e.bubble_index),
             rank_color: Some(e.color.into_bytes()),
-        })]
+        })
     }
 }
 
