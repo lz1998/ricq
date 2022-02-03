@@ -298,15 +298,11 @@ impl super::Client {
 
     /// 通过群号获取群
     pub async fn find_group(&self, code: i64) -> Option<Arc<Group>> {
-        for g in self.group_list.read().await.iter() {
-            if g.info.code == code {
-                return Some(g.clone());
-            }
-        }
-        None
+        let groups = self.groups.read().await;
+        Some(groups.get(&code)?.clone())
     }
 
-    /// 通过群号从服务器获取群，请先尝试 find_group
+    /// 批量获取群信息
     pub async fn get_group_infos(&self, group_codes: Vec<i64>) -> RQResult<Vec<GroupInfo>> {
         let req = self
             .engine
@@ -320,8 +316,31 @@ impl super::Client {
             .decode_group_info_response(resp.body)
     }
 
-    /// 刷新群列表 TODO 获取群成员列表
-    pub async fn reload_group_list(self: &Arc<Self>) -> RQResult<()> {
+    /// 获取群信息，请先尝试 find_group
+    pub async fn get_group_info(&self, group_code: i64) -> RQResult<Option<GroupInfo>> {
+        Ok(self.get_group_infos(vec![group_code]).await?.pop())
+    }
+
+    /// 刷新单个群信息
+    pub async fn reload_group(&self, group_code: i64) -> RQResult<()> {
+        let group_info = self
+            .get_group_info(group_code)
+            .await?
+            .ok_or(RQError::Other("failed to get group".into()))?;
+        let members = self.get_group_member_list(group_code).await?;
+        let mut groups = self.groups.write().await;
+        groups.insert(
+            group_info.code,
+            Arc::new(Group {
+                info: group_info,
+                members: RwLock::new(members),
+            }),
+        );
+        Ok(())
+    }
+
+    /// 刷新群列表
+    pub async fn reload_groups(self: &Arc<Self>) -> RQResult<()> {
         // 获取群列表
         let mut vec_cookie = Bytes::new();
         let mut groups = Vec::new();
@@ -336,21 +355,24 @@ impl super::Client {
             }
         }
 
-        let mut groups = stream::iter(groups)
+        let group_list: Vec<(i64, Arc<Group>)> = stream::iter(groups)
             .map(|g| async move {
                 let mem_list = self.get_group_member_list(g.code).await.unwrap_or_default();
-                Arc::new(Group {
-                    info: g,
-                    members: RwLock::new(mem_list),
-                })
+                (
+                    g.code,
+                    Arc::new(Group {
+                        info: g,
+                        members: RwLock::new(mem_list),
+                    }),
+                )
             })
             .buffered(10)
             .collect()
             .await;
 
-        let mut group_list = self.group_list.write().await;
-        group_list.clear();
-        group_list.append(&mut groups);
+        let mut groups = self.groups.write().await;
+        groups.clear();
+        groups.extend(group_list);
         Ok(())
     }
 

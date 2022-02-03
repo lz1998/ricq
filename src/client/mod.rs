@@ -42,7 +42,7 @@ pub struct Client {
     // address
     pub address: RwLock<AddressInfo>,
     pub friend_list: RwLock<Vec<Arc<FriendInfo>>>,
-    pub group_list: RwLock<Vec<Arc<Group>>>,
+    pub groups: RwLock<HashMap<i64, Arc<Group>>>,
     pub online_clients: RwLock<Vec<OtherClientInfo>>,
 
     // statics

@@ -128,10 +128,10 @@ async fn main() -> Result<()> {
             .expect("failed to reload friend list");
         println!("{:?}", client.friend_list.read().await);
         client
-            .reload_group_list()
+            .reload_groups()
             .await
             .expect("failed to reload group list");
-        let group_list = client.group_list.read().await;
+        let group_list = client.groups.read().await;
         println!("{:?}", group_list);
     }
     let r = client.refresh_status().await;

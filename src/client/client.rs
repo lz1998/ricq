@@ -22,7 +22,6 @@ impl super::Client {
         let (out_pkt_sender, _) = tokio::sync::broadcast::channel(1024);
         let (disconnect_signal, _) = tokio::sync::broadcast::channel(1024);
 
-        
         Client {
             handler: Box::new(handler),
             engine: RwLock::new(Engine::new(device, version)),
@@ -38,7 +37,7 @@ impl super::Client {
             account_info: Default::default(),
             address: Default::default(),
             friend_list: Default::default(),
-            group_list: Default::default(),
+            groups: Default::default(),
             online_clients: Default::default(),
             last_message_time: Default::default(),
             start_time: chrono::Utc::now().timestamp() as i32,
