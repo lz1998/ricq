@@ -36,7 +36,7 @@ impl super::Client {
             receipt_waiters: Default::default(),
             account_info: Default::default(),
             address: Default::default(),
-            friend_list: Default::default(),
+            friends: Default::default(),
             groups: Default::default(),
             online_clients: Default::default(),
             last_message_time: Default::default(),

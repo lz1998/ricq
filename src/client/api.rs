@@ -298,8 +298,7 @@ impl super::Client {
 
     /// 通过群号获取群
     pub async fn find_group(&self, code: i64) -> Option<Arc<Group>> {
-        let groups = self.groups.read().await;
-        Some(groups.get(&code)?.clone())
+        self.groups.read().await.get(&code).cloned()
     }
 
     /// 批量获取群信息
@@ -379,31 +378,26 @@ impl super::Client {
     /// 刷新好友列表
     pub async fn reload_friend_list(&self) -> RQResult<()> {
         let mut cur_friend_count = 0;
-        let mut friends = Vec::new();
+        let mut friend_list = Vec::new();
         loop {
             let resp = self.get_friend_list(cur_friend_count, 150, 0, 0).await?;
             cur_friend_count += resp.list.len() as i16;
             for f in resp.list {
-                friends.push(Arc::new(f));
+                friend_list.push((f.uin, Arc::new(f)));
             }
             if cur_friend_count >= resp.total_count {
                 break;
             }
         }
-        let mut friend_list = self.friend_list.write().await;
-        friend_list.clear();
-        friend_list.append(&mut friends);
+        let mut friends = self.friends.write().await;
+        friends.clear();
+        friends.extend(friend_list);
         Ok(())
     }
 
     /// 根据 uin 获取好友
     pub async fn find_friend(&self, uin: i64) -> Option<Arc<FriendInfo>> {
-        self.friend_list
-            .read()
-            .await
-            .iter()
-            .find(|f| f.uin == uin)
-            .cloned()
+        self.friends.read().await.get(&uin).cloned()
     }
 
     /// 获取群成员列表 (low level api)
