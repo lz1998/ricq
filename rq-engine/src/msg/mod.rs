@@ -116,8 +116,12 @@ mod tests {
             name: "xx".into(),
             ..Default::default()
         });
+        chain.push(elem::light_app::LightApp::new("{}".into()));
         println!("{}", chain);
         println!("{:?}", chain.reply());
         println!("{:?}", chain.anonymous());
+        for item in chain {
+            println!("{:?}", item)
+        }
     }
 }

@@ -7,6 +7,7 @@ use crate::pb::msg;
 pub mod anonymous;
 pub mod at;
 pub mod face;
+pub mod light_app;
 pub mod market_face;
 pub mod reply;
 pub mod text;
@@ -19,6 +20,7 @@ pub enum RQElem {
     MarketFace(market_face::MarketFace),
     Dice(market_face::Dice),
     FingerGuessing(market_face::FingerGuessing),
+    LightApp(light_app::LightApp),
     Other(Box<msg::elem::Elem>),
 }
 
@@ -55,6 +57,7 @@ impl From<msg::elem::Elem> for RQElem {
                     RQElem::MarketFace(f)
                 }
             }
+            msg::elem::Elem::LightApp(e) => RQElem::LightApp(light_app::LightApp::from(e)),
             _ => RQElem::Other(Box::new(elem)),
         }
     }
