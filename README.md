@@ -1,9 +1,11 @@
 # RS-QQ
-qq-android协议的rust实现 移植于MiraiGo
 
+qq-android 协议的 rust 实现 移植于 MiraiGo、OICQ、Mirai
 
 # 已完成功能/开发计划
+
 #### 登录
+
 - [x] 账号密码登录
 - [x] 二维码登录
 - [x] 验证码提交
@@ -11,10 +13,12 @@ qq-android协议的rust实现 移植于MiraiGo
 - [x] 错误信息解析
 
 #### 消息类型
+
 - [x] 文本
 - [x] 表情
 - [x] At
 - [x] 回复
+- [x] 匿名
 - [x] 骰子
 - [x] 石头剪刀布
 - [ ] 图片
@@ -27,13 +31,14 @@ qq-android协议的rust实现 移植于MiraiGo
 - [ ] 群文件(上传与接收信息)
 
 #### 事件
+
 - [x] 群消息
 - [x] 好友消息
 - [ ] 临时会话消息
 - [ ] 登录号加群
 - [ ] 登录号退群(包含T出)
 - [ ] 新成员进群/退群
-- [ ] 群/好友消息撤回 
+- [ ] 群/好友消息撤回
 - [ ] 群禁言
 - [ ] 群成员权限变更
 - [ ] 收到邀请进群通知
@@ -41,9 +46,10 @@ qq-android协议的rust实现 移植于MiraiGo
 - [ ] 新好友
 - [ ] 新好友请求
 - [ ] 客户端离线
-- [ ] 群提示 (戳一戳/运气王等) 
+- [ ] 群提示 (戳一戳/运气王等)
 
 #### 主动操作
+
 > 为防止滥用，将不支持主动邀请新成员进群
 
 - [x] 发送群消息
@@ -75,20 +81,21 @@ qq-android协议的rust实现 移植于MiraiGo
 - [ ] 获取陌生人信息
 
 #### 敏感操作
+
 > 由于[QQ钱包支付用户服务协议](https://www.tenpay.com/v2/html5/basic/public/agreement/protocol_mqq_pay.shtml), 将不支持一切有关QQ钱包的协议
 
->4.13 您不得利用本服务实施下列任一的行为：
->\
->     （9） **侵害QQ钱包支付服务系統；**
+> 4.13 您不得利用本服务实施下列任一的行为：
+> \
+> （9） **侵害QQ钱包支付服务系統；**
 
 - [ ] ~~QQ钱包协议(收款/付款等)~~
-
 
 ## 如何使用
 
 本项目是协议 lib ，如果需要直接运行，请自行基于本项目构建 (当然，必须使用 AGPL-v3 协议开源)
 
 这里有几个可参考例子：
+
 - [(WIP)Walle-Q](https://github.com/abrahum/walle-q) OneBot 协议
 - [rq-tower-demo](https://github.com/lz1998/rq-tower/tree/main/examples/demo) 直接使用 Rust 开发
 
