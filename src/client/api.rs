@@ -8,6 +8,7 @@ use tokio::sync::RwLock;
 
 use rq_engine::{pb, GroupMessageEvent, MessageChain};
 
+use crate::client::Group;
 use crate::engine::command::{friendlist::*, oidb_svc::*, profile_service::*, wtlogin::*};
 use crate::engine::structs::{FriendInfo, GroupInfo, GroupMemberInfo};
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
@@ -296,12 +297,9 @@ impl super::Client {
     }
 
     /// 通过群号获取群
-    pub async fn find_group(
-        &self,
-        code: i64,
-    ) -> Option<Arc<(GroupInfo, RwLock<Vec<GroupMemberInfo>>)>> {
+    pub async fn find_group(&self, code: i64) -> Option<Arc<Group>> {
         for g in self.group_list.read().await.iter() {
-            if g.0.code == code {
+            if g.info.code == code {
                 return Some(g.clone());
             }
         }
@@ -309,10 +307,7 @@ impl super::Client {
     }
 
     /// 通过群号从服务器获取群，请先尝试 find_group
-    pub async fn get_group_infos(
-        &self,
-        group_codes: Vec<i64>,
-    ) -> RQResult<Vec<pb::oidb::RspGroupInfo>> {
+    pub async fn get_group_infos(&self, group_codes: Vec<i64>) -> RQResult<Vec<GroupInfo>> {
         let req = self
             .engine
             .read()
@@ -344,7 +339,10 @@ impl super::Client {
         let mut groups = stream::iter(groups)
             .map(|g| async move {
                 let mem_list = self.get_group_member_list(g.code).await.unwrap_or_default();
-                Arc::new((g, RwLock::new(mem_list)))
+                Arc::new(Group {
+                    info: g,
+                    members: RwLock::new(mem_list),
+                })
             })
             .buffered(10)
             .collect()

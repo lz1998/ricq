@@ -42,7 +42,7 @@ pub struct Client {
     // address
     pub address: RwLock<AddressInfo>,
     pub friend_list: RwLock<Vec<Arc<FriendInfo>>>,
-    pub group_list: RwLock<Vec<Arc<(GroupInfo, RwLock<Vec<GroupMemberInfo>>)>>>,
+    pub group_list: RwLock<Vec<Arc<Group>>>,
     pub online_clients: RwLock<Vec<OtherClientInfo>>,
 
     // statics
@@ -53,4 +53,11 @@ pub struct Client {
     group_message_builder: RwLock<cached::TimedCache<i32, Vec<GroupMessagePart>>>,
     /// 每个 28 Byte
     c2c_cache: RwLock<cached::TimedCache<(i64, i64, i32, i64), ()>>,
+}
+
+// TODO 大群会占用大量内存，可以考虑提供 trait，用磁盘存储
+#[derive(Default, Debug)]
+pub struct Group {
+    info: GroupInfo,
+    members: RwLock<Vec<GroupMemberInfo>>,
 }

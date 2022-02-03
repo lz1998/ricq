@@ -1,8 +1,8 @@
-use crate::command::online_push::GroupMessagePart;
-use crate::msg::MessageChain;
 use bytes::Bytes;
 
+use crate::command::online_push::GroupMessagePart;
 use crate::jce;
+use crate::msg::MessageChain;
 
 #[derive(Default, Debug)]
 pub struct AccountInfo {
@@ -52,9 +52,12 @@ pub struct GroupInfo {
     pub group_level: u32,
     pub member_count: u16,
     pub max_member_count: u16,
+    // 全群禁言时间
+    pub shut_up_timestamp: i64,
+    // 自己被禁言时间
+    pub my_shut_up_timestamp: i64,
     // 最后一条信息的SEQ,只有通过 GetGroupInfo 函数获取的 GroupInfo 才会有
     pub last_msg_seq: i64,
-    // lock: RWMutex todo
 }
 
 #[derive(Debug, Default, Clone)]

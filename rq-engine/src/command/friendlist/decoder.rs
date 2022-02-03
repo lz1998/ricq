@@ -49,9 +49,9 @@ impl super::super::super::Engine {
         let mut r = Jce::new(&mut fl_resp);
         let vec_cookie: Bytes = r.get_by_tag(4).map_err(RQError::from)?;
         let groups: Vec<jce::TroopNumber> = r.get_by_tag(5).map_err(RQError::from)?;
-        let mut l: Vec<GroupInfo> = Vec::new();
-        for g in groups {
-            l.push(GroupInfo {
+        let l = groups
+            .into_iter()
+            .map(|g| GroupInfo {
                 uin: g.group_uin,
                 code: g.group_code,
                 name: g.group_name,
@@ -59,9 +59,11 @@ impl super::super::super::Engine {
                 owner_uin: g.group_owner_uin,
                 member_count: g.member_num as u16,
                 max_member_count: g.max_group_member_num as u16,
+                shut_up_timestamp: g.shut_up_timestamp,
+                my_shut_up_timestamp: g.my_shut_up_timestamp,
                 ..Default::default()
             })
-        }
+            .collect();
         Ok(GroupListResponse {
             groups: l,
             vec_cookie,

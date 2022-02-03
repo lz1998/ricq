@@ -79,12 +79,12 @@ impl Client {
             Some(group) => group,
             None => return Err(RQError::Other("TODO: load group from server".into())), // TODO get group from server
         };
-        if group.0.member_count == 0 {
+        if group.info.member_count == 0 {
             group
-                .1
+                .members
                 .write()
                 .await
-                .append(&mut self.get_group_member_list(group.0.code).await?)
+                .append(&mut self.get_group_member_list(group.info.code).await?)
         }
 
         let anon_info = part
@@ -113,7 +113,7 @@ impl Client {
             }
         } else {
             let member = group
-                .1
+                .members
                 .read()
                 .await
                 .iter()
@@ -131,8 +131,8 @@ impl Client {
 
         let group_message = GroupMessageEvent {
             id: part.seq,
-            group_code: group.0.code,
-            group_name: group.0.name.clone(),
+            group_code: group.info.code,
+            group_name: group.info.name.clone(),
             sender,
             time: part.time,
             original_obj: part.clone(),
