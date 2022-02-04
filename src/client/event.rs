@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-use rq_engine::structs::{GroupMessage, PrivateMessage};
-
+use crate::structs::{Group, GroupMemberInfo, GroupMessage, PrivateMessage};
 use crate::Client;
 
 #[derive(Clone, derivative::Derivative)]
@@ -13,13 +12,23 @@ pub struct GroupMessageEvent {
 }
 
 impl GroupMessageEvent {
-    pub fn group_name(&self) -> String {
-        // lazy load
-        todo!()
+    pub async fn group(&self) -> Option<Arc<Group>> {
+        let group = self.client.find_group(self.message.group_code).await;
+        if group.is_some() {
+            return group;
+        }
+        self.client.reload_group(self.message.group_code).await.ok();
+        self.client.find_group(self.message.group_code).await
     }
-    pub fn sender_nick(&self) -> String {
-        // lazy load
-        todo!()
+
+    pub async fn member(&self) -> Option<GroupMemberInfo> {
+        let group = self.group().await?;
+        let members = group.members.read().await;
+        members
+            .iter()
+            .filter(|m| m.uin == self.message.from_uin)
+            .last()
+            .cloned()
     }
 }
 
