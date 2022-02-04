@@ -7,9 +7,9 @@ use tokio::time::{sleep, Duration};
 
 use rs_qq::client::handler::DefaultHandler;
 use rs_qq::client::Client;
-use rs_qq::engine::command::wtlogin::{LoginResponse, QRCodeState};
-use rs_qq::engine::protocol::device::Device;
-use rs_qq::engine::protocol::version::{get_version, Protocol};
+use rs_qq::device::Device;
+use rs_qq::version::{get_version, Protocol};
+use rs_qq::{LoginResponse, QRCodeState};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -101,7 +101,7 @@ async fn main() -> Result<()> {
     client.register_client().await.unwrap();
     {
         client
-            .reload_friend_list()
+            .reload_friends()
             .await
             .expect("failed to reload friend list");
         println!("{:?}", client.friends.read().await);

@@ -369,7 +369,7 @@ impl super::Client {
     }
 
     /// 刷新好友列表
-    pub async fn reload_friend_list(&self) -> RQResult<()> {
+    pub async fn reload_friends(&self) -> RQResult<()> {
         let mut cur_friend_count = 0;
         let mut friend_list = Vec::new();
         loop {
