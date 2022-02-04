@@ -6,6 +6,7 @@ use bytes::{Buf, Bytes};
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
+use rq_engine::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
 use rq_engine::elem::anonymous::Anonymous;
 use rq_engine::{pb, GroupMessageReceipt, MessageChain};
 
@@ -753,5 +754,37 @@ impl super::Client {
             .read()
             .await
             .decode_get_anony_info_response(resp.body)
+    }
+
+    /// 分享群音乐
+    pub async fn send_group_music_share(
+        &self,
+        group_code: i64,
+        music_share: MusicShare,
+        music_type: MusicType,
+    ) -> RQResult<()> {
+        let req = self.engine.read().await.build_share_music_request_packet(
+            SendMusicTarget::Group(group_code),
+            music_share,
+            music_type.version(),
+        );
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
+    /// 分享好友音乐
+    pub async fn send_friend_music_share(
+        &self,
+        uin: i64,
+        music_share: MusicShare,
+        music_type: MusicType,
+    ) -> RQResult<()> {
+        let req = self.engine.read().await.build_share_music_request_packet(
+            SendMusicTarget::Friend(uin),
+            music_share,
+            music_type.version(),
+        );
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
     }
 }

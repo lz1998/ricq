@@ -1,6 +1,7 @@
 use bytes::{BufMut, BytesMut};
 
 use crate::command::common::PbToBytes;
+use crate::command::oidb_svc::music::{MusicShare, MusicVersion, SendMusicTarget};
 use crate::pb;
 use crate::protocol::packet::Packet;
 
@@ -283,5 +284,52 @@ impl super::super::super::Engine {
         };
         let payload = self.transport.encode_oidb_packet(0xe07, 0, body.to_bytes());
         self.uni_packet("OidbSvc.0xe07_0", payload)
+    }
+
+    pub fn build_share_music_request_packet(
+        &self,
+        send_music_target: SendMusicTarget,
+        music_share: MusicShare,
+        music_version: &'static MusicVersion,
+    ) -> Packet {
+        let body = pb::oidb::Db77ReqBody {
+            app_id: music_version.app_id,
+            app_type: music_version.app_type,
+            msg_style: if music_share.music_url.is_empty() {
+                0
+            } else {
+                4
+            },
+            client_info: Some(pb::oidb::Db77ClientInfo {
+                platform: music_version.platform,
+                sdk_version: music_version.sdk_version.into(),
+                android_package_name: music_version.package_name.into(),
+                android_signature: music_version.signature.into(),
+                ..Default::default()
+            }),
+            send_type: send_music_target.send_type(),
+            recv_uin: match send_music_target {
+                SendMusicTarget::Friend(uin) => uin as u64,
+                SendMusicTarget::Group(code) => code as u64,
+                SendMusicTarget::Guild { channel_id, .. } => channel_id,
+            },
+            rich_msg_body: Some(pb::oidb::Db77RichMsgBody {
+                title: music_share.title,
+                summary: music_share.summary,
+                brief: music_share.brief,
+                url: music_share.url,
+                picture_url: music_share.picture_url,
+                music_url: music_share.music_url,
+                ..Default::default()
+            }),
+            recv_guild_id: if let SendMusicTarget::Guild { guild_id, .. } = send_music_target {
+                guild_id
+            } else {
+                0
+            },
+            ..Default::default()
+        };
+        let payload = self.transport.encode_oidb_packet(0xb77, 9, body.to_bytes());
+        self.uni_packet("OidbSvc.0xb77_9", payload)
     }
 }

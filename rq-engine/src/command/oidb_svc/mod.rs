@@ -1,7 +1,8 @@
+use crate::pb;
+
 pub mod builder;
 pub mod decoder;
-
-use crate::pb;
+pub mod music;
 
 // 群 @全体 剩余次数
 #[derive(Default, Debug)]
