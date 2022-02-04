@@ -2,16 +2,26 @@ use std::fmt;
 
 use prost::Message;
 
+pub use crate::msg::elem::{
+    anonymous::Anonymous,
+    at::At,
+    face::Face,
+    light_app::LightApp,
+    market_face::{Dice, FingerGuessing, MarketFace},
+    red_bag::RedBag,
+    reply::Reply,
+    text::Text,
+};
 use crate::pb::msg;
 
-pub mod anonymous;
-pub mod at;
-pub mod face;
-pub mod light_app;
-pub mod market_face;
-pub mod red_bag;
-pub mod reply;
-pub mod text;
+mod anonymous;
+mod at;
+mod face;
+mod light_app;
+mod market_face;
+mod red_bag;
+mod reply;
+mod text;
 
 #[derive(Debug, Clone)]
 pub enum RQElem {

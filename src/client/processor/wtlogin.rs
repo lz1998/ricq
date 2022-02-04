@@ -6,7 +6,8 @@ use bytes::{BufMut, Bytes, BytesMut};
 use crate::engine::command::wtlogin::*;
 use crate::engine::protocol::device::random_string;
 use crate::engine::protocol::transport::Transport;
-use crate::{Client, QEvent};
+use crate::handler::QEvent;
+use crate::Client;
 
 impl Client {
     pub async fn process_login_response(self: &Arc<Self>, login_response: LoginResponse) {

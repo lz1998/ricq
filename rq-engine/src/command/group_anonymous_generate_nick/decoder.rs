@@ -1,7 +1,7 @@
 use bytes::Bytes;
 
 use crate::command::common::PbToBytes;
-use crate::elem::anonymous::Anonymous;
+use crate::msg::elem::Anonymous;
 use crate::{pb, RQError, RQResult};
 
 impl super::super::super::Engine {

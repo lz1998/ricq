@@ -7,14 +7,16 @@ use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
 use rq_engine::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
-use rq_engine::elem::anonymous::Anonymous;
-use rq_engine::{pb, GroupMessageReceipt, MessageChain};
+use rq_engine::msg::elem::Anonymous;
+use rq_engine::msg::MessageChain;
+use rq_engine::pb;
 
 use crate::client::Group;
 use crate::engine::command::{friendlist::*, oidb_svc::*, profile_service::*, wtlogin::*};
-use crate::engine::structs::{FriendInfo, GroupInfo, GroupMemberInfo};
+use crate::engine::structs::{FriendInfo, GroupInfo, GroupMemberInfo, GroupMessageReceipt};
+use crate::handler::QEvent;
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
-use crate::{QEvent, RQError, RQResult};
+use crate::{RQError, RQResult};
 
 /// 登录相关
 impl super::Client {

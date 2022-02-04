@@ -8,16 +8,15 @@ use tokio::sync::{oneshot, Mutex};
 use rq_engine::command::online_push::GroupMessagePart;
 
 use crate::engine::protocol::packet::Packet;
-use crate::engine::structs::{
-    AccountInfo, AddressInfo, FriendInfo, GroupInfo, GroupMemberInfo, OtherClientInfo,
-};
+use crate::engine::structs::{AccountInfo, AddressInfo, FriendInfo, OtherClientInfo};
 use crate::engine::Engine;
+use crate::structs::Group;
 
-pub mod api;
-pub mod client;
+mod api;
+mod client;
 pub mod handler;
-pub mod net;
-pub mod processor;
+mod net;
+mod processor;
 
 pub struct Client {
     handler: Box<dyn handler::Handler + Sync + Send + 'static>,
@@ -28,11 +27,11 @@ pub struct Client {
     // 是否在线（是否可以快速重连）
     pub online: AtomicBool,
     // 停止网络
-    pub disconnect_signal: broadcast::Sender<()>,
+    disconnect_signal: broadcast::Sender<()>,
     pub heartbeat_enabled: AtomicBool,
 
-    pub out_pkt_sender: net::OutPktSender,
-    pub packet_promises: RwLock<HashMap<i32, oneshot::Sender<Packet>>>,
+    out_pkt_sender: net::OutPktSender,
+    packet_promises: RwLock<HashMap<i32, oneshot::Sender<Packet>>>,
     packet_waiters: RwLock<HashMap<String, oneshot::Sender<Packet>>>,
     receipt_waiters: Mutex<HashMap<i32, oneshot::Sender<i32>>>,
 
@@ -53,11 +52,4 @@ pub struct Client {
     group_message_builder: RwLock<cached::TimedCache<i32, Vec<GroupMessagePart>>>,
     /// 每个 28 Byte
     c2c_cache: RwLock<cached::TimedCache<(i64, i64, i32, i64), ()>>,
-}
-
-// TODO 大群会占用大量内存，可以考虑提供 trait，用磁盘存储
-#[derive(Default, Debug)]
-pub struct Group {
-    info: GroupInfo,
-    members: RwLock<Vec<GroupMemberInfo>>,
 }

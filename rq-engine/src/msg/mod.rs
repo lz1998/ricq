@@ -1,13 +1,12 @@
 use std::fmt;
 
 use elem::RQElem;
+use elem::*;
 
-use crate::elem::{anonymous::Anonymous, reply::Reply};
 use crate::pb::msg;
-use crate::pb::msg::elem::Elem;
 
 pub mod elem;
-pub mod fragment;
+mod fragment;
 
 #[derive(Debug, Default, Clone)]
 pub struct MessageChain(pub Vec<msg::elem::Elem>);
@@ -57,8 +56,8 @@ impl IntoIterator for MessageChain {
         self.0
             .into_iter()
             .filter_map(|e| match e {
-                Elem::SrcMsg(_) => None,
-                Elem::AnonGroupMsg(_) => None,
+                msg::elem::Elem::SrcMsg(_) => None,
+                msg::elem::Elem::AnonGroupMsg(_) => None,
                 _ => Some(e),
             })
             .map(RQElem::from)

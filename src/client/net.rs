@@ -14,7 +14,6 @@ use rq_engine::{RQError, RQResult};
 use super::Client;
 
 pub type OutPktSender = broadcast::Sender<Bytes>;
-pub type OutPktReceiver = broadcast::Receiver<Bytes>;
 pub type Connection = JoinHandle<()>;
 
 impl crate::Client {

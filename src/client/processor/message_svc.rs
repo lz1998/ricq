@@ -4,10 +4,12 @@ use cached::Cached;
 use futures::{stream, StreamExt};
 
 use rq_engine::command::message_svc::MessageSyncResponse;
+use rq_engine::msg::MessageChain;
+use rq_engine::pb;
+use rq_engine::structs::PrivateMessageEvent;
 
-use crate::engine::*;
+use crate::handler::QEvent;
 use crate::Client;
-use crate::QEvent;
 use crate::RQResult;
 
 impl Client {

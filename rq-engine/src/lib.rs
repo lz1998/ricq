@@ -5,12 +5,10 @@ use std::sync::atomic::{AtomicI32, AtomicI64, AtomicU16, Ordering};
 use rand::Rng;
 
 pub use error::{RQError, RQResult};
-pub use msg::*;
 use protocol::device::Device;
 use protocol::oicq;
 use protocol::transport::Transport;
 use protocol::version::Version;
-pub use structs::*;
 
 pub mod binary;
 pub mod command;

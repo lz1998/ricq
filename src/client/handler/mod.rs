@@ -7,7 +7,8 @@ use tokio::sync::{
     watch::Sender as WatchSender,
 };
 
-use crate::engine::*;
+use rq_engine::structs::{GroupMessageEvent, PrivateMessageEvent};
+
 use crate::Client;
 
 /// 所有需要外发的数据的枚举打包

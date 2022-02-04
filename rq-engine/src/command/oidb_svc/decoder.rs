@@ -2,7 +2,8 @@ use bytes::Bytes;
 
 use crate::command::common::PbToBytes;
 use crate::command::oidb_svc::GroupAtAllRemainInfo;
-use crate::{pb, GroupInfo, RQError, RQResult};
+use crate::structs::GroupInfo;
+use crate::{pb, RQError, RQResult};
 
 use super::OcrResponse;
 

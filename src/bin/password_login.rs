@@ -6,10 +6,10 @@ use anyhow::Result;
 use futures::StreamExt;
 use tokio_util::codec::{FramedRead, LinesCodec};
 
-use rs_qq::client::handler::DefaultHandler;
-use rs_qq::client::Client;
 use rs_qq::device::Device;
+use rs_qq::handler::DefaultHandler;
 use rs_qq::version::{get_version, Protocol};
+use rs_qq::Client;
 use rs_qq::LoginResponse;
 
 #[tokio::main]

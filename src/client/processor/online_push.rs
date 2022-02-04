@@ -1,11 +1,12 @@
 use std::sync::Arc;
 
 use cached::Cached;
+use rq_engine::msg::MessageChain;
+use rq_engine::structs::GroupMessageEvent;
 
 use crate::client::handler::QEvent;
 use crate::client::Client;
 use crate::engine::command::online_push::GroupMessagePart;
-use crate::engine::*;
 use crate::{RQError, RQResult};
 
 impl Client {
