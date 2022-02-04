@@ -1,9 +1,11 @@
 use std::sync::Arc;
 
 use cached::Cached;
-use rq_engine::msg::MessageChain;
-use rq_engine::structs::GroupMessageEvent;
 
+use rq_engine::msg::MessageChain;
+use rq_engine::structs::GroupMessage;
+
+use crate::client::event::GroupMessageEvent;
 use crate::client::handler::QEvent;
 use crate::client::Client;
 use crate::engine::command::online_push::GroupMessagePart;
@@ -62,10 +64,10 @@ impl Client {
         if let Some(group_msg) = group_msg {
             // message is finish
             self.handler
-                .handle(QEvent::GroupMessage(
-                    self.clone(),
-                    self.parse_group_message(group_msg).await?,
-                ))
+                .handle(QEvent::GroupMessage(GroupMessageEvent {
+                    client: self.clone(),
+                    message: self.parse_group_message(group_msg).await?,
+                }))
                 .await; //todo
         }
         Ok(())
@@ -74,26 +76,12 @@ impl Client {
     pub(crate) async fn parse_group_message(
         &self,
         part: GroupMessagePart,
-    ) -> RQResult<GroupMessageEvent> {
-        let group = match self.find_group(part.group_code).await {
-            Some(group) => group,
-            None => return Err(RQError::Other("TODO: load group from server".into())), // TODO get group from server
-        };
-        if group.info.member_count == 0 {
-            group
-                .members
-                .write()
-                .await
-                .append(&mut self.get_group_member_list(group.info.code).await?)
-        }
-
-        let group_message = GroupMessageEvent {
+    ) -> RQResult<GroupMessage> {
+        let group_message = GroupMessage {
             id: part.seq,
-            group_code: group.info.code,
-            group_name: group.info.name.clone(),
+            group_code: part.group_code,
             from_uin: part.from_uin,
             time: part.time,
-            original_obj: part.clone(),
             elements: MessageChain::from(part.elems),
             internal_id: part.rand,
         };

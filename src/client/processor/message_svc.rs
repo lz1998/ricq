@@ -6,8 +6,9 @@ use futures::{stream, StreamExt};
 use rq_engine::command::message_svc::MessageSyncResponse;
 use rq_engine::msg::MessageChain;
 use rq_engine::pb;
-use rq_engine::structs::PrivateMessageEvent;
+use rq_engine::structs::PrivateMessage;
 
+use crate::client::event::PrivateMessageEvent;
 use crate::handler::QEvent;
 use crate::Client;
 use crate::RQResult;
@@ -53,9 +54,12 @@ impl Client {
             .for_each(|msg| async {
                 match msg.head.as_ref().unwrap().msg_type() {
                     9 | 10 | 31 | 79 | 97 | 120 | 132 | 133 | 166 | 167 => {
-                        if let Ok(event) = self.parse_private_message(msg).await {
+                        if let Ok(private_message) = self.parse_private_message(msg).await {
                             self.handler
-                                .handle(QEvent::PrivateMessage(self.clone(), event))
+                                .handle(QEvent::PrivateMessage(PrivateMessageEvent {
+                                    client: self.clone(),
+                                    message: private_message,
+                                }))
                                 .await
                         }
                     }
@@ -103,18 +107,14 @@ impl Client {
         false
     }
 
-    pub async fn parse_private_message(
-        &self,
-        msg: pb::msg::Message,
-    ) -> RQResult<PrivateMessageEvent> {
+    pub async fn parse_private_message(&self, msg: pb::msg::Message) -> RQResult<PrivateMessage> {
         let head = msg.head.unwrap();
-        Ok(PrivateMessageEvent {
+        Ok(PrivateMessage {
             id: head.msg_seq(),
             target: head.to_uin.unwrap(),
             time: head.msg_time.unwrap(),
             from_uin: head.from_uin.unwrap_or_default(),
             from_nick: head.from_nick.unwrap_or_default(),
-            self_id: self.uin().await,
             internal_id: if let Some(attr) =
                 &msg.body.as_ref().unwrap().rich_text.as_ref().unwrap().attr
             {

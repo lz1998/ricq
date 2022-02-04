@@ -1,6 +1,5 @@
 use bytes::Bytes;
 
-use crate::command::online_push::GroupMessagePart;
 use crate::jce;
 use crate::msg::MessageChain;
 
@@ -94,10 +93,9 @@ pub struct FriendInfo {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct PrivateMessageEvent {
+pub struct PrivateMessage {
     pub id: i32,
     pub internal_id: i32,
-    pub self_id: i64, //?
     pub target: i64,
     pub time: i32,
     pub from_uin: i64,
@@ -106,15 +104,13 @@ pub struct PrivateMessageEvent {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct GroupMessageEvent {
+pub struct GroupMessage {
     pub id: i32,
     pub internal_id: i32,
     pub group_code: i64,
-    pub group_name: String,
     pub from_uin: i64,
     pub time: i32,
     pub elements: MessageChain,
-    pub original_obj: GroupMessagePart,
 }
 
 #[derive(Debug, Clone, Default)]

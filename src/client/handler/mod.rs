@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use async_trait::async_trait;
 use tokio::sync::{
     broadcast::Sender as BroadcastSender,
@@ -7,9 +5,7 @@ use tokio::sync::{
     watch::Sender as WatchSender,
 };
 
-use rq_engine::structs::{GroupMessageEvent, PrivateMessageEvent};
-
-use crate::Client;
+use crate::client::event::{GroupMessageEvent, PrivateMessageEvent};
 
 /// 所有需要外发的数据的枚举打包
 #[derive(Clone, derivative::Derivative)]
@@ -20,20 +16,11 @@ pub enum QEvent {
     /// 登录成功事件
     LoginEvent(i64),
     /// 群消息
-    GroupMessage(
-        #[derivative(Debug = "ignore")] Arc<Client>,
-        GroupMessageEvent,
-    ),
+    GroupMessage(GroupMessageEvent),
     /// 群自身消息
-    SelfGroupMessage(
-        #[derivative(Debug = "ignore")] Arc<Client>,
-        GroupMessageEvent,
-    ),
+    SelfGroupMessage(GroupMessageEvent),
     /// 私聊消息
-    PrivateMessage(
-        #[derivative(Debug = "ignore")] Arc<Client>,
-        PrivateMessageEvent,
-    ),
+    PrivateMessage(PrivateMessageEvent),
     // FriendList(decoder::friendlist::FriendListResponse),
     // GroupMemberInfo(structs::GroupMemberInfo),
 
@@ -47,13 +34,11 @@ pub trait Handler: Sync {
     async fn handle(&self, msg: QEvent) {
         match msg {
             QEvent::LoginEvent(uin) => self.handle_login_event(uin).await,
-            QEvent::GroupMessage(_, group_message) => {
-                self.handle_group_message(group_message).await
-            }
-            QEvent::SelfGroupMessage(_, group_message) => {
+            QEvent::GroupMessage(group_message) => self.handle_group_message(group_message).await,
+            QEvent::SelfGroupMessage(group_message) => {
                 self.handle_self_group_message(group_message).await
             }
-            QEvent::PrivateMessage(_, private_message) => {
+            QEvent::PrivateMessage(private_message) => {
                 self.handle_private_message(private_message).await
             }
             QEvent::TcpConnect => self.handle_tcp_connect_event().await,
@@ -75,11 +60,17 @@ pub struct DefaultHandler;
 impl Handler for DefaultHandler {
     async fn handle(&self, e: QEvent) {
         match e {
-            QEvent::GroupMessage(_, m) => {
-                println!("MESSAGE (GROUP={}): {}", m.group_code, m.elements)
+            QEvent::GroupMessage(m) => {
+                println!(
+                    "MESSAGE (GROUP={}): {}",
+                    m.message.group_code, m.message.elements
+                )
             }
-            QEvent::PrivateMessage(_, m) => {
-                println!("MESSAGE (FRIEND={}): {}", m.from_uin, m.elements)
+            QEvent::PrivateMessage(m) => {
+                println!(
+                    "MESSAGE (FRIEND={}): {}",
+                    m.message.from_uin, m.message.elements
+                )
             }
             _ => println!("{:?}", e),
         }

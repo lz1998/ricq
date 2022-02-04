@@ -14,6 +14,7 @@ use crate::structs::Group;
 
 mod api;
 mod client;
+pub mod event;
 pub mod handler;
 mod net;
 mod processor;
