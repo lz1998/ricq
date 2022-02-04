@@ -9,6 +9,7 @@ pub mod at;
 pub mod face;
 pub mod light_app;
 pub mod market_face;
+pub mod red_bag;
 pub mod reply;
 pub mod text;
 
@@ -21,6 +22,7 @@ pub enum RQElem {
     Dice(market_face::Dice),
     FingerGuessing(market_face::FingerGuessing),
     LightApp(light_app::LightApp),
+    RedBag(red_bag::RedBag),
     Other(Box<msg::elem::Elem>),
 }
 
@@ -58,6 +60,7 @@ impl From<msg::elem::Elem> for RQElem {
                 }
             }
             msg::elem::Elem::LightApp(e) => RQElem::LightApp(light_app::LightApp::from(e)),
+            msg::elem::Elem::QqWalletMsg(e) => RQElem::RedBag(red_bag::RedBag::from(e)),
             _ => RQElem::Other(Box::new(elem)),
         }
     }
