@@ -292,7 +292,14 @@ impl super::Client {
     }
 
     /// 通过群号获取群
-    pub async fn find_group(&self, code: i64) -> Option<Arc<Group>> {
+    pub async fn find_group(&self, code: i64, auto_reload: bool) -> Option<Arc<Group>> {
+        let group = self.groups.read().await.get(&code).cloned();
+        if group.is_some() {
+            return group;
+        }
+        if auto_reload {
+            self.reload_group(code).await.ok();
+        }
         self.groups.read().await.get(&code).cloned()
     }
 

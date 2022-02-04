@@ -13,12 +13,7 @@ pub struct GroupMessageEvent {
 
 impl GroupMessageEvent {
     pub async fn group(&self) -> Option<Arc<Group>> {
-        let group = self.client.find_group(self.message.group_code).await;
-        if group.is_some() {
-            return group;
-        }
-        self.client.reload_group(self.message.group_code).await.ok();
-        self.client.find_group(self.message.group_code).await
+        self.client.find_group(self.message.group_code, true).await
     }
 
     pub async fn member(&self) -> Option<GroupMemberInfo> {
