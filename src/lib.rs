@@ -6,7 +6,7 @@ pub use config::Config;
 pub use engine::command::wtlogin::{LoginResponse, QRCodeState};
 pub use engine::error::{RQError, RQResult};
 pub use engine::jce;
-pub use engine::msg::elem;
+pub use engine::msg;
 pub use engine::protocol::device;
 pub use engine::protocol::version;
 pub use engine::structs;
