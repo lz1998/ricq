@@ -17,6 +17,7 @@ impl super::super::super::Engine {
         forward: bool,
         elems: Vec<pb::msg::Elem>,
     ) -> Packet {
+        let sync_cookie = self.sync_cookie();
         let req = pb::msg::SendMessageRequest {
             routing_head: Some(pb::msg::RoutingHead {
                 grp: Some(pb::msg::Grp {
@@ -39,7 +40,7 @@ impl super::super::super::Engine {
             }),
             msg_seq: Some(self.next_group_seq()),
             msg_rand: Some(r),
-            sync_cookie: Some(Vec::new()),
+            sync_cookie: Some(sync_cookie),
             msg_via: Some(1),
             msg_ctrl: if forward {
                 Some(pb::msg::MsgCtrl { msg_flag: Some(4) })
@@ -120,6 +121,42 @@ impl super::super::super::Engine {
                 pkg_num: Some(pkg_num),
                 pkg_index: Some(pkg_index),
                 div_seq: Some(pkg_div),
+                ..Default::default()
+            }),
+            msg_body: Some(pb::msg::MessageBody {
+                rich_text: Some(pb::msg::RichText {
+                    elems,
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
+            msg_seq: Some(self.next_friend_seq()),
+            msg_rand: Some(r),
+            sync_cookie: Some(sync_cookie),
+            ..Default::default()
+        };
+        self.uni_packet("MessageSvc.PbSendMsg", req.to_bytes())
+    }
+
+    // MessageSvc.PbSendMsg
+    pub fn build_temp_sending_packet(
+        &self,
+        group_uin: i64,
+        user_uin: i64,
+        r: i32,
+        elems: Vec<pb::msg::Elem>,
+    ) -> Packet {
+        let sync_cookie = self.sync_cookie();
+        let req = pb::msg::SendMessageRequest {
+            routing_head: Some(pb::msg::RoutingHead {
+                grp_tmp: Some(pb::msg::GrpTmp {
+                    group_uin: Some(group_uin),
+                    to_uin: Some(user_uin),
+                }),
+                ..Default::default()
+            }),
+            content_head: Some(pb::msg::ContentHead {
+                pkg_num: Some(1),
                 ..Default::default()
             }),
             msg_body: Some(pb::msg::MessageBody {

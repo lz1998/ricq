@@ -7,6 +7,7 @@ use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
 use rq_engine::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
+use rq_engine::common::group_code2uin;
 use rq_engine::msg::elem::Anonymous;
 use rq_engine::msg::MessageChain;
 use rq_engine::pb;
@@ -645,9 +646,10 @@ impl super::Client {
         target: i64,
         message_chain: MessageChain,
     ) -> RQResult<()> {
+        let r: i32 = rand::random();
         let req = self.engine.read().await.build_friend_sending_packet(
             target,
-            495,
+            r,
             1,
             0,
             0,
@@ -794,6 +796,24 @@ impl super::Client {
             music_type.version(),
         );
         let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
+    /// 发送临时消息
+    pub async fn send_temp_message(
+        &self,
+        group_code: i64,
+        user_uin: i64,
+        message_chain: MessageChain,
+    ) -> RQResult<()> {
+        let r: i32 = rand::random();
+        let req = self.engine.read().await.build_temp_sending_packet(
+            group_code2uin(group_code),
+            user_uin,
+            r,
+            message_chain.into(),
+        );
+        self.send(req).await?;
         Ok(())
     }
 }
