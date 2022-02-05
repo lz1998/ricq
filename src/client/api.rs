@@ -816,4 +816,23 @@ impl super::Client {
         self.send(req).await?;
         Ok(())
     }
+
+    /// 修改群名片
+    pub async fn edit_group_member_card(
+        &self,
+        group_code: i64,
+        member_uin: i64,
+        card: String,
+    ) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_edit_group_tag_packet(
+                group_code,
+                member_uin,
+                card);
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
 }

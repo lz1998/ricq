@@ -130,4 +130,30 @@ impl super::super::super::Engine {
         };
         self.uni_packet("friendlist.GetTroopMemberListReq", pkt.freeze())
     }
+
+    // friendlist.ModifyGroupCardReq
+    pub fn build_edit_group_tag_packet(&self, group_code: i64, member_uin: i64, new_tag: String) -> Packet {
+        let payload = jce::ModifyGroupCardRequest {
+            group_code,
+            uin_info: vec![jce::UinInfo {
+                uin: member_uin,
+                flag: 31,
+                name: new_tag,
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let buf = jce::RequestDataVersion3 {
+            map: HashMap::from([("MGCREQ".to_string(), pack_uni_request_data(&payload.freeze()))]),
+        };
+        let pkt = jce::RequestPacket {
+            i_version: 3,
+            i_request_id: self.next_packet_seq(),
+            s_servant_name: "mqq.IMService.FriendListServiceServantObj".to_string(),
+            s_func_name: "ModifyGroupCardReq".to_string(),
+            s_buffer: buf.freeze(),
+            ..Default::default()
+        };
+        self.uni_packet("friendlist.ModifyGroupCardReq", pkt.freeze())
+    }
 }

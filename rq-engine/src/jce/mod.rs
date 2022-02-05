@@ -784,14 +784,13 @@ JceStruct!(TroopMemberInfo {
     39 => group_honor: Bytes,
 });
 
-// JceStruct!(ModifyGroupCardRequest {
-//
-// 		0 => zero: i64
-// 		1 => group_code: i64
-// 		2 => new_seq: i64
-// 		3 => uin_info: []
-// 	});
-//
+JceStruct!(ModifyGroupCardRequest {
+    0 => zero: i64,
+    1 => group_code: i64,
+    2 => new_seq: i64,
+    3 => uin_info: Vec<UinInfo>,
+});
+
 JceStruct!(UinInfo {
     0 => uin: i64,
     1 => flag: i64,
