@@ -67,7 +67,8 @@ impl super::super::super::Engine {
         is_invite: bool,
         accept: bool,
         block: bool,
-        reason: String) -> Packet {
+        reason: String,
+    ) -> Packet {
         let (sub_src_id, group_msg_type) = if is_invite { (10016, 2) } else { (31, 1) };
         let info_type = if accept { 11 } else { 12 };
         let req = pb::structmsg::ReqSystemMsgAction {
@@ -93,7 +94,12 @@ impl super::super::super::Engine {
     }
 
     // ProfileService.Pb.ReqSystemMsgAction.Friend
-    pub fn build_system_msg_friend_action_packet(&self, req_id: i64, requester: i64, accept: bool) -> Packet {
+    pub fn build_system_msg_friend_action_packet(
+        &self,
+        req_id: i64,
+        requester: i64,
+        accept: bool,
+    ) -> Packet {
         let info_type = if accept { 2 } else { 3 };
         let req = pb::structmsg::ReqSystemMsgAction {
             msg_type: 1,
@@ -105,7 +111,7 @@ impl super::super::super::Engine {
             action_info: Some(pb::structmsg::SystemMsgActionInfo {
                 r#type: info_type,
                 blacklist: false,
-                add_frd_sn_info: Some(pb::structmsg::AddFrdSnInfo{
+                add_frd_sn_info: Some(pb::structmsg::AddFrdSnInfo {
                     ..Default::default()
                 }),
                 ..Default::default()
