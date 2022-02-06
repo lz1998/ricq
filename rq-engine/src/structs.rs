@@ -94,8 +94,8 @@ pub struct FriendInfo {
 
 #[derive(Debug, Clone, Default)]
 pub struct PrivateMessage {
-    pub id: i32,
-    pub internal_id: i32,
+    pub seqs: Vec<i32>,
+    pub rands: Vec<i32>,
     pub target: i64,
     pub time: i32,
     pub from_uin: i64,
@@ -113,8 +113,10 @@ pub struct GroupMessage {
     pub elements: MessageChain,
 }
 
+// 用于撤回
 #[derive(Debug, Clone, Default)]
-pub struct GroupMessageReceipt {
-    pub rand: i32,
-    pub seq: i32,
+pub struct MessageReceipt {
+    pub seqs: Vec<i32>,
+    pub rands: Vec<i32>,
+    pub time: i64,
 }

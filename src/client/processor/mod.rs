@@ -80,7 +80,7 @@ impl super::Client {
                     let engine = cli.engine.read().await;
                     let _notify_msg_type = engine.decode_svc_notify(pkt.body).unwrap();
                     log_error!(
-                        cli.send(engine.build_get_message_request_packet(0)).await,
+                        cli.get_sync_message(0).await,
                         "process message svc notify error: {:?}"
                     )
                 }

@@ -25,7 +25,7 @@ impl Client {
                 .receipt_waiters
                 .lock()
                 .await
-                .remove(&group_message_part.seq)
+                .remove(&group_message_part.rand)
             {
                 let _ = tx.send(group_message_part.seq);
             }

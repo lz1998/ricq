@@ -10,14 +10,15 @@ impl super::super::super::Engine {
     pub fn build_group_sending_packet(
         &self,
         group_code: i64,
-        r: i32,
+        elems: Vec<pb::msg::Elem>,
+        ran: i32,
+        time: i64,
         pkg_num: i32,
         pkg_index: i32,
         pkg_div: i32,
         forward: bool,
-        elems: Vec<pb::msg::Elem>,
     ) -> Packet {
-        let sync_cookie = self.sync_cookie();
+        let sync_cookie = self.sync_cookie(time);
         let req = pb::msg::SendMessageRequest {
             routing_head: Some(pb::msg::RoutingHead {
                 grp: Some(pb::msg::Grp {
@@ -39,7 +40,7 @@ impl super::super::super::Engine {
                 ..Default::default()
             }),
             msg_seq: Some(self.next_group_seq()),
-            msg_rand: Some(r),
+            msg_rand: Some(ran),
             sync_cookie: Some(sync_cookie),
             msg_via: Some(1),
             msg_ctrl: if forward {
@@ -53,11 +54,10 @@ impl super::super::super::Engine {
     }
 
     // build sync_cookie
-    fn sync_cookie(&self) -> Vec<u8> {
+    fn sync_cookie(&self, time: i64) -> Vec<u8> {
         if !self.transport.sig.sync_cookie.is_empty() {
             return self.transport.sig.sync_cookie.to_vec();
         }
-        let time = chrono::Utc::now().timestamp() as i64;
         pb::msg::SyncCookie {
             time1: Some(time),
             time: Some(time),
@@ -73,9 +73,9 @@ impl super::super::super::Engine {
     }
 
     // MessageSvc.PbGetMsg
-    pub fn build_get_message_request_packet(&self, flag: i32) -> Packet {
+    pub fn build_get_message_request_packet(&self, flag: i32, time: i64) -> Packet {
         // start = 0, continue = 1, stop = 2
-        let sync_cookie = self.sync_cookie();
+        let sync_cookie = self.sync_cookie(time);
         let req = pb::msg::GetMessageRequest {
             sync_flag: Some(flag),
             sync_cookie: Some(sync_cookie),
@@ -102,13 +102,15 @@ impl super::super::super::Engine {
     pub fn build_friend_sending_packet(
         &self,
         target: i64,
-        r: i32,
+        elems: Vec<pb::msg::Elem>,
+        seq: i32,
+        ran: i32,
+        time: i64,
         pkg_num: i32,
         pkg_index: i32,
         pkg_div: i32,
-        elems: Vec<pb::msg::Elem>,
     ) -> Packet {
-        let sync_cookie = self.sync_cookie();
+        let sync_cookie = self.sync_cookie(time);
 
         let req = pb::msg::SendMessageRequest {
             routing_head: Some(pb::msg::RoutingHead {
@@ -130,8 +132,8 @@ impl super::super::super::Engine {
                 }),
                 ..Default::default()
             }),
-            msg_seq: Some(self.next_friend_seq()),
-            msg_rand: Some(r),
+            msg_seq: Some(seq),
+            msg_rand: Some(ran),
             sync_cookie: Some(sync_cookie),
             ..Default::default()
         };
@@ -143,10 +145,12 @@ impl super::super::super::Engine {
         &self,
         group_uin: i64,
         user_uin: i64,
-        r: i32,
         elems: Vec<pb::msg::Elem>,
+        seq: i32,
+        ran: i32,
+        time: i64,
     ) -> Packet {
-        let sync_cookie = self.sync_cookie();
+        let sync_cookie = self.sync_cookie(time);
         let req = pb::msg::SendMessageRequest {
             routing_head: Some(pb::msg::RoutingHead {
                 grp_tmp: Some(pb::msg::GrpTmp {
@@ -166,8 +170,8 @@ impl super::super::super::Engine {
                 }),
                 ..Default::default()
             }),
-            msg_seq: Some(self.next_friend_seq()),
-            msg_rand: Some(r),
+            msg_seq: Some(seq),
+            msg_rand: Some(ran),
             sync_cookie: Some(sync_cookie),
             ..Default::default()
         };
@@ -191,22 +195,32 @@ impl super::super::super::Engine {
         self.uni_packet("MessageSvc.PbGetGroupMsg", req.to_bytes())
     }
 
-    pub fn build_private_recall_packet(&self, uin: i64, msg_seq: i32, random: i32) -> Packet {
+    pub fn build_private_recall_packet(
+        &self,
+        uin: i64,
+        msg_time: i64,
+        seqs: Vec<i32>,
+        rands: Vec<i32>,
+    ) -> Packet {
         let req = pb::msg::MsgWithDrawReq {
             c2c_with_draw: vec![pb::msg::C2cMsgWithDrawReq {
-                msg_info: vec![pb::msg::C2cMsgInfo {
-                    from_uin: Some(self.uin()),
-                    to_uin: Some(uin),
-                    msg_time: Some(chrono::Utc::now().timestamp()),
-                    msg_uid: Some(0x0100_0000_0000_0000),
-                    msg_seq: Some(msg_seq),
-                    msg_random: Some(random),
-                    routing_head: Some(pb::msg::RoutingHead {
-                        c2c: Some(pb::msg::C2c { to_uin: Some(uin) }),
+                msg_info: seqs
+                    .into_iter()
+                    .zip(rands.into_iter())
+                    .map(|(seq, ran)| pb::msg::C2cMsgInfo {
+                        from_uin: Some(self.uin()),
+                        to_uin: Some(uin),
+                        msg_time: Some(msg_time),
+                        msg_uid: Some(0x0100_0000_0000_0000 | (ran as i64 & 0xFFFFFFFF)),
+                        msg_seq: Some(seq),
+                        msg_random: Some(ran),
+                        routing_head: Some(pb::msg::RoutingHead {
+                            c2c: Some(pb::msg::C2c { to_uin: Some(uin) }),
+                            ..Default::default()
+                        }),
                         ..Default::default()
-                    }),
-                    ..Default::default()
-                }],
+                    })
+                    .collect(),
                 long_message_flag: Some(0),
                 reserved: Some(vec![0x08, 0x00]),
                 sub_cmd: Some(1),
@@ -222,20 +236,23 @@ impl super::super::super::Engine {
         seqs: Vec<i32>,
         rands: Vec<i32>,
     ) -> Packet {
-        let req = pb::msg::GroupMsgWithDrawReq {
-            sub_cmd: Some(1),
-            group_code: Some(group_code),
-            user_def: Some(vec![0x08, 0x00]),
-            msg_list: seqs
-                .into_iter()
-                .zip(rands.into_iter())
-                .map(|(seq, ran)| pb::msg::GroupMsgInfo {
-                    msg_seq: Some(seq),
-                    msg_random: Some(ran),
-                    msg_type: Some(0),
-                })
-                .collect(),
-            group_type: None,
+        let req = pb::msg::MsgWithDrawReq {
+            group_with_draw: vec![pb::msg::GroupMsgWithDrawReq {
+                sub_cmd: Some(1),
+                group_code: Some(group_code),
+                user_def: Some(vec![0x08, 0x00]),
+                msg_list: seqs
+                    .into_iter()
+                    .zip(rands.into_iter())
+                    .map(|(seq, ran)| pb::msg::GroupMsgInfo {
+                        msg_seq: Some(seq),
+                        msg_random: Some(ran),
+                        msg_type: Some(0),
+                    })
+                    .collect(),
+                group_type: None,
+            }],
+            ..Default::default()
         };
         self.uni_packet("PbMessageSvc.PbMsgWithDraw", req.to_bytes())
     }

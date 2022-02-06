@@ -14,7 +14,7 @@ use rq_engine::pb;
 
 use crate::client::Group;
 use crate::engine::command::{friendlist::*, oidb_svc::*, profile_service::*, wtlogin::*};
-use crate::engine::structs::{FriendInfo, GroupInfo, GroupMemberInfo, GroupMessageReceipt};
+use crate::engine::structs::{FriendInfo, GroupInfo, GroupMemberInfo, MessageReceipt};
 use crate::handler::QEvent;
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
 use crate::{RQError, RQResult};
@@ -244,29 +244,34 @@ impl super::Client {
         &self,
         group_code: i64,
         message_chain: MessageChain,
-    ) -> RQResult<GroupMessageReceipt> {
-        let r: i32 = rand::random();
+    ) -> RQResult<MessageReceipt> {
+        let time = chrono::Utc::now().timestamp();
+        let ran = (rand::random::<u32>() >> 1) as i32;
         let (tx, rx) = tokio::sync::oneshot::channel();
         {
-            self.receipt_waiters.lock().await.insert(r, tx);
+            self.receipt_waiters.lock().await.insert(ran, tx);
         }
         let req = self.engine.read().await.build_group_sending_packet(
             group_code,
-            r,
+            message_chain.clone().into(),
+            ran,
+            time,
             1,
             0,
             0,
             false,
-            message_chain.clone().into(),
         );
         self.send(req).await?;
-        let mut receipt = GroupMessageReceipt {
-            rand: r,
-            ..Default::default()
+        let mut receipt = MessageReceipt {
+            seqs: vec![0],
+            rands: vec![ran],
+            time,
         };
         match tokio::time::timeout(Duration::from_secs(5), rx).await {
             Ok(Ok(seq)) => {
-                receipt.seq = seq;
+                if let Some(s) = receipt.seqs.first_mut() {
+                    *s = seq;
+                }
             }
             Ok(Err(_)) => {} //todo
             Err(_) => {}
@@ -645,18 +650,26 @@ impl super::Client {
         &self,
         target: i64,
         message_chain: MessageChain,
-    ) -> RQResult<()> {
-        let r: i32 = rand::random();
+    ) -> RQResult<MessageReceipt> {
+        let time = chrono::Utc::now().timestamp();
+        let seq = self.engine.read().await.next_friend_seq();
+        let ran = (rand::random::<u32>() >> 1) as i32;
         let req = self.engine.read().await.build_friend_sending_packet(
             target,
-            r,
+            message_chain.into(),
+            seq,
+            ran,
+            time,
             1,
             0,
             0,
-            message_chain.into(),
         );
         self.send(req).await?;
-        Ok(())
+        Ok(MessageReceipt {
+            seqs: vec![seq],
+            rands: vec![ran],
+            time,
+        })
     }
 
     pub async fn send_like(&self, uin: i64, count: i32) -> RQResult<()> {
@@ -665,19 +678,19 @@ impl super::Client {
         Ok(())
     }
 
-    // TODO 待测试
     // 撤回私聊消息
     pub async fn recall_private_message(
         &self,
         uin: i64,
-        msg_id: i32,
-        msg_internal_id: i32,
+        msg_time: i64,
+        seqs: Vec<i32>,
+        rands: Vec<i32>,
     ) -> RQResult<()> {
-        let req =
-            self.engine
-                .read()
-                .await
-                .build_private_recall_packet(uin, msg_id, msg_internal_id);
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_private_recall_packet(uin, msg_time, seqs, rands);
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
@@ -744,11 +757,12 @@ impl super::Client {
 
     // sync message
     pub async fn get_sync_message(&self, sync_flag: i32) -> RQResult<()> {
+        let time = chrono::Utc::now().timestamp();
         let req = self
             .engine
             .read()
             .await
-            .build_get_message_request_packet(sync_flag);
+            .build_get_message_request_packet(sync_flag, time);
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
@@ -806,12 +820,16 @@ impl super::Client {
         user_uin: i64,
         message_chain: MessageChain,
     ) -> RQResult<()> {
-        let r: i32 = rand::random();
+        let time = chrono::Utc::now().timestamp();
+        let seq = self.engine.read().await.next_friend_seq();
+        let ran = (rand::random::<u32>() >> 1) as i32;
         let req = self.engine.read().await.build_temp_sending_packet(
             group_code2uin(group_code),
             user_uin,
-            r,
             message_chain.into(),
+            seq,
+            ran,
+            time,
         );
         self.send(req).await?;
         Ok(())
