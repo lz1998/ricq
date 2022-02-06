@@ -35,4 +35,84 @@ impl super::super::super::Engine {
         let payload = req.to_bytes();
         self.uni_packet("ProfileService.Pb.ReqSystemMsgNew.Group", payload)
     }
+
+    // ProfileService.Pb.ReqSystemMsgNew.Friend
+    pub fn build_system_msg_new_friend_packet(&self) -> Packet {
+        let req = pb::structmsg::ReqSystemMsgNew {
+            msg_num: 20,
+            version: 1000,
+            checktype: 2,
+            flag: Some(pb::structmsg::FlagInfo {
+                frd_msg_discuss2_many_chat: 1,
+                frd_msg_get_busi_card: 1,
+                frd_msg_need_waiting_msg: 1,
+                frd_msg_uint32_need_all_unread_msg: 1,
+                grp_msg_mask_invite_auto_join: 1,
+                ..Default::default()
+            }),
+            friend_msg_type_flag: 1,
+            ..Default::default()
+        };
+        let payload = req.to_bytes();
+        self.uni_packet("ProfileService.Pb.ReqSystemMsgNew.Friend", payload)
+    }
+
+    // ProfileService.Pb.ReqSystemMsgAction.Group
+    pub fn build_system_msg_group_action_packet(
+        &self,
+        req_id: i64,
+        requester: i64,
+        group: i64,
+        msg_type: i32,
+        is_invite: bool,
+        accept: bool,
+        block: bool,
+        reason: String) -> Packet {
+        let (sub_src_id, group_msg_type) = if is_invite { (10016, 2) } else { (31, 1) };
+        let info_type = if accept { 11 } else { 12 };
+        let req = pb::structmsg::ReqSystemMsgAction {
+            msg_type,
+            msg_seq: req_id,
+            req_uin: requester,
+            sub_type: 1,
+            src_id: 3,
+            sub_src_id,
+            group_msg_type,
+            action_info: Some(pb::structmsg::SystemMsgActionInfo {
+                r#type: info_type,
+                group_code: group,
+                blacklist: block,
+                msg: reason,
+                sig: vec![],
+                ..Default::default()
+            }),
+            language: 1000,
+        };
+        let payload = req.to_bytes();
+        self.uni_packet("ProfileService.Pb.ReqSystemMsgAction.Group", payload)
+    }
+
+    // ProfileService.Pb.ReqSystemMsgAction.Friend
+    pub fn build_system_msg_friend_action_packet(&self, req_id: i64, requester: i64, accept: bool) -> Packet {
+        let info_type = if accept { 2 } else { 3 };
+        let req = pb::structmsg::ReqSystemMsgAction {
+            msg_type: 1,
+            msg_seq: req_id,
+            req_uin: requester,
+            sub_type: 1,
+            src_id: 6,
+            sub_src_id: 7,
+            action_info: Some(pb::structmsg::SystemMsgActionInfo {
+                r#type: info_type,
+                blacklist: false,
+                add_frd_sn_info: Some(pb::structmsg::AddFrdSnInfo{
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let payload = req.to_bytes();
+        self.uni_packet("ProfileService.Pb.ReqSystemMsgAction.Friend", payload)
+    }
 }
