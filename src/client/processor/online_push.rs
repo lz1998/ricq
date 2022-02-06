@@ -3,6 +3,7 @@ use std::sync::Arc;
 use cached::Cached;
 
 use rq_engine::msg::MessageChain;
+use rq_engine::pb::msg;
 use rq_engine::structs::GroupMessage;
 
 use crate::client::event::GroupMessageEvent;
@@ -47,17 +48,11 @@ impl Client {
                 // wait for more parts
                 None
             } else {
-                let mut parts = builder.cache_remove(&div_seq).unwrap_or_default();
-                parts.sort_by(|a, b| a.pkg_index.cmp(&b.pkg_index));
-                let mut merged = parts.remove(0);
-                for part in parts.into_iter() {
-                    merged.elems.extend(part.elems);
-                }
-                Some(merged)
+                Some(builder.cache_remove(&div_seq).unwrap_or_default())
             }
         } else {
             // single-part
-            Some(group_message_part)
+            Some(vec![group_message_part])
         };
 
         // handle message
@@ -75,15 +70,22 @@ impl Client {
 
     pub(crate) async fn parse_group_message(
         &self,
-        part: GroupMessagePart,
+        mut parts: Vec<GroupMessagePart>,
     ) -> RQResult<GroupMessage> {
+        parts.sort_by(|a, b| a.pkg_index.cmp(&b.pkg_index));
         let group_message = GroupMessage {
-            id: part.seq,
-            group_code: part.group_code,
-            from_uin: part.from_uin,
-            time: part.time,
-            elements: MessageChain::from(part.elems),
-            internal_id: part.rand,
+            seqs: parts.iter().map(|p| p.seq).collect(),
+            rands: parts.iter().map(|p| p.rand).collect(),
+            group_code: parts.first().map(|p| p.group_code).unwrap_or_default(),
+            from_uin: parts.first().map(|p| p.from_uin).unwrap_or_default(),
+            time: parts.first().map(|p| p.time).unwrap_or_default(),
+            elements: MessageChain::from(
+                parts
+                    .into_iter()
+                    .map(|p| p.elems)
+                    .flatten()
+                    .collect::<Vec<msg::Elem>>(),
+            ),
         };
         //todo extInfo
         //todo group_card_update

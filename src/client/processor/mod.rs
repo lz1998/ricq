@@ -91,7 +91,10 @@ impl super::Client {
                         .await
                         .decode_message_svc_packet(pkt.body)
                         .unwrap();
-                    cli.process_message_sync(resp).await.unwrap();
+                    log_error!(
+                        cli.process_message_sync(resp).await,
+                        "process message sync error: {:?}"
+                    )
                 }
                 "OnlinePush.ReqPush" => {
                     let engine = cli.engine.read().await;

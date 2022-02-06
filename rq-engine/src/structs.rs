@@ -105,8 +105,8 @@ pub struct PrivateMessage {
 
 #[derive(Debug, Clone, Default)]
 pub struct GroupMessage {
-    pub id: i32,
-    pub internal_id: i32,
+    pub seqs: Vec<i32>,
+    pub rands: Vec<i32>,
     pub group_code: i64,
     pub from_uin: i64,
     pub time: i32,

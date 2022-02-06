@@ -192,16 +192,12 @@ impl super::super::super::Engine {
     }
 
     pub fn build_private_recall_packet(&self, uin: i64, msg_seq: i32, random: i32) -> Packet {
-        let time = std::time::SystemTime::now()
-            .duration_since(std::time::SystemTime::UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
         let req = pb::msg::MsgWithDrawReq {
             c2c_with_draw: vec![pb::msg::C2cMsgWithDrawReq {
                 msg_info: vec![pb::msg::C2cMsgInfo {
                     from_uin: Some(self.uin()),
                     to_uin: Some(uin),
-                    msg_time: Some(time as i64),
+                    msg_time: Some(chrono::Utc::now().timestamp()),
                     msg_uid: Some(0x0100_0000_0000_0000),
                     msg_seq: Some(msg_seq),
                     msg_random: Some(random),
@@ -216,6 +212,30 @@ impl super::super::super::Engine {
                 sub_cmd: Some(1),
             }],
             ..Default::default()
+        };
+        self.uni_packet("PbMessageSvc.PbMsgWithDraw", req.to_bytes())
+    }
+
+    pub fn build_group_recall_packet(
+        &self,
+        group_code: i64,
+        seqs: Vec<i32>,
+        rands: Vec<i32>,
+    ) -> Packet {
+        let req = pb::msg::GroupMsgWithDrawReq {
+            sub_cmd: Some(1),
+            group_code: Some(group_code),
+            user_def: Some(vec![0x08, 0x00]),
+            msg_list: seqs
+                .into_iter()
+                .zip(rands.into_iter())
+                .map(|(seq, ran)| pb::msg::GroupMsgInfo {
+                    msg_seq: Some(seq),
+                    msg_random: Some(ran),
+                    msg_type: Some(0),
+                })
+                .collect(),
+            group_type: None,
         };
         self.uni_packet("PbMessageSvc.PbMsgWithDraw", req.to_bytes())
     }

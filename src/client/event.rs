@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use rq_engine::RQResult;
+
 use crate::structs::{Group, GroupMemberInfo, GroupMessage, PrivateMessage};
 use crate::Client;
 
@@ -24,6 +26,17 @@ impl GroupMessageEvent {
             .filter(|m| m.uin == self.message.from_uin)
             .last()
             .cloned()
+    }
+
+    pub async fn recall(&self) -> RQResult<()> {
+        // TODO check permission
+        self.client
+            .recall_group_message(
+                self.message.group_code,
+                self.message.seqs.clone(),
+                self.message.rands.clone(),
+            )
+            .await
     }
 }
 

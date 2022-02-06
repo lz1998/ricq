@@ -828,10 +828,23 @@ impl super::Client {
             .engine
             .read()
             .await
-            .build_edit_group_tag_packet(
-                group_code,
-                member_uin,
-                card);
+            .build_edit_group_tag_packet(group_code, member_uin, card);
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
+    /// 撤回群消息
+    pub async fn recall_group_message(
+        &self,
+        group_code: i64,
+        seqs: Vec<i32>,
+        rands: Vec<i32>,
+    ) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_recall_packet(group_code, seqs, rands);
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
