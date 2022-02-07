@@ -84,6 +84,15 @@ impl Handler for DefaultHandler {
                     m.message.from_uin, m.message.elements
                 )
             }
+            QEvent::GroupRequest(m) => {
+                println!(
+                    "REQUEST (GROUP={}, UIN={}): {}",
+                    m.request.group_code, m.request.req_uin, m.request.message
+                )
+            }
+            QEvent::FriendRequest(m) => {
+                println!("REQUEST (UIN={}): {}", m.request.req_uin, m.request.message)
+            }
             _ => println!("{:?}", e),
         }
     }
