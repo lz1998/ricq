@@ -5,7 +5,7 @@ use tokio::sync::{
     watch::Sender as WatchSender,
 };
 
-use crate::client::event::{GroupMessageEvent, PrivateMessageEvent};
+use crate::client::event::{GroupMessageEvent, GroupRequestEvent, PrivateMessageEvent};
 
 /// 所有需要外发的数据的枚举打包
 #[derive(Clone, derivative::Derivative)]
@@ -21,11 +21,13 @@ pub enum QEvent {
     SelfGroupMessage(GroupMessageEvent),
     /// 私聊消息
     PrivateMessage(PrivateMessageEvent),
+    /// 加群申请
+    GroupRequest(GroupRequestEvent),
     // FriendList(decoder::friendlist::FriendListResponse),
     // GroupMemberInfo(structs::GroupMemberInfo),
 
     // 群消息发送成功事件 内部处理
-    // GroupMessageReceipt(GroupMessageReceiptEvent),
+    // GroupMessageReceipt(GroupMessageReceiptEvent)
 }
 
 /// 处理外发数据的接口
@@ -41,6 +43,7 @@ pub trait Handler: Sync {
             QEvent::PrivateMessage(private_message) => {
                 self.handle_private_message(private_message).await
             }
+            QEvent::GroupRequest(group_request) => self.handle_group_request(group_request).await,
             QEvent::TcpConnect => self.handle_tcp_connect_event().await,
             QEvent::TcpDisconnect => self.handle_tcp_connect_event().await,
         }
@@ -51,6 +54,7 @@ pub trait Handler: Sync {
     async fn handle_group_message(&self, _group_message: GroupMessageEvent) {}
     async fn handle_self_group_message(&self, _group_message: GroupMessageEvent) {}
     async fn handle_private_message(&self, _private_message: PrivateMessageEvent) {}
+    async fn handle_group_request(&self, _group_request: GroupRequestEvent) {}
 }
 
 /// 一个默认 Handler，只是把信息打印出来

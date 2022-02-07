@@ -91,7 +91,18 @@ impl super::Client {
                     if let Some(notify) = notify {
                         match notify.msg_type {
                             35 | 36 | 37 | 45 | 46 | 84 | 85 | 86 | 87 => {
-                                // TODO pull group system msg(group request), then process
+                                // pull group system msg(group request), then process
+                                match cli.get_all_group_system_messages().await {
+                                    Ok(msgs) => {
+                                        cli.process_group_system_messages(msgs).await;
+                                    }
+                                    Err(err) => {
+                                        tracing::warn!(
+                                            "failed to get group system message {}",
+                                            err
+                                        );
+                                    }
+                                }
                             }
                             187 | 188 | 189 | 190 | 191 => {
                                 // TODO pull friend system msg(friend request), then process

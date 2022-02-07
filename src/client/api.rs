@@ -183,10 +183,7 @@ impl super::Client {
 /// API
 impl super::Client {
     /// 获取进群申请信息
-    pub async fn get_group_system_messages(
-        &self,
-        suspicious: bool,
-    ) -> RQResult<GroupSystemMessages> {
+    async fn get_group_system_messages(&self, suspicious: bool) -> RQResult<GroupSystemMessages> {
         let req = self
             .engine
             .read()
@@ -197,6 +194,16 @@ impl super::Client {
             .read()
             .await
             .decode_system_msg_group_packet(resp.body)
+    }
+
+    /// 获取所有进群申请信息
+    pub(crate) async fn get_all_group_system_messages(&self) -> RQResult<GroupSystemMessages> {
+        let mut resp = self.get_group_system_messages(false).await?;
+        let risk_resp = self.get_group_system_messages(true).await?;
+        resp.join_group_requests
+            .extend(risk_resp.join_group_requests);
+        resp.self_invited.extend(risk_resp.self_invited);
+        Ok(resp)
     }
 
     /// 获取好友列表
