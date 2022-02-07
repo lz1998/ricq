@@ -206,6 +206,20 @@ impl super::Client {
         Ok(resp)
     }
 
+    /// 获取好友申请信息
+    pub(crate) async fn get_friend_system_messages(&self) -> RQResult<FriendSystemMessages> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_system_msg_new_friend_packet();
+        let resp = self.send_and_wait(req).await?;
+        self.engine
+            .read()
+            .await
+            .decode_system_msg_friend_packet(resp.body)
+    }
+
     /// 获取好友列表
     /// 第一个参数offset，从0开始；第二个参数count，150，另外两个都是0
     pub async fn get_friend_list(

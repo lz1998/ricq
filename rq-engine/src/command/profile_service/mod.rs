@@ -33,3 +33,16 @@ pub struct JoinGroupRequest {
     pub invitor_uin: Option<i64>,
     pub invitor_nick: Option<String>,
 }
+
+#[derive(Debug, Default, Clone)]
+pub struct FriendSystemMessages {
+    pub requests: Vec<NewFriendRequest>,
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct NewFriendRequest {
+    pub msg_seq: i64,
+    pub message: String,
+    pub req_uin: i64,
+    pub req_nick: String,
+}

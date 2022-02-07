@@ -105,7 +105,18 @@ impl super::Client {
                                 }
                             }
                             187 | 188 | 189 | 190 | 191 => {
-                                // TODO pull friend system msg(friend request), then process
+                                // pull friend system msg(friend request), then process
+                                match cli.get_friend_system_messages().await {
+                                    Ok(msgs) => {
+                                        cli.process_friend_system_messages(msgs).await;
+                                    }
+                                    Err(err) => {
+                                        tracing::warn!(
+                                            "failed to get friend system message {}",
+                                            err
+                                        );
+                                    }
+                                }
                             }
                             _ => {
                                 // TODO tracing.warn!()

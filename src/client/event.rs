@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use rq_engine::command::profile_service::JoinGroupRequest;
+use rq_engine::command::profile_service::{JoinGroupRequest, NewFriendRequest};
 use rq_engine::RQResult;
 
 use crate::structs::{Group, GroupMemberInfo, GroupMessage, PrivateMessage};
@@ -58,6 +58,20 @@ pub struct GroupRequestEvent {
 }
 
 impl GroupRequestEvent {
+    pub async fn accept(&self) {
+        todo!()
+    }
+}
+
+#[derive(Clone, derivative::Derivative)]
+#[derivative(Debug)]
+pub struct FriendRequestEvent {
+    #[derivative(Debug = "ignore")]
+    pub client: Arc<Client>,
+    pub request: NewFriendRequest,
+}
+
+impl FriendRequestEvent {
     pub async fn accept(&self) {
         todo!()
     }

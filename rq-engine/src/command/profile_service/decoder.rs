@@ -77,4 +77,32 @@ impl super::super::super::Engine {
             )),
         }
     }
+
+    // ProfileService.Pb.ReqSystemMsgNew.Friend
+    pub fn decode_system_msg_friend_packet(
+        &self,
+        payload: Bytes,
+    ) -> RQResult<FriendSystemMessages> {
+        let rsp = pb::structmsg::RspSystemMsgNew::from_bytes(&payload)
+            .map_err(|_| RQError::Decode("RspSystemMsgNew".into()))?;
+        Ok(FriendSystemMessages {
+            requests: rsp
+                .friendmsgs
+                .into_iter()
+                .map(|m| {
+                    let msg = m.msg.as_ref();
+                    NewFriendRequest {
+                        msg_seq: m.msg_seq,
+                        message: msg
+                            .map(|msg| msg.msg_additional.to_owned())
+                            .unwrap_or_default(),
+                        req_uin: m.req_uin,
+                        req_nick: msg
+                            .map(|msg| msg.req_uin_nick.to_owned())
+                            .unwrap_or_default(),
+                    }
+                })
+                .collect(),
+        })
+    }
 }
