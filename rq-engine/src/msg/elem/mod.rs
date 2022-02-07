@@ -6,6 +6,8 @@ pub use crate::msg::elem::{
     anonymous::Anonymous,
     at::At,
     face::Face,
+    friend_image::FriendImage,
+    group_image::GroupImage,
     light_app::LightApp,
     market_face::{Dice, FingerGuessing, MarketFace},
     red_bag::RedBag,
@@ -17,6 +19,8 @@ use crate::pb::msg;
 mod anonymous;
 mod at;
 mod face;
+mod friend_image;
+mod group_image;
 mod light_app;
 mod market_face;
 mod red_bag;
@@ -33,6 +37,8 @@ pub enum RQElem {
     FingerGuessing(market_face::FingerGuessing),
     LightApp(light_app::LightApp),
     RedBag(red_bag::RedBag),
+    FriendImage(friend_image::FriendImage),
+    GroupImage(group_image::GroupImage),
     Other(Box<msg::elem::Elem>),
 }
 
@@ -71,6 +77,10 @@ impl From<msg::elem::Elem> for RQElem {
             }
             msg::elem::Elem::LightApp(e) => RQElem::LightApp(light_app::LightApp::from(e)),
             msg::elem::Elem::QqWalletMsg(e) => RQElem::RedBag(red_bag::RedBag::from(e)),
+            msg::elem::Elem::NotOnlineImage(e) => {
+                RQElem::FriendImage(friend_image::FriendImage::from(e))
+            }
+            msg::elem::Elem::CustomFace(e) => RQElem::GroupImage(group_image::GroupImage::from(e)),
             _ => RQElem::Other(Box::new(elem)),
         }
     }
@@ -82,6 +92,8 @@ impl fmt::Display for RQElem {
             RQElem::At(e) => fmt::Display::fmt(e, f),
             RQElem::Text(e) => fmt::Display::fmt(e, f),
             RQElem::Face(e) => fmt::Display::fmt(e, f),
+            RQElem::GroupImage(e) => fmt::Display::fmt(e, f),
+            RQElem::FriendImage(e) => fmt::Display::fmt(e, f),
             _ => write!(f, ""),
         }
     }
