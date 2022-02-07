@@ -4,6 +4,7 @@ use bytes::Bytes;
 
 use crate::engine::protocol::packet::Packet;
 
+pub mod c2c;
 pub mod config_push_svc;
 pub mod message_svc;
 pub mod online_push;
@@ -77,12 +78,31 @@ impl super::Client {
                     )
                 }
                 "MessageSvc.PushNotify" => {
+                    // c2c流程：
+                    // 1. Server 发送 PushNotify 到 Client, 表示有通知需要 Client 拉取 (不带具体内容)
+                    // 2. Client 根据 msg_type 发送请求拉取具体通知内容
+                    // 类型：好友申请、群申请、私聊消息、其他?
                     let engine = cli.engine.read().await;
-                    let _notify_msg_type = engine.decode_svc_notify(pkt.body).unwrap();
-                    log_error!(
-                        cli.get_sync_message(0).await,
-                        "process message svc notify error: {:?}"
-                    )
+                    let notify = engine.decode_svc_notify(pkt.body).unwrap_or_default();
+                    if let Some(notify) = notify {
+                        match notify.msg_type {
+                            35 | 36 | 37 | 45 | 46 | 84 | 85 | 86 | 87 => {
+                                // TODO pull group system msg(group request), then process
+                            }
+                            187 | 188 | 189 | 190 | 191 => {
+                                // TODO pull friend system msg(friend request), then process
+                            }
+                            _ => {
+                                // TODO tracing.warn!()
+                            }
+                        }
+                        // TODO pull private msg, then process
+                    } else {
+                        log_error!(
+                            cli.get_sync_message(0).await,
+                            "process message svc notify error: {:?}"
+                        )
+                    }
                 }
                 "MessageSvc.PbGetMsg" => {
                     let resp = cli

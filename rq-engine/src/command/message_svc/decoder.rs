@@ -5,8 +5,11 @@ use crate::pb::msg::GetMessageResponse;
 use crate::{jce, RQError, RQResult};
 
 impl crate::Engine {
-    // untested
-    pub fn decode_svc_notify(&self, mut payload: Bytes) -> RQResult<Option<i32>> {
+    // MessageSvc.PushNotify
+    pub fn decode_svc_notify(
+        &self,
+        mut payload: Bytes,
+    ) -> RQResult<Option<jce::RequestPushNotify>> {
         payload.advance(4);
         let mut req: jce::RequestPacket = jcers::from_buf(&mut payload)?;
         let mut data: jce::RequestDataVersion2 = jcers::from_buf(&mut req.s_buffer)?;
@@ -16,12 +19,12 @@ impl crate::Engine {
         let notify_data = data
             .map
             .get_mut("req_PushNotify")
-            .unwrap()
+            .ok_or(RQError::Decode("req_PushNotify".into()))?
             .get_mut("PushNotifyPack.RequestPushNotify")
-            .unwrap();
+            .ok_or(RQError::Decode("PushNotifyPack.RequestPushNotify".into()))?;
         notify_data.advance(1);
         let notify: jce::RequestPushNotify = jcers::from_buf(notify_data)?;
-        Ok(Some(notify.msg_type))
+        Ok(Some(notify))
     }
 
     pub fn decode_message_svc_packet(
