@@ -780,24 +780,35 @@ impl super::Client {
         let mut sync_flag = SYNC_START;
         let mut msgs = Vec::new();
         loop {
-            let resp = self.sync_message(sync_flag).await?;
-            self.delete_message(
-                resp.msgs
-                    .iter()
-                    .map(|m| {
-                        let head = m.head.as_ref().unwrap();
-                        pb::MessageItem {
-                            from_uin: head.from_uin(),
-                            to_uin: head.to_uin(),
-                            msg_type: head.msg_type(),
-                            msg_seq: head.msg_seq(),
-                            msg_uid: head.msg_uid(),
-                            ..Default::default()
-                        }
-                    })
-                    .collect(),
-            )
-            .await?;
+            let resp = match self.sync_message(sync_flag).await {
+                Ok(resp) => resp,
+                Err(_) => {
+                    tracing::warn!(target: "rs_qq", "failed to sync_message");
+                    break;
+                }
+            };
+            if let Err(err) = self
+                .delete_message(
+                    resp.msgs
+                        .iter()
+                        .map(|m| {
+                            let head = m.head.as_ref().unwrap();
+                            pb::MessageItem {
+                                from_uin: head.from_uin(),
+                                to_uin: head.to_uin(),
+                                msg_type: head.msg_type(),
+                                msg_seq: head.msg_seq(),
+                                msg_uid: head.msg_uid(),
+                                ..Default::default()
+                            }
+                        })
+                        .collect(),
+                )
+                .await
+            {
+                tracing::warn!(target: "rs_qq", "failed to delete_message: {}",err);
+                break;
+            }
             match resp.msg_rsp_type {
                 0 => {
                     let mut engine = self.engine.write().await;
