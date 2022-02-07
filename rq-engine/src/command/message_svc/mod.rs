@@ -1,12 +1,12 @@
 use crate::pb;
-use bytes::Bytes;
 
 pub mod builder;
 pub mod decoder;
 
 pub struct MessageSyncResponse {
+    pub msg_rsp_type: i32,
     pub sync_flag: i32,
-    pub sync_cookie: Bytes,
-    pub pub_account_cookie: Bytes,
+    pub sync_cookie: Option<Vec<u8>>,
+    pub pub_account_cookie: Option<Vec<u8>>,
     pub msgs: Vec<pb::msg::Message>,
 }

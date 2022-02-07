@@ -82,8 +82,12 @@ impl super::Client {
                     // 1. Server 发送 PushNotify 到 Client, 表示有通知需要 Client 拉取 (不带具体内容)
                     // 2. Client 根据 msg_type 发送请求拉取具体通知内容
                     // 类型：好友申请、群申请、私聊消息、其他?
-                    let engine = cli.engine.read().await;
-                    let notify = engine.decode_svc_notify(pkt.body).unwrap_or_default();
+                    let notify = cli
+                        .engine
+                        .read()
+                        .await
+                        .decode_svc_notify(pkt.body)
+                        .unwrap_or_default();
                     if let Some(notify) = notify {
                         match notify.msg_type {
                             35 | 36 | 37 | 45 | 46 | 84 | 85 | 86 | 87 => {
@@ -96,25 +100,19 @@ impl super::Client {
                                 // TODO tracing.warn!()
                             }
                         }
-                        // TODO pull private msg, then process
-                    } else {
-                        log_error!(
-                            cli.get_sync_message(0).await,
-                            "process message svc notify error: {:?}"
-                        )
                     }
-                }
-                "MessageSvc.PbGetMsg" => {
-                    let resp = cli
-                        .engine
-                        .read()
-                        .await
-                        .decode_message_svc_packet(pkt.body)
-                        .unwrap();
-                    log_error!(
-                        cli.process_message_sync(resp).await,
-                        "process message sync error: {:?}"
-                    )
+                    // pull private msg and other, then process
+                    match cli.sync_all_message().await {
+                        Ok(msgs) => {
+                            log_error!(
+                                cli.process_message_sync(msgs).await,
+                                "process message sync error: {:?}"
+                            )
+                        }
+                        Err(err) => {
+                            tracing::warn!("failed to sync message {}", err);
+                        }
+                    }
                 }
                 "OnlinePush.ReqPush" => {
                     let engine = cli.engine.read().await;

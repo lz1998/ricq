@@ -6,6 +6,7 @@ use bytes::{Buf, Bytes};
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
+use rq_engine::command::message_svc::MessageSyncResponse;
 use rq_engine::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
 use rq_engine::common::group_code2uin;
 use rq_engine::msg::elem::Anonymous;
@@ -756,15 +757,78 @@ impl super::Client {
     }
 
     // sync message
-    pub async fn get_sync_message(&self, sync_flag: i32) -> RQResult<()> {
+    async fn sync_message(&self, sync_flag: i32) -> RQResult<MessageSyncResponse> {
         let time = chrono::Utc::now().timestamp();
         let req = self
             .engine
             .read()
             .await
             .build_get_message_request_packet(sync_flag, time);
-        let _ = self.send_and_wait(req).await?;
-        Ok(())
+        let resp = self.send_and_wait(req).await?;
+        self.engine
+            .read()
+            .await
+            .decode_message_svc_packet(resp.body)
+    }
+
+    // 从服务端拉取通知
+    pub(crate) async fn sync_all_message(&self) -> RQResult<Vec<pb::msg::Message>> {
+        const SYNC_START: i32 = 0;
+        const _SYNC_CONTINUE: i32 = 1;
+        const SYNC_STOP: i32 = 2;
+
+        let mut sync_flag = SYNC_START;
+        let mut msgs = Vec::new();
+        loop {
+            let resp = self.sync_message(sync_flag).await?;
+            self.delete_message(
+                resp.msgs
+                    .iter()
+                    .map(|m| {
+                        let head = m.head.as_ref().unwrap();
+                        pb::MessageItem {
+                            from_uin: head.from_uin(),
+                            to_uin: head.to_uin(),
+                            msg_type: head.msg_type(),
+                            msg_seq: head.msg_seq(),
+                            msg_uid: head.msg_uid(),
+                            ..Default::default()
+                        }
+                    })
+                    .collect(),
+            )
+            .await?;
+            match resp.msg_rsp_type {
+                0 => {
+                    let mut engine = self.engine.write().await;
+                    if let Some(sync_cookie) = resp.sync_cookie {
+                        engine.transport.sig.sync_cookie = Bytes::from(sync_cookie)
+                    }
+                    if let Some(pub_account_cookie) = resp.pub_account_cookie {
+                        engine.transport.sig.pub_account_cookie = Bytes::from(pub_account_cookie)
+                    }
+                }
+                1 => {
+                    let mut engine = self.engine.write().await;
+                    if let Some(sync_cookie) = resp.sync_cookie {
+                        engine.transport.sig.sync_cookie = Bytes::from(sync_cookie)
+                    }
+                }
+                2 => {
+                    let mut engine = self.engine.write().await;
+                    if let Some(pub_account_cookie) = resp.pub_account_cookie {
+                        engine.transport.sig.pub_account_cookie = Bytes::from(pub_account_cookie)
+                    }
+                }
+                _ => {}
+            }
+            msgs.extend(resp.msgs);
+            sync_flag = resp.sync_flag;
+            if sync_flag == SYNC_STOP {
+                break;
+            }
+        }
+        return Ok(msgs);
     }
 
     /// 获取自己的匿名信息（用于发送群消息）

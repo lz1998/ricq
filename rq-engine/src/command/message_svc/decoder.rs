@@ -27,6 +27,7 @@ impl crate::Engine {
         Ok(Some(notify))
     }
 
+    // MessageSvc.PbGetMsg
     pub fn decode_message_svc_packet(
         &self,
         payload: Bytes,
@@ -34,9 +35,10 @@ impl crate::Engine {
         let resp = GetMessageResponse::from_bytes(&payload)
             .map_err(|_| RQError::Decode("GetMessageResponse".to_string()))?;
         Ok(super::MessageSyncResponse {
+            msg_rsp_type: resp.msg_rsp_type.unwrap_or_default(),
             sync_flag: resp.sync_flag.unwrap(),
-            sync_cookie: Bytes::copy_from_slice(resp.sync_cookie()),
-            pub_account_cookie: Bytes::copy_from_slice(resp.pub_account_cookie()),
+            sync_cookie: resp.sync_cookie,
+            pub_account_cookie: resp.pub_account_cookie,
             msgs: resp
                 .uin_pair_msgs
                 .into_iter()
