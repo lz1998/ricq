@@ -3,7 +3,7 @@ pub mod device_lock;
 use std::sync::atomic::Ordering;
 
 use crate::RQError;
-use rq_engine::{jce::SvcRespRegister, RQResult};
+use rq_engine::{jce::SvcRespRegister, RQResult, command::wtlogin::LoginResponse};
 
 use crate::Client;
 
@@ -35,3 +35,9 @@ impl Client {
 }
 
 
+#[async_trait::async_trait]
+pub trait Login {
+    type Args;
+
+    async fn login(self,args:Self::Args)->RQResult<LoginResponse>;
+}

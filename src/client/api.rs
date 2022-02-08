@@ -2,22 +2,27 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 
-use bytes::{Buf, Bytes};
+use bytes::Bytes;
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
-use rq_engine::command::message_svc::MessageSyncResponse;
-use rq_engine::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
-use rq_engine::common::group_code2uin;
-use rq_engine::msg::elem::Anonymous;
-use rq_engine::msg::MessageChain;
-use rq_engine::pb;
+use rq_engine::{
+    command::{
+        message_svc::MessageSyncResponse,
+        oidb_svc::music::{MusicShare, MusicType, SendMusicTarget},
+    },
+    common::group_code2uin,
+    msg::{elem::Anonymous, MessageChain},
+    pb,
+};
 
 use crate::client::Group;
-use crate::engine::command::{friendlist::*, oidb_svc::*, profile_service::*, wtlogin::*};
-use crate::engine::structs::{FriendInfo, GroupInfo, GroupMemberInfo, MessageReceipt};
-use crate::handler::QEvent;
-use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
+use crate::engine::{
+    command::{friendlist::*, oidb_svc::*, profile_service::*},
+    structs::{FriendInfo, GroupInfo, GroupMemberInfo, MessageReceipt},
+};
+
+use crate::jce::SvcDevLoginInfo;
 use crate::{RQError, RQResult};
 
 /// 登录相关
