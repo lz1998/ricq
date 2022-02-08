@@ -16,16 +16,16 @@ pub use crate::msg::elem::{
 };
 use crate::pb::msg;
 
-pub mod anonymous;
-pub mod at;
-pub mod face;
-pub mod friend_image;
-pub mod group_image;
-pub mod light_app;
-pub mod market_face;
-pub mod red_bag;
-pub mod reply;
-pub mod text;
+ mod anonymous;
+ mod at;
+ mod face;
+ mod friend_image;
+ mod group_image;
+ mod light_app;
+ mod market_face;
+ mod red_bag;
+ mod reply;
+ mod text;
 
 #[derive(Debug, Clone)]
 pub enum RQElem {
