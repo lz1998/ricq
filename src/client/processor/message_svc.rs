@@ -72,11 +72,13 @@ impl Client {
                 match msg.head.as_ref().unwrap().msg_type() {
                     9 | 10 | 31 | 79 | 97 | 120 | 132 | 133 | 166 | 167 => {
                         if let Err(err)=self.process_private_message(msg).await{
-                            tracing::warn!(target: "rs_qq", "failed to process private message {}",err);
+                            tracing::error!(target: "rs_qq", "failed to process private message {}",err);
                         }
                     }
                     33 => {
-                        // troop add member broadcast
+                        if let Err(err)=self.process_join_group(msg).await{
+                            tracing::error!(target: "rs_qq", "failed to process join group {}",err);
+                        }
                     }
                     140 | 141 => {
                         // temp session

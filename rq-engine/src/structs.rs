@@ -113,6 +113,12 @@ pub struct GroupMessage {
     pub elements: MessageChain,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct NewMember {
+    pub group_code: i64,
+    pub member_uin: i64,
+}
+
 // 用于撤回
 #[derive(Debug, Clone, Default)]
 pub struct MessageReceipt {

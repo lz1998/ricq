@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use rq_engine::command::profile_service::{JoinGroupRequest, NewFriendRequest};
+use rq_engine::structs::NewMember;
 use rq_engine::RQResult;
 
 use crate::structs::{Group, GroupMemberInfo, GroupMessage, PrivateMessage};
@@ -108,5 +109,31 @@ impl FriendRequestEvent {
         self.client
             .solve_friend_system_message(self.request.msg_seq, self.request.req_uin, false)
             .await
+    }
+}
+
+#[derive(Clone, derivative::Derivative)]
+#[derivative(Debug)]
+pub struct NewMemberEvent {
+    #[derivative(Debug = "ignore")]
+    pub client: Arc<Client>,
+    pub new_member: NewMember,
+}
+
+impl NewMemberEvent {
+    pub async fn group(&self) -> Option<Arc<Group>> {
+        self.client
+            .find_group(self.new_member.group_code, true)
+            .await
+    }
+
+    pub async fn member(&self) -> Option<GroupMemberInfo> {
+        let group = self.group().await?;
+        let members = group.members.read().await;
+        members
+            .iter()
+            .filter(|m| m.uin == self.new_member.member_uin)
+            .last()
+            .cloned()
     }
 }

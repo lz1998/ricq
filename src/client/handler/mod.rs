@@ -6,7 +6,7 @@ use tokio::sync::{
 };
 
 use crate::client::event::{
-    FriendRequestEvent, GroupMessageEvent, GroupRequestEvent, PrivateMessageEvent,
+    FriendRequestEvent, GroupMessageEvent, GroupRequestEvent, NewMemberEvent, PrivateMessageEvent,
 };
 
 /// 所有需要外发的数据的枚举打包
@@ -27,6 +27,7 @@ pub enum QEvent {
     GroupRequest(GroupRequestEvent),
     /// 加好友申请
     FriendRequest(FriendRequestEvent),
+    NewMember(NewMemberEvent),
     // FriendList(decoder::friendlist::FriendListResponse),
     // GroupMemberInfo(structs::GroupMemberInfo),
 
@@ -51,6 +52,7 @@ pub trait Handler: Sync {
             QEvent::FriendRequest(friend_request) => {
                 self.handle_friend_request(friend_request).await
             }
+            QEvent::NewMember(new_member) => self.handle_new_member(new_member).await,
             QEvent::TcpConnect => self.handle_tcp_connect_event().await,
             QEvent::TcpDisconnect => self.handle_tcp_connect_event().await,
         }
@@ -63,6 +65,7 @@ pub trait Handler: Sync {
     async fn handle_private_message(&self, _private_message: PrivateMessageEvent) {}
     async fn handle_group_request(&self, _group_request: GroupRequestEvent) {}
     async fn handle_friend_request(&self, _group_request: FriendRequestEvent) {}
+    async fn handle_new_member(&self, _new_member: NewMemberEvent) {}
 }
 
 /// 一个默认 Handler，只是把信息打印出来
