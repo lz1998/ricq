@@ -864,6 +864,14 @@ pub struct ReqFavorite {
     pub i_count: i32,
 }
 
+#[derive(Debug, Clone, JceGet, JcePut, Default)]
+pub struct MsgType0x210 {
+    #[jce(0)]
+    pub sub_msg_type: i64,
+    #[jce(10)]
+    pub v_protobuf: Bytes,
+}
+
 #[cfg(test)]
 mod tests {
     use bytes::*;

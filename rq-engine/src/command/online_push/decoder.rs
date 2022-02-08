@@ -83,45 +83,7 @@ impl super::super::super::Engine {
         let uin: i64 = jr.get_by_tag(0)?;
         let msg_infos: Vec<jce::PushMessageInfo> = jr.get_by_tag(2)?;
 
-        let infos: Vec<PushInfo> = msg_infos
-            .iter()
-            .map(|info| self.parse_push_info(info))
-            .collect::<RQResult<_>>()?;
-        Ok(ReqPush {
-            resp: ReqPushResp { uin, msg_infos },
-            push_infos: infos,
-        })
-    }
-
-    fn parse_push_info(&self, raw: &jce::PushMessageInfo) -> RQResult<PushInfo> {
-        let info = PushInfo {
-            msg_seq: raw.msg_seq,
-            msg_time: raw.msg_time,
-            msg_uid: raw.msg_uid,
-            ..Default::default()
-        };
-        match raw.msg_type {
-            732 => {
-                let mut r = raw.v_msg.clone();
-                let _group_code = r.get_i32() as i64;
-                let i_type = r.get_u8();
-                r.get_u8();
-                match i_type {
-                    0x0c => {}
-                    0x10 | 0x11 | 0x14 | 0x15 => {}
-                    _ => {}
-                }
-            }
-            528 => {
-                let mut v_msg = raw.v_msg.clone();
-                let mut jr = jcers::Jce::new(&mut v_msg);
-                let _sub_type: i64 = jr.get_by_tag(0)?;
-                // println!("sub_type: {}", sub_type);
-                // TODO ...
-            }
-            _ => {}
-        }
-        Ok(info)
+        Ok(ReqPush { uin, msg_infos })
     }
 
     // TODO 还没测试
@@ -190,30 +152,6 @@ impl super::super::super::Engine {
         Err(RQError::Decode(
             "decode_online_push_trans_packet unknown error".to_string(),
         ))
-    }
-
-    pub fn msg_type_0x210_sub8a_decoder(
-        &self,
-        uin: i64,
-        protobuf: Bytes,
-    ) -> RQResult<Vec<FriendMessageRecalledEvent>> {
-        let s8a =
-            pb::Sub8A::from_bytes(&protobuf).map_err(|_| RQError::Decode("Sub8A".to_string()))?;
-        let mut events = Vec::new();
-        for m in s8a.msg_info {
-            if m.to_uin == uin {
-                events.push(FriendMessageRecalledEvent {
-                    friend_uin: m.from_uin,
-                    message_id: m.msg_seq,
-                    time: m.msg_time,
-                })
-            }
-        }
-        if !events.is_empty() {
-            Ok(events)
-        } else {
-            Err(RQError::Decode("events length is 0".to_string()))
-        }
     }
 
     pub fn msg_type_0x210_subb3_decoder(&self, protobuf: Bytes) -> RQResult<NewFriendEvent> {

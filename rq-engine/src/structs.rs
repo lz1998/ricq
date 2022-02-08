@@ -119,6 +119,21 @@ pub struct NewMember {
     pub member_uin: i64,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct GroupMute {
+    pub group_code: i64,
+    pub operator_uin: i64,
+    pub target_uin: i64,
+    pub time: u32,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct FriendMessageRecall {
+    pub msg_seq: i32,
+    pub friend_uin: i64,
+    pub time: i64,
+}
+
 // 用于撤回
 #[derive(Debug, Clone, Default)]
 pub struct MessageReceipt {

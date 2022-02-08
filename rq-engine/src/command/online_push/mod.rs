@@ -6,36 +6,8 @@ pub mod decoder;
 
 #[derive(Debug, Default)]
 pub struct ReqPush {
-    pub resp: ReqPushResp,
-    pub push_infos: Vec<PushInfo>,
-}
-
-#[derive(Debug, Default)]
-pub struct ReqPushResp {
     pub uin: i64,
     pub msg_infos: Vec<jce::PushMessageInfo>,
-}
-
-#[derive(Debug, Default)]
-pub struct PushInfo {
-    pub msg_seq: i16,
-    pub msg_time: i64,
-    pub msg_uid: i64,
-    pub push_msg: PushMsg,
-}
-
-#[derive(Debug, derivative::Derivative)]
-#[derivative(Default)]
-pub enum PushMsg {
-    #[derivative(Default)]
-    Unknown,
-    T0x2dc {
-        group_mute_events: Vec<GroupMuteEvent>,
-        group_recalled_events: Vec<GroupMessageRecalledEvent>,
-        group_red_bag_lucky_king_events: Vec<GroupRedBagLuckyKingNotifyEvent>,
-        group_digest_events: Vec<GroupDigestEvent>,
-    },
-    T0x210 {},
 }
 
 #[derive(Debug, Default)]
@@ -90,12 +62,6 @@ pub struct GroupMessagePart {
     pub pkg_index: i32,
     // 分片id，相同id的应该合并，且根据pkg_index排序
     pub div_seq: i32,
-}
-
-pub struct FriendMessageRecalledEvent {
-    pub friend_uin: i64,
-    pub message_id: i32,
-    pub time: i64,
 }
 
 pub struct NewFriendEvent {

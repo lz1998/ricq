@@ -96,15 +96,15 @@ impl super::Client {
                     let resp = engine.decode_online_push_req_packet(pkt.body).unwrap();
                     let _ = cli
                         .send(engine.build_delete_online_push_packet(
-                            resp.resp.uin,
+                            resp.uin,
                             0,
                             Bytes::new(),
                             pkt.seq_id as u16,
-                            resp.resp.msg_infos,
+                            resp.msg_infos.clone(),
                         ))
                         .await;
                     tracing::warn!(target: "rs_qq", "unhandled OnlinePush.ReqPush");
-                    //todo
+                    cli.process_push_req(resp.msg_infos).await;
                 }
                 _ => {
                     tracing::warn!(target: "rs_qq", "unhandled pkt: {}", &pkt.command_name);
