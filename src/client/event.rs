@@ -59,7 +59,49 @@ pub struct GroupRequestEvent {
 
 impl GroupRequestEvent {
     pub async fn accept(&self) -> RQResult<()> {
-        todo!()
+        let JoinGroupRequest {
+            msg_seq,
+            req_uin,
+            group_code,
+            invitor_uin,
+            ..
+        } = &self.request;
+        self.client
+            .solve_group_add_request(
+                *msg_seq,
+                *req_uin,
+                *group_code,
+                0,
+                invitor_uin.is_some(),
+                true,
+                false,
+                "".into(),
+            )
+            .await
+    }
+
+    pub async fn reject(&self, reason: Option<impl Into<String>>) -> RQResult<()> {
+        let JoinGroupRequest {
+            msg_seq,
+            req_uin,
+            group_code,
+            invitor_uin,
+            ..
+        } = &self.request;
+        self.client
+            .solve_group_add_request(
+                *msg_seq,
+                *req_uin,
+                *group_code,
+                0,
+                invitor_uin.is_some(),
+                false,
+                true,
+                reason
+                    .and_then(|f| Some(Into::<String>::into(f)))
+                    .unwrap_or_default(),
+            )
+            .await
     }
 }
 

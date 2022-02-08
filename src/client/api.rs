@@ -44,6 +44,25 @@ impl super::Client {
             .decode_system_msg_group_packet(resp.body)
     }
 
+    pub(crate) async fn solve_group_add_request(
+        &self,
+        req_id: i64,
+        requester: i64,
+        group: i64,
+        msg_type: i32,
+        is_invite: bool,
+        accept: bool,
+        block: bool,
+        reason: String,
+    ) -> RQResult<()> {
+        let engine = self.engine.read().await;
+        let pkg = engine.build_system_msg_group_action_packet(
+            req_id, requester, group, msg_type, is_invite, accept, block, reason,
+        );
+
+        let _ = self.send_and_wait(pkg).await;
+        Ok(())
+    }
     /// 获取所有进群申请信息
     pub(crate) async fn get_all_group_system_messages(&self) -> RQResult<GroupSystemMessages> {
         let mut resp = self.get_group_system_messages(false).await?;
