@@ -54,6 +54,21 @@ impl super::Client {
         Ok(resp)
     }
 
+    pub(crate) async fn solve_friend_request(
+        &self,
+        req_id: i64,
+        requester: i64,
+        accept: bool,
+    ) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_system_msg_friend_action_packet(req_id, requester, accept);
+        self.send_and_wait(req).await?;
+        Ok(())
+    }
+
     /// 获取好友申请信息
     pub(crate) async fn get_friend_system_messages(&self) -> RQResult<FriendSystemMessages> {
         let req = self

@@ -58,7 +58,7 @@ pub struct GroupRequestEvent {
 }
 
 impl GroupRequestEvent {
-    pub async fn accept(&self) {
+    pub async fn accept(&self) -> RQResult<()> {
         todo!()
     }
 }
@@ -72,7 +72,15 @@ pub struct FriendRequestEvent {
 }
 
 impl FriendRequestEvent {
-    pub async fn accept(&self) {
-        todo!()
+    pub async fn accept(&self) -> RQResult<()> {
+        self.client
+            .solve_friend_request(self.request.msg_seq, self.request.req_uin, true)
+            .await
+    }
+
+    pub async fn reject(&self) -> RQResult<()> {
+        self.client
+            .solve_friend_request(self.request.msg_seq, self.request.req_uin, false)
+            .await
     }
 }
