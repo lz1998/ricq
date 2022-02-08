@@ -164,4 +164,6 @@ impl super::super::super::Engine {
         };
         self.uni_packet("friendlist.ModifyGroupCardReq", pkt.freeze())
     }
+
+`
 }

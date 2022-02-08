@@ -45,7 +45,7 @@ pub trait PacketBuilder {
     /// ## Notice
     /// 该方法与 `packet` 方法至少实现一个
     fn packet_command() -> &'static str {
-        ""
+        unimplemented!("Invoke Unimplemented fn")
     }
 
     /// build 根据 arg 参数生成 packet 的 body 部分
