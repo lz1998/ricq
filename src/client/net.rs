@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
@@ -19,9 +19,8 @@ pub type Connection = JoinHandle<()>;
 impl crate::Client {
     pub async fn start(self: &Arc<Self>) -> RQResult<()> {
         self.running.store(true, Ordering::Relaxed);
-        let addr = "42.81.176.211:443"
-            .parse::<SocketAddr>()
-            .expect("failed to parse addr");
+        
+        let addr = SocketAddr::new(IpAddr::V4(Ipv4Addr::new(42, 81, 176, 211)), 443);
 
         let conn = self.connect(&addr).await?;
         conn.await.unwrap();
