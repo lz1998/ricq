@@ -196,6 +196,7 @@ impl super::Client {
             .decode_system_msg_group_packet(resp.body)
     }
 
+    /// 通过/拒绝 加群申请
     pub(crate) async fn set_group_system_message(
         &self,
         req_id: i64,
@@ -226,7 +227,17 @@ impl super::Client {
         Ok(resp)
     }
 
-    
+    pub(crate) async fn set_friend_system_message(
+        &self,
+        req_id: i64,
+        requester: i64,
+        accept: bool,
+    ) -> RQResult<()> {
+        let engine = self.engine.read().await;
+        let pkt = engine.build_system_msg_friend_action_packet(req_id, requester, accept);
+        self.send_and_wait(pkt).await?;
+        Ok(())
+    }
 
     /// 获取好友申请信息
     pub(crate) async fn get_friend_system_messages(&self) -> RQResult<FriendSystemMessages> {
