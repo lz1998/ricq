@@ -196,29 +196,8 @@ impl super::Client {
             .decode_system_msg_group_packet(resp.body)
     }
 
-    /// 通过/拒绝 加群申请
-    pub(crate) async fn set_group_system_message(
-        &self,
-        req_id: i64,
-        requester: i64,
-        group: i64,
-        msg_type: i32,
-        is_invite: bool,
-        accept: bool,
-        block: bool,
-        reason: String,
-    ) -> RQResult<()> {
-        let engine = self.engine.read().await;
-        let pkt = engine.build_system_msg_group_action_packet(
-            req_id, requester, group, msg_type, is_invite, accept, block, reason,
-        );
-        self.send_and_wait(pkt).await?;
-
-        Ok(())
-    }
-
-    /// 获取所有进群申请信息
-    pub(crate) async fn get_all_group_system_messages(&self) -> RQResult<GroupSystemMessages> {
+    /// 获取所有进群请求
+    pub async fn get_all_group_system_messages(&self) -> RQResult<GroupSystemMessages> {
         let mut resp = self.get_group_system_messages(false).await?;
         let risk_resp = self.get_group_system_messages(true).await?;
         resp.join_group_requests
@@ -227,20 +206,36 @@ impl super::Client {
         Ok(resp)
     }
 
-    pub(crate) async fn set_friend_system_message(
+    /// 处理加群申请
+    pub async fn solve_group_system_message(
         &self,
-        req_id: i64,
-        requester: i64,
+        msg_seq: i64,
+        req_uin: i64,
+        group_code: i64,
+        suspicious: bool,
+        is_invite: bool,
         accept: bool,
+        block: bool,
+        reason: String,
     ) -> RQResult<()> {
         let engine = self.engine.read().await;
-        let pkt = engine.build_system_msg_friend_action_packet(req_id, requester, accept);
+        let pkt = engine.build_system_msg_group_action_packet(
+            msg_seq,
+            req_uin,
+            group_code,
+            if suspicious { 2 } else { 1 },
+            is_invite,
+            accept,
+            block,
+            reason,
+        );
         self.send_and_wait(pkt).await?;
+
         Ok(())
     }
 
-    /// 获取好友申请信息
-    pub(crate) async fn get_friend_system_messages(&self) -> RQResult<FriendSystemMessages> {
+    /// 获取好友请求
+    pub async fn get_friend_system_messages(&self) -> RQResult<FriendSystemMessages> {
         let req = self
             .engine
             .read()
@@ -251,6 +246,19 @@ impl super::Client {
             .read()
             .await
             .decode_system_msg_friend_packet(resp.body)
+    }
+
+    /// 处理好友申请
+    pub async fn solve_friend_system_message(
+        &self,
+        msg_seq: i64,
+        req_uin: i64,
+        accept: bool,
+    ) -> RQResult<()> {
+        let engine = self.engine.read().await;
+        let pkt = engine.build_system_msg_friend_action_packet(msg_seq, req_uin, accept);
+        self.send_and_wait(pkt).await?;
+        Ok(())
     }
 
     /// 获取好友列表
