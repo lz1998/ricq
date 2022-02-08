@@ -11,6 +11,11 @@ use crate::Client;
 impl Client {
     pub async fn process_private_message(self: &Arc<Self>, msg: pb::msg::Message) -> RQResult<()> {
         let private_message = parse_private_message(msg)?;
+        if private_message.from_uin == self.uin() {
+            // TODO dispatch self private message event
+            // TODO swap friend seq
+            return Ok(());
+        }
         self.handler
             .handle(QEvent::PrivateMessage(PrivateMessageEvent {
                 client: self.clone(),
