@@ -108,4 +108,25 @@ impl super::super::super::Engine {
         }
         Ok(GroupMemberListResponse { next_uin, list: l })
     }
+
+     //friendlist.delFriend
+     pub fn decode_remove_friend(&self, mut payload: Bytes) -> RQResult<()> {
+        let mut req: jce::RequestPacket = jcers::from_buf(&mut payload)?;
+
+        let mut data: jce::RequestDataVersion3 = jcers::from_buf(&mut req.s_buffer)?;
+
+        let mut r = data.map.remove("DFRESP").ok_or(RQError::Decode(
+            "decode_remove_friend `DFRESP` not found".into(),
+        ))?;
+        let ret = r.get_i32();
+        if ret != 0 {
+            // 猜测 ret 为失败的个数
+            Err(RQError::Other(format!(
+                "delete friend error: Failure Count {}",
+                ret
+            )))
+        } else {
+            Ok(())
+        }
+    }
 }
