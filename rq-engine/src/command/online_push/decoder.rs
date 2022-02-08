@@ -154,19 +154,6 @@ impl super::super::super::Engine {
         ))
     }
 
-    pub fn msg_type_0x210_subb3_decoder(&self, protobuf: Bytes) -> RQResult<NewFriendEvent> {
-        let msg_add_frd_notify = pb::SubB3::from_bytes(&protobuf)
-            .map_err(|_| RQError::Decode("SubB3".to_string()))?
-            .msg_add_frd_notify
-            .ok_or_else(|| RQError::Decode("msg_add_frd_notify is none".to_string()))?;
-        let friend = FriendInfo {
-            uin: msg_add_frd_notify.uin,
-            nick: msg_add_frd_notify.nick,
-            ..Default::default()
-        };
-        Ok(NewFriendEvent { friend })
-    }
-
     // return group number group leave
     pub fn msg_type_0x210_subd4_decoder(&self, protobuf: Bytes) -> RQResult<GroupLeaveEvent> {
         let d4 =

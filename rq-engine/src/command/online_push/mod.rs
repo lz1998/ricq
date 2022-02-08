@@ -1,4 +1,4 @@
-use crate::structs::{FriendInfo, GroupMemberPermission};
+use crate::structs::GroupMemberPermission;
 use crate::{jce, pb};
 
 pub mod builder;
@@ -62,10 +62,6 @@ pub struct GroupMessagePart {
     pub pkg_index: i32,
     // 分片id，相同id的应该合并，且根据pkg_index排序
     pub div_seq: i32,
-}
-
-pub struct NewFriendEvent {
-    pub friend: FriendInfo,
 }
 
 #[derive(Debug, Default)]

@@ -7,10 +7,12 @@ use futures::{stream, StreamExt};
 use rq_engine::command::common::PbToBytes;
 use rq_engine::msg::MessageChain;
 use rq_engine::pb::msg;
-use rq_engine::structs::{FriendMessageRecall, GroupMessage, GroupMute};
+use rq_engine::structs::{FriendInfo, FriendMessageRecall, GroupMessage, GroupMute};
 use rq_engine::{jce, pb};
 
-use crate::client::event::{FriendMessageRecallEvent, GroupMessageEvent, GroupMuteEvent};
+use crate::client::event::{
+    FriendMessageRecallEvent, GroupMessageEvent, GroupMuteEvent, NewFriendEvent,
+};
 use crate::client::handler::QEvent;
 use crate::client::Client;
 use crate::engine::command::online_push::GroupMessagePart;
@@ -160,8 +162,23 @@ impl Client {
                                 })
                                 .await;
                         }
+                        0xB3 => {
+                            let msg_add_frd_notify =
+                                pb::SubB3::from_bytes(&msg.v_protobuf).unwrap();
+                            if let Some(f) = msg_add_frd_notify.msg_add_frd_notify {
+                                self.handler
+                                    .handle(QEvent::NewFriend(NewFriendEvent {
+                                        client: self.clone(),
+                                        friend: FriendInfo {
+                                            uin: f.uin,
+                                            nick: f.nick,
+                                            ..Default::default()
+                                        },
+                                    }))
+                                    .await;
+                            }
+                        }
                         0x8B => {}
-                        0xB3 => {}
                         0xD4 => {}
                         0x27 => {}
                         0x122 => {}

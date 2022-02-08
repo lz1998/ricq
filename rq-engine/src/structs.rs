@@ -84,7 +84,7 @@ pub enum GroupMemberPermission {
     Member = 3,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct FriendInfo {
     pub uin: i64,
     pub nick: String,
