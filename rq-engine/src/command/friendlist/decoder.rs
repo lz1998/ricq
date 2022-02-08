@@ -120,9 +120,8 @@ impl super::super::super::Engine {
         ))?;
         let ret = r.get_i32();
         if ret != 0 {
-            // 猜测 ret 为失败的个数
             Err(RQError::Other(format!(
-                "delete friend error: Failure Count {}",
+                "delete friend error: {}",
                 ret
             )))
         } else {
