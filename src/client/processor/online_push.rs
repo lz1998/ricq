@@ -7,11 +7,14 @@ use futures::{stream, StreamExt};
 use rq_engine::command::common::PbToBytes;
 use rq_engine::msg::MessageChain;
 use rq_engine::pb::msg;
-use rq_engine::structs::{FriendInfo, FriendMessageRecall, GroupMessage, GroupMute};
+use rq_engine::structs::{
+    FriendInfo, FriendMessageRecall, GroupMessage, GroupMessageRecall, GroupMute,
+};
 use rq_engine::{jce, pb};
 
 use crate::client::event::{
-    FriendMessageRecallEvent, GroupMessageEvent, GroupMuteEvent, NewFriendEvent,
+    FriendMessageRecallEvent, GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent,
+    NewFriendEvent,
 };
 use crate::client::handler::QEvent;
 use crate::client::Client;
@@ -133,7 +136,36 @@ impl Client {
                         }
                         0x10 | 0x11 | 0x14 | 0x15 => {
                             // group notify msg
-                            // TODO proto 改成 oneof
+                            r.advance(1);
+                            let b = pb::notify::NotifyMsgBody::from_bytes(&r).unwrap();
+                            if let Some(opt_msg_recall) = b.opt_msg_recall {
+                                let operator_uin = opt_msg_recall.uin;
+                                let recalls: Vec<pb::notify::RecalledMessageMeta> = opt_msg_recall
+                                    .recalled_msg_list
+                                    .into_iter()
+                                    .filter(|rm| rm.msg_type != 2)
+                                    .collect();
+                                stream::iter(recalls)
+                                    .map(|rm| GroupMessageRecall {
+                                        msg_seq: rm.seq,
+                                        group_code,
+                                        operator_uin,
+                                        author_uin: rm.author_uin,
+                                        time: rm.time,
+                                    })
+                                    .for_each(async move |e| {
+                                        // TODO dispatch group message recall
+                                        self.handler
+                                            .handle(QEvent::GroupMessageRecall(
+                                                GroupMessageRecallEvent {
+                                                    client: self.clone(),
+                                                    recall: e,
+                                                },
+                                            ))
+                                            .await;
+                                    })
+                                    .await;
+                            }
                         }
                         _ => {}
                     }

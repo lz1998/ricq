@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use rq_engine::command::profile_service::{JoinGroupRequest, NewFriendRequest};
-use rq_engine::structs::{FriendInfo, FriendMessageRecall, GroupMute, NewMember};
+use rq_engine::structs::{
+    FriendInfo, FriendMessageRecall, GroupMessageRecall, GroupMute, NewMember,
+};
 use rq_engine::RQResult;
 
 use crate::structs::{Group, GroupMemberInfo, GroupMessage, PrivateMessage};
@@ -152,6 +154,14 @@ pub struct FriendMessageRecallEvent {
     #[derivative(Debug = "ignore")]
     pub client: Arc<Client>,
     pub recall: FriendMessageRecall,
+}
+
+#[derive(Clone, derivative::Derivative)]
+#[derivative(Debug)]
+pub struct GroupMessageRecallEvent {
+    #[derivative(Debug = "ignore")]
+    pub client: Arc<Client>,
+    pub recall: GroupMessageRecall,
 }
 
 #[derive(Clone, derivative::Derivative)]

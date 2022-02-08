@@ -6,8 +6,8 @@ use tokio::sync::{
 };
 
 use crate::client::event::{
-    FriendMessageRecallEvent, FriendRequestEvent, GroupMessageEvent, GroupMuteEvent,
-    GroupRequestEvent, NewFriendEvent, NewMemberEvent, PrivateMessageEvent,
+    FriendMessageRecallEvent, FriendRequestEvent, GroupMessageEvent, GroupMessageRecallEvent,
+    GroupMuteEvent, GroupRequestEvent, NewFriendEvent, NewMemberEvent, PrivateMessageEvent,
 };
 
 /// 所有需要外发的数据的枚举打包
@@ -34,6 +34,8 @@ pub enum QEvent {
     GroupMute(GroupMuteEvent),
     /// 好友消息撤回
     FriendMessageRecall(FriendMessageRecallEvent),
+    /// 群消息撤回
+    GroupMessageRecall(GroupMessageRecallEvent),
     /// 新好友
     NewFriend(NewFriendEvent),
     // FriendList(decoder::friendlist::FriendListResponse),
@@ -67,6 +69,9 @@ pub trait Handler: Sync {
                 self.handle_friend_message_recall(friend_message_recall)
                     .await
             }
+            QEvent::GroupMessageRecall(group_message_recall) => {
+                self.handle_group_message_recall(group_message_recall).await
+            }
             QEvent::TcpConnect => self.handle_tcp_connect_event().await,
             QEvent::TcpDisconnect => self.handle_tcp_connect_event().await,
         }
@@ -83,6 +88,7 @@ pub trait Handler: Sync {
     async fn handle_group_mute(&self, _group_mute: GroupMuteEvent) {}
     async fn handle_friend_message_recall(&self, _friend_message_recall: FriendMessageRecallEvent) {
     }
+    async fn handle_group_message_recall(&self, _group_message_recall: GroupMessageRecallEvent) {}
     async fn handle_new_friend(&self, _new_friend: NewFriendEvent) {}
 }
 

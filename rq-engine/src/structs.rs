@@ -134,6 +134,15 @@ pub struct FriendMessageRecall {
     pub time: i64,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct GroupMessageRecall {
+    pub msg_seq: i32,
+    pub group_code: i64,
+    pub operator_uin: i64,
+    pub author_uin: i64,
+    pub time: i32,
+}
+
 // 用于撤回
 #[derive(Debug, Clone, Default)]
 pub struct MessageReceipt {
