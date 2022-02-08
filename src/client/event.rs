@@ -58,8 +58,34 @@ pub struct GroupRequestEvent {
 }
 
 impl GroupRequestEvent {
-    pub async fn accept(&self) {
-        todo!()
+    pub async fn accept(&self, msg_type: i32) -> RQResult<()> {
+        self.client
+            .set_group_system_message(
+                self.request.msg_seq,
+                self.request.req_uin,
+                self.request.group_code,
+                msg_type,
+                self.request.invitor_uin.is_some(),
+                true,
+                false,
+                "".into(),
+            )
+            .await
+    }
+
+    pub async fn reject(&self, msg_type: i32, reason: impl ToString) -> RQResult<()> {
+        self.client
+            .set_group_system_message(
+                self.request.msg_seq,
+                self.request.req_uin,
+                self.request.group_code,
+                msg_type,
+                self.request.invitor_uin.is_some(),
+                false,
+                true,
+                reason.to_string(),
+            )
+            .await
     }
 }
 

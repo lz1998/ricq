@@ -196,6 +196,26 @@ impl super::Client {
             .decode_system_msg_group_packet(resp.body)
     }
 
+    pub(crate) async fn set_group_system_message(
+        &self,
+        req_id: i64,
+        requester: i64,
+        group: i64,
+        msg_type: i32,
+        is_invite: bool,
+        accept: bool,
+        block: bool,
+        reason: String,
+    ) -> RQResult<()> {
+        let engine = self.engine.read().await;
+        let pkt = engine.build_system_msg_group_action_packet(
+            req_id, requester, group, msg_type, is_invite, accept, block, reason,
+        );
+        self.send_and_wait(pkt).await?;
+
+        Ok(())
+    }
+
     /// 获取所有进群申请信息
     pub(crate) async fn get_all_group_system_messages(&self) -> RQResult<GroupSystemMessages> {
         let mut resp = self.get_group_system_messages(false).await?;
@@ -205,6 +225,8 @@ impl super::Client {
         resp.self_invited.extend(risk_resp.self_invited);
         Ok(resp)
     }
+
+    
 
     /// 获取好友申请信息
     pub(crate) async fn get_friend_system_messages(&self) -> RQResult<FriendSystemMessages> {
