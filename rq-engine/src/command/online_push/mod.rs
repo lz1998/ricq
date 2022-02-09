@@ -10,18 +10,6 @@ pub struct ReqPush {
     pub msg_infos: Vec<jce::PushMessageInfo>,
 }
 
-#[derive(Debug, Default)]
-pub struct GroupMuteEvent {}
-
-#[derive(Debug, Default)]
-pub struct GroupMessageRecalledEvent {}
-
-#[derive(Debug, Default)]
-pub struct GroupRedBagLuckyKingNotifyEvent {}
-
-#[derive(Debug, Default)]
-pub struct GroupDigestEvent {}
-
 pub enum OnlinePushTrans {
     MemberLeave {
         msg_uid: i64,
@@ -62,9 +50,4 @@ pub struct GroupMessagePart {
     pub pkg_index: i32,
     // 分片id，相同id的应该合并，且根据pkg_index排序
     pub div_seq: i32,
-}
-
-// 需要同步群成员
-pub struct GroupMemberNeedSync {
-    pub group_code: i64,
 }

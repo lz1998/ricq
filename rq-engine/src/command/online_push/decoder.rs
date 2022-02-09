@@ -2,7 +2,8 @@ use bytes::{Buf, Bytes};
 use jcers::Jce;
 
 use crate::command::common::PbToBytes;
-use crate::command::online_push::*;
+use crate::command::online_push::{GroupMessagePart, OnlinePushTrans, ReqPush};
+use crate::structs::GroupMemberPermission;
 use crate::{jce, pb, RQError, RQResult};
 
 impl super::super::super::Engine {
@@ -151,23 +152,6 @@ impl super::super::super::Engine {
         }
         Err(RQError::Decode(
             "decode_online_push_trans_packet unknown error".to_string(),
-        ))
-    }
-
-    pub fn msg_type_0x210_sub44_decoder(&self, protobuf: Bytes) -> RQResult<GroupMemberNeedSync> {
-        let b44 =
-            pb::Sub44::from_bytes(&protobuf).map_err(|_| RQError::Decode("Sub44".to_string()))?;
-        let group_code = b44
-            .group_sync_msg
-            .ok_or_else(|| {
-                RQError::Decode("msg_type_0x210_sub44_decoder group_sync_msg is None".to_string())
-            })?
-            .grp_code;
-        if group_code != 0 {
-            return Ok(GroupMemberNeedSync { group_code });
-        }
-        Err(RQError::Decode(
-            "msg_type_0x210_sub44_decoder unknown error".to_string(),
         ))
     }
 }
