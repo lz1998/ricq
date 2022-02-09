@@ -285,6 +285,7 @@ impl super::Client {
             .await
             .decode_friend_group_list_response(resp.body)
     }
+
     /// 删除好友
     /// ## Args
     /// - `del_uin` 为要删除的好友QQid
@@ -293,12 +294,20 @@ impl super::Client {
     /// - 如果删除好友成功 返回 Ok(())
     /// - 如果删除好友失败 返回 Err(RQError::Other)
     /// - 其他异常 返回 Err(..)
-    pub async fn set_delete_friend(&self, del_uin: i64) -> RQResult<()> {
+    pub async fn delete_friend(&self, del_uin: i64) -> RQResult<()> {
         let req = self.engine.read().await.build_delete_friend_packet(del_uin);
 
         let resp = self.send_and_wait(req).await?;
 
-        self.engine.read().await.decode_remove_friend(resp.body)
+        let resp = self.engine.read().await.decode_remove_friend(resp.body)?;
+        if resp.error_code != 0 {
+            Err(RQError::Other(format!(
+                "Delete Friend Failure : code = {}",
+                resp.error_code
+            )))
+        } else {
+            Ok(())
+        }
     }
 
     /// 获取群列表
