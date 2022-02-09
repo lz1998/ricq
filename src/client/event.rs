@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use rq_engine::command::profile_service::{JoinGroupRequest, NewFriendRequest};
+use rq_engine::command::profile_service::{JoinGroupRequest, NewFriendRequest, SelfInvited};
 use rq_engine::structs::{
     DeleteFriend, FriendInfo, FriendMessageRecall, FriendPoke, GroupLeave, GroupMessageRecall,
     GroupMute, GroupNameUpdate, MemberPermissionChange, NewMember,
@@ -211,4 +211,12 @@ pub struct MemberPermissionChangeEvent {
     #[derivative(Debug = "ignore")]
     pub client: Arc<Client>,
     pub change: MemberPermissionChange,
+}
+
+#[derive(Clone, derivative::Derivative)]
+#[derivative(Debug)]
+pub struct SelfInvitedEvent {
+    #[derivative(Debug = "ignore")]
+    pub client: Arc<Client>,
+    pub request: SelfInvited,
 }
