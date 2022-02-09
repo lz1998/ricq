@@ -155,13 +155,12 @@ impl Client {
                                         author_uin: rm.author_uin,
                                         time: rm.time,
                                     })
-                                    .for_each(async move |e| {
-                                        // TODO dispatch group message recall
+                                    .for_each(async move |recall| {
                                         self.handler
                                             .handle(QEvent::GroupMessageRecall(
                                                 GroupMessageRecallEvent {
                                                     client: self.clone(),
-                                                    recall: e,
+                                                    recall,
                                                 },
                                             ))
                                             .await;
@@ -176,7 +175,7 @@ impl Client {
                     let mut v_msg = info.v_msg;
                     let msg: jce::MsgType0x210 = jcers::from_buf(&mut v_msg).unwrap();
                     match msg.sub_msg_type {
-                        0x8A => {
+                        0x8A | 0x8B => {
                             let s8a = pb::Sub8A::from_bytes(&msg.v_protobuf).unwrap();
                             stream::iter(s8a.msg_info)
                                 .map(|m| FriendMessageRecall {
@@ -225,7 +224,7 @@ impl Client {
                                 }))
                                 .await;
                         }
-                        0x122 => {
+                        0x122 | 0x123 => {
                             let t = pb::notify::GeneralGrayTipInfo::from_bytes(&msg.v_protobuf)
                                 .unwrap();
                             let mut sender: i64 = 0;
@@ -342,8 +341,6 @@ impl Client {
                                 }
                             }
                         }
-                        0x8B => {}
-                        0x123 => {}
                         _ => {}
                     }
                 }
