@@ -53,4 +53,5 @@ pub struct Client {
     group_message_builder: RwLock<cached::TimedCache<i32, Vec<GroupMessagePart>>>,
     /// 每个 28 Byte
     c2c_cache: RwLock<cached::TimedCache<(i64, i64, i32, i64), ()>>,
+    push_req_cache: RwLock<cached::TimedCache<(i16, i64), ()>>,
 }

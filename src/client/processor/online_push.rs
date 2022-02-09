@@ -106,9 +106,9 @@ impl Client {
 
     pub(crate) async fn process_push_req(self: &Arc<Self>, msg_infos: Vec<jce::PushMessageInfo>) {
         for info in msg_infos {
-            // let msg_seq = info.msg_seq;
-            // let msg_time = info.msg_time;
-            // let msg_uid = info.msg_uid;
+            if self.push_req_exists(&info).await {
+                continue;
+            }
             match info.msg_type {
                 732 => {
                     let mut r = info.v_msg;
@@ -348,5 +348,23 @@ impl Client {
                 _ => {}
             }
         }
+    }
+
+    async fn push_req_exists(&self, info: &jce::PushMessageInfo) -> bool {
+        let msg_time = info.msg_time as i32;
+        if self.start_time > msg_time {
+            return true;
+        }
+        let mut push_req_cache = self.push_req_cache.write().await;
+        let key = (info.msg_seq, info.msg_uid);
+        if push_req_cache.cache_get(&key).is_some() {
+            return true;
+        }
+        push_req_cache.cache_set(key, ());
+        if push_req_cache.cache_misses().unwrap_or_default() > 10 {
+            push_req_cache.flush();
+            push_req_cache.cache_reset_metrics();
+        }
+        false
     }
 }
