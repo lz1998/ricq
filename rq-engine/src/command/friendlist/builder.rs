@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::atomic::Ordering;
 
 use bytes::{BufMut, Bytes, BytesMut};
 use jcers::JcePut;
@@ -29,7 +30,7 @@ impl super::super::super::Engine {
             },
             &mut d50,
         )
-        .unwrap();
+            .unwrap();
 
         let req = jce::FriendListRequest {
             reqtype: 3,
@@ -163,5 +164,39 @@ impl super::super::super::Engine {
             ..Default::default()
         };
         self.uni_packet("friendlist.ModifyGroupCardReq", pkt.freeze())
+    }
+
+    //friendlist.DelFriend
+    /// #Notice
+    /// 根据目前对源码的分析，
+    /// `del_type` 一直为 2，
+    /// `version` 一直为 1
+    /// 目前采用硬编码
+    pub fn build_delete_friend_packet(&self, del_uin: i64) -> Packet {
+        let payload = jce::DelFriendReq {
+            uin: self.uin.load(Ordering::Relaxed),
+            del_uin,
+            del_type: 2,
+            version: 1,
+        };
+
+        let buf = jce::RequestDataVersion3 {
+            map: HashMap::from_iter([
+                ("DF".to_string(),
+                 pack_uni_request_data(&payload.freeze())
+                )
+            ])
+        };
+
+        let pkt = jce::RequestPacket {
+            i_version: 3,
+            i_request_id: self.next_packet_seq(),
+            s_servant_name: "mqq.IMService.FriendListServiceServantObj".to_string(),
+            s_func_name: "DelFriendReq".to_string(),
+            s_buffer: buf.freeze(),
+            ..Default::default()
+        };
+
+        self.uni_packet("friendlist.delFriend", pkt.freeze())
     }
 }
