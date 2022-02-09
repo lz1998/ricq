@@ -8,14 +8,15 @@ use rq_engine::command::common::PbToBytes;
 use rq_engine::msg::MessageChain;
 use rq_engine::pb::msg;
 use rq_engine::structs::{
-    FriendInfo, FriendMessageRecall, FriendPoke, GroupLeave, GroupMessage, GroupMessageRecall,
-    GroupMute,
+    DeleteFriend, FriendInfo, FriendMessageRecall, FriendPoke, GroupLeave, GroupMessage,
+    GroupMessageRecall, GroupMute, GroupNameUpdate,
 };
 use rq_engine::{jce, pb};
 
 use crate::client::event::{
-    FriendMessageRecallEvent, FriendPokeEvent, GroupLeaveEvent, GroupMessageEvent,
-    GroupMessageRecallEvent, GroupMuteEvent, NewFriendEvent,
+    DeleteFriendEvent, FriendMessageRecallEvent, FriendPokeEvent, GroupLeaveEvent,
+    GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent, GroupNameUpdateEvent,
+    NewFriendEvent,
 };
 use crate::client::handler::QEvent;
 use crate::client::Client;
@@ -245,8 +246,58 @@ impl Client {
                                     .await;
                             }
                         }
+                        0x27 => {
+                            let s27 = pb::msgtype0x210::SubMsg0x27Body::from_bytes(&msg.v_protobuf)
+                                .unwrap();
+                            for mod_info in s27.mod_infos {
+                                if let Some(mod_group_profile) = mod_info.mod_group_profile {
+                                    for profile_info in mod_group_profile.group_profile_infos {
+                                        if profile_info.field.unwrap_or_default() == 1 {
+                                            let new_group_name =
+                                                String::from_utf8_lossy(profile_info.value())
+                                                    .to_string();
+                                            let update = GroupNameUpdate {
+                                                group_code: mod_group_profile
+                                                    .group_code
+                                                    .unwrap_or_default()
+                                                    as i64,
+                                                operator_uin: mod_group_profile
+                                                    .cmd_uin
+                                                    .unwrap_or_default()
+                                                    as i64,
+                                                group_name: new_group_name,
+                                            };
+                                            self.handler
+                                                .handle(QEvent::GroupNameUpdate(
+                                                    GroupNameUpdateEvent {
+                                                        client: self.clone(),
+                                                        update,
+                                                    },
+                                                ))
+                                                .await;
+                                        }
+                                    }
+                                }
+                                if let Some(del_friend) = mod_info.del_friend {
+                                    let delete_friends: Vec<DeleteFriend> = del_friend
+                                        .uins
+                                        .into_iter()
+                                        .map(|uin| DeleteFriend { uin: uin as i64 })
+                                        .collect();
+                                    stream::iter(delete_friends)
+                                        .for_each(async move |delete| {
+                                            self.handler
+                                                .handle(QEvent::DeleteFriend(DeleteFriendEvent {
+                                                    client: self.clone(),
+                                                    delete,
+                                                }))
+                                                .await;
+                                        })
+                                        .await;
+                                }
+                            }
+                        }
                         0x8B => {}
-                        0x27 => {}
                         0x123 => {}
                         0x44 => {}
                         _ => {}

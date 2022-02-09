@@ -156,6 +156,17 @@ pub struct FriendPoke {
     pub receiver: i64,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct GroupNameUpdate {
+    pub group_code: i64,
+    pub operator_uin: i64,
+    pub group_name: String,
+}
+#[derive(Debug, Clone, Default)]
+pub struct DeleteFriend {
+    pub uin: i64,
+}
+
 // 用于撤回
 #[derive(Debug, Clone, Default)]
 pub struct MessageReceipt {
