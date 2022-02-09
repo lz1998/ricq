@@ -65,12 +65,6 @@ pub struct GroupMessagePart {
 }
 
 #[derive(Debug, Default)]
-pub struct GroupLeaveEvent {
-    pub group_code: i64,
-    pub operator: i64,
-}
-
-#[derive(Debug, Default)]
 pub struct Sub0x27Event {
     pub group_name_updated_events: Vec<GroupNameUpdatedEvent>,
     pub del_friend_events: Vec<i64>,

@@ -8,13 +8,13 @@ use rq_engine::command::common::PbToBytes;
 use rq_engine::msg::MessageChain;
 use rq_engine::pb::msg;
 use rq_engine::structs::{
-    FriendInfo, FriendMessageRecall, GroupMessage, GroupMessageRecall, GroupMute,
+    FriendInfo, FriendMessageRecall, GroupLeave, GroupMessage, GroupMessageRecall, GroupMute,
 };
 use rq_engine::{jce, pb};
 
 use crate::client::event::{
-    FriendMessageRecallEvent, GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent,
-    NewFriendEvent,
+    FriendMessageRecallEvent, GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent,
+    GroupMuteEvent, NewFriendEvent,
 };
 use crate::client::handler::QEvent;
 use crate::client::Client;
@@ -210,8 +210,20 @@ impl Client {
                                     .await;
                             }
                         }
+                        0xD4 => {
+                            let d4 = pb::SubD4::from_bytes(&&msg.v_protobuf).unwrap();
+                            self.handler
+                                .handle(QEvent::GroupLeave(GroupLeaveEvent {
+                                    client: self.clone(),
+                                    leave: GroupLeave {
+                                        group_code: d4.uin,
+                                        member_uin: self.uin().await,
+                                        operator_uin: None,
+                                    },
+                                }))
+                                .await;
+                        }
                         0x8B => {}
-                        0xD4 => {}
                         0x27 => {}
                         0x122 => {}
                         0x123 => {}

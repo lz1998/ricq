@@ -154,16 +154,6 @@ impl super::super::super::Engine {
         ))
     }
 
-    // return group number group leave
-    pub fn msg_type_0x210_subd4_decoder(&self, protobuf: Bytes) -> RQResult<GroupLeaveEvent> {
-        let d4 =
-            pb::SubD4::from_bytes(&protobuf).map_err(|_| RQError::Decode("SubD4".to_string()))?;
-        Ok(GroupLeaveEvent {
-            group_code: d4.uin,
-            ..Default::default()
-        })
-    }
-
     pub fn msg_type_0x210_sub27_decoder(&self, protobuf: Bytes) -> RQResult<Sub0x27Event> {
         let s27 = pb::msgtype0x210::SubMsg0x27Body::from_bytes(&protobuf)
             .map_err(|_| RQError::Decode("SubMsg0x27Body".to_string()))?;

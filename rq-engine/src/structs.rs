@@ -143,6 +143,13 @@ pub struct GroupMessageRecall {
     pub time: i32,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct GroupLeave {
+    pub group_code: i64,
+    pub member_uin: i64,
+    pub operator_uin: Option<i64>,
+}
+
 // 用于撤回
 #[derive(Debug, Clone, Default)]
 pub struct MessageReceipt {
