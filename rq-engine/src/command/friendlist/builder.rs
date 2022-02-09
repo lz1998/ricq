@@ -29,7 +29,7 @@ impl super::super::super::Engine {
             },
             &mut d50,
         )
-        .unwrap();
+            .unwrap();
 
         let req = jce::FriendListRequest {
             reqtype: 3,
@@ -196,6 +196,6 @@ impl super::super::super::Engine {
             ..Default::default()
         };
 
-        self.uni_packet("DF",pkt.freeze())
+        self.uni_packet("friendlist.delFriend",pkt.freeze())
     }
 }
