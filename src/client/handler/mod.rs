@@ -53,52 +53,7 @@ pub enum QEvent {
 /// 处理外发数据的接口
 #[async_trait]
 pub trait Handler: Sync {
-    async fn handle(&self, msg: QEvent) {
-        match msg {
-            QEvent::LoginEvent(uin) => self.handle_login_event(uin).await,
-            QEvent::GroupMessage(group_message) => self.handle_group_message(group_message).await,
-            QEvent::SelfGroupMessage(group_message) => {
-                self.handle_self_group_message(group_message).await
-            }
-            QEvent::PrivateMessage(private_message) => {
-                self.handle_private_message(private_message).await
-            }
-            QEvent::GroupRequest(group_request) => self.handle_group_request(group_request).await,
-            QEvent::FriendRequest(friend_request) => {
-                self.handle_friend_request(friend_request).await
-            }
-            QEvent::NewMember(new_member) => self.handle_new_member(new_member).await,
-            QEvent::GroupMute(group_mute) => self.handle_group_mute(group_mute).await,
-            QEvent::NewFriend(new_friend) => self.handle_new_friend(new_friend).await,
-            QEvent::FriendMessageRecall(friend_message_recall) => {
-                self.handle_friend_message_recall(friend_message_recall)
-                    .await
-            }
-            QEvent::GroupMessageRecall(group_message_recall) => {
-                self.handle_group_message_recall(group_message_recall).await
-            }
-            QEvent::GroupLeave(group_leave) => self.handle_group_leave(group_leave).await,
-            QEvent::FriendPoke(friend_poke) => self.handle_friend_poke(friend_poke).await,
-            QEvent::TcpConnect => self.handle_tcp_connect_event().await,
-            QEvent::TcpDisconnect => self.handle_tcp_connect_event().await,
-        }
-    }
-    async fn handle_login_event(&self, _uin: i64) {}
-    async fn handle_tcp_connect_event(&self) {}
-    async fn handle_tcp_disconnect_event(&self) {}
-    async fn handle_group_message(&self, _group_message: GroupMessageEvent) {}
-    async fn handle_self_group_message(&self, _group_message: GroupMessageEvent) {}
-    async fn handle_private_message(&self, _private_message: PrivateMessageEvent) {}
-    async fn handle_group_request(&self, _group_request: GroupRequestEvent) {}
-    async fn handle_friend_request(&self, _group_request: FriendRequestEvent) {}
-    async fn handle_new_member(&self, _new_member: NewMemberEvent) {}
-    async fn handle_group_mute(&self, _group_mute: GroupMuteEvent) {}
-    async fn handle_friend_message_recall(&self, _friend_message_recall: FriendMessageRecallEvent) {
-    }
-    async fn handle_group_message_recall(&self, _group_message_recall: GroupMessageRecallEvent) {}
-    async fn handle_new_friend(&self, _new_friend: NewFriendEvent) {}
-    async fn handle_group_leave(&self, _group_leave: GroupLeaveEvent) {}
-    async fn handle_friend_poke(&self, _friend_poke: FriendPokeEvent) {}
+    async fn handle(&self, _msg: QEvent);
 }
 
 /// 一个默认 Handler，只是把信息打印出来
