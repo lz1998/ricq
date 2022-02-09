@@ -5,6 +5,7 @@ use cached::Cached;
 use futures::{stream, StreamExt};
 
 use rq_engine::command::common::PbToBytes;
+use rq_engine::command::online_push::{OnlinePushTrans, PushTransInfo};
 use rq_engine::msg::MessageChain;
 use rq_engine::pb::msg;
 use rq_engine::structs::{
@@ -16,7 +17,7 @@ use rq_engine::{jce, pb};
 use crate::client::event::{
     DeleteFriendEvent, FriendMessageRecallEvent, FriendPokeEvent, GroupLeaveEvent,
     GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent, GroupNameUpdateEvent,
-    NewFriendEvent, NewMemberEvent,
+    MemberPermissionChangeEvent, NewFriendEvent, NewMemberEvent,
 };
 use crate::client::handler::QEvent;
 use crate::client::Client;
@@ -364,6 +365,50 @@ impl Client {
         if push_req_cache.cache_misses().unwrap_or_default() > 10 {
             push_req_cache.flush();
             push_req_cache.cache_reset_metrics();
+        }
+        false
+    }
+
+    pub(crate) async fn process_push_trans(self: &Arc<Self>, push_trans: OnlinePushTrans) {
+        if self.push_trans_exists(&push_trans).await {
+            return;
+        }
+        match push_trans.info {
+            PushTransInfo::MemberLeave(leave) => {
+                self.handler
+                    .handle(QEvent::GroupLeave(GroupLeaveEvent {
+                        client: self.clone(),
+                        leave,
+                    }))
+                    .await;
+            }
+            PushTransInfo::MemberPermissionChange(change) => {
+                self.handler
+                    .handle(QEvent::MemberPermissionChange(
+                        MemberPermissionChangeEvent {
+                            client: self.clone(),
+                            change,
+                        },
+                    ))
+                    .await;
+            }
+        }
+    }
+
+    async fn push_trans_exists(&self, info: &OnlinePushTrans) -> bool {
+        let msg_time = info.msg_time as i32;
+        if self.start_time > msg_time {
+            return true;
+        }
+        let mut push_trans_cache = self.push_trans_cache.write().await;
+        let key = (info.msg_seq, info.msg_uid);
+        if push_trans_cache.cache_get(&key).is_some() {
+            return true;
+        }
+        push_trans_cache.cache_set(key, ());
+        if push_trans_cache.cache_misses().unwrap_or_default() > 10 {
+            push_trans_cache.flush();
+            push_trans_cache.cache_reset_metrics();
         }
         false
     }

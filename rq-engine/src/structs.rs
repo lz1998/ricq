@@ -162,9 +162,17 @@ pub struct GroupNameUpdate {
     pub operator_uin: i64,
     pub group_name: String,
 }
+
 #[derive(Debug, Clone, Default)]
 pub struct DeleteFriend {
     pub uin: i64,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct MemberPermissionChange {
+    pub group_code: i64,
+    pub member_uin: i64,
+    pub new_permission: GroupMemberPermission,
 }
 
 // 用于撤回

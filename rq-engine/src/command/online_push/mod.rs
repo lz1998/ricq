@@ -1,4 +1,4 @@
-use crate::structs::GroupMemberPermission;
+use crate::structs::{GroupLeave, MemberPermissionChange};
 use crate::{jce, pb};
 
 pub mod builder;
@@ -10,27 +10,18 @@ pub struct ReqPush {
     pub msg_infos: Vec<jce::PushMessageInfo>,
 }
 
-pub enum OnlinePushTrans {
-    MemberLeave {
-        msg_uid: i64,
-        // 和group_code不一样
-        group_uin: i64,
-        member_uin: i64,
-    },
-    MemberKicked {
-        msg_uid: i64,
-        // 和group_code不一样
-        group_uin: i64,
-        member_uin: i64,
-        operator_uin: i64,
-    },
-    MemberPermissionChanged {
-        msg_uid: i64,
-        // 和group_code不一样
-        group_uin: i64,
-        member_uin: i64,
-        new_permission: GroupMemberPermission,
-    },
+#[derive(Debug, Clone)]
+pub enum PushTransInfo {
+    MemberLeave(GroupLeave),
+    MemberPermissionChange(MemberPermissionChange),
+    // TODO 转让
+}
+#[derive(Debug, Clone)]
+pub struct OnlinePushTrans {
+    pub msg_seq: i32,
+    pub msg_uid: i64,
+    pub msg_time: i32,
+    pub info: PushTransInfo,
 }
 
 #[derive(Debug, Default, Clone, PartialEq)]

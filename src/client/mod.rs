@@ -54,4 +54,5 @@ pub struct Client {
     /// 每个 28 Byte
     c2c_cache: RwLock<cached::TimedCache<(i64, i64, i32, i64), ()>>,
     push_req_cache: RwLock<cached::TimedCache<(i16, i64), ()>>,
+    push_trans_cache: RwLock<cached::TimedCache<(i32, i64), ()>>,
 }

@@ -92,10 +92,14 @@ impl super::Client {
                     }
                 }
                 "OnlinePush.ReqPush" => {
-                    let engine = cli.engine.read().await;
-                    let resp = engine.decode_online_push_req_packet(pkt.body).unwrap();
+                    let resp = cli
+                        .engine
+                        .read()
+                        .await
+                        .decode_online_push_req_packet(pkt.body)
+                        .unwrap();
                     let _ = cli
-                        .send(engine.build_delete_online_push_packet(
+                        .send(cli.engine.read().await.build_delete_online_push_packet(
                             resp.uin,
                             0,
                             Bytes::new(),
@@ -105,6 +109,15 @@ impl super::Client {
                         .await;
                     tracing::warn!(target: "rs_qq", "unhandled OnlinePush.ReqPush");
                     cli.process_push_req(resp.msg_infos).await;
+                }
+                "OnlinePush.PbPushTransMsg" => {
+                    let online_push_trans = cli
+                        .engine
+                        .read()
+                        .await
+                        .decode_online_push_trans_packet(pkt.body)
+                        .unwrap();
+                    cli.process_push_trans(online_push_trans).await;
                 }
                 _ => {
                     tracing::warn!(target: "rs_qq", "unhandled pkt: {}", &pkt.command_name);
