@@ -110,7 +110,7 @@ impl super::super::super::Engine {
     }
 
     //friendlist.delFriend
-    pub fn decode_remove_friend(&self, mut payload: Bytes) -> RQResult<()> {
+    pub fn decode_remove_friend(&self, mut payload: Bytes) -> RQResult<DelFriendResponse> {
         let mut req: jce::RequestPacket = jcers::from_buf(&mut payload)?;
 
         let mut data: jce::RequestDataVersion3 = jcers::from_buf(&mut req.s_buffer)?;
@@ -120,13 +120,6 @@ impl super::super::super::Engine {
         ))?;
         let resp = jcers::from_buf::<_, jce::DelFriendResp>(&mut r).map_err(RQError::Jce)?;
 
-        if resp.error_code != 0 {
-            Ok(())
-        } else {
-            Err(RQError::Other(format!(
-                "Delete Friend Failure : code = {}",
-                resp.error_code
-            )))
-        }
+        Ok(DelFriendResponse { err_code: resp.error_code })
     }
 }
