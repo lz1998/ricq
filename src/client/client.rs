@@ -45,6 +45,7 @@ impl super::Client {
             c2c_cache: RwLock::new(cached::TimedCache::with_lifespan(3600)),
             push_req_cache: RwLock::new(cached::TimedCache::with_lifespan(30)),
             push_trans_cache: RwLock::new(cached::TimedCache::with_lifespan(15)),
+            group_sys_message_cache: RwLock::new(Default::default()),
         }
     }
 

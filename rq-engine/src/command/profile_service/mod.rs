@@ -11,6 +11,7 @@ pub struct GroupSystemMessages {
 #[derive(Debug, Default, Clone)]
 pub struct SelfInvited {
     pub msg_seq: i64,
+    pub msg_time: i64,
     pub invitor_uin: i64,
     pub invitor_nick: String,
     pub group_code: i64,
@@ -23,6 +24,7 @@ pub struct SelfInvited {
 #[derive(Debug, Default, Clone)]
 pub struct JoinGroupRequest {
     pub msg_seq: i64,
+    pub msg_time: i64,
     pub message: String,
     pub req_uin: i64,
     pub req_nick: String,

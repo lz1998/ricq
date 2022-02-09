@@ -16,16 +16,18 @@ impl super::super::super::Engine {
                 for st in rsp
                     .groupmsgs
                     .into_iter()
-                    .filter_map(|st| st.msg.map(|m| (st.msg_seq, st.req_uin, m)))
+                    .filter_map(|st| st.msg.map(|m| (st.msg_seq, st.msg_time, st.req_uin, m)))
                 {
                     let msg_seq = st.0;
-                    let req_uin = st.1;
-                    let msg = st.2;
+                    let msg_time = st.1;
+                    let req_uin = st.2;
+                    let msg = st.3;
                     match msg.sub_type {
                         // 1 进群申请
                         1 => match msg.group_msg_type {
                             1 => join_group_requests.push(JoinGroupRequest {
                                 msg_seq,
+                                msg_time,
                                 message: msg.msg_additional,
                                 req_uin,
                                 req_nick: msg.req_uin_nick,
@@ -37,6 +39,7 @@ impl super::super::super::Engine {
                             }),
                             2 => self_invited.push(SelfInvited {
                                 msg_seq,
+                                msg_time,
                                 invitor_uin: msg.action_uin,
                                 invitor_nick: msg.action_uin_nick,
                                 group_code: msg.group_code,
@@ -46,6 +49,7 @@ impl super::super::super::Engine {
                             }),
                             22 => join_group_requests.push(JoinGroupRequest {
                                 msg_seq,
+                                msg_time,
                                 message: msg.msg_additional,
                                 req_uin,
                                 req_nick: msg.req_uin_nick,
