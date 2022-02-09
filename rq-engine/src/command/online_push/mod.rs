@@ -64,19 +64,6 @@ pub struct GroupMessagePart {
     pub div_seq: i32,
 }
 
-#[derive(Debug, Default)]
-pub struct Sub0x27Event {
-    pub group_name_updated_events: Vec<GroupNameUpdatedEvent>,
-    pub del_friend_events: Vec<i64>,
-}
-
-#[derive(Debug, Default)]
-pub struct GroupNameUpdatedEvent {
-    pub group_code: i64,
-    pub new_name: String,
-    pub operator_uin: i64,
-}
-
 // 需要同步群成员
 pub struct GroupMemberNeedSync {
     pub group_code: i64,

@@ -154,38 +154,6 @@ impl super::super::super::Engine {
         ))
     }
 
-    pub fn msg_type_0x210_sub27_decoder(&self, protobuf: Bytes) -> RQResult<Sub0x27Event> {
-        let s27 = pb::msgtype0x210::SubMsg0x27Body::from_bytes(&protobuf)
-            .map_err(|_| RQError::Decode("SubMsg0x27Body".to_string()))?;
-        let mut sub_0x27_event = Sub0x27Event::default();
-        for m in s27.mod_infos {
-            if let Some(profile) = m.mod_group_profile {
-                for info in profile.group_profile_infos.into_iter() {
-                    if let Some(field) = info.field {
-                        if field == 1 {
-                            sub_0x27_event
-                                .group_name_updated_events
-                                .push(GroupNameUpdatedEvent {
-                                    group_code: profile.group_code.unwrap_or_default() as i64,
-                                    new_name: String::from_utf8_lossy(
-                                        &info.value.unwrap_or_default(),
-                                    )
-                                    .to_string(),
-                                    operator_uin: profile.cmd_uin.unwrap_or_default() as i64,
-                                });
-                        }
-                    }
-                }
-            }
-            if let Some(ref del_friend) = m.del_friend {
-                sub_0x27_event
-                    .del_friend_events
-                    .append(&mut del_friend.uins.iter().map(|uin| *uin as i64).collect())
-            }
-        }
-        Ok(sub_0x27_event)
-    }
-
     pub fn msg_type_0x210_sub44_decoder(&self, protobuf: Bytes) -> RQResult<GroupMemberNeedSync> {
         let b44 =
             pb::Sub44::from_bytes(&protobuf).map_err(|_| RQError::Decode("Sub44".to_string()))?;

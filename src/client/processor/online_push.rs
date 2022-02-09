@@ -9,14 +9,14 @@ use rq_engine::msg::MessageChain;
 use rq_engine::pb::msg;
 use rq_engine::structs::{
     DeleteFriend, FriendInfo, FriendMessageRecall, FriendPoke, GroupLeave, GroupMessage,
-    GroupMessageRecall, GroupMute, GroupNameUpdate,
+    GroupMessageRecall, GroupMute, GroupNameUpdate, NewMember,
 };
 use rq_engine::{jce, pb};
 
 use crate::client::event::{
     DeleteFriendEvent, FriendMessageRecallEvent, FriendPokeEvent, GroupLeaveEvent,
     GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent, GroupNameUpdateEvent,
-    NewFriendEvent,
+    NewFriendEvent, NewMemberEvent,
 };
 use crate::client::handler::QEvent;
 use crate::client::Client;
@@ -297,9 +297,53 @@ impl Client {
                                 }
                             }
                         }
+                        0x44 => {
+                            let b44 = pb::Sub44::from_bytes(&msg.v_protobuf).unwrap();
+                            if let Some(group_sync_msg) = b44.group_sync_msg {
+                                if let Some(group) =
+                                    self.find_group(group_sync_msg.grp_code, true).await
+                                {
+                                    let last_join_time = group
+                                        .members
+                                        .read()
+                                        .await
+                                        .iter()
+                                        .map(|m| m.join_time)
+                                        .max()
+                                        .unwrap_or_default();
+                                    if let Ok(refreshed_members) =
+                                        self.get_group_member_list(group.info.code).await
+                                    {
+                                        let mut members = group.members.write().await;
+                                        members.clear();
+                                        members.extend(refreshed_members);
+                                    }
+                                    let new_members: Vec<NewMember> = group
+                                        .members
+                                        .read()
+                                        .await
+                                        .iter()
+                                        .filter(|m| m.join_time > last_join_time)
+                                        .map(|m| NewMember {
+                                            group_code: group.info.code,
+                                            member_uin: m.uin,
+                                        })
+                                        .collect();
+                                    stream::iter(new_members)
+                                        .for_each(async move |new_member| {
+                                            self.handler
+                                                .handle(QEvent::NewMember(NewMemberEvent {
+                                                    client: self.clone(),
+                                                    new_member,
+                                                }))
+                                                .await;
+                                        })
+                                        .await;
+                                }
+                            }
+                        }
                         0x8B => {}
                         0x123 => {}
-                        0x44 => {}
                         _ => {}
                     }
                 }
