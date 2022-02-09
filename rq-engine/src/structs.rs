@@ -84,7 +84,7 @@ pub enum GroupMemberPermission {
     Member = 3,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct FriendInfo {
     pub uin: i64,
     pub nick: String,
@@ -111,6 +111,49 @@ pub struct GroupMessage {
     pub from_uin: i64,
     pub time: i32,
     pub elements: MessageChain,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct NewMember {
+    pub group_code: i64,
+    pub member_uin: i64,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct GroupMute {
+    pub group_code: i64,
+    pub operator_uin: i64,
+    pub target_uin: i64,
+    pub time: u32,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct FriendMessageRecall {
+    pub msg_seq: i32,
+    pub friend_uin: i64,
+    pub time: i64,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct GroupMessageRecall {
+    pub msg_seq: i32,
+    pub group_code: i64,
+    pub operator_uin: i64,
+    pub author_uin: i64,
+    pub time: i32,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct GroupLeave {
+    pub group_code: i64,
+    pub member_uin: i64,
+    pub operator_uin: Option<i64>,
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct FriendPoke {
+    pub sender: i64,
+    pub receiver: i64,
 }
 
 // 用于撤回

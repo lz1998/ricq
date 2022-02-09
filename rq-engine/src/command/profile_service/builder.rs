@@ -60,28 +60,26 @@ impl super::super::super::Engine {
     // ProfileService.Pb.ReqSystemMsgAction.Group
     pub fn build_system_msg_group_action_packet(
         &self,
-        req_id: i64,
-        requester: i64,
-        group: i64,
+        msg_seq: i64,
+        req_uin: i64,
+        group_code: i64,
         msg_type: i32,
         is_invite: bool,
         accept: bool,
         block: bool,
         reason: String,
     ) -> Packet {
-        let (sub_src_id, group_msg_type) = if is_invite { (10016, 2) } else { (31, 1) };
-        let info_type = if accept { 11 } else { 12 };
         let req = pb::structmsg::ReqSystemMsgAction {
             msg_type,
-            msg_seq: req_id,
-            req_uin: requester,
+            msg_seq,
+            req_uin,
             sub_type: 1,
             src_id: 3,
-            sub_src_id,
-            group_msg_type,
+            sub_src_id: if is_invite { 10016 } else { 31 },
+            group_msg_type: if is_invite { 2 } else { 1 },
             action_info: Some(pb::structmsg::SystemMsgActionInfo {
-                r#type: info_type,
-                group_code: group,
+                r#type: if accept { 11 } else { 12 },
+                group_code,
                 blacklist: block,
                 msg: reason,
                 sig: vec![],
@@ -97,23 +95,20 @@ impl super::super::super::Engine {
     pub fn build_system_msg_friend_action_packet(
         &self,
         req_id: i64,
-        requester: i64,
+        req_uin: i64,
         accept: bool,
     ) -> Packet {
-        let info_type = if accept { 2 } else { 3 };
         let req = pb::structmsg::ReqSystemMsgAction {
             msg_type: 1,
             msg_seq: req_id,
-            req_uin: requester,
+            req_uin,
             sub_type: 1,
             src_id: 6,
             sub_src_id: 7,
             action_info: Some(pb::structmsg::SystemMsgActionInfo {
-                r#type: info_type,
+                r#type: if accept { 2 } else { 3 },
                 blacklist: false,
-                add_frd_sn_info: Some(pb::structmsg::AddFrdSnInfo {
-                    ..Default::default()
-                }),
+                add_frd_sn_info: Some(pb::structmsg::AddFrdSnInfo::default()),
                 ..Default::default()
             }),
             ..Default::default()

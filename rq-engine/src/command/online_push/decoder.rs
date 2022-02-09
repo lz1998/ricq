@@ -83,45 +83,7 @@ impl super::super::super::Engine {
         let uin: i64 = jr.get_by_tag(0)?;
         let msg_infos: Vec<jce::PushMessageInfo> = jr.get_by_tag(2)?;
 
-        let infos: Vec<PushInfo> = msg_infos
-            .iter()
-            .map(|info| self.parse_push_info(info))
-            .collect::<RQResult<_>>()?;
-        Ok(ReqPush {
-            resp: ReqPushResp { uin, msg_infos },
-            push_infos: infos,
-        })
-    }
-
-    fn parse_push_info(&self, raw: &jce::PushMessageInfo) -> RQResult<PushInfo> {
-        let info = PushInfo {
-            msg_seq: raw.msg_seq,
-            msg_time: raw.msg_time,
-            msg_uid: raw.msg_uid,
-            ..Default::default()
-        };
-        match raw.msg_type {
-            732 => {
-                let mut r = raw.v_msg.clone();
-                let _group_code = r.get_i32() as i64;
-                let i_type = r.get_u8();
-                r.get_u8();
-                match i_type {
-                    0x0c => {}
-                    0x10 | 0x11 | 0x14 | 0x15 => {}
-                    _ => {}
-                }
-            }
-            528 => {
-                let mut v_msg = raw.v_msg.clone();
-                let mut jr = jcers::Jce::new(&mut v_msg);
-                let _sub_type: i64 = jr.get_by_tag(0)?;
-                // println!("sub_type: {}", sub_type);
-                // TODO ...
-            }
-            _ => {}
-        }
-        Ok(info)
+        Ok(ReqPush { uin, msg_infos })
     }
 
     // TODO 还没测试
@@ -192,53 +154,6 @@ impl super::super::super::Engine {
         ))
     }
 
-    pub fn msg_type_0x210_sub8a_decoder(
-        &self,
-        uin: i64,
-        protobuf: Bytes,
-    ) -> RQResult<Vec<FriendMessageRecalledEvent>> {
-        let s8a =
-            pb::Sub8A::from_bytes(&protobuf).map_err(|_| RQError::Decode("Sub8A".to_string()))?;
-        let mut events = Vec::new();
-        for m in s8a.msg_info {
-            if m.to_uin == uin {
-                events.push(FriendMessageRecalledEvent {
-                    friend_uin: m.from_uin,
-                    message_id: m.msg_seq,
-                    time: m.msg_time,
-                })
-            }
-        }
-        if !events.is_empty() {
-            Ok(events)
-        } else {
-            Err(RQError::Decode("events length is 0".to_string()))
-        }
-    }
-
-    pub fn msg_type_0x210_subb3_decoder(&self, protobuf: Bytes) -> RQResult<NewFriendEvent> {
-        let msg_add_frd_notify = pb::SubB3::from_bytes(&protobuf)
-            .map_err(|_| RQError::Decode("SubB3".to_string()))?
-            .msg_add_frd_notify
-            .ok_or_else(|| RQError::Decode("msg_add_frd_notify is none".to_string()))?;
-        let friend = FriendInfo {
-            uin: msg_add_frd_notify.uin,
-            nick: msg_add_frd_notify.nick,
-            ..Default::default()
-        };
-        Ok(NewFriendEvent { friend })
-    }
-
-    // return group number group leave
-    pub fn msg_type_0x210_subd4_decoder(&self, protobuf: Bytes) -> RQResult<GroupLeaveEvent> {
-        let d4 =
-            pb::SubD4::from_bytes(&protobuf).map_err(|_| RQError::Decode("SubD4".to_string()))?;
-        Ok(GroupLeaveEvent {
-            group_code: d4.uin,
-            ..Default::default()
-        })
-    }
-
     pub fn msg_type_0x210_sub27_decoder(&self, protobuf: Bytes) -> RQResult<Sub0x27Event> {
         let s27 = pb::msgtype0x210::SubMsg0x27Body::from_bytes(&protobuf)
             .map_err(|_| RQError::Decode("SubMsg0x27Body".to_string()))?;
@@ -269,30 +184,6 @@ impl super::super::super::Engine {
             }
         }
         Ok(sub_0x27_event)
-    }
-
-    pub fn msg_type_0x210_sub122_decoder(
-        &self,
-        protobuf: Bytes,
-    ) -> RQResult<FriendPokeNotifyEvent> {
-        let t = pb::notify::GeneralGrayTipInfo::from_bytes(&protobuf)
-            .map_err(|_| RQError::Decode("GeneralGrayTipInfo".to_string()))?;
-        let mut sender: i64 = 0;
-        let mut receiver: i64 = 0;
-        for templ in t.msg_templ_param {
-            if templ.name == "uin_str1" {
-                sender = templ.value.parse::<i64>().unwrap_or_default()
-            } else if templ.name == "uin_str2" {
-                receiver = templ.value.parse::<i64>().unwrap_or_default()
-            }
-        }
-        if sender == 0 {
-            Err(RQError::Decode(
-                "msg_type_0x210_sub122_decoder sender is 0".to_string(),
-            ))
-        } else {
-            Ok(FriendPokeNotifyEvent { sender, receiver })
-        }
     }
 
     pub fn msg_type_0x210_sub44_decoder(&self, protobuf: Bytes) -> RQResult<GroupMemberNeedSync> {
