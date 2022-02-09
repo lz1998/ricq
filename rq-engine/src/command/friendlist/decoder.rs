@@ -1,4 +1,5 @@
 use std::fmt::format;
+
 use bytes::{Buf, Bytes};
 use jcers::Jce;
 
@@ -119,14 +120,15 @@ impl super::super::super::Engine {
         let mut r = data.map.remove("DFRESP").ok_or(RQError::Decode(
             "decode_remove_friend `DFRESP` not found".into(),
         ))?;
-        let resp = jcers::from_buf::<_, jce::DelFriendResp>(&mut r)
-            .map_err(RQError::Jce)
-            ?;
+        let resp = jcers::from_buf::<_, jce::DelFriendResp>(&mut r).map_err(RQError::Jce)?;
 
         if resp.error_code != 0 {
             Ok(())
         } else {
-            Err(RQError::Other(format!("Delete Friend Failure : code = {}",resp.error_code)))
+            Err(RQError::Other(format!(
+                "Delete Friend Failure : code = {}",
+                resp.error_code
+            )))
         }
     }
 }
