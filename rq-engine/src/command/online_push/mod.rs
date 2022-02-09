@@ -77,11 +77,6 @@ pub struct GroupNameUpdatedEvent {
     pub operator_uin: i64,
 }
 
-pub struct FriendPokeNotifyEvent {
-    pub sender: i64,
-    pub receiver: i64,
-}
-
 // 需要同步群成员
 pub struct GroupMemberNeedSync {
     pub group_code: i64,

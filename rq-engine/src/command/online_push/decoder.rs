@@ -186,30 +186,6 @@ impl super::super::super::Engine {
         Ok(sub_0x27_event)
     }
 
-    pub fn msg_type_0x210_sub122_decoder(
-        &self,
-        protobuf: Bytes,
-    ) -> RQResult<FriendPokeNotifyEvent> {
-        let t = pb::notify::GeneralGrayTipInfo::from_bytes(&protobuf)
-            .map_err(|_| RQError::Decode("GeneralGrayTipInfo".to_string()))?;
-        let mut sender: i64 = 0;
-        let mut receiver: i64 = 0;
-        for templ in t.msg_templ_param {
-            if templ.name == "uin_str1" {
-                sender = templ.value.parse::<i64>().unwrap_or_default()
-            } else if templ.name == "uin_str2" {
-                receiver = templ.value.parse::<i64>().unwrap_or_default()
-            }
-        }
-        if sender == 0 {
-            Err(RQError::Decode(
-                "msg_type_0x210_sub122_decoder sender is 0".to_string(),
-            ))
-        } else {
-            Ok(FriendPokeNotifyEvent { sender, receiver })
-        }
-    }
-
     pub fn msg_type_0x210_sub44_decoder(&self, protobuf: Bytes) -> RQResult<GroupMemberNeedSync> {
         let b44 =
             pb::Sub44::from_bytes(&protobuf).map_err(|_| RQError::Decode("Sub44".to_string()))?;

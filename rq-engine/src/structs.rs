@@ -150,6 +150,12 @@ pub struct GroupLeave {
     pub operator_uin: Option<i64>,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct FriendPoke {
+    pub sender: i64,
+    pub receiver: i64,
+}
+
 // 用于撤回
 #[derive(Debug, Clone, Default)]
 pub struct MessageReceipt {

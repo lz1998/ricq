@@ -6,9 +6,9 @@ use tokio::sync::{
 };
 
 use crate::client::event::{
-    FriendMessageRecallEvent, FriendRequestEvent, GroupLeaveEvent, GroupMessageEvent,
-    GroupMessageRecallEvent, GroupMuteEvent, GroupRequestEvent, NewFriendEvent, NewMemberEvent,
-    PrivateMessageEvent,
+    FriendMessageRecallEvent, FriendPokeEvent, FriendRequestEvent, GroupLeaveEvent,
+    GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent, GroupRequestEvent, NewFriendEvent,
+    NewMemberEvent, PrivateMessageEvent,
 };
 
 /// 所有需要外发的数据的枚举打包
@@ -41,6 +41,8 @@ pub enum QEvent {
     NewFriend(NewFriendEvent),
     /// 退群/被踢
     GroupLeave(GroupLeaveEvent),
+    /// 好友戳一戳
+    FriendPoke(FriendPokeEvent),
     // FriendList(decoder::friendlist::FriendListResponse),
     // GroupMemberInfo(structs::GroupMemberInfo),
 
@@ -76,6 +78,7 @@ pub trait Handler: Sync {
                 self.handle_group_message_recall(group_message_recall).await
             }
             QEvent::GroupLeave(group_leave) => self.handle_group_leave(group_leave).await,
+            QEvent::FriendPoke(friend_poke) => self.handle_friend_poke(friend_poke).await,
             QEvent::TcpConnect => self.handle_tcp_connect_event().await,
             QEvent::TcpDisconnect => self.handle_tcp_connect_event().await,
         }
@@ -95,6 +98,7 @@ pub trait Handler: Sync {
     async fn handle_group_message_recall(&self, _group_message_recall: GroupMessageRecallEvent) {}
     async fn handle_new_friend(&self, _new_friend: NewFriendEvent) {}
     async fn handle_group_leave(&self, _group_leave: GroupLeaveEvent) {}
+    async fn handle_friend_poke(&self, _friend_poke: FriendPokeEvent) {}
 }
 
 /// 一个默认 Handler，只是把信息打印出来

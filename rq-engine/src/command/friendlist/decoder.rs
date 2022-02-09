@@ -1,5 +1,3 @@
-use std::fmt::format;
-
 use bytes::{Buf, Bytes};
 use jcers::Jce;
 

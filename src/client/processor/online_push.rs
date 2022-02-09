@@ -8,13 +8,14 @@ use rq_engine::command::common::PbToBytes;
 use rq_engine::msg::MessageChain;
 use rq_engine::pb::msg;
 use rq_engine::structs::{
-    FriendInfo, FriendMessageRecall, GroupLeave, GroupMessage, GroupMessageRecall, GroupMute,
+    FriendInfo, FriendMessageRecall, FriendPoke, GroupLeave, GroupMessage, GroupMessageRecall,
+    GroupMute,
 };
 use rq_engine::{jce, pb};
 
 use crate::client::event::{
-    FriendMessageRecallEvent, GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent,
-    GroupMuteEvent, NewFriendEvent,
+    FriendMessageRecallEvent, FriendPokeEvent, GroupLeaveEvent, GroupMessageEvent,
+    GroupMessageRecallEvent, GroupMuteEvent, NewFriendEvent,
 };
 use crate::client::handler::QEvent;
 use crate::client::Client;
@@ -211,7 +212,7 @@ impl Client {
                             }
                         }
                         0xD4 => {
-                            let d4 = pb::SubD4::from_bytes(&&msg.v_protobuf).unwrap();
+                            let d4 = pb::SubD4::from_bytes(&msg.v_protobuf).unwrap();
                             self.handler
                                 .handle(QEvent::GroupLeave(GroupLeaveEvent {
                                     client: self.clone(),
@@ -223,9 +224,29 @@ impl Client {
                                 }))
                                 .await;
                         }
+                        0x122 => {
+                            let t = pb::notify::GeneralGrayTipInfo::from_bytes(&msg.v_protobuf)
+                                .unwrap();
+                            let mut sender: i64 = 0;
+                            let mut receiver: i64 = 0;
+                            for templ in t.msg_templ_param {
+                                if templ.name == "uin_str1" {
+                                    sender = templ.value.parse::<i64>().unwrap_or_default()
+                                } else if templ.name == "uin_str2" {
+                                    receiver = templ.value.parse::<i64>().unwrap_or_default()
+                                }
+                            }
+                            if sender != 0 {
+                                self.handler
+                                    .handle(QEvent::FriendPoke(FriendPokeEvent {
+                                        client: self.clone(),
+                                        poke: FriendPoke { sender, receiver },
+                                    }))
+                                    .await;
+                            }
+                        }
                         0x8B => {}
                         0x27 => {}
-                        0x122 => {}
                         0x123 => {}
                         0x44 => {}
                         _ => {}
