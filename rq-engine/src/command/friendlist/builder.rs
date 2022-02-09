@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::atomic::Ordering;
 
 use bytes::{BufMut, Bytes, BytesMut};
 use jcers::JcePut;
@@ -171,9 +172,9 @@ impl super::super::super::Engine {
     /// `del_type` 一直为 2，
     /// `version` 一直为 1
     /// 目前采用硬编码
-    pub fn build_delete_friend_packet(&self, uin: i64, del_uin: i64) -> Packet {
+    pub fn build_delete_friend_packet(&self, del_uin: i64) -> Packet {
         let payload = jce::DelFriendReq {
-            uin,
+            uin:self.uin.load(Ordering::Relaxed),
             del_uin,
             del_type: 2,
             version: 1,

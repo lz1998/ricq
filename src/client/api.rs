@@ -294,7 +294,7 @@ impl super::Client {
     /// - 如果删除好友失败 返回 Err(RQError::Other)
     /// - 其他异常 返回 Err(..)
     pub async fn set_delete_friend(&self, del_uin: i64) -> RQResult<()> {
-        let req = self.engine.read().await.build_delete_friend_packet(self.uin().await, del_uin);
+        let req = self.engine.read().await.build_delete_friend_packet(del_uin);
 
         let resp = self.send_and_wait(req).await?;
 
