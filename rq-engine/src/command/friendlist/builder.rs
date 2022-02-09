@@ -174,7 +174,7 @@ impl super::super::super::Engine {
     /// 目前采用硬编码
     pub fn build_delete_friend_packet(&self, del_uin: i64) -> Packet {
         let payload = jce::DelFriendReq {
-            uin:self.uin.load(Ordering::Relaxed),
+            uin: self.uin.load(Ordering::Relaxed),
             del_uin,
             del_type: 2,
             version: 1,
@@ -188,7 +188,7 @@ impl super::super::super::Engine {
             ])
         };
 
-        let pkt=jce::RequestPacket{
+        let pkt = jce::RequestPacket {
             i_version: 3,
             i_request_id: self.next_packet_seq(),
             s_servant_name: "mqq.IMService.FriendListServiceServantObj".to_string(),
@@ -197,6 +197,6 @@ impl super::super::super::Engine {
             ..Default::default()
         };
 
-        self.uni_packet("friendlist.delFriend",pkt.freeze())
+        self.uni_packet("friendlist.delFriend", pkt.freeze())
     }
 }
