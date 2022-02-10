@@ -12,30 +12,34 @@ mod fragment;
 pub struct MessageChain(pub Vec<msg::elem::Elem>);
 
 impl MessageChain {
+    pub fn new<E: Into<Vec<msg::elem::Elem>>>(e: E) -> Self {
+        Self(e.into())
+    }
+
+    pub fn from_iter<ES, E>(es: ES) -> Self
+    where
+        ES: IntoIterator<Item = E>,
+        E: Into<Vec<msg::elem::Elem>>,
+    {
+        Self(es.into_iter().map(Into::into).flatten().collect())
+    }
+
     pub fn push<E: Into<Vec<msg::elem::Elem>>>(&mut self, e: E) {
         self.0.extend(e.into())
     }
 
     pub fn anonymous(&self) -> Option<Anonymous> {
-        self.0
-            .iter()
-            .filter_map(|e| match e {
-                msg::elem::Elem::AnonGroupMsg(anonymous) => {
-                    Some(Anonymous::from(anonymous.clone()))
-                }
-                _ => None,
-            })
-            .next()
+        self.0.iter().find_map(|e| match e {
+            msg::elem::Elem::AnonGroupMsg(anonymous) => Some(Anonymous::from(anonymous.clone())),
+            _ => None,
+        })
     }
 
     pub fn reply(&self) -> Option<Reply> {
-        self.0
-            .iter()
-            .filter_map(|e| match e {
-                msg::elem::Elem::SrcMsg(src_msg) => Some(Reply::from(src_msg.clone())),
-                _ => None,
-            })
-            .next()
+        self.0.iter().find_map(|e| match e {
+            msg::elem::Elem::SrcMsg(src_msg) => Some(Reply::from(src_msg.clone())),
+            _ => None,
+        })
     }
 
     pub fn with_anonymous(&mut self, anonymous: Anonymous) {

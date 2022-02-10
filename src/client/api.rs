@@ -148,9 +148,7 @@ impl super::Client {
             self.wait_packet("MessageSvc.PushForceOffline", 1)
         };
         if let (Err(RQError::Timeout), Err(RQError::Timeout)) = r {
-            self.handler
-                .handle(QEvent::LoginEvent(self.uin().await))
-                .await;
+            self.handler.handle(QEvent::Login(self.uin().await)).await;
             Ok(())
         } else {
             Err(RQError::TokenLoginFailed)
@@ -339,7 +337,7 @@ impl super::Client {
         }
         let req = self.engine.read().await.build_group_sending_packet(
             group_code,
-            message_chain.clone().into(),
+            message_chain.into(),
             ran,
             time,
             1,

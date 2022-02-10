@@ -66,7 +66,7 @@ impl Client {
                 if let Some(v) = t402 {
                     set_t402(&mut engine.transport, v)
                 }
-                self.handler.handle(QEvent::LoginEvent(engine.uin())).await;
+                self.handler.handle(QEvent::Login(engine.uin())).await;
             }
             LoginResponse::NeedCaptcha { t104, .. } => {
                 t104.map(|v| engine.transport.sig.t104 = v);

@@ -98,3 +98,54 @@ impl fmt::Display for RQElem {
         }
     }
 }
+
+macro_rules! impl_from {
+    ($key: tt, $fty: ty) => {
+        impl From<$fty> for RQElem {
+            fn from(e: $fty) -> Self {
+                RQElem::$key(e)
+            }
+        }
+    };
+}
+
+impl_from!(At, at::At);
+impl_from!(Text, text::Text);
+impl_from!(Face, face::Face);
+impl_from!(MarketFace, market_face::MarketFace);
+impl_from!(Dice, market_face::Dice);
+impl_from!(FingerGuessing, market_face::FingerGuessing);
+impl_from!(LightApp, light_app::LightApp);
+impl_from!(RedBag, red_bag::RedBag);
+impl_from!(FriendImage, friend_image::FriendImage);
+impl_from!(GroupImage, group_image::GroupImage);
+impl_from!(Other, Box<msg::elem::Elem>);
+
+macro_rules! impl_from_rqelem_to_pb {
+    ($($key: tt: $fty: ty),*) => {
+        impl From<RQElem> for Vec<msg::elem::Elem> {
+            fn from(e: RQElem) -> Self {
+                match e {
+                    $(
+                        RQElem::$key(e) => Self::from(e),
+                    )*
+                    _ => vec![],
+                }
+            }
+        }
+    }
+}
+
+impl_from_rqelem_to_pb!(
+    At: at::At,
+    Text: text::Text,
+    Face: face::Face,
+    MarketFace: market_face::MarketFace,
+    Dice: market_face::Dice,
+    FingerGuessing: market_face::FingerGuessing,
+    LightApp: light_app::LightApp
+    // RedBag: red_bag::RedBag,
+    // FriendImage: friend_image::FriendImage,
+    // GroupImage: group_image::GroupImage,
+    // Other: Box<msg::elem::Elem>
+);
