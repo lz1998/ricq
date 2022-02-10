@@ -1,5 +1,7 @@
 # RS-QQ
 
+![](https://socialify.git.ci/lz1998/rs-qq/image?forks=1&issues=1&language=1&owner=1&pattern=Circuit%20Board&pulls=1&stargazers=1&theme=Dark)
+
 qq-android 协议的 rust 实现 移植于 MiraiGo、OICQ、Mirai
 
 # 已完成功能/开发计划
