@@ -121,31 +121,3 @@ impl_from!(FriendImage, friend_image::FriendImage);
 impl_from!(GroupImage, group_image::GroupImage);
 impl_from!(Other, Box<msg::elem::Elem>);
 
-macro_rules! impl_from_rqelem_to_pb {
-    ($($key: tt: $fty: ty),*) => {
-        impl From<RQElem> for Vec<msg::elem::Elem> {
-            fn from(e: RQElem) -> Self {
-                match e {
-                    $(
-                        RQElem::$key(e) => Self::from(e),
-                    )*
-                    _ => vec![],
-                }
-            }
-        }
-    }
-}
-
-impl_from_rqelem_to_pb!(
-    At: at::At,
-    Text: text::Text,
-    Face: face::Face,
-    MarketFace: market_face::MarketFace,
-    Dice: market_face::Dice,
-    FingerGuessing: market_face::FingerGuessing,
-    LightApp: light_app::LightApp
-    // RedBag: red_bag::RedBag,
-    // FriendImage: friend_image::FriendImage,
-    // GroupImage: group_image::GroupImage,
-    // Other: Box<msg::elem::Elem>
-);
