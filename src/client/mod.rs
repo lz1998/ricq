@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::net::SocketAddr;
 use std::sync::atomic::{AtomicBool, AtomicI64};
 use std::sync::Arc;
 
@@ -17,6 +18,7 @@ mod api;
 mod client;
 pub mod event;
 pub mod handler;
+mod highway;
 mod net;
 mod processor;
 
@@ -57,4 +59,7 @@ pub struct Client {
     push_req_cache: RwLock<cached::TimedCache<(i16, i64), ()>>,
     push_trans_cache: RwLock<cached::TimedCache<(i32, i64), ()>>,
     group_sys_message_cache: RwLock<GroupSystemMessages>,
+
+    highway_session: RwLock<rq_engine::highway::Session>,
+    highway_addrs: RwLock<Vec<SocketAddr>>,
 }
