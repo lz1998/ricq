@@ -4,6 +4,7 @@ fn main() -> Result<()> {
     prost_build::compile_protos(
         &[
             "src/pb/data.proto",
+            "src/pb/cmd0x388/cmd0x388.proto",
             "src/pb/cmd0x3bb/cmd0x3bb.proto",
             "src/pb/cmd0x6ff/smbcmd0x519.proto",
             "src/pb/cmd0x6ff/subcmd0x501.proto",

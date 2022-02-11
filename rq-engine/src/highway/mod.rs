@@ -22,8 +22,6 @@ pub struct BdhInput {
     pub ticket: Vec<u8>,
     pub ext: Vec<u8>,
     pub encrypt: bool,
-    pub size: usize,
-    pub md5: Vec<u8>,
 }
 
 impl Session {

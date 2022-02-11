@@ -4,6 +4,7 @@ pub mod friendlist;
 pub mod group_anonymous_generate_nick;
 pub mod group_member_card;
 pub mod heartbeat;
+pub mod img_store;
 pub mod message_svc;
 pub mod oidb_svc;
 pub mod online_push;

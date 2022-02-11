@@ -6,6 +6,7 @@ use bytes::{Buf, Bytes};
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
+use rq_engine::command::img_store::GroupImageStoreResp;
 use rq_engine::command::message_svc::MessageSyncResponse;
 use rq_engine::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
 use rq_engine::common::group_code2uin;
@@ -1045,5 +1046,26 @@ impl super::Client {
             .read()
             .await
             .decode_summary_card_response(resp.body)
+    }
+
+    // 用 highway 上传群图片之前调用，获取 upload_key
+    // TODO 测试完 highway 改成 pub(crate)
+    pub async fn get_group_image_store(
+        &self,
+        group_code: i64,
+        file_name: String,
+        md5: Vec<u8>,
+        size: i32,
+    ) -> RQResult<GroupImageStoreResp> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_image_store_packet(group_code, file_name, md5, size);
+        let resp = self.send_and_wait(req).await?;
+        self.engine
+            .read()
+            .await
+            .decode_group_image_store_response(resp.body)
     }
 }
