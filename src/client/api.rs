@@ -15,7 +15,9 @@ use rq_engine::pb;
 
 use crate::client::Group;
 use crate::engine::command::{friendlist::*, oidb_svc::*, profile_service::*, wtlogin::*};
-use crate::engine::structs::{FriendInfo, GroupInfo, GroupMemberInfo, MessageReceipt};
+use crate::engine::structs::{
+    FriendInfo, GroupInfo, GroupMemberInfo, MessageReceipt, SummaryCardInfo,
+};
 use crate::handler::QEvent;
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
 use crate::{RQError, RQResult};
@@ -1029,5 +1031,19 @@ impl super::Client {
             .build_group_recall_packet(group_code, seqs, rands);
         let _ = self.send_and_wait(req).await?;
         Ok(())
+    }
+
+    // 获取名片信息
+    pub async fn get_summary_info(&self, uin: i64) -> RQResult<SummaryCardInfo> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_summary_card_request_packet(uin);
+        let resp = self.send_and_wait(req).await?;
+        self.engine
+            .read()
+            .await
+            .decode_summary_card_response(resp.body)
     }
 }
