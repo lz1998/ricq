@@ -216,17 +216,20 @@ impl super::Client {
         block: bool,
         reason: String,
     ) -> RQResult<()> {
-        let engine = self.engine.read().await;
-        let pkt = engine.build_system_msg_group_action_packet(
-            msg_seq,
-            req_uin,
-            group_code,
-            if suspicious { 2 } else { 1 },
-            is_invite,
-            accept,
-            block,
-            reason,
-        );
+        let pkt = self
+            .engine
+            .read()
+            .await
+            .build_system_msg_group_action_packet(
+                msg_seq,
+                req_uin,
+                group_code,
+                if suspicious { 2 } else { 1 },
+                is_invite,
+                accept,
+                block,
+                reason,
+            );
         self.send_and_wait(pkt).await?;
 
         Ok(())
@@ -253,8 +256,11 @@ impl super::Client {
         req_uin: i64,
         accept: bool,
     ) -> RQResult<()> {
-        let engine = self.engine.read().await;
-        let pkt = engine.build_system_msg_friend_action_packet(msg_seq, req_uin, accept);
+        let pkt = self
+            .engine
+            .read()
+            .await
+            .build_system_msg_friend_action_packet(msg_seq, req_uin, accept);
         self.send_and_wait(pkt).await?;
         Ok(())
     }
