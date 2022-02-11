@@ -46,6 +46,8 @@ impl super::Client {
             push_req_cache: RwLock::new(cached::TimedCache::with_lifespan(30)),
             push_trans_cache: RwLock::new(cached::TimedCache::with_lifespan(15)),
             group_sys_message_cache: RwLock::new(Default::default()),
+            highway_session: RwLock::new(Default::default()),
+            highway_addrs: RwLock::new(Default::default()),
         }
     }
 
