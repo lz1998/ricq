@@ -11,5 +11,6 @@ pub mod pb_message_svc;
 pub mod profile_service;
 pub mod reg_prxy_svc;
 pub mod stat_svc;
+pub mod summary_card;
 pub mod visitor_svc;
 pub mod wtlogin;

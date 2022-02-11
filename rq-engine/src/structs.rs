@@ -92,6 +92,20 @@ pub struct FriendInfo {
     pub face_id: i16,
 }
 
+#[derive(Debug, Default, Clone)]
+pub struct SummaryCardInfo {
+    pub uin: i64,
+    pub sex: u8,
+    pub age: u8,
+    pub nickname: String,
+    pub level: i32,
+    pub city: String,
+    pub sign: String,
+    pub mobile: String,
+    pub login_days: i64,
+    pub q_id: String,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct PrivateMessage {
     pub seqs: Vec<i32>,
