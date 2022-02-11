@@ -43,7 +43,8 @@ impl Client {
             }
         }
         // pull private msg and other, then process
-        match self.sync_all_message().await {
+        let all_message = self.sync_all_message().await;
+        match all_message {
             Ok(msgs) => {
                 if let Err(err) = self.process_message_sync(msgs).await {
                     tracing::error!(target: "rs_qq", "process message sync error: {:?}",err);

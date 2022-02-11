@@ -82,7 +82,8 @@ impl super::Client {
                     // 1. Server 发送 PushNotify 到 Client, 表示有通知需要 Client 拉取 (不带具体内容)
                     // 2. Client 根据 msg_type 发送请求拉取具体通知内容
                     // 类型：好友申请、群申请、私聊消息、其他?
-                    match cli.engine.read().await.decode_svc_notify(pkt.body) {
+                    let resp = cli.engine.read().await.decode_svc_notify(pkt.body);
+                    match resp {
                         Ok(notify) => {
                             cli.process_push_notify(notify).await;
                         }
