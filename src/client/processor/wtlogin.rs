@@ -10,7 +10,7 @@ use crate::handler::QEvent;
 use crate::Client;
 
 impl Client {
-    pub async fn process_login_response(self: &Arc<Self>, login_response: LoginResponse) {
+    pub(crate) async fn process_login_response(self: &Arc<Self>, login_response: LoginResponse) {
         // merge transport
         // merge account_info
         // merge oicq_codec
@@ -97,7 +97,7 @@ impl Client {
         }
     }
 
-    pub async fn process_trans_emp_response(&self, qrcode_state: QRCodeState) {
+    pub(crate) async fn process_trans_emp_response(&self, qrcode_state: QRCodeState) {
         if let QRCodeState::QRCodeConfirmed { uin, tgtgt_key, .. } = qrcode_state {
             let engine = &mut self.engine.write().await;
             engine.transport.sig.tgtgt_key = tgtgt_key;

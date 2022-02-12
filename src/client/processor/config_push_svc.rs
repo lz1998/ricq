@@ -10,7 +10,7 @@ use crate::engine::command::config_push_svc::ConfigPushReq;
 use crate::RQError;
 
 impl Client {
-    pub async fn process_config_push_req(
+    pub(crate) async fn process_config_push_req(
         &self,
         config_push_req: ConfigPushReq,
     ) -> Result<(), RQError> {

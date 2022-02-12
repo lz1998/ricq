@@ -7,7 +7,7 @@ use crate::handler::QEvent;
 use crate::Client;
 
 impl Client {
-    pub async fn process_group_system_messages(self: &Arc<Self>, msgs: GroupSystemMessages) {
+    pub(crate) async fn process_group_system_messages(self: &Arc<Self>, msgs: GroupSystemMessages) {
         for request in msgs.self_invited.clone() {
             if self
                 .self_invited_exists(request.msg_seq, request.msg_time)

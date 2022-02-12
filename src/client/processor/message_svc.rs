@@ -76,7 +76,9 @@ impl Client {
                         }
                     }
                     140 | 141 => {
-                        // temp session
+                        if let Err(err)=self.process_temp_message(msg).await{
+                            tracing::error!(target: "rs_qq", "failed to process temp message {}",err);
+                        }
                     }
                     208 => {
                         // private ptt

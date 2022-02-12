@@ -9,7 +9,7 @@ use crate::client::event::{
     DeleteFriendEvent, FriendMessageRecallEvent, FriendPokeEvent, FriendRequestEvent,
     GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent,
     GroupNameUpdateEvent, GroupRequestEvent, MemberPermissionChangeEvent, NewFriendEvent,
-    NewMemberEvent, PrivateMessageEvent, SelfInvitedEvent,
+    NewMemberEvent, PrivateMessageEvent, SelfInvitedEvent, TempMessageEvent,
 };
 
 /// 所有需要外发的数据的枚举打包
@@ -26,6 +26,8 @@ pub enum QEvent {
     SelfGroupMessage(GroupMessageEvent),
     /// 私聊消息
     PrivateMessage(PrivateMessageEvent),
+    /// 私聊消息
+    TempMessage(TempMessageEvent),
     /// 加群申请
     GroupRequest(GroupRequestEvent),
     /// 加群申请
@@ -88,6 +90,14 @@ impl Handler for DefaultHandler {
                     m.message.elements
                 )
             }
+            QEvent::TempMessage(m) => {
+                tracing::info!(
+                    target = "rs_qq",
+                    "MESSAGE (TEMP={}): {}",
+                    m.message.from_uin,
+                    m.message.elements
+                )
+            }
             QEvent::GroupRequest(m) => {
                 tracing::info!(
                     target = "rs_qq",
@@ -146,6 +156,7 @@ pub trait PartlyHandler: Sync {
     async fn handle_group_message(&self, _event: GroupMessageEvent) {}
     async fn handle_self_group_message(&self, _event: GroupMessageEvent) {}
     async fn handle_private_message(&self, _event: PrivateMessageEvent) {}
+    async fn handle_temp_message(&self, _event: TempMessageEvent) {}
     async fn handle_group_request(&self, _event: GroupRequestEvent) {}
     async fn handle_self_invited(&self, _event: SelfInvitedEvent) {}
     async fn handle_friend_request(&self, _event: FriendRequestEvent) {}
@@ -174,6 +185,7 @@ where
             QEvent::GroupMessage(m) => self.handle_group_message(m).await,
             QEvent::SelfGroupMessage(m) => self.handle_self_group_message(m).await,
             QEvent::PrivateMessage(m) => self.handle_private_message(m).await,
+            QEvent::TempMessage(m) => self.handle_temp_message(m).await,
             QEvent::GroupRequest(m) => self.handle_group_request(m).await,
             QEvent::SelfInvited(m) => self.handle_self_invited(m).await,
             QEvent::FriendRequest(m) => self.handle_friend_request(m).await,

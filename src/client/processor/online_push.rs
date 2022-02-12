@@ -25,7 +25,7 @@ use crate::engine::command::online_push::GroupMessagePart;
 use crate::{RQError, RQResult};
 
 impl Client {
-    pub async fn process_group_message_part(
+    pub(crate) async fn process_group_message_part(
         self: &Arc<Self>,
         group_message_part: GroupMessagePart,
     ) -> Result<(), RQError> {

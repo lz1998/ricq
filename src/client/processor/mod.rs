@@ -108,7 +108,6 @@ impl super::Client {
                             resp.msg_infos.clone(),
                         ))
                         .await;
-                    tracing::warn!(target: "rs_qq", "unhandled OnlinePush.ReqPush");
                     cli.process_push_req(resp.msg_infos).await;
                 }
                 "OnlinePush.PbPushTransMsg" => {
