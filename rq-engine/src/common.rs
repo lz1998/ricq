@@ -1,3 +1,5 @@
+use std::net::Ipv4Addr;
+
 pub fn group_code2uin(code: i64) -> i64 {
     let mut left = code / 1000000;
     if (0..=10).contains(&left) {
@@ -43,6 +45,16 @@ pub fn group_uin2code(uin: i64) -> i64 {
         left -= 3890
     }
     left * 1000000 + uin % 1000000
+}
+
+pub struct RQIP(pub u32);
+
+impl From<RQIP> for Ipv4Addr {
+    fn from(ip: RQIP) -> Self {
+        let mut ip: [u8; 4] = ip.0.to_be_bytes();
+        ip.reverse();
+        Ipv4Addr::from(ip)
+    }
 }
 
 #[cfg(test)]

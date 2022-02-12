@@ -28,18 +28,16 @@ impl Session {
     fn next_seq(&self) -> i32 {
         self.seq.fetch_add(2, Ordering::Relaxed)
     }
+
     pub fn build_bdh_head(
         &self,
         command_id: i32,
         filesize: i64,
-        chunk: Vec<u8>,
+        chunk: &[u8],
         dataoffset: i64,
         ticket: Vec<u8>,
         file_md5: Vec<u8>,
-        ext: Vec<u8>,
     ) -> Bytes {
-        let chunk_md5 = md5::compute(&chunk).to_vec();
-        let chunk_length = chunk.len();
         pb::ReqDataHighwayHead {
             msg_basehead: Some(pb::DataHighwayHead {
                 version: 1,
@@ -53,18 +51,14 @@ impl Session {
                 ..Default::default()
             }),
             msg_seghead: Some(pb::SegHead {
-                serviceid: 0,
                 filesize,
                 dataoffset,
-                datalength: chunk_length as i32,
-                rtcode: 0,
+                datalength: chunk.len() as i32,
                 serviceticket: ticket,
-                flag: 0,
-                md5: chunk_md5,
+                md5: md5::compute(chunk).to_vec(),
                 file_md5,
                 ..Default::default()
             }),
-            req_extendinfo: ext.to_vec(),
             ..Default::default()
         }
         .to_bytes()

@@ -26,6 +26,9 @@ impl Decoder for HighwayCodec {
     type Error = RQError;
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
+        if src.len() < 10 {
+            return Ok(None);
+        }
         src.get_u8();
         let head_length = src.get_u32() as usize;
         let body_length = src.get_u32() as usize;

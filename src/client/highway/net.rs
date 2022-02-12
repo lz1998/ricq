@@ -35,11 +35,10 @@ impl Client {
             let head = self.highway_session.read().await.build_bdh_head(
                 input.command_id,
                 length as i64,
-                chunk.to_vec(),
+                &chunk,
                 (i * CHUNK_SIZE) as i64,
                 ticket.clone(),
                 sum.clone(),
-                input.ext.clone(),
             );
             stream
                 .send(HighwayFrame {
@@ -54,7 +53,10 @@ impl Client {
                 .await
                 .decode_rsp_head(resp.head)?;
             if rsp_head.error_code != 0 {
-                return Err(RQError::Other("error_code != 0".into()));
+                return Err(RQError::Other(format!(
+                    "error_code = {}",
+                    rsp_head.error_code
+                )));
             }
             if !rsp_head.rsp_extendinfo.is_empty() {
                 rsp_ext = Bytes::from(rsp_head.rsp_extendinfo)

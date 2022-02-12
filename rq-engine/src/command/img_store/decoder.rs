@@ -4,6 +4,7 @@ use bytes::Bytes;
 
 use crate::command::common::PbToBytes;
 use crate::command::img_store::GroupImageStoreResp;
+use crate::common::RQIP;
 use crate::{pb, RQError, RQResult};
 
 impl super::super::super::Engine {
@@ -31,13 +32,13 @@ impl super::super::super::Engine {
             }
         } else {
             GroupImageStoreResp::NotExist {
-                file_id: rsp.file_id.unwrap_or_default(),
+                file_id: rsp.fileid.unwrap_or_default(),
                 upload_key: rsp.up_ukey.unwrap_or_default(),
                 upload_addrs: rsp
                     .up_ip
                     .into_iter()
                     .zip(rsp.up_port)
-                    .map(|(ip, port)| SocketAddr::new(Ipv4Addr::from(ip).into(), port as u16))
+                    .map(|(ip, port)| SocketAddr::new(Ipv4Addr::from(RQIP(ip)).into(), port as u16))
                     .collect(),
             }
         })
