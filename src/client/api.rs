@@ -10,7 +10,8 @@ use rq_engine::command::img_store::GroupImageStoreResp;
 use rq_engine::command::message_svc::MessageSyncResponse;
 use rq_engine::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
 use rq_engine::common::group_code2uin;
-use rq_engine::msg::elem::Anonymous;
+use rq_engine::highway::BdhInput;
+use rq_engine::msg::elem::{calculate_image_resource_id, Anonymous, GroupImage};
 use rq_engine::msg::MessageChain;
 use rq_engine::pb;
 
@@ -1054,18 +1055,79 @@ impl super::Client {
         &self,
         group_code: i64,
         file_name: String,
-        md5: Vec<u8>,
+        image_md5: Vec<u8>,
         size: i32,
     ) -> RQResult<GroupImageStoreResp> {
         let req = self
             .engine
             .read()
             .await
-            .build_group_image_store_packet(group_code, file_name, md5, size);
+            .build_group_image_store_packet(group_code, file_name, image_md5, size);
         let resp = self.send_and_wait(req).await?;
         self.engine
             .read()
             .await
             .decode_group_image_store_response(resp.body)
+    }
+
+    /// 上传群图片
+    pub async fn upload_group_image(
+        &self,
+        group_code: i64,
+        image: Vec<u8>,
+        file_name: String,
+    ) -> RQResult<GroupImage> {
+        let image_md5 = md5::compute(&image).to_vec();
+        let image_size = image.len() as i32;
+        let req = self
+            .get_group_image_store(group_code, file_name, image_md5.clone(), image_size)
+            .await?;
+        match req {
+            GroupImageStoreResp::Exist {
+                file_id,
+                height,
+                width,
+            } => Ok(GroupImage {
+                image_id: calculate_image_resource_id(&image_md5, false),
+                file_id: file_id as i64,
+                size: image_size,
+                width: width as i32,
+                height: height as i32,
+                md5: image_md5,
+                ..Default::default()
+            }),
+            GroupImageStoreResp::NotExist {
+                file_id,
+                upload_key,
+                mut upload_addrs,
+            } => {
+                // TODO addr ?
+                let addr = upload_addrs
+                    .pop()
+                    .ok_or_else(|| RQError::Other("upload_addrs is empty".into()))?;
+                self.highway_upload_bdh(
+                    addr,
+                    BdhInput {
+                        command_id: 2,
+                        body: image,
+                        ticket: upload_key,
+                        ext: vec![],
+                        encrypt: false,
+                    },
+                )
+                .await?;
+                // TODO width, height
+                // TODO image_type
+                Ok(GroupImage {
+                    image_id: calculate_image_resource_id(&image_md5, false),
+                    file_id: file_id as i64,
+                    size: image_size,
+                    width: 720,
+                    height: 480,
+                    md5: image_md5,
+                    ..Default::default()
+                })
+            }
+        }
     }
 }

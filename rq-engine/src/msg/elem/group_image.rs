@@ -1,7 +1,6 @@
 use std::fmt;
 
-use bytes::Bytes;
-
+use crate::command::common::PbToBytes;
 use crate::pb::msg;
 use crate::pb::msg::CustomFace;
 
@@ -12,8 +11,31 @@ pub struct GroupImage {
     pub size: i32,
     pub width: i32,
     pub height: i32,
-    pub md5: Bytes,
+    pub md5: Vec<u8>,
     pub url: String,
+}
+
+impl From<GroupImage> for Vec<msg::elem::Elem> {
+    fn from(e: GroupImage) -> Self {
+        vec![{
+            let mut cface = msg::CustomFace {
+                file_type: Some(66),
+                useful: Some(1),
+                biz_type: Some(5),
+                width: Some(e.width),
+                height: Some(e.height),
+                file_id: Some(e.file_id as i32),
+                file_path: Some(e.image_id),
+                // TODO decode type
+                image_type: Some(1000),
+                size: Some(e.size),
+                flag: Some(vec![0; 4]),
+                ..Default::default()
+            };
+            cface.pb_reserve = Some(msg::ResvAttr::default().to_bytes().to_vec());
+            msg::elem::Elem::CustomFace(cface)
+        }]
+    }
 }
 
 impl From<msg::CustomFace> for GroupImage {
@@ -38,7 +60,7 @@ impl From<msg::CustomFace> for GroupImage {
             width: custom_face.width(),
             height: custom_face.height(),
             url,
-            md5: Bytes::copy_from_slice(custom_face.md5()),
+            md5: custom_face.md5.unwrap_or_default(),
         };
     }
 }
@@ -54,7 +76,7 @@ fn to_uuid(md5: &str) -> String {
     )
 }
 
-fn calculate_image_resource_id(md5: &[u8], no_dash: bool) -> String {
+pub fn calculate_image_resource_id(md5: &[u8], no_dash: bool) -> String {
     let mut r = "{".to_owned();
     let md5 = crate::hex::encode_hex(md5).to_uppercase();
     if no_dash {

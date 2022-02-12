@@ -2,6 +2,8 @@ use std::fmt;
 
 use prost::Message;
 
+pub use group_image::calculate_image_resource_id;
+
 pub use crate::msg::elem::{
     anonymous::Anonymous,
     at::At,
@@ -120,4 +122,3 @@ impl_from!(RedBag, red_bag::RedBag);
 impl_from!(FriendImage, friend_image::FriendImage);
 impl_from!(GroupImage, group_image::GroupImage);
 impl_from!(Other, Box<msg::elem::Elem>);
-
