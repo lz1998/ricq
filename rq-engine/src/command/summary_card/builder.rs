@@ -50,7 +50,7 @@ impl super::super::super::Engine {
                 touin: Some(target),
                 service: Some(16),
                 platform: Some(2),
-                qqver: Some("8.4.18.4945".into()),
+                qqver: Some(self.transport.version.build_ver.into()),
                 build: Some(4945),
                 ..Default::default()
             }

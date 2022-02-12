@@ -24,8 +24,7 @@ impl super::super::super::Engine {
                 platform_type: Some(9),
                 bu_type: Some(1),
                 pic_type: Some(1000),
-                // TODO 版本能不能改？
-                build_ver: Some("8.2.7.4410".as_bytes().to_vec()),
+                build_ver: Some(self.transport.version.build_ver.as_bytes().to_vec()),
                 app_pic_type: Some(1006),
                 file_index: Some(vec![]),
                 transfer_url: Some(vec![]),

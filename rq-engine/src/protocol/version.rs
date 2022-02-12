@@ -16,6 +16,7 @@ pub struct Version {
     pub apk_sign: &'static [u8],
     pub apk_id: &'static str,
     pub sort_version_name: &'static str,
+    pub build_ver: &'static str,
     pub sdk_version: &'static str,
     pub app_id: u32,
     pub sub_app_id: u32,
@@ -42,6 +43,7 @@ pub static ANDROID_PHONE: &Version = &Version {
     app_id: 537100432,
     sub_app_id: 537100432,
     sort_version_name: "8.8.38",
+    build_ver: "8.8.38.2266",
     build_time: 1634310940,
     apk_sign: &[
         0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E, 0xB6,
@@ -60,6 +62,7 @@ pub static IPAD: &Version = &Version {
     app_id: 537097188,
     sub_app_id: 537097188,
     sort_version_name: "8.8.35",
+    build_ver: "8.8.38.2266",
     build_time: 1595836208,
     apk_sign: &[
         170, 57, 120, 244, 31, 217, 111, 249, 145, 74, 102, 158, 24, 100, 116, 199,
@@ -77,6 +80,7 @@ pub static ANDROID_WATCH: &Version = &Version {
     app_id: 537064446,
     sub_app_id: 537064446,
     sort_version_name: "2.0.5",
+    build_ver: "2.0.5",
     build_time: 1559564731,
     apk_sign: &[
         0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E, 0xB6,
@@ -95,6 +99,7 @@ pub static MACOS: &Version = &Version {
     app_id: 537064315,
     sub_app_id: 537064315,
     sort_version_name: "5.8.9",
+    build_ver: "5.8.9.3460",
     build_time: 1595836208,
     apk_sign: &[
         170, 57, 120, 244, 31, 217, 111, 249, 145, 74, 102, 158, 24, 100, 116, 199,
@@ -112,6 +117,7 @@ pub static QIDIAN: &Version = &Version {
     app_id: 537061386,
     sub_app_id: 537036590,
     sort_version_name: "3.8.6",
+    build_ver: "8.8.38.2266",
     build_time: 1556628836,
     apk_sign: &[
         160, 30, 236, 171, 133, 233, 227, 186, 43, 15, 106, 21, 140, 133, 92, 41,
