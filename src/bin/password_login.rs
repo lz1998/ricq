@@ -14,6 +14,12 @@ use rs_qq::LoginResponse;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    let env = tracing_subscriber::EnvFilter::from("rs_qq=debug,sled=warn,info");
+    tracing_subscriber::fmt()
+        .with_env_filter(env)
+        .without_time()
+        .init();
+
     // load uin and password from env
     let uin: i64 = std::env::var("UIN")
         .expect("failed to read UIN from env")
@@ -51,7 +57,7 @@ async fn main() -> Result<()> {
             LoginResponse::Success {
                 ref account_info, ..
             } => {
-                println!("login success: {:?}", account_info);
+                tracing::info!(target = "rs_qq", "login success: {:?}", account_info);
                 break;
             }
             LoginResponse::DeviceLocked {
@@ -60,10 +66,10 @@ async fn main() -> Result<()> {
                 ref message,
                 ..
             } => {
-                println!("device locked: {:?}", message);
-                println!("sms_phone: {:?}", sms_phone);
-                println!("verify_url: {:?}", verify_url);
-                println!("手机打开url，处理完成后重启程序");
+                tracing::info!(target = "rs_qq", "device locked: {:?}", message);
+                tracing::info!(target = "rs_qq", "sms_phone: {:?}", sms_phone);
+                tracing::info!(target = "rs_qq", "verify_url: {:?}", verify_url);
+                tracing::info!(target = "rs_qq", "手机打开url，处理完成后重启程序");
                 std::process::exit(0);
                 //也可以走短信验证
                 // resp = client.request_sms().await.expect("failed to request sms");
@@ -74,8 +80,8 @@ async fn main() -> Result<()> {
                 image_captcha: ref _image_captcha,
                 ..
             } => {
-                println!("滑块URL: {:?}", verify_url);
-                println!("请输入ticket:");
+                tracing::info!(target = "rs_qq", "滑块URL: {:?}", verify_url);
+                tracing::info!(target = "rs_qq", "请输入ticket:");
                 let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
                 let ticket = reader
                     .next()
@@ -108,7 +114,7 @@ async fn main() -> Result<()> {
             }
         }
     }
-    println!("{:?}", resp);
+    tracing::info!(target = "rs_qq", "{:?}", resp);
     client
         .register_client()
         .await
@@ -126,18 +132,18 @@ async fn main() -> Result<()> {
             .reload_friends()
             .await
             .expect("failed to reload friend list");
-        println!("{:?}", client.friends.read().await);
+        tracing::info!(target = "rs_qq", "{:?}", client.friends.read().await);
         client
             .reload_groups()
             .await
             .expect("failed to reload group list");
         let group_list = client.groups.read().await;
-        println!("{:?}", group_list);
+        tracing::info!(target = "rs_qq", "{:?}", group_list);
     }
     let r = client.refresh_status().await;
-    println!("{:?}", r);
+    tracing::info!(target = "rs_qq", "{:?}", r);
     let d = client.get_allowed_clients().await;
-    println!("{:?}", d);
+    tracing::info!(target = "rs_qq", "{:?}", d);
 
     // client.delete_essence_message(1095020555, 8114, 2107692422).await
     // let mem_info = client.get_group_member_info(335783090, 875543543).await;

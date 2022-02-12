@@ -73,27 +73,39 @@ impl Handler for DefaultHandler {
     async fn handle(&self, e: QEvent) {
         match e {
             QEvent::GroupMessage(m) => {
-                println!(
+                tracing::info!(
+                    target = "rs_qq",
                     "MESSAGE (GROUP={}): {}",
-                    m.message.group_code, m.message.elements
+                    m.message.group_code,
+                    m.message.elements
                 )
             }
             QEvent::PrivateMessage(m) => {
-                println!(
+                tracing::info!(
+                    target = "rs_qq",
                     "MESSAGE (FRIEND={}): {}",
-                    m.message.from_uin, m.message.elements
+                    m.message.from_uin,
+                    m.message.elements
                 )
             }
             QEvent::GroupRequest(m) => {
-                println!(
+                tracing::info!(
+                    target = "rs_qq",
                     "REQUEST (GROUP={}, UIN={}): {}",
-                    m.request.group_code, m.request.req_uin, m.request.message
+                    m.request.group_code,
+                    m.request.req_uin,
+                    m.request.message
                 )
             }
             QEvent::FriendRequest(m) => {
-                println!("REQUEST (UIN={}): {}", m.request.req_uin, m.request.message)
+                tracing::info!(
+                    target = "rs_qq",
+                    "REQUEST (UIN={}): {}",
+                    m.request.req_uin,
+                    m.request.message
+                )
             }
-            _ => println!("{:?}", e),
+            _ => tracing::info!(target = "rs_qq", "{:?}", e),
         }
     }
 }

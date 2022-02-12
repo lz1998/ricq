@@ -1,5 +1,6 @@
 use crate::client::{Client, OtherClientInfo};
 use crate::RQError;
+
 // use crate::client::income::decoder::online_push::GroupMessagePart;
 
 impl Client {
@@ -7,7 +8,7 @@ impl Client {
         &self,
         other_clients: Vec<OtherClientInfo>,
     ) -> Result<(), RQError> {
-        println!("{:?}", other_clients);
+        tracing::debug!(target = "rs_qq", "{:?}", other_clients);
         // TODO merge part and dispatch to handler
         Ok(())
     }

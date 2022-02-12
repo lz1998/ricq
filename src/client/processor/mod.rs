@@ -120,8 +120,11 @@ impl super::Client {
                         .unwrap();
                     cli.process_push_trans(online_push_trans).await;
                 }
+                "RegPrxySvc.GetMsgV2" | "RegPrxySvc.PbGetMsg" | "RegPrxySvc.NoticeEnd" => {
+                    tracing::trace!(target: "rs_qq", "ignore pkt: {}", &pkt.command_name);
+                }
                 _ => {
-                    tracing::warn!(target: "rs_qq", "unhandled pkt: {}", &pkt.command_name);
+                    tracing::debug!(target: "rs_qq", "unhandled pkt: {}", &pkt.command_name);
                 }
             }
         });
