@@ -168,4 +168,9 @@ impl super::super::super::Engine {
             "decode_online_push_trans_packet unknown error".to_string(),
         ))
     }
+
+    // OnlinePush.PbC2CMsgSync
+    pub fn decode_c2c_sync_packet(&self, payload: Bytes) -> RQResult<pb::msg::PbPushMsg> {
+        pb::msg::PbPushMsg::from_bytes(&payload).map_err(|_| RQError::Decode("PbPushMsg".into()))
+    }
 }

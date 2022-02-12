@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use bytes::Buf;
+use bytes::{Buf, Bytes};
 use cached::Cached;
 use futures::{stream, StreamExt};
 
@@ -411,5 +411,24 @@ impl Client {
             push_trans_cache.cache_reset_metrics();
         }
         false
+    }
+
+    pub(crate) async fn process_c2c_sync(
+        self: &Arc<Self>,
+        pkt_seq: i32,
+        push: pb::msg::PbPushMsg,
+    ) -> RQResult<()> {
+        let req = self.engine.read().await.build_delete_online_push_packet(
+            self.uin().await,
+            push.svrip(),
+            Bytes::from(push.push_token.unwrap_or_default()),
+            pkt_seq as u16,
+            vec![],
+        );
+        let _ = self.send(req).await?;
+        if let Some(msg) = push.msg {
+            self.process_message_sync(vec![msg]).await;
+        }
+        Ok(())
     }
 }

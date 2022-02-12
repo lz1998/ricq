@@ -6,7 +6,6 @@ use futures::{stream, StreamExt};
 use rq_engine::{jce, pb};
 
 use crate::Client;
-use crate::RQResult;
 
 impl Client {
     pub(crate) async fn process_push_notify(
@@ -46,9 +45,7 @@ impl Client {
         let all_message = self.sync_all_message().await;
         match all_message {
             Ok(msgs) => {
-                if let Err(err) = self.process_message_sync(msgs).await {
-                    tracing::error!(target: "rs_qq", "process message sync error: {:?}",err);
-                }
+                self.process_message_sync(msgs).await;
             }
             Err(err) => {
                 tracing::warn!("failed to sync message {}", err);
@@ -56,10 +53,7 @@ impl Client {
         }
     }
 
-    pub(crate) async fn process_message_sync(
-        self: &Arc<Self>,
-        msgs: Vec<pb::msg::Message>,
-    ) -> RQResult<()> {
+    pub(crate) async fn process_message_sync(self: &Arc<Self>, msgs: Vec<pb::msg::Message>) {
         stream::iter(msgs)
             .filter_map(|msg| async {
                 let head = msg.head.clone().unwrap();
@@ -91,7 +85,6 @@ impl Client {
                 }
             })
             .await;
-        Ok(())
     }
 
     async fn msg_exists(&self, head: &pb::msg::MessageHead) -> bool {

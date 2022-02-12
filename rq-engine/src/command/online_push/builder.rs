@@ -17,21 +17,22 @@ impl super::super::super::Engine {
         seq: u16,
         del_msg: Vec<jce::PushMessageInfo>,
     ) -> Packet {
-        let mut req = jce::SvcRespPushMsg {
+        let req = jce::SvcRespPushMsg {
             uin,
             svrip,
             push_token,
+            del_infos: del_msg
+                .into_iter()
+                .map(|m| jce::DelMsgInfo {
+                    from_uin: m.from_uin,
+                    msg_time: m.msg_time,
+                    msg_seq: m.msg_seq,
+                    msg_cookies: m.msg_cookies,
+                    ..Default::default()
+                })
+                .collect(),
             ..Default::default()
         };
-        for m in del_msg {
-            req.del_infos.push(jce::DelMsgInfo {
-                from_uin: m.from_uin,
-                msg_time: m.msg_time,
-                msg_seq: m.msg_seq,
-                msg_cookies: m.msg_cookies,
-                ..Default::default()
-            })
-        }
         let b = pack_uni_request_data(&req.freeze());
         let buf = jce::RequestDataVersion3 {
             map: HashMap::from([("resp".to_string(), b)]),
