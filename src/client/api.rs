@@ -355,7 +355,7 @@ impl super::Client {
             0,
             false,
         );
-        self.send(req).await?;
+        let _ = self.send_and_wait(req).await?;
         let mut receipt = MessageReceipt {
             seqs: vec![0],
             rands: vec![ran],
