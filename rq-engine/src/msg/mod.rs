@@ -98,7 +98,7 @@ mod tests {
     #[test]
     fn test_iter() {
         let mut chain = MessageChain::default();
-        chain.push(elem::text::Text::new("hello".into()));
+        chain.push(Text::new("hello".into()));
         for e in chain.into_iter() {
             println!("{:?}", e)
         }
@@ -107,19 +107,19 @@ mod tests {
     #[test]
     fn test_display() {
         let mut chain = MessageChain::default();
-        chain.with_anonymous(elem::anonymous::Anonymous::default());
-        chain.with_reply(elem::reply::Reply::default());
-        chain.push(elem::text::Text::new("hello".into()));
-        chain.push(elem::at::At::new(12345));
-        chain.push(elem::text::Text::new("world".into()));
-        chain.push(elem::face::Face::new(1));
-        chain.push(elem::market_face::Dice::new(1));
-        chain.push(elem::market_face::FingerGuessing::Rock);
-        chain.push(elem::market_face::MarketFace {
+        chain.with_anonymous(Anonymous::default());
+        chain.with_reply(Reply::default());
+        chain.push(Text::new("hello".into()));
+        chain.push(At::new(12345));
+        chain.push(Text::new("world".into()));
+        chain.push(Face::new(1));
+        chain.push(Dice::new(1));
+        chain.push(FingerGuessing::Rock);
+        chain.push(MarketFace {
             name: "xx".into(),
             ..Default::default()
         });
-        chain.push(elem::light_app::LightApp::new("{}".into()));
+        chain.push(LightApp::new("{}".into()));
         println!("{}", chain);
         println!("{:?}", chain.reply());
         println!("{:?}", chain.anonymous());
