@@ -4,9 +4,22 @@
 
 qq-android 协议的 rust 实现 移植于 MiraiGo、OICQ、Mirai
 
-# 已完成功能/开发计划
+## 如何使用
 
-#### 登录
+本项目是协议 lib, 不推荐直接基于本项目开发。
+
+Rust 用户推荐使用 [RQ-Tower](https://github.com/lz1998/rq-tower),
+基于 [Demo](https://github.com/lz1998/rq-tower/tree/main/examples/demo) 修改。
+
+其他语言用户推荐使用 [(WIP)Walle-Q](https://github.com/abrahum/walle-q), 基于 OneBot 协议开发。
+
+如果一定要基于本项目开发，可以参考 `src/bin/password_login.rs` 或 `src/bin/qrcode_login.rs`。
+
+> 本项目是一个年轻的项目，请使用 nightly channel 构建本项目哦（正经人谁用 stable 啊）
+
+## 已完成功能/开发计划
+
+### 登录
 
 - [x] 账号密码登录
 - [x] 二维码登录
@@ -14,7 +27,7 @@ qq-android 协议的 rust 实现 移植于 MiraiGo、OICQ、Mirai
 - [x] 设备锁验证
 - [x] 错误信息解析
 
-#### 消息类型
+### 消息类型
 
 - [x] 文本
 - [x] 表情
@@ -32,7 +45,7 @@ qq-android 协议的 rust 实现 移植于 MiraiGo、OICQ、Mirai
 - [ ] 合并转发
 - [ ] 群文件(上传与接收信息)
 
-#### 事件
+### 事件
 
 - [x] 群消息
 - [x] 好友消息
@@ -48,12 +61,12 @@ qq-android 协议的 rust 实现 移植于 MiraiGo、OICQ、Mirai
 - [x] 群成员权限变更
 - [x] 新成员进群/退群
 - [x] 登录号加群
-- [ ] 临时会话消息
+- [x] 临时会话消息
 - [ ] 登录号退群(包含T出)
 - [ ] 客户端离线
 - [ ] 群提示 (戳一戳/运气王等)
 
-#### 主动操作
+### 主动操作
 
 > 为防止滥用，将不支持主动邀请新成员进群
 
@@ -82,12 +95,12 @@ qq-android 协议的 rust 实现 移植于 MiraiGo、OICQ、Mirai
 - [x] 处理加群请求
 - [x] 处理好友请求
 - [x] 删除好友
+- [x] 获取陌生人信息
 - [ ] 获取群荣誉 (龙王/群聊火焰等)
 - [ ] 获取群文件下载链接
 - [ ] ~~群成员邀请~~
-- [ ] 获取陌生人信息
 
-#### 敏感操作
+### 敏感操作
 
 > 由于[QQ钱包支付用户服务协议](https://www.tenpay.com/v2/html5/basic/public/agreement/protocol_mqq_pay.shtml), 将不支持一切有关QQ钱包的协议
 
@@ -96,15 +109,3 @@ qq-android 协议的 rust 实现 移植于 MiraiGo、OICQ、Mirai
 > （9） **侵害QQ钱包支付服务系統；**
 
 - [ ] ~~QQ钱包协议(收款/付款等)~~
-
-## 如何使用
-
-本项目是协议 lib ，如果需要直接运行，请自行基于本项目构建 (当然，必须使用 AGPL-v3 协议开源)
-
-这里有几个可参考例子：
-
-- [(WIP)Walle-Q](https://github.com/abrahum/walle-q) OneBot 协议
-- [rq-tower-demo](https://github.com/lz1998/rq-tower/tree/main/examples/demo) 直接使用 Rust 开发
-
-> 本项目是一个年轻的项目，请使用 nightly channel 构建本项目哦（正经人谁用 stable 啊）
-
