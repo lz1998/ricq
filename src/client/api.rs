@@ -758,7 +758,7 @@ impl super::Client {
             0,
             0,
         );
-        self.send(req).await?;
+        let _ = self.send_and_wait(req).await?;
         Ok(MessageReceipt {
             seqs: vec![seq],
             rands: vec![ran],
