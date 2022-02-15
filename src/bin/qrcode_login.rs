@@ -3,6 +3,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use bytes::Bytes;
+use tokio::net::TcpStream;
 use tokio::time::{sleep, Duration};
 
 use rs_qq::client::handler::DefaultHandler;
@@ -33,15 +34,42 @@ async fn main() -> Result<()> {
         .await
         .expect("failed to write device.json"); //todo
 
-    let config = rs_qq::Config::new(device, get_version(Protocol::IPad));
-    let cli = Client::new_with_config(config, DefaultHandler);
-    let client = Arc::new(cli);
+    let client = Arc::new(Client::new(
+        device,
+        get_version(Protocol::IPad),
+        DefaultHandler,
+    ));
+    let stream = TcpStream::connect(client.get_address())
+        .await
+        .expect("failed to connect");
     let c = client.clone();
-    let handle = tokio::spawn(async move {
-        c.start().await.expect("failed to run client");
-    });
-    tokio::time::sleep(Duration::from_millis(200)).await; // 等一下，确保连上了
+    let handle = tokio::spawn(async move { c.start_with_stream(stream).await });
+    tokio::task::yield_now().await; // 等一下，确保连上了
     let mut resp = client.fetch_qrcode().await.expect("failed to fetch qrcode");
+
+    // // vvv 如果不关心二维码状态，可以用这个替换下面的 vvv
+    // use rs_qq::ext::login::auto_query_qrcode;
+    // match resp {
+    //     QRCodeState::QRCodeImageFetch {
+    //         ref image_data,
+    //         ref sig,
+    //     } => {
+    //         tokio::fs::write("qrcode.png", &image_data)
+    //             .await
+    //             .expect("failed to write file");
+    //         if let Err(err) = auto_query_qrcode(&client, sig).await {
+    //             panic!("登录失败 {}", err)
+    //         };
+    //     }
+    //     _ => {
+    //         panic!("resp error")
+    //     }
+    // }
+    // // ^^^ 如果不关心二维码状态，可以用这个替换下面的 ^^^
+
+    // -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+
+    // vvv 如果关心二维码状态，可以用这个 vvv
     let mut image_sig = Bytes::new();
     loop {
         match resp {
@@ -105,6 +133,8 @@ async fn main() -> Result<()> {
             .await
             .expect("failed to query qrcode result");
     }
+    // ^^^ 如果不关心二维码状态，可以用这个 ^^^
+
     after_login(&client).await;
     {
         client
