@@ -1,5 +1,6 @@
 .idea
-target
+/target/
+Cargo.lock
 .vscode
 qrcode.png
 device.json
