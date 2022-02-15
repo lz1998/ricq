@@ -59,7 +59,7 @@ pub async fn auto_reconnect<C: Connector + Sync>(
     }
 }
 
-pub struct Token(Bytes);
+pub struct Token(pub Bytes);
 pub struct Password {
     pub uin: i64,
     pub password: String,
