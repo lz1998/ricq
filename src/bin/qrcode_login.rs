@@ -43,7 +43,7 @@ async fn main() -> Result<()> {
         .await
         .expect("failed to connect");
     let c = client.clone();
-    let handle = tokio::spawn(async move { c.start_with_stream(stream).await });
+    let handle = tokio::spawn(async move { c.start(stream).await });
     tokio::task::yield_now().await; // 等一下，确保连上了
     let mut resp = client.fetch_qrcode().await.expect("failed to fetch qrcode");
 
