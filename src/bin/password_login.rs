@@ -7,6 +7,7 @@ use futures::StreamExt;
 use tokio_util::codec::{FramedRead, LinesCodec};
 
 use rs_qq::device::Device;
+use rs_qq::ext::common::after_login;
 use rs_qq::handler::DefaultHandler;
 use rs_qq::version::{get_version, Protocol};
 use rs_qq::Client;
@@ -115,18 +116,7 @@ async fn main() -> Result<()> {
         }
     }
     tracing::info!(target = "rs_qq", "{:?}", resp);
-    client
-        .register_client()
-        .await
-        .expect("failed to register client");
-    client
-        .refresh_status()
-        .await
-        .expect("failed to refresh status");
-    let c = client.clone();
-    tokio::spawn(async move {
-        c.do_heartbeat().await;
-    });
+    after_login(&client).await;
     {
         client
             .reload_friends()
@@ -140,8 +130,6 @@ async fn main() -> Result<()> {
         let group_list = client.groups.read().await;
         tracing::info!(target = "rs_qq", "{:?}", group_list);
     }
-    let r = client.refresh_status().await;
-    tracing::info!(target = "rs_qq", "{:?}", r);
     let d = client.get_allowed_clients().await;
     tracing::info!(target = "rs_qq", "{:?}", d);
 

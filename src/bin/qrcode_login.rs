@@ -8,6 +8,7 @@ use tokio::time::{sleep, Duration};
 use rs_qq::client::handler::DefaultHandler;
 use rs_qq::client::Client;
 use rs_qq::device::Device;
+use rs_qq::ext::common::after_login;
 use rs_qq::version::{get_version, Protocol};
 use rs_qq::{LoginResponse, QRCodeState};
 
@@ -104,7 +105,7 @@ async fn main() -> Result<()> {
             .await
             .expect("failed to query qrcode result");
     }
-    client.register_client().await.unwrap();
+    after_login(&client).await;
     {
         client
             .reload_friends()
