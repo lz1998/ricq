@@ -16,4 +16,5 @@ use rq_engine as engine;
 
 pub mod client;
 mod config;
+pub mod ext;
 pub mod structs;
