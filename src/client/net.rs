@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use std::net::{Ipv4Addr, SocketAddr};
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
@@ -18,11 +18,14 @@ pub type OutPktSender = broadcast::Sender<Bytes>;
 pub type Connection = JoinHandle<()>;
 
 impl crate::Client {
+    pub fn get_address(&self) -> SocketAddr {
+        // TODO 选择最快地址
+        SocketAddr::new(Ipv4Addr::new(42, 81, 176, 211).into(), 443)
+    }
+
     pub async fn start(self: &Arc<Self>) -> RQResult<()> {
         self.running.store(true, Ordering::Relaxed);
-        let addr = "42.81.176.211:443"
-            .parse::<SocketAddr>()
-            .expect("failed to parse addr");
+        let addr = self.get_address();
         self.start_with_addr(addr).await?;
         Ok(())
     }
@@ -47,7 +50,8 @@ impl crate::Client {
                 }
             } else {
                 // 没登录过，重连
-                self.reconnect(&addr).await?.await.ok();
+                self.disconnect();
+                self.connect(&addr).await?.await.ok();
             }
         }
         self.disconnect();
@@ -120,10 +124,5 @@ impl crate::Client {
         let conn = self.connect(addr).await?;
         self.register_client().await?;
         Ok(conn)
-    }
-
-    async fn reconnect(self: &Arc<Self>, addr: &SocketAddr) -> RQResult<Connection> {
-        self.disconnect();
-        self.connect(addr).await
     }
 }

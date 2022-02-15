@@ -1,4 +1,3 @@
-use std::net::{Ipv4Addr, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -13,9 +12,8 @@ use crate::{Client, RQError, RQResult};
 
 #[async_trait]
 pub trait Connector {
-    async fn connect(&self, _client: &Arc<Client>) -> std::io::Result<TcpStream> {
-        // TODO 选择延迟最低的 client
-        TcpStream::connect(SocketAddr::new(Ipv4Addr::new(42, 81, 176, 211).into(), 443)).await
+    async fn connect(&self, client: &Arc<Client>) -> std::io::Result<TcpStream> {
+        TcpStream::connect(client.get_address()).await
     }
 }
 
