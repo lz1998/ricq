@@ -32,6 +32,7 @@ pub async fn auto_reconnect<C: Connector + Sync>(
     let mut count = 0;
     loop {
         client.stop();
+        tracing::error!("client will reconnect after {} seconds", interval.as_secs());
         tokio::time::sleep(interval).await;
         let stream = if let Ok(stream) = connector.connect(&client).await {
             count = 0;
@@ -39,6 +40,7 @@ pub async fn auto_reconnect<C: Connector + Sync>(
         } else {
             count += 1;
             if count > max {
+                tracing::error!("reconnect_count: {}, break!", count);
                 break;
             }
             continue;
@@ -46,10 +48,12 @@ pub async fn auto_reconnect<C: Connector + Sync>(
         let c = client.clone();
         let handle = tokio::spawn(async move { c.start(stream).await });
         tokio::task::yield_now().await; // 等一下，确保连上了
-        if let Err(_) = fast_login(&client, &credential).await {
+        if let Err(err) = fast_login(&client, &credential).await {
             // token 可能过期了
+            tracing::error!("failed to fast_login: {}, break!", err);
             break;
         }
+        tracing::info!("succeed to reconnect");
         after_login(&client).await;
         handle.await.ok();
     }
