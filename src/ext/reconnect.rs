@@ -17,13 +17,17 @@ pub trait Connector {
     }
 }
 
+pub struct DefaultConnector;
+
+impl Connector for DefaultConnector {}
+
 /// 自动重连，在掉线后使用，会阻塞到重连结束
 pub async fn auto_reconnect<C: Connector + Sync>(
     client: Arc<Client>,
-    connector: C,
     credential: Credential,
     interval: Duration,
     max: usize,
+    connector: C,
 ) {
     let mut count = 0;
     loop {
