@@ -5,6 +5,8 @@ use anyhow::Result;
 use futures::StreamExt;
 use tokio::net::TcpStream;
 use tokio_util::codec::{FramedRead, LinesCodec};
+use tracing::Level;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use rs_qq::device::Device;
 use rs_qq::ext::common::after_login;
@@ -15,10 +17,17 @@ use rs_qq::LoginResponse;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let env = tracing_subscriber::EnvFilter::from("rs_qq=debug,sled=warn,info");
-    tracing_subscriber::fmt()
-        .with_env_filter(env)
-        .without_time()
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_target(true)
+                .without_time(),
+        )
+        .with(
+            tracing_subscriber::filter::Targets::new()
+                .with_target("rs_qq", Level::DEBUG)
+                .with_target("demo", Level::DEBUG),
+        )
         .init();
 
     // load uin and password from env
@@ -28,7 +37,7 @@ async fn main() -> Result<()> {
         .expect("failed to parse UIN");
     let password = std::env::var("PASSWORD").expect("failed to read PASSWORD from env");
 
-    let device = match Path::new("device.json").exists() {
+    let device = match Path::new("../../../device.json").exists() {
         true => serde_json::from_str(
             &tokio::fs::read_to_string("device.json")
                 .await

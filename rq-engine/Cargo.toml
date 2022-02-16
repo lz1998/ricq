@@ -3,27 +3,26 @@ name = "rq-engine"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-bytes = "1.1.0"
-rand = "0.8.4"
+bytes = "1"
+rand = "0.8"
 chrono = "0.4"
-p256 = { version = "0.9", features = ["ecdh"] }
-serde = { version = "1.0", features = ["derive"] }
-md5 = "0.7.0"
-byteorder = "1.4"
+p256 = { version = "0.10", features = ["ecdh"] }
+serde = { version = "1", features = ["derive"] }
+md5 = "0.7"
+byteorder = "1"
 generic-array = "0.14"
-flate2 = { version = "1.0.17", features = ["rust_backend"], default-features = false }
-prost = { version = "0.9.0", git = "https://github.com/lz1998/prost" }
-prost-types = { version = "0.9.0", git = "https://github.com/lz1998/prost" }
-thiserror = "1.0.30"
+flate2 = { version = "1", features = ["rust_backend"], default-features = false }
+thiserror = "1"
 derivative = "2"
-lazy_static = "1.4.0"
-base64 = "0.13"
+lazy_static = "1"
 
-jcers = { version = "0.1.0", features = ["derive"] }
+# patch due to permission of abnormal utf8
+prost = "~0.9"
+prost-types = "~0.9"
+
+jcers = { version = "0.1", features = ["derive"] }
 
 [build-dependencies]
-prost-build = { version = "0.9.0" }
+prost-build = { version = "0.9" }
 

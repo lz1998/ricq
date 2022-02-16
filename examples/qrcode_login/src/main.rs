@@ -5,6 +5,8 @@ use anyhow::Result;
 use bytes::Bytes;
 use tokio::net::TcpStream;
 use tokio::time::{sleep, Duration};
+use tracing::Level;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use rs_qq::client::handler::DefaultHandler;
 use rs_qq::client::Client;
@@ -15,10 +17,17 @@ use rs_qq::{LoginResponse, QRCodeState};
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let env = tracing_subscriber::EnvFilter::from("rs_qq=debug,sled=warn,info");
-    tracing_subscriber::fmt()
-        .with_env_filter(env)
-        .without_time()
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_target(true)
+                .without_time(),
+        )
+        .with(
+            tracing_subscriber::filter::Targets::new()
+                .with_target("rs_qq", Level::DEBUG)
+                .with_target("demo", Level::DEBUG),
+        )
         .init();
 
     let device = match Path::new("device.json").exists() {
