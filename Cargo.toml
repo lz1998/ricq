@@ -10,7 +10,9 @@ bytes = "1.1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 md5 = "0.7.0"
-flate2 = { version = "1.0.17", features = ["rust_backend"], default-features = false }
+flate2 = { version = "1.0.17", features = [
+    "rust_backend",
+], default-features = false }
 prost = { version = "0.9.0", git = "https://github.com/lz1998/prost" }
 tokio = { version = "1", features = ["full"] }
 tokio-util = { version = "0.6", features = ["codec"] }
@@ -25,11 +27,14 @@ chrono = "0.4"
 derivative = "2"
 jcers = { version = "0.1.0", features = ["derive"] }
 rq-engine = { path = "./rq-engine" }
+
+[dev-dependencies]
 tracing-subscriber = { version = "0.3", features = [
     "fmt",
     "env-filter",
     "local-time",
 ] }
+
 [workspace]
 members = []
 

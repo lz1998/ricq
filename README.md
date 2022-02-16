@@ -13,7 +13,7 @@ Rust 用户推荐使用 [RQ-Tower](https://github.com/lz1998/rq-tower),
 
 其他语言用户推荐使用 [(WIP)Walle-Q](https://github.com/abrahum/walle-q), 基于 OneBot 协议开发。
 
-如果一定要基于本项目开发，可以参考 `src/bin/password_login.rs` 或 `src/bin/qrcode_login.rs`。
+如果一定要基于本项目开发，可以参考 `examples/password_login.rs` 或 `examples/qrcode_login.rs`。
 
 > 本项目是一个年轻的项目，请使用 nightly channel 构建本项目哦（正经人谁用 stable 啊）
 
