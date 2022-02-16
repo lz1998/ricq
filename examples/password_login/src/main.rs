@@ -26,7 +26,7 @@ async fn main() -> Result<()> {
         .with(
             tracing_subscriber::filter::Targets::new()
                 .with_target("rs_qq", Level::DEBUG)
-                .with_target("demo", Level::DEBUG),
+                .with_target("password_login", Level::DEBUG),
         )
         .init();
 
@@ -37,18 +37,21 @@ async fn main() -> Result<()> {
         .expect("failed to parse UIN");
     let password = std::env::var("PASSWORD").expect("failed to read PASSWORD from env");
 
-    let device = match Path::new("../../../device.json").exists() {
+    let device = match Path::new("device.json").exists() {
         true => serde_json::from_str(
             &tokio::fs::read_to_string("device.json")
                 .await
                 .expect("failed to read device.json"),
         )
         .expect("failed to parse device info"),
-        false => Device::random(),
+        false => {
+            let d = Device::random();
+            tokio::fs::write("device.json", serde_json::to_string(&d).unwrap())
+                .await
+                .expect("failed to write device info to file");
+            d
+        }
     };
-    tokio::fs::write("device.json", serde_json::to_string(&device).unwrap())
-        .await
-        .expect("failed to write device info to file");
 
     let client = Arc::new(Client::new(
         device,
@@ -70,7 +73,7 @@ async fn main() -> Result<()> {
             LoginResponse::Success {
                 ref account_info, ..
             } => {
-                tracing::info!(target = "rs_qq", "login success: {:?}", account_info);
+                tracing::info!("login success: {:?}", account_info);
                 break;
             }
             LoginResponse::DeviceLocked {
@@ -79,10 +82,10 @@ async fn main() -> Result<()> {
                 ref message,
                 ..
             } => {
-                tracing::info!(target = "rs_qq", "device locked: {:?}", message);
-                tracing::info!(target = "rs_qq", "sms_phone: {:?}", sms_phone);
-                tracing::info!(target = "rs_qq", "verify_url: {:?}", verify_url);
-                tracing::info!(target = "rs_qq", "手机打开url，处理完成后重启程序");
+                tracing::info!("device locked: {:?}", message);
+                tracing::info!("sms_phone: {:?}", sms_phone);
+                tracing::info!("verify_url: {:?}", verify_url);
+                tracing::info!("手机打开url，处理完成后重启程序");
                 std::process::exit(0);
                 //也可以走短信验证
                 // resp = client.request_sms().await.expect("failed to request sms");
@@ -93,8 +96,8 @@ async fn main() -> Result<()> {
                 image_captcha: ref _image_captcha,
                 ..
             } => {
-                tracing::info!(target = "rs_qq", "滑块URL: {:?}", verify_url);
-                tracing::info!(target = "rs_qq", "请输入ticket:");
+                tracing::info!("滑块URL: {:?}", verify_url);
+                tracing::info!("请输入ticket:");
                 let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
                 let ticket = reader
                     .next()
@@ -127,23 +130,23 @@ async fn main() -> Result<()> {
             }
         }
     }
-    tracing::info!(target = "rs_qq", "{:?}", resp);
+    tracing::info!("{:?}", resp);
     after_login(&client).await;
     {
         client
             .reload_friends()
             .await
             .expect("failed to reload friend list");
-        tracing::info!(target = "rs_qq", "{:?}", client.friends.read().await);
+        tracing::info!("{:?}", client.friends.read().await);
         client
             .reload_groups()
             .await
             .expect("failed to reload group list");
         let group_list = client.groups.read().await;
-        tracing::info!(target = "rs_qq", "{:?}", group_list);
+        tracing::info!("{:?}", group_list);
     }
     let d = client.get_allowed_clients().await;
-    tracing::info!(target = "rs_qq", "{:?}", d);
+    tracing::info!("{:?}", d);
 
     // client.delete_essence_message(1095020555, 8114, 2107692422).await
     // let mem_info = client.get_group_member_info(335783090, 875543543).await;

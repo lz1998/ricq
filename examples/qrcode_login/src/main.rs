@@ -26,7 +26,7 @@ async fn main() -> Result<()> {
         .with(
             tracing_subscriber::filter::Targets::new()
                 .with_target("rs_qq", Level::DEBUG)
-                .with_target("demo", Level::DEBUG),
+                .with_target("qrcode_login", Level::DEBUG),
         )
         .init();
 
@@ -36,12 +36,15 @@ async fn main() -> Result<()> {
                 .await
                 .expect("failed to read device.json"),
         )
-        .expect("failed to parse device json"),
-        false => Device::random(),
+        .expect("failed to parse device info"),
+        false => {
+            let d = Device::random();
+            tokio::fs::write("device.json", serde_json::to_string(&d).unwrap())
+                .await
+                .expect("failed to write device info to file");
+            d
+        }
     };
-    tokio::fs::write("device.json", serde_json::to_string(&device).unwrap())
-        .await
-        .expect("failed to write device.json"); //todo
 
     let client = Arc::new(Client::new(
         device,
@@ -90,16 +93,16 @@ async fn main() -> Result<()> {
                     .await
                     .expect("failed to write file");
                 image_sig = sig.clone();
-                tracing::info!(target = "rs_qq", "二维码: qrcode.png");
+                tracing::info!("二维码: qrcode.png");
             }
             QRCodeState::QRCodeWaitingForScan => {
-                tracing::info!(target = "rs_qq", "二维码待扫描")
+                tracing::info!("二维码待扫描")
             }
             QRCodeState::QRCodeWaitingForConfirm => {
-                tracing::info!(target = "rs_qq", "二维码待确认")
+                tracing::info!("二维码待确认")
             }
             QRCodeState::QRCodeTimeout => {
-                tracing::info!(target = "rs_qq", "二维码已超时，重新获取");
+                tracing::info!("二维码已超时，重新获取");
                 if let QRCodeState::QRCodeImageFetch {
                     ref image_data,
                     ref sig,
@@ -109,7 +112,7 @@ async fn main() -> Result<()> {
                         .await
                         .expect("failed to write file");
                     image_sig = sig.clone();
-                    tracing::info!(target = "rs_qq", "二维码: qrcode.png");
+                    tracing::info!("二维码: qrcode.png");
                 }
             }
             QRCodeState::QRCodeConfirmed {
@@ -118,7 +121,7 @@ async fn main() -> Result<()> {
                 ref tgt_qr,
                 ..
             } => {
-                tracing::info!(target = "rs_qq", "二维码已确认");
+                tracing::info!("二维码已确认");
                 let mut login_resp = client
                     .qrcode_login(tmp_pwd, tmp_no_pic_sig, tgt_qr)
                     .await
@@ -129,7 +132,7 @@ async fn main() -> Result<()> {
                         .await
                         .expect("failed to device lock login");
                 }
-                tracing::info!(target = "rs_qq", "{:?}", login_resp);
+                tracing::info!("{:?}", login_resp);
                 break;
             }
             QRCodeState::QRCodeCanceled => {
@@ -150,12 +153,12 @@ async fn main() -> Result<()> {
             .reload_friends()
             .await
             .expect("failed to reload friend list");
-        tracing::info!(target = "rs_qq", "{:?}", client.friends.read().await);
+        tracing::info!("{:?}", client.friends.read().await);
         client
             .reload_groups()
             .await
             .expect("failed to reload group list");
-        tracing::info!(target = "rs_qq", "{:?}", client.groups.read().await);
+        tracing::info!("{:?}", client.groups.read().await);
     }
 
     handle.await.unwrap();
