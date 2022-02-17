@@ -21,7 +21,7 @@ pub struct T125 {
     pub open_id: Bytes,
     pub open_key: Bytes,
 }
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct T11A {
     pub face: u16,
     pub gender: u8,
