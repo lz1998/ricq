@@ -22,6 +22,7 @@ pub mod msg;
 pub mod pb;
 pub mod protocol;
 pub mod structs;
+pub mod wtlogin;
 
 // build_packet: param -> bytes
 // decode_packet: bytes -> struct
