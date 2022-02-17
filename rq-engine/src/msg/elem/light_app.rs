@@ -30,7 +30,7 @@ impl From<LightApp> for Vec<msg::elem::Elem> {
 
 impl From<msg::LightApp> for LightApp {
     fn from(e: msg::LightApp) -> Self {
-        let data = e.clone().data.unwrap_or_default();
+        let data = e.data.unwrap_or_default();
         if data.len() > 1 {
             let content = if data[0] == 0 {
                 data[1..].to_vec()

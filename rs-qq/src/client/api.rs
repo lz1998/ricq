@@ -934,7 +934,7 @@ impl super::Client {
                 break;
             }
         }
-        return Ok(msgs);
+        Ok(msgs)
     }
 
     /// 获取自己的匿名信息（用于发送群消息）

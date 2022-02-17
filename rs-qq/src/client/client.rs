@@ -20,7 +20,7 @@ impl super::Client {
         H: crate::client::handler::Handler + 'static + Sync + Send,
     {
         let (out_pkt_sender, _) = tokio::sync::broadcast::channel(1024);
-        let (disconnect_signal, _) = tokio::sync::broadcast::channel(1024);
+        let (disconnect_signal, _) = tokio::sync::broadcast::channel(8);
 
         Client {
             handler: Box::new(handler),
@@ -80,7 +80,7 @@ impl super::Client {
             let mut packet_promises = self.packet_promises.write().await;
             packet_promises.insert(seq, sender);
         }
-        if let Err(_) = self.out_pkt_sender.send(data) {
+        if self.out_pkt_sender.send(data).is_err() {
             let mut packet_promises = self.packet_promises.write().await;
             packet_promises.remove(&seq);
             return Err(RQError::Network);

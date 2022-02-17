@@ -21,7 +21,7 @@ impl MessageChain {
         ES: IntoIterator<Item = E>,
         E: Into<Vec<msg::elem::Elem>>,
     {
-        Self(es.into_iter().map(Into::into).flatten().collect())
+        Self(es.into_iter().flat_map(Into::into).collect())
     }
 
     pub fn push<E: Into<Vec<msg::elem::Elem>>>(&mut self, e: E) {
@@ -47,7 +47,7 @@ impl MessageChain {
     }
 
     pub fn with_reply(&mut self, reply: Reply) {
-        let index = if let Some(_) = self.anonymous() { 1 } else { 0 };
+        let index = if self.anonymous().is_some() { 1 } else { 0 };
         self.0.insert(index, msg::elem::Elem::from(reply))
     }
 }

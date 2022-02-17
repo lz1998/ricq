@@ -13,14 +13,16 @@ impl Client {
         self: &Arc<Self>,
         msg: pb::msg::Message,
     ) -> RQResult<()> {
-        let head = msg.head.ok_or(RQError::Other("missing head".into()))?;
+        let head = msg
+            .head
+            .ok_or_else(|| RQError::Other("missing head".into()))?;
         let group_code = group_uin2code(head.from_uin());
         let member_uin = head.auth_uin();
 
         let group = self
             .find_group(group_code, true)
             .await
-            .ok_or(RQError::Other("group not found".into()))?;
+            .ok_or_else(|| RQError::Other("group not found".into()))?;
 
         if member_uin == self.uin().await {
             // find_group 的时候已经 reload group info 了

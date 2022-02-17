@@ -19,9 +19,9 @@ impl crate::Engine {
         let notify_data = data
             .map
             .get_mut("req_PushNotify")
-            .ok_or(RQError::Decode("req_PushNotify".into()))?
+            .ok_or_else(|| RQError::Decode("req_PushNotify".into()))?
             .get_mut("PushNotifyPack.RequestPushNotify")
-            .ok_or(RQError::Decode("PushNotifyPack.RequestPushNotify".into()))?;
+            .ok_or_else(|| RQError::Decode("PushNotifyPack.RequestPushNotify".into()))?;
         notify_data.advance(1);
         let notify: jce::RequestPushNotify = jcers::from_buf(notify_data)?;
         Ok(Some(notify))

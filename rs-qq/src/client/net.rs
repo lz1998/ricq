@@ -60,7 +60,7 @@ impl crate::Client {
                 }
                 output = rx.recv() => {
                     if let Ok(output) = output {
-                        if let Err(_)=write_half.send(output).await{
+                        if write_half.send(output).await.is_err(){
                             break;
                         }
                     }

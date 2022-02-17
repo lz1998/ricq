@@ -115,9 +115,10 @@ impl super::super::super::Engine {
 
         let mut data: jce::RequestDataVersion3 = jcers::from_buf(&mut req.s_buffer)?;
 
-        let mut r = data.map.remove("DFRESP").ok_or(RQError::Decode(
-            "decode_remove_friend `DFRESP` not found".into(),
-        ))?;
+        let mut r = data
+            .map
+            .remove("DFRESP")
+            .ok_or_else(|| RQError::Decode("decode_remove_friend `DFRESP` not found".into()))?;
         jcers::from_buf(&mut r).map_err(RQError::Jce)
     }
 }

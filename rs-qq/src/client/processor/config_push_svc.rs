@@ -25,7 +25,7 @@ impl Client {
         match config_push_req.body {
             ConfigPushBody::Unknown => {}
             ConfigPushBody::SsoServers { .. } => {}
-            ConfigPushBody::FileStorageInfo { info, rsp_body } => {
+            ConfigPushBody::FileStorageInfo { info: _, rsp_body } => {
                 let mut session = self.highway_session.write().await;
                 if let Some(rsp_body) = rsp_body {
                     session.sig_session = Bytes::from(rsp_body.sig_session.unwrap_or_default());
