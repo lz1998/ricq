@@ -629,6 +629,8 @@ impl super::Client {
     }
 
     /// 设置群管理员
+    ///
+    /// flag: true 设置管理员 false 取消管理员
     pub async fn group_set_admin(&self, group_code: i64, member: i64, flag: bool) -> RQResult<()> {
         let req = self
             .engine
