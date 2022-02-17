@@ -17,7 +17,7 @@ impl Client {
         let mut engine = self.engine.write().await;
         let mut cli_account_info = self.account_info.write().await;
         match login_response {
-            LoginResponse::Success {
+            LoginResponse::Success(LoginSuccess {
                 rollback_sig: _,
                 rand_seed,
                 ksid,
@@ -37,7 +37,7 @@ impl Client {
                 d2,
                 d2key,
                 device_token,
-            } => {
+            }) => {
                 rand_seed.map(|v| engine.transport.sig.rand_seed = v);
                 ksid.map(|v| engine.transport.sig.ksid = v);
                 account_info.map(|v| {
@@ -68,12 +68,12 @@ impl Client {
                 }
                 self.handler.handle(QEvent::Login(engine.uin())).await;
             }
-            LoginResponse::NeedCaptcha { t104, .. } => {
+            LoginResponse::NeedCaptcha(LoginNeedCaptcha { t104, .. }) => {
                 t104.map(|v| engine.transport.sig.t104 = v);
             }
-            LoginResponse::DeviceLocked {
+            LoginResponse::DeviceLocked(LoginDeviceLocked {
                 t104, t174, t402, ..
-            } => {
+            }) => {
                 t104.map(|v| engine.transport.sig.t104 = v);
                 if let Some(v) = t174 {
                     engine.transport.sig.t174 = v
@@ -82,11 +82,11 @@ impl Client {
                     set_t402(&mut engine.transport, v)
                 }
             }
-            LoginResponse::DeviceLockLogin {
+            LoginResponse::DeviceLockLogin(LoginDeviceLockLogin {
                 rand_seed,
                 t104,
                 t402,
-            } => {
+            }) => {
                 rand_seed.map(|v| engine.transport.sig.rand_seed = v);
                 t104.map(|v| engine.transport.sig.t104 = v);
                 if let Some(v) = t402 {

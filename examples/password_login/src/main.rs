@@ -12,8 +12,8 @@ use rs_qq::device::Device;
 use rs_qq::ext::common::after_login;
 use rs_qq::handler::DefaultHandler;
 use rs_qq::version::{get_version, Protocol};
-use rs_qq::Client;
-use rs_qq::LoginResponse;
+use rs_qq::{Client, LoginDeviceLocked, LoginNeedCaptcha, LoginSuccess};
+use rs_qq::{LoginResponse, LoginUnknownStatus};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -70,18 +70,18 @@ async fn main() -> Result<()> {
         .expect("failed to login with password");
     loop {
         match resp {
-            LoginResponse::Success {
+            LoginResponse::Success(LoginSuccess {
                 ref account_info, ..
-            } => {
+            }) => {
                 tracing::info!("login success: {:?}", account_info);
                 break;
             }
-            LoginResponse::DeviceLocked {
+            LoginResponse::DeviceLocked(LoginDeviceLocked {
                 ref sms_phone,
                 ref verify_url,
                 ref message,
                 ..
-            } => {
+            }) => {
                 tracing::info!("device locked: {:?}", message);
                 tracing::info!("sms_phone: {:?}", sms_phone);
                 tracing::info!("verify_url: {:?}", verify_url);
@@ -90,12 +90,12 @@ async fn main() -> Result<()> {
                 //也可以走短信验证
                 // resp = client.request_sms().await.expect("failed to request sms");
             }
-            LoginResponse::NeedCaptcha {
+            LoginResponse::NeedCaptcha(LoginNeedCaptcha {
                 ref verify_url,
                 // 图片应该没了
                 image_captcha: ref _image_captcha,
                 ..
-            } => {
+            }) => {
                 tracing::info!("滑块URL: {:?}", verify_url);
                 tracing::info!("请输入ticket:");
                 let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
@@ -122,10 +122,10 @@ async fn main() -> Result<()> {
             LoginResponse::TooManySMSRequest => {
                 panic!("too many sms request");
             }
-            LoginResponse::UnknownLoginStatus {
+            LoginResponse::UnknownStatus(LoginUnknownStatus {
                 ref status,
                 ref tlv_map,
-            } => {
+            }) => {
                 panic!("unknown login status: {:?}, {:?}", status, tlv_map);
             }
         }

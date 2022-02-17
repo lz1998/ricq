@@ -4,7 +4,10 @@
 pub use client::handler;
 pub use client::Client;
 pub use config::Config;
-pub use engine::command::wtlogin::{LoginResponse, QRCodeConfirmed, QRCodeImageFetch, QRCodeState};
+pub use engine::command::wtlogin::{
+    LoginDeviceLockLogin, LoginDeviceLocked, LoginNeedCaptcha, LoginResponse, LoginSuccess,
+    LoginUnknownStatus, QRCodeConfirmed, QRCodeImageFetch, QRCodeState,
+};
 pub use engine::error::{RQError, RQResult};
 use engine::jce;
 pub use engine::msg;

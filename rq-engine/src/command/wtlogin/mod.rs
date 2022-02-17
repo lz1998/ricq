@@ -43,56 +43,71 @@ pub struct ImageCaptcha {
 
 #[derive(Debug, Clone)]
 pub enum LoginResponse {
-    Success {
-        rollback_sig: Option<T161>,
-        rand_seed: Option<Bytes>,
-        ksid: Option<Bytes>,
-        account_info: Option<T11A>,
-        t512: Option<T512>,
-        // 不知道有没有 t402
-        t402: Option<Bytes>,
-        wt_session_ticket_key: Option<Bytes>,
-        srm_token: Option<Bytes>,
-        t133: Option<Bytes>,
-        encrypt_a1: Option<Bytes>,
-        tgt: Option<Bytes>,
-        tgt_key: Option<Bytes>,
-        user_st_key: Option<Bytes>,
-        user_st_web_sig: Option<Bytes>,
-        s_key: Option<Bytes>,
-        s_key_expired_time: i64,
-        d2: Option<Bytes>,
-        d2key: Option<Bytes>,
-        device_token: Option<Bytes>,
-    },
+    Success(LoginSuccess),
     // slider or image captcha
-    NeedCaptcha {
-        t104: Option<Bytes>,
-        verify_url: Option<String>,
-        image_captcha: Option<ImageCaptcha>,
-    },
+    NeedCaptcha(LoginNeedCaptcha),
     AccountFrozen,
     // sms or qrcode
-    DeviceLocked {
-        t104: Option<Bytes>,
-        t174: Option<Bytes>,
-        t402: Option<Bytes>,
-        sms_phone: Option<String>,
-        verify_url: Option<String>,
-        message: Option<String>,
-        rand_seed: Option<Bytes>,
-    },
+    DeviceLocked(LoginDeviceLocked),
     TooManySMSRequest,
     // More login packet needed
-    DeviceLockLogin {
-        t104: Option<Bytes>,
-        t402: Option<Bytes>,
-        rand_seed: Option<Bytes>,
-    },
-    UnknownLoginStatus {
-        status: u8,
-        tlv_map: HashMap<u16, Bytes>,
-    },
+    DeviceLockLogin(LoginDeviceLockLogin),
+    UnknownStatus(LoginUnknownStatus),
+}
+
+#[derive(Debug, Clone)]
+pub struct LoginSuccess {
+    pub rollback_sig: Option<T161>,
+    pub rand_seed: Option<Bytes>,
+    pub ksid: Option<Bytes>,
+    pub account_info: Option<T11A>,
+    pub t512: Option<T512>,
+    // 不知道有没有 t402
+    pub t402: Option<Bytes>,
+    pub wt_session_ticket_key: Option<Bytes>,
+    pub srm_token: Option<Bytes>,
+    pub t133: Option<Bytes>,
+    pub encrypt_a1: Option<Bytes>,
+    pub tgt: Option<Bytes>,
+    pub tgt_key: Option<Bytes>,
+    pub user_st_key: Option<Bytes>,
+    pub user_st_web_sig: Option<Bytes>,
+    pub s_key: Option<Bytes>,
+    pub s_key_expired_time: i64,
+    pub d2: Option<Bytes>,
+    pub d2key: Option<Bytes>,
+    pub device_token: Option<Bytes>,
+}
+
+#[derive(Debug, Clone)]
+pub struct LoginNeedCaptcha {
+    pub t104: Option<Bytes>,
+    pub verify_url: Option<String>,
+    pub image_captcha: Option<ImageCaptcha>,
+}
+
+#[derive(Debug, Clone)]
+pub struct LoginDeviceLocked {
+    pub t104: Option<Bytes>,
+    pub t174: Option<Bytes>,
+    pub t402: Option<Bytes>,
+    pub sms_phone: Option<String>,
+    pub verify_url: Option<String>,
+    pub message: Option<String>,
+    pub rand_seed: Option<Bytes>,
+}
+
+#[derive(Debug, Clone)]
+pub struct LoginDeviceLockLogin {
+    pub t104: Option<Bytes>,
+    pub t402: Option<Bytes>,
+    pub rand_seed: Option<Bytes>,
+}
+
+#[derive(Debug, Clone)]
+pub struct LoginUnknownStatus {
+    pub status: u8,
+    pub tlv_map: HashMap<u16, Bytes>,
 }
 
 impl LoginResponse {
@@ -107,7 +122,7 @@ impl LoginResponse {
                     .remove(&0x119)
                     .map(|v| decode_t119(&v, encrypt_key))
                     .ok_or_else(|| RQError::Decode("missing 0x119".to_string()))?;
-                LoginResponse::Success {
+                LoginResponse::Success(LoginSuccess {
                     rollback_sig: tlv_map.remove(&0x161).map(decode_t161),
                     rand_seed: tlv_map.remove(&0x403),
                     ksid: t119.remove(&0x108),
@@ -127,9 +142,9 @@ impl LoginResponse {
                     d2: t119.remove(&0x143),
                     d2key: t119.remove(&0x305),
                     device_token: t119.remove(&0x322),
-                }
+                })
             }
-            2 => LoginResponse::NeedCaptcha {
+            2 => LoginResponse::NeedCaptcha(LoginNeedCaptcha {
                 t104: tlv_map.remove(&0x104),
                 verify_url: tlv_map
                     .remove(&0x192)
@@ -143,9 +158,9 @@ impl LoginResponse {
                         image: img_data,
                     }
                 }),
-            },
+            }),
             40 => LoginResponse::AccountFrozen,
-            160 | 239 => LoginResponse::DeviceLocked {
+            160 | 239 => LoginResponse::DeviceLocked(LoginDeviceLocked {
                 // TODO?
                 sms_phone: tlv_map.remove(&0x178).map(|_| "todo".into()),
                 verify_url: tlv_map
@@ -158,14 +173,14 @@ impl LoginResponse {
                 t104: tlv_map.remove(&0x104),
                 t174: tlv_map.remove(&0x174),
                 t402: tlv_map.remove(&0x402),
-            },
+            }),
             162 => LoginResponse::TooManySMSRequest,
-            204 => LoginResponse::DeviceLockLogin {
+            204 => LoginResponse::DeviceLockLogin(LoginDeviceLockLogin {
                 t104: tlv_map.remove(&0x104),
                 t402: tlv_map.remove(&0x402),
                 rand_seed: tlv_map.remove(&0x403),
-            },
-            _ => LoginResponse::UnknownLoginStatus { status, tlv_map },
+            }),
+            _ => LoginResponse::UnknownStatus(LoginUnknownStatus { status, tlv_map }),
         };
         Ok(resp)
     }
