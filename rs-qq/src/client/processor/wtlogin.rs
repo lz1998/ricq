@@ -98,7 +98,7 @@ impl Client {
     }
 
     pub(crate) async fn process_trans_emp_response(&self, qrcode_state: QRCodeState) {
-        if let QRCodeState::QRCodeConfirmed { uin, tgtgt_key, .. } = qrcode_state {
+        if let QRCodeState::Confirmed(QRCodeConfirmed { uin, tgtgt_key, .. }) = qrcode_state {
             let engine = &mut self.engine.write().await;
             engine.transport.sig.tgtgt_key = tgtgt_key;
             engine.uin.store(uin, Ordering::SeqCst);

@@ -13,7 +13,7 @@ use rs_qq::client::Client;
 use rs_qq::device::Device;
 use rs_qq::ext::common::after_login;
 use rs_qq::version::{get_version, Protocol};
-use rs_qq::{LoginResponse, QRCodeState};
+use rs_qq::{LoginResponse, QRCodeConfirmed, QRCodeImageFetch, QRCodeState};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -85,28 +85,28 @@ async fn main() -> Result<()> {
     let mut image_sig = Bytes::new();
     loop {
         match resp {
-            QRCodeState::QRCodeImageFetch {
+            QRCodeState::ImageFetch(QRCodeImageFetch {
                 ref image_data,
                 ref sig,
-            } => {
+            }) => {
                 tokio::fs::write("qrcode.png", &image_data)
                     .await
                     .expect("failed to write file");
                 image_sig = sig.clone();
                 tracing::info!("二维码: qrcode.png");
             }
-            QRCodeState::QRCodeWaitingForScan => {
+            QRCodeState::WaitingForScan => {
                 tracing::info!("二维码待扫描")
             }
-            QRCodeState::QRCodeWaitingForConfirm => {
+            QRCodeState::WaitingForConfirm => {
                 tracing::info!("二维码待确认")
             }
-            QRCodeState::QRCodeTimeout => {
+            QRCodeState::Timeout => {
                 tracing::info!("二维码已超时，重新获取");
-                if let QRCodeState::QRCodeImageFetch {
+                if let QRCodeState::ImageFetch(QRCodeImageFetch {
                     ref image_data,
                     ref sig,
-                } = client.fetch_qrcode().await.expect("failed to fetch qrcode")
+                }) = client.fetch_qrcode().await.expect("failed to fetch qrcode")
                 {
                     tokio::fs::write("qrcode.png", &image_data)
                         .await
@@ -115,12 +115,12 @@ async fn main() -> Result<()> {
                     tracing::info!("二维码: qrcode.png");
                 }
             }
-            QRCodeState::QRCodeConfirmed {
+            QRCodeState::Confirmed(QRCodeConfirmed {
                 ref tmp_pwd,
                 ref tmp_no_pic_sig,
                 ref tgt_qr,
                 ..
-            } => {
+            }) => {
                 tracing::info!("二维码已确认");
                 let mut login_resp = client
                     .qrcode_login(tmp_pwd, tmp_no_pic_sig, tgt_qr)
@@ -135,7 +135,7 @@ async fn main() -> Result<()> {
                 tracing::info!("{:?}", login_resp);
                 break;
             }
-            QRCodeState::QRCodeCanceled => {
+            QRCodeState::Canceled => {
                 panic!("二维码已取消")
             }
         }

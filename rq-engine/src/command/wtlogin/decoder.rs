@@ -1,7 +1,7 @@
 use bytes::{Buf, Bytes};
 
 use crate::binary::BinaryReader;
-use crate::command::wtlogin::{LoginResponse, QRCodeState};
+use crate::command::wtlogin::{LoginResponse, QRCodeConfirmed, QRCodeImageFetch, QRCodeState};
 use crate::{RQError, RQResult};
 
 impl super::super::super::Engine {
@@ -32,12 +32,12 @@ impl super::super::super::Engine {
             body.get_u16();
             let mut m = body.read_tlv_map(2);
             if m.contains_key(&0x17) {
-                return Ok(QRCodeState::QRCodeImageFetch {
+                return Ok(QRCodeState::ImageFetch(QRCodeImageFetch {
                     image_data: m
                         .remove(&0x17)
                         .ok_or_else(|| RQError::Decode("missing 0x17".into()))?,
                     sig,
-                });
+                }));
             }
         }
         if cmd == 0x12 {
@@ -56,10 +56,10 @@ impl super::super::super::Engine {
             let code = body.get_u8();
             if code != 0 {
                 return match code {
-                    0x30 => Ok(QRCodeState::QRCodeWaitingForScan),
-                    0x35 => Ok(QRCodeState::QRCodeWaitingForConfirm),
-                    0x36 => Ok(QRCodeState::QRCodeCanceled),
-                    0x11 => Ok(QRCodeState::QRCodeTimeout),
+                    0x30 => Ok(QRCodeState::WaitingForScan),
+                    0x35 => Ok(QRCodeState::WaitingForConfirm),
+                    0x36 => Ok(QRCodeState::Canceled),
+                    0x11 => Ok(QRCodeState::Timeout),
                     _ => Err(RQError::Decode("invalid body code".to_string())),
                 };
             }
@@ -67,7 +67,7 @@ impl super::super::super::Engine {
             body.get_i32(); // sig create time
             body.get_u16();
             let mut m = body.read_tlv_map(2);
-            return Ok(QRCodeState::QRCodeConfirmed {
+            return Ok(QRCodeState::Confirmed(QRCodeConfirmed {
                 uin,
                 tmp_pwd: m
                     .remove(&0x18)
@@ -81,7 +81,7 @@ impl super::super::super::Engine {
                 tgtgt_key: m
                     .remove(&0x1e)
                     .ok_or_else(|| RQError::Decode("missing 0x1e".into()))?,
-            });
+            }));
         }
         Err(RQError::Decode(
             "decode_trans_emp_response unknown error".to_string(),

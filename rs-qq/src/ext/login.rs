@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use rq_engine::command::wtlogin::{LoginResponse, QRCodeState};
+use rq_engine::command::wtlogin::{LoginResponse, QRCodeConfirmed, QRCodeState};
 use rq_engine::{RQError, RQResult};
 
 use crate::Client;
@@ -12,14 +12,14 @@ pub async fn auto_query_qrcode(client: &Arc<Client>, sig: &[u8]) -> RQResult<()>
         tokio::time::sleep(Duration::from_secs(5)).await;
         let qrcode_state = client.query_qrcode_result(sig).await?;
         match qrcode_state {
-            QRCodeState::QRCodeTimeout => return Err(RQError::Other("timeout".into())),
-            QRCodeState::QRCodeCanceled => return Err(RQError::Other("canceled".into())),
-            QRCodeState::QRCodeConfirmed {
+            QRCodeState::Timeout => return Err(RQError::Other("timeout".into())),
+            QRCodeState::Canceled => return Err(RQError::Other("canceled".into())),
+            QRCodeState::Confirmed(QRCodeConfirmed {
                 ref tmp_pwd,
                 ref tmp_no_pic_sig,
                 ref tgt_qr,
                 ..
-            } => {
+            }) => {
                 let login_resp = client.qrcode_login(tmp_pwd, tmp_no_pic_sig, tgt_qr).await?;
                 return match login_resp {
                     LoginResponse::Success { .. } => Ok(()),

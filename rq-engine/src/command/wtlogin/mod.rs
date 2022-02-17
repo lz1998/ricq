@@ -12,22 +12,29 @@ pub mod tlv_writer;
 
 #[derive(Debug, Clone)]
 pub enum QRCodeState {
-    QRCodeImageFetch {
-        image_data: Bytes,
-        sig: Bytes,
-    },
-    QRCodeWaitingForScan,
-    QRCodeWaitingForConfirm,
-    QRCodeTimeout,
-    QRCodeConfirmed {
-        uin: i64,
-        tmp_pwd: Bytes,
-        tmp_no_pic_sig: Bytes,
-        tgt_qr: Bytes,
-        tgtgt_key: Bytes,
-    },
-    QRCodeCanceled,
+    ImageFetch(QRCodeImageFetch),
+    WaitingForScan,
+    WaitingForConfirm,
+    Timeout,
+    Confirmed(QRCodeConfirmed),
+    Canceled,
 }
+
+#[derive(Debug, Clone)]
+pub struct QRCodeImageFetch {
+    pub image_data: Bytes,
+    pub sig: Bytes,
+}
+
+#[derive(Debug, Clone)]
+pub struct QRCodeConfirmed {
+    pub uin: i64,
+    pub tmp_pwd: Bytes,
+    pub tmp_no_pic_sig: Bytes,
+    pub tgt_qr: Bytes,
+    pub tgtgt_key: Bytes,
+}
+
 #[derive(Debug, Clone)]
 pub struct ImageCaptcha {
     pub sign: Bytes,
