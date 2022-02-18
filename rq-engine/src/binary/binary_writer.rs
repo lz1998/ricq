@@ -23,7 +23,7 @@ where
     B: BufMut,
 {
     fn write_bytes_short(&mut self, data: &[u8]) {
-        self.put_u16(data.chunk().len() as u16);
+        self.put_u16(data.len() as u16);
         self.put_slice(data.chunk())
     }
 
