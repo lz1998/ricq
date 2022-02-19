@@ -687,6 +687,12 @@ impl super::Client {
         Ok(())
     }
 
+    pub async fn group_quit(&self, group_code: i64) -> RQResult<()> {
+        let req = self.engine.read().await.build_quit_group_packet(group_code);
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
     /// 获取群 @全体成员 剩余次数
     pub async fn group_at_all_remain(&self, group_code: i64) -> RQResult<GroupAtAllRemainInfo> {
         let req = self

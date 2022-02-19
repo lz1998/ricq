@@ -1,3 +1,5 @@
+use jcers::JcePut;
+
 use crate::command::common::PbToBytes;
 use crate::pb;
 use crate::protocol::packet::Packet;
@@ -115,5 +117,37 @@ impl super::super::super::Engine {
         };
         let payload = req.to_bytes();
         self.uni_packet("ProfileService.Pb.ReqSystemMsgAction.Friend", payload)
+    }
+
+    // ProfileService.GroupMngReq
+    pub fn build_quit_group_packet(&self, group_code: i64) -> Packet {
+        let mut jce_mut = jcers::JceMut::new();
+        jce_mut.put_i32(2, 0);
+        jce_mut.put_i64(self.uin(), 1);
+        jce_mut.put_bytes(
+            bytes::Bytes::from({
+                let mut v = Vec::with_capacity(8);
+                v.extend((self.uin() as u32).to_be_bytes());
+                v.extend(group_code.to_be_bytes());
+                v
+            }),
+            2,
+        );
+        let buf = crate::jce::RequestDataVersion3 {
+            map: [(
+                "GroupMngReq".to_owned(),
+                crate::command::common::pack_uni_request_data(&jce_mut.freeze()),
+            )]
+            .into(),
+        };
+        let pkt = crate::jce::RequestPacket {
+            i_version: 3,
+            i_request_id: self.next_packet_seq(),
+            s_servant_name: "KQQ.ProfileService.ProfileServantObj".to_owned(),
+            s_func_name: "GroupMngReq".to_owned(),
+            s_buffer: buf.freeze(),
+            ..Default::default()
+        };
+        self.uni_packet("ProfileService.GroupMngReq", pkt.freeze())
     }
 }
