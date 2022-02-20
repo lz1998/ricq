@@ -184,6 +184,17 @@ impl super::Client {
 
 /// API
 impl super::Client {
+    /// 修改昵称
+    pub async fn update_qq_nickname(&self, name: String) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_update_qq_nickname_packet(name);
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
     /// 获取进群申请信息
     async fn get_group_system_messages(&self, suspicious: bool) -> RQResult<GroupSystemMessages> {
         let req = self
