@@ -1,11 +1,23 @@
 use bytes::{BufMut, BytesMut};
 
+use crate::binary::BinaryWriter;
 use crate::command::common::PbToBytes;
 use crate::command::oidb_svc::music::{MusicShare, MusicVersion, SendMusicTarget};
 use crate::pb;
 use crate::protocol::packet::Packet;
 
 impl super::super::super::Engine {
+    // OidbSvc.0x4ff_9
+    pub fn build_update_qq_nickname_packet(&self, name: String) -> Packet {
+        let mut w = BytesMut::new();
+        w.put_u32(self.uin() as u32);
+        w.put_u8(0);
+        w.put_u32(85538);
+        w.write_bytes_short(name.as_bytes());
+        let payload = self.transport.encode_oidb_packet(0x4ff, 9, w.freeze());
+        self.uni_packet("OidbSvc.0x4ff_9", payload)
+    }
+
     // OidbSvc.0x88d_0
     pub fn build_group_info_request_packet(&self, group_codes: Vec<i64>) -> Packet {
         let body = pb::oidb::D88dReqBody {
