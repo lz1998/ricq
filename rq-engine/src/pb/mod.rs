@@ -38,6 +38,10 @@ pub mod profilecard {
     include!(concat!(env!("OUT_DIR"), "/profilecard.rs"));
 }
 
+pub mod sig_act {
+    include!(concat!(env!("OUT_DIR"), "/sig_act.rs"));
+}
+
 pub mod structmsg {
     include!(concat!(env!("OUT_DIR"), "/structmsg.rs"));
 }
