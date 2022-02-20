@@ -1,21 +1,41 @@
 use bytes::{BufMut, BytesMut};
 
-use crate::binary::BinaryWriter;
 use crate::command::common::PbToBytes;
 use crate::command::oidb_svc::music::{MusicShare, MusicVersion, SendMusicTarget};
+use crate::command::oidb_svc::EditingProfileDetail;
 use crate::pb;
 use crate::protocol::packet::Packet;
 
 impl super::super::super::Engine {
-    // OidbSvc.0x4ff_9
-    pub fn build_update_qq_nickname_packet(&self, name: String) -> Packet {
+    // OidbSvc.0x4ff_9_IMCore
+    pub fn build_update_profile_detail_packet(&self, profile: EditingProfileDetail) -> Packet {
         let mut w = BytesMut::new();
         w.put_u32(self.uin() as u32);
         w.put_u8(0);
-        w.put_u32(85538);
-        w.write_bytes_short(name.as_bytes());
+        let mut field_count = 0;
+        let mut buf = BytesMut::new();
+        if let Some(value) = profile.nick {
+            field_count += 1;
+            buf.put_u16(20002);
+            buf.put_u16(value.as_bytes().len() as u16);
+            buf.put_slice(value.as_bytes());
+        }
+        if let Some(value) = profile.email {
+            field_count += 1;
+            buf.put_u16(20011);
+            buf.put_u16(value.as_bytes().len() as u16);
+            buf.put_slice(value.as_bytes());
+        }
+        if let Some(value) = profile.personal_note {
+            field_count += 1;
+            buf.put_u16(20019);
+            buf.put_u16(value.as_bytes().len() as u16);
+            buf.put_slice(value.as_bytes());
+        }
+        w.put_u16(field_count);
+        w.put_slice(&buf);
         let payload = self.transport.encode_oidb_packet(0x4ff, 9, w.freeze());
-        self.uni_packet("OidbSvc.0x4ff_9", payload)
+        self.uni_packet("OidbSvc.0x4ff_9_IMCore", payload)
     }
 
     // OidbSvc.0x88d_0

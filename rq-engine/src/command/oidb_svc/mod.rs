@@ -16,3 +16,11 @@ pub struct OcrResponse {
     pub texts: Vec<pb::oidb::TextDetection>,
     pub language: String,
 }
+
+// 编辑个人资料
+#[derive(Default, Debug)]
+pub struct EditingProfileDetail {
+    pub nick: Option<String>,
+    pub email: Option<String>,
+    pub personal_note: Option<String>,
+}

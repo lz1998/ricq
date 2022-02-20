@@ -1,5 +1,6 @@
 use bytes::Bytes;
 
+pub use crate::command::oidb_svc::EditingProfileDetail;
 use crate::jce;
 use crate::msg::MessageChain;
 

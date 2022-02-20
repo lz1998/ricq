@@ -184,13 +184,13 @@ impl super::Client {
 
 /// API
 impl super::Client {
-    /// 修改昵称
-    pub async fn update_qq_nickname(&self, name: String) -> RQResult<()> {
+    /// 修改个人资料
+    pub async fn update_profile_detail(&self, profile: EditingProfileDetail) -> RQResult<()> {
         let req = self
             .engine
             .read()
             .await
-            .build_update_qq_nickname_packet(name);
+            .build_update_profile_detail_packet(profile);
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
