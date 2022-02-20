@@ -185,7 +185,7 @@ impl super::Client {
 /// API
 impl super::Client {
     /// 修改个人资料
-    pub async fn update_profile_detail(&self, profile: EditingProfileDetail) -> RQResult<()> {
+    pub async fn update_profile_detail(&self, profile: ProfileDetailUpdate) -> RQResult<()> {
         let req = self
             .engine
             .read()

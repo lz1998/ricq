@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::pb;
 
 pub mod builder;
@@ -19,8 +21,25 @@ pub struct OcrResponse {
 
 // 编辑个人资料
 #[derive(Default, Debug)]
-pub struct EditingProfileDetail {
-    pub nick: Option<String>,
-    pub email: Option<String>,
-    pub personal_note: Option<String>,
+pub struct ProfileDetailUpdate(pub HashMap<u16, Vec<u8>>);
+
+impl ProfileDetailUpdate {
+    pub fn new() -> Self {
+        Self::default()
+    }
+    pub fn name(&mut self, value: String) {
+        self.0.insert(20002, value.into_bytes());
+    }
+    pub fn email(&mut self, value: String) {
+        self.0.insert(20011, value.into_bytes());
+    }
+    pub fn personal_note(&mut self, value: String) {
+        self.0.insert(20019, value.into_bytes());
+    }
+    pub fn company(&mut self, value: String) {
+        self.0.insert(24008, value.into_bytes());
+    }
+    pub fn college(&mut self, value: String) {
+        self.0.insert(20021, value.into_bytes());
+    }
 }
