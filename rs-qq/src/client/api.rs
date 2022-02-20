@@ -184,6 +184,16 @@ impl super::Client {
 
 /// API
 impl super::Client {
+    pub async fn update_signature(&self, signature: String) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_update_signature_packet(signature);
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
     /// 修改个人资料
     pub async fn update_profile_detail(&self, profile: ProfileDetailUpdate) -> RQResult<()> {
         let req = self
