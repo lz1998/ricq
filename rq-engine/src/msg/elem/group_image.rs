@@ -13,28 +13,46 @@ pub struct GroupImage {
     pub height: i32,
     pub md5: Vec<u8>,
     pub url: String,
+
+    pub flash: bool,
 }
 
 impl From<GroupImage> for Vec<msg::elem::Elem> {
     fn from(e: GroupImage) -> Self {
-        vec![{
-            let mut cface = msg::CustomFace {
-                file_type: Some(66),
-                useful: Some(1),
-                biz_type: Some(5),
-                width: Some(e.width),
-                height: Some(e.height),
-                file_id: Some(e.file_id as i32),
-                file_path: Some(e.image_id),
-                // TODO decode type
-                image_type: Some(1000),
-                size: Some(e.size),
-                flag: Some(vec![0; 4]),
+        let mut cface = msg::CustomFace {
+            file_type: Some(66),
+            useful: Some(1),
+            biz_type: Some(5),
+            width: Some(e.width),
+            height: Some(e.height),
+            file_id: Some(e.file_id as i32),
+            file_path: Some(e.image_id),
+            // TODO decode type
+            image_type: Some(1000),
+            size: Some(e.size),
+            flag: Some(vec![0; 4]),
+            ..Default::default()
+        };
+        if e.flash {
+            let flash = msg::MsgElemInfoServtype3 {
+                flash_troop_pic: Some(cface),
                 ..Default::default()
-            };
+            }
+            .to_bytes();
+            let flash_elem = msg::elem::Elem::CommonElem(msg::CommonElem {
+                service_type: Some(3),
+                pb_elem: Some(flash.to_vec()),
+                ..Default::default()
+            });
+            let text_hint = msg::elem::Elem::Text(msg::Text {
+                str: Some("[闪照]请使用新版手机QQ查看闪照。".to_owned()),
+                ..Default::default()
+            });
+            vec![flash_elem, text_hint]
+        } else {
             cface.pb_reserve = Some(msg::ResvAttr::default().to_bytes().to_vec());
-            msg::elem::Elem::CustomFace(cface)
-        }]
+            vec![msg::elem::Elem::CustomFace(cface)]
+        }
     }
 }
 
@@ -61,7 +79,23 @@ impl From<msg::CustomFace> for GroupImage {
             height: custom_face.height(),
             url,
             md5: custom_face.md5.unwrap_or_default(),
+            flash: false,
         };
+    }
+}
+
+impl TryFrom<msg::CommonElem> for GroupImage {
+    type Error = msg::CommonElem;
+
+    fn try_from(e: msg::CommonElem) -> Result<Self, Self::Error> {
+        if let Ok(pb_elem) = msg::MsgElemInfoServtype3::from_bytes(e.pb_elem()) {
+            if let Some(p) = pb_elem.flash_troop_pic {
+                let mut group_image: GroupImage = p.into(); //todo:url check
+                group_image.flash = true;
+                return Ok(group_image);
+            }
+        }
+        Err(e)
     }
 }
 
