@@ -2,6 +2,10 @@
 
 include!(concat!(env!("OUT_DIR"), "/pb.rs"));
 
+pub mod cmd0x352 {
+    include!(concat!(env!("OUT_DIR"), "/cmd0x352.rs"));
+}
+
 pub mod cmd0x388 {
     include!(concat!(env!("OUT_DIR"), "/cmd0x388.rs"));
 }

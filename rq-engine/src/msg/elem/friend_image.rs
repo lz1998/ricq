@@ -1,4 +1,3 @@
-use bytes::Bytes;
 use std::fmt;
 
 use crate::{command::common::PbToBytes, pb::msg};
@@ -6,9 +5,10 @@ use crate::{command::common::PbToBytes, pb::msg};
 #[derive(Default, Debug, Clone)]
 pub struct FriendImage {
     pub image_id: String,
-    pub md5: Bytes,
+    pub md5: Vec<u8>,
     pub size: i32,
     pub url: String,
+
     pub flash: bool,
 }
 
@@ -70,7 +70,7 @@ impl From<msg::NotOnlineImage> for FriendImage {
             image_id: e.file_path().to_owned(),
             size: e.file_len(),
             url,
-            md5: Bytes::copy_from_slice(e.pic_md5()),
+            md5: e.pic_md5().to_vec(),
             flash: false,
         }
     }
