@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use bytes::{Buf, Bytes};
 
+use crate::binary::BinaryReader;
 use crate::command::wtlogin::tlv_reader::*;
 use crate::{RQError, RQResult};
 
@@ -108,6 +109,7 @@ pub struct LoginDeviceLockLogin {
 pub struct LoginUnknownStatus {
     pub status: u8,
     pub tlv_map: HashMap<u16, Bytes>,
+    pub message: String,
 }
 
 impl LoginResponse {
@@ -180,7 +182,21 @@ impl LoginResponse {
                 t402: tlv_map.remove(&0x402),
                 rand_seed: tlv_map.remove(&0x403),
             }),
-            _ => LoginResponse::UnknownStatus(LoginUnknownStatus { status, tlv_map }),
+            _ => {
+                // status=1 可能是密码错误
+                let mut _title = "".into();
+                let mut message = "".into();
+                if let Some(mut v) = tlv_map.remove(&0x146) {
+                    v.advance(4);
+                    _title = v.read_string_short();
+                    message = v.read_string_short();
+                }
+                LoginResponse::UnknownStatus(LoginUnknownStatus {
+                    status,
+                    tlv_map,
+                    message,
+                })
+            }
         };
         Ok(resp)
     }

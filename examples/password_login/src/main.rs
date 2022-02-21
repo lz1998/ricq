@@ -126,8 +126,12 @@ async fn main() -> Result<()> {
             LoginResponse::UnknownStatus(LoginUnknownStatus {
                 ref status,
                 ref tlv_map,
+                ref message,
             }) => {
-                panic!("unknown login status: {:?}, {:?}", status, tlv_map);
+                panic!(
+                    "unknown login status: {:?}, {:?}, {:?}",
+                    message, status, tlv_map
+                );
             }
         }
     }
@@ -156,7 +160,7 @@ async fn main() -> Result<()> {
         .unwrap();
     let mut chain = MessageChain::default();
     chain.push(group_image.flash());
-    client.send_group_message(982166018, chain).await;
+    client.send_group_message(982166018, chain).await.ok();
 
     // client.delete_essence_message(1095020555, 8114, 2107692422).await
     // let mem_info = client.get_group_member_info(335783090, 875543543).await;
