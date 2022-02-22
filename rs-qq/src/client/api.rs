@@ -4,10 +4,10 @@ use std::time::Duration;
 
 use bytes::{Buf, Bytes};
 use futures::{stream, StreamExt};
-use rq_engine::command::long_conn::OffPicUpResp;
 use tokio::sync::RwLock;
 
 use rq_engine::command::img_store::GroupImageStoreResp;
+use rq_engine::command::long_conn::OffPicUpResp;
 use rq_engine::command::message_svc::MessageSyncResponse;
 use rq_engine::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
 use rq_engine::common::group_code2uin;
@@ -15,6 +15,7 @@ use rq_engine::highway::BdhInput;
 use rq_engine::msg::elem::{calculate_image_resource_id, Anonymous, FriendImage, GroupImage};
 use rq_engine::msg::MessageChain;
 use rq_engine::pb;
+use rq_engine::structs::UserOnlineStatus;
 
 use crate::client::Group;
 use crate::engine::command::{friendlist::*, oidb_svc::*, profile_service::*, wtlogin::*};
@@ -185,6 +186,25 @@ impl super::Client {
 
 /// API
 impl super::Client {
+    /// 设置在线状态
+    pub async fn set_online_status(&self, status: UserOnlineStatus) -> RQResult<()> {
+        let status = status as i64;
+        let req = if status < 1000 {
+            self.engine
+                .read()
+                .await
+                .build_set_online_status_packet(status as i32, 0)
+        } else {
+            self.engine
+                .read()
+                .await
+                .build_set_online_status_packet(11, status as i64)
+        };
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
+    /// 修改签名
     pub async fn update_signature(&self, signature: String) -> RQResult<()> {
         let req = self
             .engine
