@@ -21,6 +21,6 @@ chrono = "0.4"
 derivative = "2"
 jcers = { version = "0.1", features = ["derive"] }
 rq-engine = { path = "../rq-engine" }
-
+image = { version = "0", features = ["png", "jpeg", "bmp", "gif", "webp"] }
 
 

@@ -1130,14 +1130,21 @@ impl super::Client {
         let req = self
             .get_group_image_store(group_code, file_name, image_md5.clone(), image_size)
             .await?;
+        let image_data = match image::load_from_memory(&image) {
+            Ok(image) => image,
+            Err(err) => {
+                return RQResult::Err(RQError::Other(format!("image data error : {:?}", err)))
+            }
+        };
+        let width = image_data.width() as i32;
+        let height = image_data.height() as i32;
         match req {
             GroupImageStoreResp::Exist { file_id } => Ok(GroupImage {
                 image_id: calculate_image_resource_id(&image_md5, false),
                 file_id: file_id as i64,
                 size: image_size,
-                // TODO width, height
-                width: 720 as i32,
-                height: 480 as i32,
+                width,
+                height,
                 md5: image_md5,
                 ..Default::default()
             }),
@@ -1164,14 +1171,13 @@ impl super::Client {
                     },
                 )
                 .await?;
-                // TODO width, height
                 // TODO image_type
                 Ok(GroupImage {
                     image_id: calculate_image_resource_id(&image_md5, false),
                     file_id: file_id as i64,
                     size: image_size,
-                    width: 720,
-                    height: 480,
+                    width,
+                    height,
                     md5: image_md5,
                     ..Default::default()
                 })
