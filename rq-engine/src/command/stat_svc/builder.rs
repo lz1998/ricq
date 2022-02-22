@@ -8,6 +8,37 @@ use crate::jce;
 use crate::protocol::packet::*;
 
 impl super::super::super::Engine {
+    // StatSvc.SetStatusFromClient
+    pub fn build_set_online_status_packet(&self, status: i32, ext_online_status: i64) -> Packet {
+        let transport = &self.transport;
+        let svc = jce::SvcReqRegister {
+            uin: self.uin(),
+            bid: 1 | 2 | 4,
+            conn_type: 0,
+            status,
+            kick_pc: 0,
+            kick_weak: 0,
+            ios_version: transport.device.version.sdk as i64,
+            net_type: 1,
+            reg_type: 0,
+            guid: transport.sig.guid.to_owned(),
+            is_set_status: 1,
+            locale_id: 2052,
+            dev_name: transport.device.model.to_owned(),
+            dev_type: transport.device.model.to_owned(),
+            os_ver: transport.device.version.release.to_owned(),
+            open_push: 1,
+            large_seq: 1551,
+            vendor_name: transport.device.vendor_name.to_owned(),
+            vendor_os_name: transport.device.vendor_os_name.to_owned(),
+            ext_online_status,
+            timestamp: chrono::Utc::now().timestamp(),
+            ..Default::default()
+        };
+        let pkt = self.svc_req_register_pkt(svc);
+        self.uni_packet("StatSvc.SetStatusFromClient", pkt.freeze())
+    }
+
     // StatSvc.register
     pub fn build_client_register_packet(&self) -> Packet {
         let seq = self.next_seq();
@@ -43,22 +74,7 @@ impl super::super::super::Engine {
             set_mute: 0,
             ..Default::default()
         };
-        let mut b = BytesMut::new();
-        b.put_slice(&[0x0A]);
-        b.put_slice(&svc.freeze());
-        b.put_slice(&[0x0B]);
-        let buf = jce::RequestDataVersion3 {
-            map: HashMap::from([("SvcReqRegister".to_string(), b.into())]),
-        };
-        let pkt = jce::RequestPacket {
-            i_version: 3,
-            s_servant_name: "PushService".to_string(),
-            s_func_name: "SvcReqRegister".to_string(),
-            s_buffer: buf.freeze(),
-            context: Default::default(),
-            status: Default::default(),
-            ..Default::default()
-        };
+        let pkt = self.svc_req_register_pkt(svc);
         Packet {
             packet_type: PacketType::Login,
             encrypt_type: EncryptType::D2Key,
@@ -66,6 +82,25 @@ impl super::super::super::Engine {
             body: pkt.freeze(),
             command_name: "StatSvc.register".into(),
             uin: self.uin(),
+            ..Default::default()
+        }
+    }
+
+    fn svc_req_register_pkt(&self, svc: jce::SvcReqRegister) -> jce::RequestPacket {
+        let mut b = BytesMut::new();
+        b.put_slice(&[0x0A]);
+        b.put_slice(&svc.freeze());
+        b.put_slice(&[0x0B]);
+        let buf = jce::RequestDataVersion3 {
+            map: HashMap::from([("SvcReqRegister".to_string(), b.into())]),
+        };
+        jce::RequestPacket {
+            i_version: 3,
+            s_servant_name: "PushService".to_string(),
+            s_func_name: "SvcReqRegister".to_string(),
+            s_buffer: buf.freeze(),
+            context: Default::default(),
+            status: Default::default(),
             ..Default::default()
         }
     }
