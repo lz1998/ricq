@@ -8,7 +8,9 @@ pub struct FriendImage {
     pub image_id: String,
     pub md5: Vec<u8>,
     pub size: i32,
-    pub url: String,
+    pub orig_url: Option<String>,
+    pub res_id: Option<String>,
+    pub download_path: Option<String>,
 }
 
 impl FriendImage {
@@ -16,12 +18,20 @@ impl FriendImage {
         FlashImage::from(self)
     }
 
-    pub fn build_url(s: &str) -> String {
-        format!(
-            "https://c2cpicdw.qpic.cn/offpic_new/0{}{}/0?term=3",
-            if !s.starts_with("/") { "/" } else { "" },
-            s
-        )
+    pub fn url(&self) -> String {
+        if let Some(orig_url) = &self.orig_url {
+            format!("https://c2cpicdw.qpic.cn{}", orig_url)
+        } else {
+            let download_path = if let Some(path) = &self.download_path {
+                path.clone()
+            } else {
+                self.res_id.clone().unwrap_or_default()
+            };
+            format!(
+                "https://c2cpicdw.qpic.cn/offpic_new/0/{}/0?term=3",
+                download_path
+            )
+        }
     }
 }
 
@@ -48,27 +58,19 @@ impl From<FriendImage> for Vec<msg::elem::Elem> {
 
 impl From<msg::NotOnlineImage> for FriendImage {
     fn from(e: msg::NotOnlineImage) -> Self {
-        let url = if let Some(orig_url) = &e.orig_url {
-            format!("https://c2cpicdw.qpic.cn{}", orig_url)
-        } else {
-            let download_path = if let Some(path) = &e.download_path {
-                path
-            } else {
-                e.res_id()
-            };
-            Self::build_url(download_path)
-        };
         Self {
-            image_id: e.file_path().to_owned(),
-            size: e.file_len(),
-            url,
-            md5: e.pic_md5().to_vec(),
+            image_id: e.file_path.unwrap_or_default(),
+            size: e.file_len.unwrap_or_default(),
+            md5: e.pic_md5.unwrap_or_default(),
+            orig_url: e.orig_url,
+            res_id: e.res_id,
+            download_path: e.download_path,
         }
     }
 }
 
 impl fmt::Display for FriendImage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "[FriendImage: {}]", self.url)
+        write!(f, "[FriendImage: {}]", self.url())
     }
 }

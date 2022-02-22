@@ -10,6 +10,15 @@ pub enum FlashImage {
     GroupImage(GroupImage),
 }
 
+impl FlashImage {
+    pub fn url(&self) -> String {
+        match self {
+            FlashImage::FriendImage(i) => i.url(),
+            FlashImage::GroupImage(i) => i.url(),
+        }
+    }
+}
+
 impl From<FlashImage> for Vec<msg::elem::Elem> {
     fn from(e: FlashImage) -> Self {
         let flash = {
@@ -54,7 +63,7 @@ impl fmt::Display for FlashImage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             FlashImage::FriendImage(i) => {
-                write!(f, "[FlashImage(friend): {}]", i.url)
+                write!(f, "[FlashImage(friend): {}]", i.url())
             }
             FlashImage::GroupImage(i) => {
                 write!(f, "[FlashImage(group): {}]", i.url())

@@ -159,7 +159,7 @@ async fn main() -> Result<()> {
         .await
         .unwrap();
     let mut chain = MessageChain::default();
-    chain.push(group_image.flash());
+    chain.push(group_image);
     client.send_group_message(982166018, chain).await.ok();
 
     // client.delete_essence_message(1095020555, 8114, 2107692422).await
