@@ -12,6 +12,9 @@ pub enum RQError {
     #[error("failed to decode, {0}")]
     Decode(String),
 
+    #[error("From utf-8 error {0}")]
+    Utf8(#[from] std::string::FromUtf8Error),
+
     #[error("command_name mismatch, expected {0} get {1}")]
     CommandNameMismatch(String, String),
 
