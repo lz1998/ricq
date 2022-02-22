@@ -1147,6 +1147,9 @@ impl super::Client {
                 mut upload_addrs,
             } => {
                 // TODO addr ?
+                if self.highway_session.read().await.session_key.is_empty() {
+                    return Err(RQError::Other("highway_session_key is empty".into()));
+                }
                 let addr = upload_addrs
                     .pop()
                     .ok_or_else(|| RQError::Other("upload_addrs is empty".into()))?;
