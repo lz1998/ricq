@@ -186,20 +186,18 @@ impl super::Client {
 
 /// API
 impl super::Client {
-    /// 设置在线状态
-    pub async fn set_online_status(&self, status: UserOnlineStatus) -> RQResult<()> {
-        let status = status as i64;
-        let req = if status < 1000 {
-            self.engine
-                .read()
-                .await
-                .build_set_online_status_packet(status as i32, 0)
+    /// 设置在线状态 TODO net_type, custom_status
+    pub async fn update_online_status(&self, status: UserOnlineStatus) -> RQResult<()> {
+        let (status, ext_status) = if (status as i32) < 1000 {
+            (status as i32, 0)
         } else {
-            self.engine
-                .read()
-                .await
-                .build_set_online_status_packet(11, status as i64)
+            (11, status as i64)
         };
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_set_online_status_packet(status, ext_status);
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }

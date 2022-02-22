@@ -19,7 +19,7 @@ impl super::super::super::Engine {
             kick_pc: 0,
             kick_weak: 0,
             ios_version: transport.device.version.sdk as i64,
-            net_type: 1,
+            net_type: 1, // 0-移动网络 1-wifi
             reg_type: 0,
             guid: transport.sig.guid.to_owned(),
             is_set_status: 1,
@@ -52,7 +52,7 @@ impl super::super::super::Engine {
             kick_pc: 0,
             kick_weak: 0,
             ios_version: transport.device.version.sdk as i64,
-            net_type: 1,
+            net_type: 1, // 0-移动网络 1-wifi
             reg_type: 0,
             guid: transport.sig.guid.to_owned(),
             is_set_status: 0,

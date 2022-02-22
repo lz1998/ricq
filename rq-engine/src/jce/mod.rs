@@ -140,6 +140,11 @@ JceStruct!(SvcReqRegister {
     36 => set_mute: u8,
     38 => ext_online_status: i64,
     39 => battery_status: i32,
+    40 => tim_active_flag:u8,
+    41 => bind_uin_notify_switch:u8,
+    // 42 => stVendorPushInfo:struct,
+    43 => vendor_dev_id:i64,
+    45 => custom_status: Bytes, // 自定义状态 protobuf
 });
 
 JceStruct!(SvcRespRegister {
@@ -912,7 +917,7 @@ mod tests {
                 .get_mut("HttpServerListRes")
                 .expect("failed to get HttpServerListRes"),
         )
-            .unwrap();
+        .unwrap();
         for s in sso_server_infos.sso_server_infos {
             println!("Get Addrs server:{} port:{}", s.server, s.port);
         }
