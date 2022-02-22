@@ -4,6 +4,7 @@ use std::time::Duration;
 
 use bytes::{Buf, Bytes};
 use futures::{stream, StreamExt};
+use rq_engine::command::long_conn::OffPicUpResp;
 use tokio::sync::RwLock;
 
 use rq_engine::command::img_store::GroupImageStoreResp;
@@ -11,7 +12,7 @@ use rq_engine::command::message_svc::MessageSyncResponse;
 use rq_engine::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
 use rq_engine::common::group_code2uin;
 use rq_engine::highway::BdhInput;
-use rq_engine::msg::elem::{calculate_image_resource_id, Anonymous, GroupImage};
+use rq_engine::msg::elem::{calculate_image_resource_id, Anonymous, FriendImage, GroupImage};
 use rq_engine::msg::MessageChain;
 use rq_engine::pb;
 
@@ -1158,5 +1159,29 @@ impl super::Client {
                 })
             }
         }
+    }
+
+    pub async fn get_private_image_store(
+        &self,
+        target: i64,
+        image_md5: Vec<u8>,
+        size: i32,
+    ) -> RQResult<OffPicUpResp> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_off_pic_up_packet(target, image_md5, size);
+        let resp = self.send_and_wait(req).await?;
+        self.engine
+            .read()
+            .await
+            .decode_off_pic_up_response(resp.body)
+    }
+
+    pub async fn upload_private_image(_target: i64, image: Vec<u8>) -> RQResult<FriendImage> {
+        let _image_md5 = md5::compute(&image).to_vec();
+        let _image_size = image.len() as i32;
+        todo!()
     }
 }

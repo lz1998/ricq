@@ -12,12 +12,24 @@ pub struct GroupImage {
     pub width: i32,
     pub height: i32,
     pub md5: Vec<u8>,
-    pub url: String,
+    pub orig_url: Option<String>,
 }
 
 impl GroupImage {
     pub fn flash(self) -> FlashImage {
         FlashImage::from(self)
+    }
+
+    pub fn url(&self) -> String {
+        if let Some(orig_url) = &self.orig_url {
+            format!("https://gchat.qpic.cn{}", orig_url)
+        } else {
+            format!(
+                "https://gchat.qpic.cn/gchatpic_new/0/0-0-{}{}",
+                calculate_image_resource_id(&self.md5[1..37], true),
+                "/0?term=2"
+            )
+        }
     }
 }
 
@@ -51,15 +63,6 @@ impl From<msg::CustomFace> for GroupImage {
         if custom_face.md5().is_empty() {
             return Self::default();
         }
-        let url = if let Some(orig_url) = &custom_face.orig_url {
-            format!("https://gchat.qpic.cn{}", orig_url)
-        } else {
-            format!(
-                "https://gchat.qpic.cn/gchatpic_new/0/0-0-{}{}",
-                calculate_image_resource_id(&custom_face.md5()[1..37], true),
-                "/0?term=2"
-            )
-        };
         // guild image todo
         return Self {
             file_id: custom_face.file_id() as i64,
@@ -67,7 +70,7 @@ impl From<msg::CustomFace> for GroupImage {
             size: custom_face.size(),
             width: custom_face.width(),
             height: custom_face.height(),
-            url,
+            orig_url: custom_face.orig_url,
             md5: custom_face.md5.unwrap_or_default(),
         };
     }
@@ -98,6 +101,6 @@ pub fn calculate_image_resource_id(md5: &[u8], no_dash: bool) -> String {
 
 impl fmt::Display for GroupImage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "[GroupImage: {}]", self.url)
+        write!(f, "[GroupImage: {}]", self.url())
     }
 }

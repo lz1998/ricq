@@ -57,7 +57,7 @@ impl fmt::Display for FlashImage {
                 write!(f, "[FlashImage(friend): {}]", i.url)
             }
             FlashImage::GroupImage(i) => {
-                write!(f, "[FlashImage(group): {}]", i.url)
+                write!(f, "[FlashImage(group): {}]", i.url())
             }
         }
     }

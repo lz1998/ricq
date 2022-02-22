@@ -15,6 +15,14 @@ impl FriendImage {
     pub fn flash(self) -> FlashImage {
         FlashImage::from(self)
     }
+
+    pub fn build_url(s: &str) -> String {
+        format!(
+            "https://c2cpicdw.qpic.cn/offpic_new/0{}{}/0?term=3",
+            if !s.starts_with("/") { "/" } else { "" },
+            s
+        )
+    }
 }
 
 impl From<FriendImage> for msg::NotOnlineImage {
@@ -48,15 +56,7 @@ impl From<msg::NotOnlineImage> for FriendImage {
             } else {
                 e.res_id()
             };
-            format!(
-                "https://c2cpicdw.qpic.cn/offpic_new/0{}{}/0?term=3",
-                if !download_path.starts_with('/') {
-                    "/"
-                } else {
-                    ""
-                },
-                download_path
-            )
+            Self::build_url(download_path)
         };
         Self {
             image_id: e.file_path().to_owned(),
