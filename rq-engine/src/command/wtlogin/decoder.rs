@@ -91,6 +91,7 @@ impl super::super::super::Engine {
     pub fn decode_login_response(&self, mut reader: Bytes) -> RQResult<LoginResponse> {
         let _sub_command = reader.get_u16(); // sub command
         let status = reader.get_u8();
+        // TODO status=213 不能执行下面的步骤 panic
         reader.get_u16();
         let tlv_map = reader.read_tlv_map(2);
         LoginResponse::decode(status, tlv_map, &self.transport.sig.tgtgt_key)

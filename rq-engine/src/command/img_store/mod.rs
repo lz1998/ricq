@@ -7,8 +7,6 @@ pub mod decoder;
 pub enum GroupImageStoreResp {
     Exist {
         file_id: u64,
-        width: u32,
-        height: u32,
     },
     NotExist {
         file_id: u64,

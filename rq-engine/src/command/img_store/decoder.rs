@@ -26,9 +26,7 @@ impl super::super::super::Engine {
         Ok(if rsp.file_exit() {
             let img_info = rsp.img_info.unwrap_or_default();
             GroupImageStoreResp::Exist {
-                file_id: rsp.file_id.unwrap_or_default(),
-                height: img_info.file_height.unwrap_or_default(),
-                width: img_info.file_width.unwrap_or_default(),
+                file_id: rsp.fileid.unwrap_or_default(),
             }
         } else {
             GroupImageStoreResp::NotExist {

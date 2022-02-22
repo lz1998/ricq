@@ -1113,16 +1113,13 @@ impl super::Client {
             .get_group_image_store(group_code, file_name, image_md5.clone(), image_size)
             .await?;
         match req {
-            GroupImageStoreResp::Exist {
-                file_id,
-                height,
-                width,
-            } => Ok(GroupImage {
+            GroupImageStoreResp::Exist { file_id } => Ok(GroupImage {
                 image_id: calculate_image_resource_id(&image_md5, false),
                 file_id: file_id as i64,
                 size: image_size,
-                width: width as i32,
-                height: height as i32,
+                // TODO width, height
+                width: 720 as i32,
+                height: 480 as i32,
                 md5: image_md5,
                 ..Default::default()
             }),

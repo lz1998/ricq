@@ -153,6 +153,8 @@ async fn main() -> Result<()> {
     let d = client.get_allowed_clients().await;
     tracing::info!("{:?}", d);
 
+    // 等一下，收到 ConfigPushSvc.PushReq 才可以发
+    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
     let img_bytes = tokio::fs::read("test.png").await.unwrap();
     let group_image = client
         .upload_group_image(982166018, img_bytes, "a.png".into())
