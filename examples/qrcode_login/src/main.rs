@@ -21,7 +21,12 @@ async fn main() -> Result<()> {
         .with(
             tracing_subscriber::fmt::layer()
                 .with_target(true)
-                .without_time(),
+                .with_timer(tracing_subscriber::fmt::time::OffsetTime::new(
+                    time::UtcOffset::__from_hms_unchecked(8, 0, 0),
+                    time::macros::format_description!(
+                        "[year repr:last_two]-[month]-[day] [hour]:[minute]:[second]"
+                    ),
+                )),
         )
         .with(
             tracing_subscriber::filter::Targets::new()
