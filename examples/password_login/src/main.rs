@@ -12,11 +12,12 @@ use rs_qq::device::Device;
 use rs_qq::ext::common::after_login;
 use rs_qq::handler::DefaultHandler;
 use rs_qq::msg::MessageChain;
+use rs_qq::structs::UserOnlineStatus;
 use rs_qq::version::{get_version, Protocol};
 use rs_qq::{Client, LoginDeviceLocked, LoginNeedCaptcha, LoginSuccess};
 use rs_qq::{LoginResponse, LoginUnknownStatus};
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     tracing_subscriber::registry()
         .with(
@@ -154,15 +155,16 @@ async fn main() -> Result<()> {
     tracing::info!("{:?}", d);
 
     // 等一下，收到 ConfigPushSvc.PushReq 才可以发
-    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-    let img_bytes = tokio::fs::read("test.png").await.unwrap();
-    let group_image = client
-        .upload_group_image(982166018, img_bytes, "a.png".into())
-        .await
-        .unwrap();
-    let mut chain = MessageChain::default();
-    chain.push(group_image);
-    client.send_group_message(982166018, chain).await.ok();
+    // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    // let img_bytes = tokio::fs::read("test.png").await.unwrap();
+    // let group_image = client
+    //     .upload_group_image(982166018, img_bytes, "a.png".into())
+    //     .await
+    //     .unwrap();
+    // let mut chain = MessageChain::default();
+    // chain.push(group_image);
+    // client.send_group_message(982166018, chain).await.ok();
+    client.update_online_status(UserOnlineStatus::Qme).await;
 
     // client.delete_essence_message(1095020555, 8114, 2107692422).await
     // let mem_info = client.get_group_member_info(335783090, 875543543).await;

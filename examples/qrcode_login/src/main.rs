@@ -15,7 +15,7 @@ use rs_qq::ext::common::after_login;
 use rs_qq::version::{get_version, Protocol};
 use rs_qq::{LoginResponse, QRCodeConfirmed, QRCodeImageFetch, QRCodeState};
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     tracing_subscriber::registry()
         .with(
