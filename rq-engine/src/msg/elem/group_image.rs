@@ -73,6 +73,7 @@ impl From<msg::CustomFace> for GroupImage {
             height: custom_face.height(),
             orig_url: custom_face.orig_url,
             md5: custom_face.md5.unwrap_or_default(),
+            image_type: custom_face.image_type.unwrap_or(1000),
         };
     }
 }

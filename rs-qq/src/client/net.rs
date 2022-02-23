@@ -15,7 +15,7 @@ pub type OutPktSender = broadcast::Sender<Bytes>;
 impl crate::Client {
     pub fn get_address(&self) -> SocketAddr {
         // TODO 选择最快地址
-        SocketAddr::new(Ipv4Addr::new(42, 81, 176, 211).into(), 443)
+        SocketAddr::new(Ipv4Addr::new(114, 221, 144, 215).into(), 80)
     }
 
     // 开始处理流数据

@@ -15,6 +15,7 @@ use rq_engine::highway::BdhInput;
 use rq_engine::msg::elem::{calculate_image_resource_id, Anonymous, FriendImage, GroupImage};
 use rq_engine::msg::MessageChain;
 use rq_engine::pb;
+use rq_engine::protocol::device::random_string;
 use rq_engine::structs::UserOnlineStatus;
 
 use crate::client::Group;
@@ -1123,36 +1124,38 @@ impl super::Client {
         &self,
         group_code: i64,
         image: Vec<u8>,
-        file_name: String,
     ) -> RQResult<GroupImage> {
         let image_md5 = md5::compute(&image).to_vec();
         let image_size = image.len() as i32;
-        let req = self
+        let img_reader = image::io::Reader::new(std::io::Cursor::new(&image))
+            .with_guessed_format()
+            .map_err(RQError::IO)?;
+        let image_format = img_reader.format().unwrap_or(image::ImageFormat::Png);
+        let image_type = match image_format {
+            image::ImageFormat::Gif => 2000,
+            _ => 1000,
+        };
+        let (width, height) = img_reader.into_dimensions().unwrap_or((720, 480));
+        let file_name = format!(
+            "{}.{}",
+            random_string(16),
+            image_format
+                .extensions_str()
+                .first()
+                .expect("image_format error")
+        );
+
+        let image_store = self
             .get_group_image_store(group_code, file_name, image_md5.clone(), image_size)
             .await?;
-        let image_data = match image::load_from_memory(&image) {
-            Ok(image) => image,
-            Err(err) => {
-                return RQResult::Err(RQError::Other(format!("image data error : {:?}", err)))
-            }
-        };
-        let width = image_data.width() as i32;
-        let height = image_data.height() as i32;
-        let image_type = if image.get(0).unwrap() == 47
-            && image.get(0).unwrap() == 49
-            && image.get(0).unwrap() == 46
-        {
-            2000
-        } else {
-            1000
-        };
-        match req {
+
+        match image_store {
             GroupImageStoreResp::Exist { file_id } => Ok(GroupImage {
                 image_id: calculate_image_resource_id(&image_md5, false),
                 file_id: file_id as i64,
                 size: image_size,
-                width,
-                height,
+                width: width as i32,
+                height: height as i32,
                 md5: image_md5,
                 image_type,
                 ..Default::default()
@@ -1184,8 +1187,8 @@ impl super::Client {
                     image_id: calculate_image_resource_id(&image_md5, false),
                     file_id: file_id as i64,
                     size: image_size,
-                    width,
-                    height,
+                    width: width as i32,
+                    height: height as i32,
                     md5: image_md5,
                     image_type,
                     ..Default::default()

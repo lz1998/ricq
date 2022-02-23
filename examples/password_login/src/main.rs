@@ -158,13 +158,16 @@ async fn main() -> Result<()> {
     // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
     // let img_bytes = tokio::fs::read("test.png").await.unwrap();
     // let group_image = client
-    //     .upload_group_image(982166018, img_bytes, "a.png".into())
+    //     .upload_group_image(982166018, img_bytes)
     //     .await
     //     .unwrap();
     // let mut chain = MessageChain::default();
     // chain.push(group_image);
     // client.send_group_message(982166018, chain).await.ok();
-    client.update_online_status(UserOnlineStatus::Qme).await;
+    client
+        .update_online_status(UserOnlineStatus::Qme)
+        .await
+        .ok();
 
     // client.delete_essence_message(1095020555, 8114, 2107692422).await
     // let mem_info = client.get_group_member_info(335783090, 875543543).await;
