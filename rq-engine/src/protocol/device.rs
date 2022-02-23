@@ -1,4 +1,5 @@
 use bytes::Bytes;
+use rand::distributions::DistString;
 use rand::{distributions::Alphanumeric, Rng};
 use serde::{Deserialize, Serialize};
 
@@ -100,11 +101,7 @@ impl Device {
 }
 
 pub fn random_string(len: usize) -> String {
-    rand::thread_rng()
-        .sample_iter(&Alphanumeric)
-        .take(len)
-        .map(char::from)
-        .collect()
+    Alphanumeric.sample_string(&mut rand::thread_rng(), len)
 }
 
 pub fn random_uuid() -> String {

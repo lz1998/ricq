@@ -11,7 +11,6 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use rs_qq::device::Device;
 use rs_qq::ext::common::after_login;
 use rs_qq::handler::DefaultHandler;
-use rs_qq::msg::MessageChain;
 use rs_qq::structs::UserOnlineStatus;
 use rs_qq::version::{get_version, Protocol};
 use rs_qq::{Client, LoginDeviceLocked, LoginNeedCaptcha, LoginSuccess};
@@ -155,6 +154,7 @@ async fn main() -> Result<()> {
     tracing::info!("{:?}", d);
 
     // 等一下，收到 ConfigPushSvc.PushReq 才可以发
+    // use rs_qq::msg::MessageChain;
     // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
     // let img_bytes = tokio::fs::read("test.png").await.unwrap();
     // let group_image = client
