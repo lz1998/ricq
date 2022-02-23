@@ -13,6 +13,7 @@ pub struct GroupImage {
     pub height: i32,
     pub md5: Vec<u8>,
     pub orig_url: Option<String>,
+    pub image_type: i32,
 }
 
 impl GroupImage {

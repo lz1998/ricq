@@ -1138,6 +1138,14 @@ impl super::Client {
         };
         let width = image_data.width() as i32;
         let height = image_data.height() as i32;
+        let image_type = if image.get(0).unwrap() == 47
+            && image.get(0).unwrap() == 49
+            && image.get(0).unwrap() == 46
+        {
+            2000
+        } else {
+            1000
+        };
         match req {
             GroupImageStoreResp::Exist { file_id } => Ok(GroupImage {
                 image_id: calculate_image_resource_id(&image_md5, false),
@@ -1146,6 +1154,7 @@ impl super::Client {
                 width,
                 height,
                 md5: image_md5,
+                image_type,
                 ..Default::default()
             }),
             GroupImageStoreResp::NotExist {
@@ -1171,7 +1180,6 @@ impl super::Client {
                     },
                 )
                 .await?;
-                // TODO image_type
                 Ok(GroupImage {
                     image_id: calculate_image_resource_id(&image_md5, false),
                     file_id: file_id as i64,
@@ -1179,6 +1187,7 @@ impl super::Client {
                     width,
                     height,
                     md5: image_md5,
+                    image_type,
                     ..Default::default()
                 })
             }
