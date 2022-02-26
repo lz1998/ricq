@@ -1,6 +1,6 @@
 use bytes::Bytes;
 use rand::distributions::DistString;
-use rand::{distributions::Alphanumeric, Rng};
+use rand::{distributions::Alphanumeric, Rng, RngCore};
 use serde::{Deserialize, Serialize};
 
 use crate::hex::encode_hex;
@@ -56,7 +56,10 @@ pub struct Device {
 
 impl Device {
     pub fn random() -> Self {
-        let mut rng = rand::thread_rng();
+        Self::random_with_rng(rand::thread_rng())
+    }
+
+    pub fn random_with_rng<RNG: RngCore>(mut rng: RNG) -> Self {
         Self {
             display: format!("GMC.{}.001", rng.gen_range(100000..999999)),
             product: "iarim".into(),
