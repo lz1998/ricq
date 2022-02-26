@@ -1,11 +1,9 @@
-use std::sync::Arc;
-
 use crate::engine::command::wtlogin::*;
 use crate::handler::QEvent;
 use crate::Client;
 
 impl Client {
-    pub(crate) async fn process_login_response(self: &Arc<Self>, login_response: LoginResponse) {
+    pub(crate) async fn process_login_response(&self, login_response: LoginResponse) {
         if let LoginResponse::Success(ref success) = login_response {
             if let Some(info) = success.account_info.clone() {
                 let mut account_info = self.account_info.write().await;

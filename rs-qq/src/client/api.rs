@@ -61,7 +61,7 @@ impl super::Client {
 
     /// 二维码登录 - 登录 ( 可能还需要 device_lock_login )
     pub async fn qrcode_login(
-        self: &Arc<Self>,
+        &self,
         tmp_pwd: &[u8],
         tmp_no_pic_sig: &[u8],
         tgt_qr: &[u8],
@@ -79,7 +79,7 @@ impl super::Client {
 
     /// 密码登录 - 提交密码md5
     pub async fn password_md5_login(
-        self: &Arc<Self>,
+        &self,
         uin: i64,
         password_md5: &[u8],
     ) -> RQResult<LoginResponse> {
@@ -95,17 +95,13 @@ impl super::Client {
         Ok(resp)
     }
 
-    pub async fn password_login(
-        self: &Arc<Self>,
-        uin: i64,
-        password: &str,
-    ) -> RQResult<LoginResponse> {
+    pub async fn password_login(&self, uin: i64, password: &str) -> RQResult<LoginResponse> {
         self.password_md5_login(uin, &md5::compute(password).to_vec())
             .await
     }
 
     /// 密码登录 - 请求短信验证码
-    pub async fn request_sms(self: &Arc<Self>) -> RQResult<LoginResponse> {
+    pub async fn request_sms(&self) -> RQResult<LoginResponse> {
         let req = self.engine.read().await.build_sms_request_packet();
         let resp = self.send_and_wait(req).await?;
         let resp = self.engine.read().await.decode_login_response(resp.body)?;
@@ -114,7 +110,7 @@ impl super::Client {
     }
 
     /// 密码登录 - 提交短信验证码
-    pub async fn submit_sms_code(self: &Arc<Self>, code: &str) -> RQResult<LoginResponse> {
+    pub async fn submit_sms_code(&self, code: &str) -> RQResult<LoginResponse> {
         let req = self
             .engine
             .read()
@@ -127,7 +123,7 @@ impl super::Client {
     }
 
     /// 密码登录 - 提交滑块ticket
-    pub async fn submit_ticket(self: &Arc<Self>, ticket: &str) -> RQResult<LoginResponse> {
+    pub async fn submit_ticket(&self, ticket: &str) -> RQResult<LoginResponse> {
         let req = self.engine.read().await.build_ticket_submit_packet(ticket);
         let resp = self.send_and_wait(req).await?;
         let resp = self.engine.read().await.decode_login_response(resp.body)?;
@@ -136,7 +132,7 @@ impl super::Client {
     }
 
     /// 设备锁登录 - 二维码、密码登录都需要
-    pub async fn device_lock_login(self: &Arc<Self>) -> RQResult<LoginResponse> {
+    pub async fn device_lock_login(&self) -> RQResult<LoginResponse> {
         let req = self.engine.read().await.build_device_lock_login_packet();
         let resp = self.send_and_wait(req).await?;
         let resp = self.engine.read().await.decode_login_response(resp.body)?;
@@ -145,7 +141,7 @@ impl super::Client {
     }
 
     /// token 登录
-    pub async fn token_login(self: &Arc<Self>, mut token: impl Buf) -> RQResult<()> {
+    pub async fn token_login(&self, mut token: impl Buf) -> RQResult<()> {
         self.load_token(&mut token).await;
         let req = self.engine.read().await.build_request_change_sig_packet();
         self.send_and_wait(req).await?;
@@ -482,7 +478,7 @@ impl super::Client {
     }
 
     /// 刷新群列表
-    pub async fn reload_groups(self: &Arc<Self>) -> RQResult<()> {
+    pub async fn reload_groups(&self) -> RQResult<()> {
         // 获取群列表
         let mut vec_cookie = Bytes::new();
         let mut groups = Vec::new();
