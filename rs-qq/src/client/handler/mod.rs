@@ -123,28 +123,28 @@ impl Handler for DefaultHandler {
 #[async_trait]
 impl Handler for BroadcastSender<QEvent> {
     async fn handle(&self, msg: QEvent) {
-        self.send(msg).unwrap();
+        self.send(msg).ok();
     }
 }
 
 #[async_trait]
 impl Handler for MpscSender<QEvent> {
     async fn handle(&self, msg: QEvent) {
-        self.send(msg).await.unwrap();
+        self.send(msg).await.ok();
     }
 }
 
 #[async_trait]
 impl Handler for UnboundedSender<QEvent> {
     async fn handle(&self, msg: QEvent) {
-        self.send(msg).unwrap();
+        self.send(msg).ok();
     }
 }
 
 #[async_trait]
 impl Handler for WatchSender<QEvent> {
     async fn handle(&self, msg: QEvent) {
-        self.send(msg).unwrap();
+        self.send(msg).ok();
     }
 }
 
