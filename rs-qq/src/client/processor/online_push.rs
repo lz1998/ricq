@@ -93,7 +93,8 @@ impl Client {
             time: parts.first().map(|p| p.time).unwrap_or_default(),
             elements: MessageChain::from(
                 parts
-                    .into_iter().flat_map(|p| p.elems)
+                    .into_iter()
+                    .flat_map(|p| p.elems)
                     .collect::<Vec<msg::Elem>>(),
             ),
         };

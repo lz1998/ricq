@@ -14,16 +14,13 @@ fn recursion<P: AsRef<Path>>(v: &mut Vec<String>, dir: P) -> Result<()> {
                 v.push(path);
             }
         }
-    };
+    }
     Ok(())
 }
 
 fn main() -> Result<()> {
     let mut v = Vec::<String>::new();
     recursion(&mut v, "src/pb")?;
-    prost_build::compile_protos(
-        &v,
-        &["src/pb"],
-    )?;
+    prost_build::compile_protos(&v, &["src/pb"])?;
     Ok(())
 }
