@@ -40,16 +40,14 @@ impl super::super::super::Engine {
             vendor_os_name: transport.device.vendor_os_name.to_owned(),
             ext_online_status,
             timestamp: chrono::Utc::now().timestamp(),
-            custom_status: if let Some(custom_status) = custom_status {
-                crate::pb::online_status::CustomStatus {
+            custom_status: custom_status
+                .map(|custom_status| crate::pb::online_status::CustomStatus {
                     uface_index: Some(custom_status.face_index),
                     s_wording: Some(custom_status.words),
                     uface_type: Some(1),
-                }
-                .to_bytes()
-            } else {
-                Bytes::default()
-            },
+                })
+                .unwrap_or_default()
+                .to_bytes(),
             ..Default::default()
         };
         let pkt = self.svc_req_register_pkt(svc);
