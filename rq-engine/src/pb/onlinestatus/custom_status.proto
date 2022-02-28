@@ -1,9 +1,0 @@
-syntax = "proto2";
-package online_status;
-
-message CustomStatus {
-  optional uint64 ufaceIndex = 1;
-  optional string sWording = 2;
-  optional uint64 ufaceType = 3;
-}
-

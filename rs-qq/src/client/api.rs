@@ -16,7 +16,7 @@ use rq_engine::msg::elem::{calculate_image_resource_id, Anonymous, FriendImage, 
 use rq_engine::msg::MessageChain;
 use rq_engine::pb;
 use rq_engine::protocol::device::random_string;
-use rq_engine::structs::{CustomStatus, UserOnlineStatus};
+use rq_engine::structs::Status;
 
 use crate::client::Group;
 use crate::engine::command::{friendlist::*, oidb_svc::*, profile_service::*, wtlogin::*};
@@ -184,37 +184,20 @@ impl super::Client {
 /// API
 impl super::Client {
     /// 设置在线状态 TODO net_type
-    pub async fn update_online_status<T>(
-        &self,
-        status: UserOnlineStatus,
-        custom_status: T,
-    ) -> RQResult<()>
+    pub async fn update_online_status<T>(&self, status: T) -> RQResult<()>
     where
-        T: Into<Option<CustomStatus>>,
+        T: Into<Status>,
     {
-        let custom_status = custom_status.into();
-        let (status, ext_status) = if custom_status.is_some() {
-            let words = &custom_status.as_ref().unwrap().words;
-            if words.is_empty() {
-                return RQResult::Err(RQError::Other(
-                    "Custom status words must not be empty".to_owned(),
-                ));
+        let status = status.into();
+        if let Some(ref custom_status) = status.custom_status {
+            if custom_status.wording.is_empty() || custom_status.wording.chars().count() > 4 {
+                return Err(RQError::Other("invalid wording length".into()));
             }
-            if words.chars().count() > 4 {
-                return RQResult::Err(RQError::Other(
-                    "Custom status words len cannot be greater than 4".to_owned(),
-                ));
-            }
-            (11, 2000)
-        } else if (status as i32) < 1000 {
-            (status as i32, 0)
-        } else {
-            (11, status as i64)
-        };
+        }
         let req = self.engine.read().await.build_set_online_status_packet(
-            status,
-            ext_status,
-            custom_status,
+            status.online_status,
+            status.ext_online_status,
+            status.custom_status,
         );
         let _ = self.send_and_wait(req).await?;
         Ok(())

@@ -7,22 +7,22 @@ use crate::command::common::pack_uni_request_data;
 use crate::command::common::PbToBytes;
 use crate::jce;
 use crate::protocol::packet::*;
-use crate::structs::CustomStatus;
+use crate::structs::CustomOnlineStatus;
 
 impl super::super::super::Engine {
     // StatSvc.SetStatusFromClient
     pub fn build_set_online_status_packet(
         &self,
-        status: i32,
+        online_status: i32,
         ext_online_status: i64,
-        custom_status: Option<CustomStatus>,
+        custom_status: Option<CustomOnlineStatus>,
     ) -> Packet {
         let transport = &self.transport;
         let svc = jce::SvcReqRegister {
             uin: self.uin(),
             bid: 1 | 2 | 4,
             conn_type: 0,
-            status,
+            status: online_status,
             kick_pc: 0,
             kick_weak: 0,
             ios_version: transport.device.version.sdk as i64,
@@ -41,13 +41,15 @@ impl super::super::super::Engine {
             ext_online_status,
             timestamp: chrono::Utc::now().timestamp(),
             custom_status: custom_status
-                .map(|custom_status| crate::pb::online_status::CustomStatus {
-                    uface_index: Some(custom_status.face_index),
-                    s_wording: Some(custom_status.words),
-                    uface_type: Some(1),
+                .map(|custom_status| {
+                    crate::pb::online_status::CustomStatus {
+                        face_index: Some(custom_status.face_index),
+                        wording: Some(custom_status.wording),
+                        face_type: Some(1),
+                    }
+                    .to_bytes()
                 })
-                .unwrap_or_default()
-                .to_bytes(),
+                .unwrap_or_default(),
             ..Default::default()
         };
         let pkt = self.svc_req_register_pkt(svc);

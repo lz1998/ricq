@@ -1,6 +1,7 @@
 use bytes::Bytes;
 
 pub use crate::command::oidb_svc::ProfileDetailUpdate;
+pub use crate::command::stat_svc::{CustomOnlineStatus, ExtOnlineStatus, OnlineStatus, Status};
 use crate::jce;
 use crate::msg::MessageChain;
 
@@ -209,40 +210,4 @@ pub struct MessageReceipt {
     pub seqs: Vec<i32>,
     pub rands: Vec<i32>,
     pub time: i64,
-}
-
-#[derive(Debug, Copy, Clone)]
-pub enum UserOnlineStatus {
-    Online = 11,          // 在线
-    Offline = 21,         // 离线
-    Away = 31,            // 离开
-    Invisible = 41,       // 隐身
-    Busy = 50,            // 忙
-    Qme = 60,             // Q我吧
-    Dnd = 70,             // 请勿打扰
-    Battery = 1000,       // 当前电量
-    Listening = 1028,     // 听歌中
-    Constellation = 1040, // 星座运势
-    Weather = 1030,       // 今日天气
-    MeetSpring = 1069,    // 遇见春天
-    Timi = 1027,          // Timi中
-    EatChicken = 1064,    // 吃鸡中
-    Loving = 1051,        // 恋爱中
-    WangWang = 1053,      // 汪汪汪
-    CookedRice = 1019,    // 干饭中
-    Study = 1018,         // 学习中
-    StayUp = 1032,        // 熬夜中
-    PlayBall = 1050,      // 打球中
-    Signal = 1011,        // 信号弱
-    StudyOnline = 1024,   // 在线学习
-    Gaming = 1017,        // 游戏中
-    Vacationing = 1022,   // 度假中
-    WatchingTV = 1021,    // 追剧中
-    Fitness = 1020,       // 健身中
-}
-
-#[derive(Debug, Clone)]
-pub struct CustomStatus {
-    pub face_index: u64,
-    pub words: String,
 }
