@@ -172,10 +172,10 @@ async fn main() -> Result<()> {
     client
         .update_online_status(
             UserOnlineStatus::Qme,
-            CustomStatus {
+            Some(CustomStatus {
                 face_index: 100,
-                words: "棒棒".to_owned(),
-            },
+                words: "棒棒1".to_owned(),
+            }),
         )
         .await
         .ok();

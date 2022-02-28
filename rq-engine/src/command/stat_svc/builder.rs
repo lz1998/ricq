@@ -41,7 +41,7 @@ impl super::super::super::Engine {
             ext_online_status,
             timestamp: chrono::Utc::now().timestamp(),
             custom_status: if let Some(custom_status) = custom_status {
-                crate::pb::onlinestatus::CustomStatus {
+                crate::pb::online_status::CustomStatus {
                     uface_index: Some(custom_status.face_index),
                     s_wording: Some(custom_status.words),
                     uface_type: Some(1),

@@ -1,5 +1,5 @@
 syntax = "proto2";
-package onlinestatus;
+package online_status;
 
 message CustomStatus {
   optional uint64 ufaceIndex = 1;
