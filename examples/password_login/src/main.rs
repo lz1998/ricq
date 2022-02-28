@@ -11,7 +11,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use rs_qq::device::Device;
 use rs_qq::ext::common::after_login;
 use rs_qq::handler::DefaultHandler;
-use rs_qq::structs::UserOnlineStatus;
+use rs_qq::structs::{CustomStatus, UserOnlineStatus};
 use rs_qq::version::{get_version, Protocol};
 use rs_qq::{Client, LoginDeviceLocked, LoginNeedCaptcha, LoginSuccess};
 use rs_qq::{LoginResponse, LoginUnknownStatus};
@@ -170,7 +170,13 @@ async fn main() -> Result<()> {
     // chain.push(group_image);
     // client.send_group_message(982166018, chain).await.ok();
     client
-        .update_online_status(UserOnlineStatus::Qme)
+        .update_online_status(
+            UserOnlineStatus::Qme,
+            Some(CustomStatus {
+                face_index: 100,
+                words: "棒棒1".to_owned(),
+            }),
+        )
         .await
         .ok();
 

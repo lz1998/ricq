@@ -38,6 +38,10 @@ pub mod oidb {
     include!(concat!(env!("OUT_DIR"), "/oidb.rs"));
 }
 
+pub mod online_status {
+    include!(concat!(env!("OUT_DIR"), "/online_status.rs"));
+}
+
 pub mod profilecard {
     include!(concat!(env!("OUT_DIR"), "/profilecard.rs"));
 }
