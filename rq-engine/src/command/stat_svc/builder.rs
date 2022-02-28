@@ -4,12 +4,19 @@ use bytes::{BufMut, Bytes, BytesMut};
 use jcers::JcePut;
 
 use crate::command::common::pack_uni_request_data;
+use crate::command::common::PbToBytes;
 use crate::jce;
 use crate::protocol::packet::*;
+use crate::structs::CustomStatus;
 
 impl super::super::super::Engine {
     // StatSvc.SetStatusFromClient
-    pub fn build_set_online_status_packet(&self, status: i32, ext_online_status: i64) -> Packet {
+    pub fn build_set_online_status_packet(
+        &self,
+        status: i32,
+        ext_online_status: i64,
+        custom_status: Option<CustomStatus>,
+    ) -> Packet {
         let transport = &self.transport;
         let svc = jce::SvcReqRegister {
             uin: self.uin(),
@@ -33,6 +40,16 @@ impl super::super::super::Engine {
             vendor_os_name: transport.device.vendor_os_name.to_owned(),
             ext_online_status,
             timestamp: chrono::Utc::now().timestamp(),
+            custom_status: if let Some(custom_status) = custom_status {
+                crate::pb::onlinestatus::CustomStatus {
+                    uface_index: Some(custom_status.face_index),
+                    s_wording: Some(custom_status.words),
+                    uface_type: Some(1),
+                }
+                .to_bytes()
+            } else {
+                Bytes::default()
+            },
             ..Default::default()
         };
         let pkt = self.svc_req_register_pkt(svc);

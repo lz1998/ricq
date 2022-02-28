@@ -211,7 +211,7 @@ pub struct MessageReceipt {
     pub time: i64,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum UserOnlineStatus {
     Online = 11,          // 在线
     Offline = 21,         // 离线
@@ -239,4 +239,10 @@ pub enum UserOnlineStatus {
     Vacationing = 1022,   // 度假中
     WatchingTV = 1021,    // 追剧中
     Fitness = 1020,       // 健身中
+}
+
+#[derive(Debug, Clone)]
+pub struct CustomStatus {
+    pub face_index: u64,
+    pub words: String,
 }
