@@ -56,10 +56,10 @@ pub struct Device {
 
 impl Device {
     pub fn random() -> Self {
-        Self::random_with_rng(rand::thread_rng())
+        Self::random_with_rng(&mut rand::thread_rng())
     }
 
-    pub fn random_with_rng<RNG: RngCore>(mut rng: RNG) -> Self {
+    pub fn random_with_rng<RNG: RngCore>(rng: &mut RNG) -> Self {
         Self {
             display: format!("GMC.{}.001", rng.gen_range(100000..999999)),
             product: "iarim".into(),
@@ -70,12 +70,12 @@ impl Device {
                 "xiaomi/iarim/sagit:10/eomam.200122.001/{}:user/release-keys",
                 rng.gen_range(1000000..9999999)
             ),
-            boot_id: random_uuid(),
+            boot_id: random_uuid(rng),
             proc_version: format!(
                 "Linux 5.4.0-54-generic-{} (android-build@google.com)",
-                random_string(8)
+                Alphanumeric.sample_string(rng, 8)
             ),
-            imei: random_imei(),
+            imei: random_imei(rng),
             brand: "Xiaomi".into(),
             bootloader: "U-boot".into(),
             base_band: "".into(),
@@ -86,8 +86,8 @@ impl Device {
             ip_address: vec![10, 0, 1, 3],
             wifi_bssid: "00:50:56:C0:00:08".into(),
             wifi_ssid: "<unknown ssid>".into(),
-            imsi_md5: md5::compute(rand::thread_rng().gen::<[u8; 16]>()).to_vec(),
-            android_id: encode_hex(&rand::thread_rng().gen::<[u8; 8]>()),
+            imsi_md5: md5::compute(rng.gen::<[u8; 16]>()).to_vec(),
+            android_id: encode_hex(&rng.gen::<[u8; 8]>()),
             apn: "wifi".into(),
             vendor_name: "MIUI".into(),
             vendor_os_name: "gmc".into(),
@@ -107,8 +107,8 @@ pub fn random_string(len: usize) -> String {
     Alphanumeric.sample_string(&mut rand::thread_rng(), len)
 }
 
-pub fn random_uuid() -> String {
-    let r = md5::compute(&rand::thread_rng().gen::<[u8; 16]>()).to_vec();
+pub fn random_uuid<RNG: RngCore>(rng: &mut RNG) -> String {
+    let r = md5::compute(&rng.gen::<[u8; 16]>()).to_vec();
     format!(
         "{}-{}-{}-{}-{}",
         encode_hex(&r[0..4]),
@@ -119,10 +119,9 @@ pub fn random_uuid() -> String {
     )
 }
 
-pub fn random_imei() -> String {
+pub fn random_imei<RNG: RngCore>(rng: &mut RNG) -> String {
     let mut sum = 0;
     let mut str = String::new();
-    let mut rng = rand::thread_rng();
     for i in 0..14 {
         let mut to_add = rng.gen_range(0..10);
         if (i + 2) % 2 == 0 {
