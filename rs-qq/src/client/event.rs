@@ -53,6 +53,12 @@ pub struct PrivateMessageEvent {
     pub message: PrivateMessage,
 }
 
+impl PrivateMessageEvent {
+    pub async fn friend(&self) -> Option<Arc<FriendInfo>> {
+        self.client.find_friend(self.message.from_uin).await
+    }
+}
+
 #[derive(Clone, derivative::Derivative)]
 #[derivative(Debug)]
 pub struct TempMessageEvent {
