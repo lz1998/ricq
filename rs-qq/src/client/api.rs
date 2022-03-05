@@ -1103,15 +1103,17 @@ impl super::Client {
     pub async fn get_group_image_store(
         &self,
         group_code: i64,
-        file_name: String,
-        image_md5: Vec<u8>,
-        size: u64,
+        image_info: &ImageInfo,
     ) -> RQResult<GroupImageStoreResp> {
-        let req = self
-            .engine
-            .read()
-            .await
-            .build_group_image_store_packet(group_code, file_name, image_md5, size);
+        let req = self.engine.read().await.build_group_image_store_packet(
+            group_code,
+            image_info.filename.clone(),
+            image_info.md5.clone(),
+            image_info.size as u64,
+            image_info.width,
+            image_info.height,
+            image_info.image_type as u32,
+        );
         let resp = self.send_and_wait(req).await?;
         self.engine
             .read()
@@ -1127,14 +1129,7 @@ impl super::Client {
     ) -> RQResult<GroupImage> {
         let image_info = get_image_info(&image)?;
 
-        let image_store = self
-            .get_group_image_store(
-                group_code,
-                image_info.filename,
-                image_info.md5.clone(),
-                image_info.size as u64,
-            )
-            .await?;
+        let image_store = self.get_group_image_store(group_code, &image_info).await?;
 
         let file_id = match image_store {
             GroupImageStoreResp::Exist { file_id } => file_id,
@@ -1179,17 +1174,17 @@ impl super::Client {
     pub async fn get_private_image_store(
         &self,
         target: i64,
-        file_name: String,
-        data_md5: Vec<u8>,
-        size: i32,
-        width: u32,
-        height: u32,
-        image_type: u32,
+        image_info: &ImageInfo,
     ) -> RQResult<OffPicUpResp> {
-        let req =
-            self.engine.read().await.build_off_pic_up_packet(
-                target, file_name, data_md5, size, width, height, image_type,
-            );
+        let req = self.engine.read().await.build_off_pic_up_packet(
+            target,
+            image_info.filename.clone(),
+            image_info.md5.clone(),
+            image_info.size as u64,
+            image_info.width,
+            image_info.height,
+            image_info.image_type as u32,
+        );
         let resp = self.send_and_wait(req).await?;
         self.engine
             .read()
@@ -1197,8 +1192,9 @@ impl super::Client {
             .decode_off_pic_up_response(resp.body)
     }
 
-    pub async fn upload_private_image(target: i64, data: Vec<u8>) -> RQResult<FriendImage> {
+    pub async fn upload_private_image(&self, target: i64, data: Vec<u8>) -> RQResult<FriendImage> {
         let image_info = get_image_info(&data)?;
+        let _image_store = self.get_private_image_store(target, &image_info).await?;
 
         todo!()
     }

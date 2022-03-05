@@ -8,7 +8,7 @@ impl crate::Engine {
         target: i64,
         file_name: String,
         md5: Vec<u8>,
-        size: i32,
+        size: u64,
         width: u32,
         height: u32,
         image_type: u32,
@@ -20,7 +20,7 @@ impl crate::Engine {
                 dst_uin: Some(target as u64),
                 file_name: Some(file_name.as_bytes().to_vec()), //todo
                 file_md5: Some(md5),
-                file_size: Some(size as u64),
+                file_size: Some(size),
                 pic_width: Some(width),
                 pic_height: Some(height),
                 pic_type: Some(image_type),
