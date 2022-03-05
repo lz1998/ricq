@@ -1194,9 +1194,41 @@ impl super::Client {
 
     pub async fn upload_private_image(&self, target: i64, data: Vec<u8>) -> RQResult<FriendImage> {
         let image_info = get_image_info(&data)?;
-        let _image_store = self.get_private_image_store(target, &image_info).await?;
+        let image_store = self.get_private_image_store(target, &image_info).await?;
 
-        todo!()
+        let res_id = match image_store {
+            OffPicUpResp::Exist(res_id) => res_id,
+            OffPicUpResp::UploadRequired {
+                res_id,
+                upload_key,
+                mut upload_addrs,
+            } => {
+                if self.highway_session.read().await.session_key.is_empty() {
+                    return Err(RQError::Other("highway_session_key is empty".into()));
+                }
+                let addr = upload_addrs
+                    .pop()
+                    .ok_or_else(|| RQError::Other("upload_addrs is empty".into()))?;
+                self.highway_upload_bdh(
+                    addr,
+                    BdhInput {
+                        command_id: 1,
+                        body: data,
+                        ticket: upload_key,
+                        ext: vec![],
+                        encrypt: false,
+                    },
+                )
+                .await?;
+                res_id
+            }
+        };
+        Ok(FriendImage {
+            image_id: res_id,
+            md5: image_info.md5,
+            size: image_info.size as i32,
+            ..Default::default()
+        })
     }
 }
 

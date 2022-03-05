@@ -117,7 +117,7 @@ message TryUpImgRsp {
   repeated uint32 upIp = 7;
   repeated uint32 upPort = 8;
   optional bytes upUkey = 9;
-  optional bytes upResid = 10;
+  optional string upResid = 10;
   optional bytes upUuid = 11;
   optional uint64 upOffset = 12;
   optional uint64 blockSize = 13;

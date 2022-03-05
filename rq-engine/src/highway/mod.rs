@@ -17,6 +17,7 @@ pub struct Session {
 }
 
 pub struct BdhInput {
+    // 1-friend, 2-group, 299-groupPtt
     pub command_id: i32,
     pub body: Vec<u8>,
     pub ticket: Vec<u8>,
