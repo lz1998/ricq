@@ -11,11 +11,11 @@ use rq_engine::command::long_conn::OffPicUpResp;
 use rq_engine::command::message_svc::MessageSyncResponse;
 use rq_engine::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
 use rq_engine::common::group_code2uin;
+use rq_engine::hex::encode_hex;
 use rq_engine::highway::BdhInput;
 use rq_engine::msg::elem::{calculate_image_resource_id, Anonymous, FriendImage, GroupImage};
 use rq_engine::msg::MessageChain;
 use rq_engine::pb;
-use rq_engine::protocol::device::random_string;
 use rq_engine::structs::Status;
 
 use crate::client::Group;
@@ -1105,7 +1105,7 @@ impl super::Client {
         group_code: i64,
         file_name: String,
         image_md5: Vec<u8>,
-        size: i32,
+        size: u64,
     ) -> RQResult<GroupImageStoreResp> {
         let req = self
             .engine
@@ -1125,41 +1125,19 @@ impl super::Client {
         group_code: i64,
         image: Vec<u8>,
     ) -> RQResult<GroupImage> {
-        let image_md5 = md5::compute(&image).to_vec();
-        let image_size = image.len() as i32;
-        let img_reader = image::io::Reader::new(std::io::Cursor::new(&image))
-            .with_guessed_format()
-            .map_err(RQError::IO)?;
-        let image_format = img_reader.format().unwrap_or(image::ImageFormat::Png);
-        let image_type = match image_format {
-            image::ImageFormat::Gif => 2000,
-            _ => 1000,
-        };
-        let (width, height) = img_reader.into_dimensions().unwrap_or((720, 480));
-        let file_name = format!(
-            "{}.{}",
-            random_string(16),
-            image_format
-                .extensions_str()
-                .first()
-                .expect("image_format error")
-        );
+        let image_info = get_image_info(&image)?;
 
         let image_store = self
-            .get_group_image_store(group_code, file_name, image_md5.clone(), image_size)
+            .get_group_image_store(
+                group_code,
+                image_info.filename,
+                image_info.md5.clone(),
+                image_info.size as u64,
+            )
             .await?;
 
-        match image_store {
-            GroupImageStoreResp::Exist { file_id } => Ok(GroupImage {
-                image_id: calculate_image_resource_id(&image_md5, false),
-                file_id: file_id as i64,
-                size: image_size,
-                width: width as i32,
-                height: height as i32,
-                md5: image_md5,
-                image_type,
-                ..Default::default()
-            }),
+        let file_id = match image_store {
+            GroupImageStoreResp::Exist { file_id } => file_id,
             GroupImageStoreResp::NotExist {
                 file_id,
                 upload_key,
@@ -1183,31 +1161,35 @@ impl super::Client {
                     },
                 )
                 .await?;
-                Ok(GroupImage {
-                    image_id: calculate_image_resource_id(&image_md5, false),
-                    file_id: file_id as i64,
-                    size: image_size,
-                    width: width as i32,
-                    height: height as i32,
-                    md5: image_md5,
-                    image_type,
-                    ..Default::default()
-                })
+                file_id
             }
-        }
+        };
+        Ok(GroupImage {
+            image_id: calculate_image_resource_id(&image_info.md5, false),
+            file_id: file_id as i64,
+            size: image_info.size as i32,
+            width: image_info.width as i32,
+            height: image_info.height as i32,
+            md5: image_info.md5,
+            image_type: image_info.image_type,
+            ..Default::default()
+        })
     }
 
     pub async fn get_private_image_store(
         &self,
         target: i64,
-        image_md5: Vec<u8>,
+        file_name: String,
+        data_md5: Vec<u8>,
         size: i32,
+        width: u32,
+        height: u32,
+        image_type: u32,
     ) -> RQResult<OffPicUpResp> {
-        let req = self
-            .engine
-            .read()
-            .await
-            .build_off_pic_up_packet(target, image_md5, size);
+        let req =
+            self.engine.read().await.build_off_pic_up_packet(
+                target, file_name, data_md5, size, width, height, image_type,
+            );
         let resp = self.send_and_wait(req).await?;
         self.engine
             .read()
@@ -1215,9 +1197,49 @@ impl super::Client {
             .decode_off_pic_up_response(resp.body)
     }
 
-    pub async fn upload_private_image(_target: i64, image: Vec<u8>) -> RQResult<FriendImage> {
-        let _image_md5 = md5::compute(&image).to_vec();
-        let _image_size = image.len() as i32;
+    pub async fn upload_private_image(target: i64, data: Vec<u8>) -> RQResult<FriendImage> {
+        let image_info = get_image_info(&data)?;
+
         todo!()
     }
+}
+
+pub struct ImageInfo {
+    pub md5: Vec<u8>,
+    pub width: u32,
+    pub height: u32,
+    pub image_type: i32,
+    pub size: u32,
+    pub filename: String,
+    pub format: image::ImageFormat,
+}
+
+fn get_image_info(data: &[u8]) -> RQResult<ImageInfo> {
+    let img_reader = image::io::Reader::new(std::io::Cursor::new(data))
+        .with_guessed_format()
+        .map_err(RQError::IO)?;
+    let format = img_reader.format().unwrap_or(image::ImageFormat::Png);
+    let md5 = md5::compute(data).to_vec();
+
+    let (width, height) = img_reader.into_dimensions().unwrap_or((720, 480));
+    Ok(ImageInfo {
+        filename: format!(
+            "{}.{}",
+            encode_hex(&md5),
+            format.extensions_str().first().expect("image_format error")
+        ),
+        md5,
+        width,
+        height,
+        image_type: match format {
+            image::ImageFormat::Jpeg => 1000,
+            image::ImageFormat::Png => 1001,
+            image::ImageFormat::WebP => 1002,
+            image::ImageFormat::Bmp => 1005,
+            image::ImageFormat::Gif => 2000,
+            _ => 1000,
+        },
+        size: data.len() as u32,
+        format,
+    })
 }

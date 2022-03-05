@@ -8,7 +8,7 @@ impl super::super::super::Engine {
         group_code: i64,
         file_name: String,
         md5: Vec<u8>,
-        size: i32,
+        size: u64,
     ) -> Packet {
         let req = pb::cmd0x388::D388ReqBody {
             net_type: Some(3),
@@ -18,7 +18,7 @@ impl super::super::super::Engine {
                 group_code: Some(group_code as u64),
                 src_uin: Some(self.uin() as u64),
                 file_md5: Some(md5),
-                file_size: Some(size as u64),
+                file_size: Some(size),
                 file_name: Some(format!("{}.gif", file_name).as_bytes().to_vec()),
                 src_term: Some(5),
                 platform_type: Some(9),
