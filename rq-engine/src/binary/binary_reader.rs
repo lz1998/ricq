@@ -1,5 +1,6 @@
-use bytes::{Buf, Bytes};
 use std::collections::HashMap;
+
+use bytes::{Buf, Bytes};
 
 pub trait BinaryReader {
     fn read_string(&mut self) -> String;
@@ -45,7 +46,13 @@ where
             if k == 255 {
                 return m;
             }
+            if self.remaining() < 2 {
+                return m;
+            }
             let len = self.get_u16() as usize;
+            if self.remaining() < len {
+                return m;
+            }
             m.insert(k, self.copy_to_bytes(len));
         }
     }
