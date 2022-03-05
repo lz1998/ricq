@@ -5,8 +5,9 @@ use futures::{SinkExt, StreamExt};
 use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
 
+use rq_engine::command::common::PbToBytes;
 use rq_engine::highway::BdhInput;
-use rq_engine::{RQError, RQResult};
+use rq_engine::{pb, RQError, RQResult};
 
 use crate::client::highway::codec::HighwayCodec;
 use crate::client::highway::HighwayFrame;
@@ -32,17 +33,25 @@ impl Client {
         const CHUNK_SIZE: usize = 256 * 1024; // 256K
         for (i, chunk) in input.body.chunks(CHUNK_SIZE).enumerate() {
             let chunk = chunk.to_vec();
-            let head = self.highway_session.read().await.build_bdh_head(
-                input.command_id,
-                length as i64,
-                &chunk,
-                (i * CHUNK_SIZE) as i64,
-                ticket.clone(),
-                sum.clone(),
-            );
+            let head = pb::ReqDataHighwayHead {
+                msg_basehead: Some(self.highway_session.read().await.build_basehead(
+                    "PicUp.DataUp".into(),
+                    4096,
+                    input.command_id,
+                    2052,
+                )),
+                msg_seghead: Some(self.highway_session.read().await.build_seghead(
+                    length as i64,
+                    (i * CHUNK_SIZE) as i64,
+                    &chunk,
+                    ticket.clone(),
+                    sum.clone(),
+                )),
+                ..Default::default()
+            };
             stream
                 .send(HighwayFrame {
-                    head,
+                    head: head.to_bytes(),
                     body: Bytes::from(chunk.clone()),
                 })
                 .await?;

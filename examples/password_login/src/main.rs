@@ -159,16 +159,16 @@ async fn main() -> Result<()> {
     tracing::info!("{:?}", d);
 
     // 等一下，收到 ConfigPushSvc.PushReq 才可以发
-    // use rs_qq::msg::MessageChain;
-    // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-    // let img_bytes = tokio::fs::read("test.png").await.unwrap();
-    // let group_image = client
-    //     .upload_group_image(982166018, img_bytes)
-    //     .await
-    //     .unwrap();
-    // let mut chain = MessageChain::default();
-    // chain.push(group_image);
-    // client.send_group_message(982166018, chain).await.ok();
+    use rs_qq::msg::MessageChain;
+    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    let img_bytes = tokio::fs::read("test.png").await.unwrap();
+    let group_image = client
+        .upload_group_image(335783090, img_bytes)
+        .await
+        .unwrap();
+    let mut chain = MessageChain::default();
+    chain.push(group_image);
+    client.send_group_message(335783090, chain).await.ok();
     let aaa = client
         .update_online_status(ExtOnlineStatus::StudyOnline)
         .await;

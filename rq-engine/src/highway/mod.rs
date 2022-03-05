@@ -29,6 +29,45 @@ impl Session {
         self.seq.fetch_add(2, Ordering::Relaxed)
     }
 
+    pub fn build_basehead(
+        &self,
+        command: String,
+        dataflag: i32,
+        command_id: i32,
+        locale_id: i32,
+    ) -> pb::DataHighwayHead {
+        pb::DataHighwayHead {
+            version: 1,
+            uin: self.uin.to_string(),
+            command,
+            seq: self.next_seq(),
+            appid: self.app_id,
+            dataflag,
+            command_id,
+            locale_id,
+            ..Default::default()
+        }
+    }
+
+    pub fn build_seghead(
+        &self,
+        filesize: i64,
+        dataoffset: i64,
+        chunk: &[u8],
+        ticket: Vec<u8>,
+        file_md5: Vec<u8>,
+    ) -> pb::SegHead {
+        pb::SegHead {
+            filesize,
+            dataoffset,
+            datalength: chunk.len() as i32,
+            serviceticket: ticket,
+            md5: md5::compute(chunk).to_vec(),
+            file_md5,
+            ..Default::default()
+        }
+    }
+
     pub fn build_bdh_head(
         &self,
         command_id: i32,
@@ -39,17 +78,7 @@ impl Session {
         file_md5: Vec<u8>,
     ) -> Bytes {
         pb::ReqDataHighwayHead {
-            msg_basehead: Some(pb::DataHighwayHead {
-                version: 1,
-                uin: self.uin.to_string(),
-                command: "PicUp.DataUp".into(),
-                seq: self.next_seq(),
-                appid: self.app_id,
-                dataflag: 4096,
-                command_id,
-                locale_id: 2052,
-                ..Default::default()
-            }),
+            msg_basehead: Some(self.build_basehead("PicUp.DataUp".into(), 4096, command_id, 2052)),
             msg_seghead: Some(pb::SegHead {
                 filesize,
                 dataoffset,
@@ -71,17 +100,7 @@ impl Session {
 
     pub fn build_heartbreak(&self) -> Bytes {
         pb::ReqDataHighwayHead {
-            msg_basehead: Some(pb::DataHighwayHead {
-                version: 1,
-                uin: self.uin.to_string(),
-                command: "PicUp.Echo".into(),
-                seq: self.next_seq(),
-                appid: self.app_id,
-                dataflag: 4096,
-                command_id: 0,
-                locale_id: 2052,
-                ..Default::default()
-            }),
+            msg_basehead: Some(self.build_basehead("PicUp.Echo".into(), 4096, 0, 2052)),
             ..Default::default()
         }
         .to_bytes()
