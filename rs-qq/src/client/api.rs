@@ -1259,7 +1259,7 @@ impl super::Client {
             group_code,
             md5.clone(),
             size as u64,
-            0,
+            1,
             size as u32,
         );
         let addr = self

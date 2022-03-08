@@ -47,6 +47,7 @@ impl Client {
                     ticket.clone(),
                     sum.clone(),
                 )),
+                req_extendinfo: input.ext.clone(),
                 ..Default::default()
             };
             stream
