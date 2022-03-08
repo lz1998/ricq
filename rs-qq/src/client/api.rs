@@ -16,7 +16,7 @@ use rq_engine::highway::BdhInput;
 use rq_engine::msg::elem::{calculate_image_resource_id, Anonymous, FriendImage, GroupImage};
 use rq_engine::msg::MessageChain;
 use rq_engine::pb;
-use rq_engine::structs::Status;
+use rq_engine::structs::{GroupAudio, Status};
 
 use crate::client::Group;
 use crate::engine::command::{friendlist::*, oidb_svc::*, profile_service::*, wtlogin::*};
@@ -374,11 +374,31 @@ impl super::Client {
             .decode_group_list_response(resp.body)
     }
 
-    /// 发送群消息 TODO 切片, At预处理Display
+    /// 发送群消息
     pub async fn send_group_message(
         &self,
         group_code: i64,
         message_chain: MessageChain,
+    ) -> RQResult<MessageReceipt> {
+        self._send_group_message(group_code, message_chain, None)
+            .await
+    }
+
+    /// 发送群语音
+    pub async fn send_group_audio(
+        &self,
+        group_code: i64,
+        group_audio: GroupAudio,
+    ) -> RQResult<MessageReceipt> {
+        self._send_group_message(group_code, MessageChain::default(), Some(group_audio))
+            .await
+    }
+
+    async fn _send_group_message(
+        &self,
+        group_code: i64,
+        message_chain: MessageChain,
+        group_audio: Option<GroupAudio>,
     ) -> RQResult<MessageReceipt> {
         let time = chrono::Utc::now().timestamp();
         let ran = (rand::random::<u32>() >> 1) as i32;
@@ -389,6 +409,7 @@ impl super::Client {
         let req = self.engine.read().await.build_group_sending_packet(
             group_code,
             message_chain.into(),
+            group_audio,
             ran,
             time,
             1,
@@ -1229,6 +1250,60 @@ impl super::Client {
             size: image_info.size as i32,
             ..Default::default()
         })
+    }
+
+    pub async fn upload_group_audio(&self, group_code: i64, data: Vec<u8>) -> RQResult<GroupAudio> {
+        let md5 = md5::compute(&data).to_vec();
+        let size = data.len();
+        let ext = self.engine.read().await.build_group_try_up_ptt_req(
+            group_code,
+            md5.clone(),
+            size as u64,
+            0,
+            size as u32,
+        );
+        let addr = self
+            .highway_addrs
+            .read()
+            .await
+            .first()
+            .cloned()
+            .ok_or(RQError::Other("highway_addrs is empty".into()))?;
+        let ticket = self
+            .highway_session
+            .read()
+            .await
+            .sig_session
+            .clone()
+            .to_vec();
+        let resp = self
+            .highway_upload_bdh(
+                addr,
+                BdhInput {
+                    command_id: 29,
+                    body: data,
+                    ticket,
+                    ext: ext.to_vec(),
+                    encrypt: false,
+                },
+            )
+            .await?;
+        let file_key = self
+            .engine
+            .read()
+            .await
+            .decode_group_try_up_ptt_resp(resp)?;
+        Ok(GroupAudio(pb::msg::Ptt {
+            file_type: Some(4),
+            src_uin: Some(self.uin().await),
+            file_name: Some(format!("{}.amr", encode_hex(&md5))),
+            file_md5: Some(md5),
+            file_size: Some(size as i32),
+            bool_valid: Some(true),
+            pb_reserve: Some(vec![8, 0, 40, 0, 56, 0]),
+            group_file_key: Some(file_key),
+            ..Default::default()
+        }))
     }
 }
 
