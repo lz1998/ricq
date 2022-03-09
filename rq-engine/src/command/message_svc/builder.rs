@@ -3,6 +3,7 @@ use prost::Message;
 use crate::command::common::PbToBytes;
 use crate::pb;
 use crate::protocol::packet::Packet;
+use crate::structs::GroupAudio;
 
 // TODO 待测试
 impl super::super::super::Engine {
@@ -11,6 +12,7 @@ impl super::super::super::Engine {
         &self,
         group_code: i64,
         elems: Vec<pb::msg::Elem>,
+        group_audio: Option<GroupAudio>,
         ran: i32,
         time: i64,
         pkg_num: i32,
@@ -35,6 +37,7 @@ impl super::super::super::Engine {
             msg_body: Some(pb::msg::MessageBody {
                 rich_text: Some(pb::msg::RichText {
                     elems,
+                    ptt: group_audio.map(|a| a.0),
                     ..Default::default()
                 }),
                 ..Default::default()

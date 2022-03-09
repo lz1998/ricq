@@ -5,3 +5,5 @@ Cargo.lock
 qrcode.png
 device.json
 test.png
+*.amr
+*.silk

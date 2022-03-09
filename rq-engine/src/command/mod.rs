@@ -11,6 +11,7 @@ pub mod oidb_svc;
 pub mod online_push;
 pub mod pb_message_svc;
 pub mod profile_service;
+pub mod ptt;
 pub mod reg_prxy_svc;
 pub mod signature;
 pub mod stat_svc;

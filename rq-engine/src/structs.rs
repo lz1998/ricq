@@ -2,8 +2,8 @@ use bytes::Bytes;
 
 pub use crate::command::oidb_svc::ProfileDetailUpdate;
 pub use crate::command::stat_svc::{CustomOnlineStatus, ExtOnlineStatus, OnlineStatus, Status};
-use crate::jce;
 use crate::msg::MessageChain;
+use crate::{jce, pb};
 
 #[derive(Default, Debug)]
 pub struct AccountInfo {
@@ -211,3 +211,9 @@ pub struct MessageReceipt {
     pub rands: Vec<i32>,
     pub time: i64,
 }
+
+#[derive(Debug, Clone, Default)]
+pub struct GroupAudio(pub pb::msg::Ptt);
+
+#[derive(Debug, Clone, Default)]
+pub struct PrivateAudio(pub pb::msg::Ptt);
