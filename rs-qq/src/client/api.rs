@@ -1252,14 +1252,20 @@ impl super::Client {
         })
     }
 
-    pub async fn upload_group_audio(&self, group_code: i64, data: Vec<u8>) -> RQResult<GroupAudio> {
+    /// 上传群音频 codec: 0-amr, 1-silk
+    pub async fn upload_group_audio(
+        &self,
+        group_code: i64,
+        data: Vec<u8>,
+        codec: u32,
+    ) -> RQResult<GroupAudio> {
         let md5 = md5::compute(&data).to_vec();
         let size = data.len();
         let ext = self.engine.read().await.build_group_try_up_ptt_req(
             group_code,
             md5.clone(),
             size as u64,
-            1,
+            codec,
             size as u32,
         );
         let addr = self
