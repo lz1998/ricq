@@ -9,15 +9,15 @@ use rq_engine::command::online_push::{OnlinePushTrans, PushTransInfo};
 use rq_engine::msg::MessageChain;
 use rq_engine::pb::msg;
 use rq_engine::structs::{
-    DeleteFriend, FriendInfo, FriendMessageRecall, FriendPoke, GroupLeave, GroupMessage,
-    GroupMessageRecall, GroupMute, GroupNameUpdate, NewMember,
+    DeleteFriend, FriendInfo, FriendMessageRecall, FriendPoke, GroupAudio, GroupAudioMessage,
+    GroupLeave, GroupMessage, GroupMessageRecall, GroupMute, GroupNameUpdate, NewMember,
 };
 use rq_engine::{jce, pb};
 
 use crate::client::event::{
-    DeleteFriendEvent, FriendMessageRecallEvent, FriendPokeEvent, GroupLeaveEvent,
-    GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent, GroupNameUpdateEvent,
-    MemberPermissionChangeEvent, NewFriendEvent, NewMemberEvent,
+    DeleteFriendEvent, FriendMessageRecallEvent, FriendPokeEvent, GroupAudioMessageEvent,
+    GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent,
+    GroupNameUpdateEvent, MemberPermissionChangeEvent, NewFriendEvent, NewMemberEvent,
 };
 use crate::client::handler::QEvent;
 use crate::client::Client;
@@ -30,6 +30,22 @@ impl Client {
         group_message_part: GroupMessagePart,
     ) -> Result<(), RQError> {
         // self.mark_group_message_readed(group_message_part.group_code, group_message_part.seq).await;
+        if let Some(ptt) = group_message_part.ptt {
+            self.handler
+                .handle(QEvent::GroupAudioMessage(GroupAudioMessageEvent {
+                    client: self.clone(),
+                    audio: GroupAudioMessage {
+                        seqs: vec![group_message_part.seq],
+                        rands: vec![group_message_part.rand],
+                        group_code: group_message_part.group_code,
+                        from_uin: group_message_part.from_uin,
+                        time: group_message_part.time,
+                        audio: GroupAudio(ptt),
+                    },
+                }))
+                .await;
+            return Ok(());
+        }
 
         // receipt message
         if group_message_part.from_uin == self.uin().await {
@@ -93,7 +109,8 @@ impl Client {
             time: parts.first().map(|p| p.time).unwrap_or_default(),
             elements: MessageChain::from(
                 parts
-                    .into_iter().flat_map(|p| p.elems)
+                    .into_iter()
+                    .flat_map(|p| p.elems)
                     .collect::<Vec<msg::Elem>>(),
             ),
         };

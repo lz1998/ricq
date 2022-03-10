@@ -2,8 +2,9 @@ use std::sync::Arc;
 
 use rq_engine::command::profile_service::{JoinGroupRequest, NewFriendRequest, SelfInvited};
 use rq_engine::structs::{
-    DeleteFriend, FriendInfo, FriendMessageRecall, FriendPoke, GroupLeave, GroupMessageRecall,
-    GroupMute, GroupNameUpdate, MemberPermissionChange, NewMember, TempMessage,
+    DeleteFriend, FriendInfo, FriendMessageRecall, FriendPoke, GroupAudioMessage, GroupLeave,
+    GroupMessageRecall, GroupMute, GroupNameUpdate, MemberPermissionChange, NewMember,
+    PrivateAudioMessage, TempMessage,
 };
 use rq_engine::RQResult;
 
@@ -233,4 +234,20 @@ pub struct SelfInvitedEvent {
     #[derivative(Debug = "ignore")]
     pub client: Arc<Client>,
     pub request: SelfInvited,
+}
+
+#[derive(Clone, derivative::Derivative)]
+#[derivative(Debug)]
+pub struct GroupAudioMessageEvent {
+    #[derivative(Debug = "ignore")]
+    pub client: Arc<Client>,
+    pub audio: GroupAudioMessage,
+}
+
+#[derive(Clone, derivative::Derivative)]
+#[derivative(Debug)]
+pub struct PrivateAudioMessageEvent {
+    #[derivative(Debug = "ignore")]
+    pub client: Arc<Client>,
+    pub audio: PrivateAudioMessage,
 }

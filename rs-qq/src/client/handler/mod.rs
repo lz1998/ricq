@@ -7,9 +7,10 @@ use tokio::sync::{
 
 use crate::client::event::{
     DeleteFriendEvent, FriendMessageRecallEvent, FriendPokeEvent, FriendRequestEvent,
-    GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent,
-    GroupNameUpdateEvent, GroupRequestEvent, MemberPermissionChangeEvent, NewFriendEvent,
-    NewMemberEvent, PrivateMessageEvent, SelfInvitedEvent, TempMessageEvent,
+    GroupAudioMessageEvent, GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent,
+    GroupMuteEvent, GroupNameUpdateEvent, GroupRequestEvent, MemberPermissionChangeEvent,
+    NewFriendEvent, NewMemberEvent, PrivateAudioMessageEvent, PrivateMessageEvent,
+    SelfInvitedEvent, TempMessageEvent,
 };
 
 /// 所有需要外发的数据的枚举打包
@@ -22,10 +23,14 @@ pub enum QEvent {
     Login(i64),
     /// 群消息
     GroupMessage(GroupMessageEvent),
+    /// 群语音
+    GroupAudioMessage(GroupAudioMessageEvent),
     /// 群自身消息
     SelfGroupMessage(GroupMessageEvent),
     /// 私聊消息
     PrivateMessage(PrivateMessageEvent),
+    /// 群语音
+    PrivateAudioMessage(PrivateAudioMessageEvent),
     /// 私聊消息
     TempMessage(TempMessageEvent),
     /// 加群申请
@@ -154,8 +159,10 @@ pub trait PartlyHandler: Sync {
     async fn handle_disconnect(&self) {}
     async fn handle_login(&self, _: i64) {}
     async fn handle_group_message(&self, _event: GroupMessageEvent) {}
+    async fn handle_group_audio(&self, _event: GroupAudioMessageEvent) {}
     async fn handle_self_group_message(&self, _event: GroupMessageEvent) {}
     async fn handle_private_message(&self, _event: PrivateMessageEvent) {}
+    async fn handle_private_audio(&self, _event: PrivateAudioMessageEvent) {}
     async fn handle_temp_message(&self, _event: TempMessageEvent) {}
     async fn handle_group_request(&self, _event: GroupRequestEvent) {}
     async fn handle_self_invited(&self, _event: SelfInvitedEvent) {}
@@ -183,8 +190,10 @@ where
             QEvent::TcpDisconnect => self.handle_disconnect().await,
             QEvent::Login(uin) => self.handle_login(uin).await,
             QEvent::GroupMessage(m) => self.handle_group_message(m).await,
+            QEvent::GroupAudioMessage(m) => self.handle_group_audio(m).await,
             QEvent::SelfGroupMessage(m) => self.handle_self_group_message(m).await,
             QEvent::PrivateMessage(m) => self.handle_private_message(m).await,
+            QEvent::PrivateAudioMessage(m) => self.handle_private_audio(m).await,
             QEvent::TempMessage(m) => self.handle_temp_message(m).await,
             QEvent::GroupRequest(m) => self.handle_group_request(m).await,
             QEvent::SelfInvited(m) => self.handle_self_invited(m).await,
