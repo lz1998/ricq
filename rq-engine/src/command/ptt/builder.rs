@@ -1,6 +1,7 @@
 use bytes::Bytes;
 
 use crate::command::common::PbToBytes;
+use crate::hex::encode_hex;
 use crate::pb;
 
 impl super::super::super::Engine {
@@ -24,7 +25,7 @@ impl super::super::super::Engine {
                 src_term: Some(5),
                 platform_type: Some(9),
                 bu_type: Some(4),
-                build_ver: Some("6.5.5.663".into()),
+                build_ver: Some(self.transport.version.build_ver.into()),
                 inner_ip: Some(0),
                 // TODO ?
                 voice_length: Some(voice_length),
@@ -34,6 +35,40 @@ impl super::super::super::Engine {
                 voice_type: Some(1),
                 ..Default::default()
             }],
+            ..Default::default()
+        };
+        req.to_bytes()
+    }
+
+    pub fn build_private_try_up_ptt_req(
+        &self,
+        target: i64,
+        file_md5: Vec<u8>,
+        file_size: i64,
+        voice_length: i32,
+    ) -> Bytes {
+        let req = pb::cmd0x346::C346ReqBody {
+            cmd: 500,
+            seq: self.next_seq() as i32,
+            business_id: 17,
+            client_type: 104,
+            apply_upload_req: Some(pb::cmd0x346::ApplyUploadReq {
+                sender_uin: self.uin(),
+                recver_uin: target,
+                file_type: 2,
+                file_size,
+                file_name: encode_hex(&file_md5),
+                bytes_10m_md5: file_md5,
+                ..Default::default()
+            }),
+            extension_req: Some(pb::cmd0x346::ExtensionReq {
+                id: 3,
+                ptt_format: 1,
+                net_type: 3,
+                voice_type: 2,
+                ptt_time: voice_length,
+                ..Default::default()
+            }),
             ..Default::default()
         };
         req.to_bytes()

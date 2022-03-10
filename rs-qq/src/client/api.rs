@@ -2,7 +2,7 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 
-use bytes::{Buf, Bytes};
+use bytes::{Buf, BufMut, Bytes};
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
@@ -16,7 +16,7 @@ use rq_engine::highway::BdhInput;
 use rq_engine::msg::elem::{calculate_image_resource_id, Anonymous, FriendImage, GroupImage};
 use rq_engine::msg::MessageChain;
 use rq_engine::pb;
-use rq_engine::structs::{GroupAudio, Status};
+use rq_engine::structs::{GroupAudio, PrivateAudio, Status};
 
 use crate::client::Group;
 use crate::engine::command::{friendlist::*, oidb_svc::*, profile_service::*, wtlogin::*};
@@ -390,7 +390,7 @@ impl super::Client {
         group_code: i64,
         group_audio: GroupAudio,
     ) -> RQResult<MessageReceipt> {
-        self._send_group_message(group_code, MessageChain::default(), Some(group_audio))
+        self._send_group_message(group_code, MessageChain::default(), Some(group_audio.0))
             .await
     }
 
@@ -398,7 +398,7 @@ impl super::Client {
         &self,
         group_code: i64,
         message_chain: MessageChain,
-        group_audio: Option<GroupAudio>,
+        group_audio: Option<pb::msg::Ptt>,
     ) -> RQResult<MessageReceipt> {
         let time = chrono::Utc::now().timestamp();
         let ran = (rand::random::<u32>() >> 1) as i32;
@@ -809,11 +809,31 @@ impl super::Client {
         Ok(translations)
     }
 
-    /// 发送好友消息
+    /// 发送私聊消息
     pub async fn send_private_message(
         &self,
         target: i64,
         message_chain: MessageChain,
+    ) -> RQResult<MessageReceipt> {
+        self._send_private_message(target, message_chain, None)
+            .await
+    }
+
+    /// 发送私聊语音
+    pub async fn send_private_audio(
+        &self,
+        target: i64,
+        audio: PrivateAudio,
+    ) -> RQResult<MessageReceipt> {
+        self._send_private_message(target, MessageChain::default(), Some(audio.0))
+            .await
+    }
+
+    async fn _send_private_message(
+        &self,
+        target: i64,
+        message_chain: MessageChain,
+        ptt: Option<pb::msg::Ptt>,
     ) -> RQResult<MessageReceipt> {
         let time = chrono::Utc::now().timestamp();
         let seq = self.engine.read().await.next_friend_seq();
@@ -821,6 +841,7 @@ impl super::Client {
         let req = self.engine.read().await.build_friend_sending_packet(
             target,
             message_chain.into(),
+            ptt,
             seq,
             ran,
             time,
@@ -1308,6 +1329,83 @@ impl super::Client {
             bool_valid: Some(true),
             pb_reserve: Some(vec![8, 0, 40, 0, 56, 0]),
             group_file_key: Some(file_key),
+            ..Default::default()
+        }))
+    }
+
+    pub async fn upload_private_audio(
+        &self,
+        target: i64,
+        data: Vec<u8>,
+        audio_duration: Duration,
+    ) -> RQResult<PrivateAudio> {
+        let md5 = md5::compute(&data).to_vec();
+        let size = data.len();
+        let ext = self.engine.read().await.build_private_try_up_ptt_req(
+            target,
+            md5.clone(),
+            size as i64,
+            size as i32,
+        );
+        let addr = self
+            .highway_addrs
+            .read()
+            .await
+            .first()
+            .cloned()
+            .ok_or(RQError::Other("highway_addrs is empty".into()))?;
+        let ticket = self
+            .highway_session
+            .read()
+            .await
+            .sig_session
+            .clone()
+            .to_vec();
+        let resp = self
+            .highway_upload_bdh(
+                addr,
+                BdhInput {
+                    command_id: 26,
+                    body: data,
+                    ticket,
+                    ext: ext.to_vec(),
+                    encrypt: false,
+                },
+            )
+            .await?;
+        let uuid = self
+            .engine
+            .read()
+            .await
+            .decode_private_try_up_ptt_resp(resp)?;
+        Ok(PrivateAudio(pb::msg::Ptt {
+            file_type: Some(4),
+            src_uin: Some(self.uin().await),
+            file_uuid: Some(uuid),
+            file_name: Some(format!("{}.amr", encode_hex(&md5))),
+            file_md5: Some(md5),
+            file_size: Some(size as i32),
+            reserve: Some({
+                let mut w = Vec::new();
+                w.put_u8(3); // tlv count
+                {
+                    w.put_u8(8);
+                    w.put_u16(4);
+                    w.put_u32(1); // codec
+                }
+                {
+                    w.put_u8(9);
+                    w.put_u16(4);
+                    w.put_u32(audio_duration.as_secs() as u32); // voiceLength
+                }
+                {
+                    w.put_u8(10);
+                    w.put_u16(6);
+                    w.put_slice(&[0x08, 0x00, 0x28, 0x00, 0x38, 0x00]); // change_voice+redpack_type+autototext_voice
+                }
+                w
+            }),
+            bool_valid: Some(true),
             ..Default::default()
         }))
     }
