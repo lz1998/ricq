@@ -1409,6 +1409,16 @@ impl super::Client {
             ..Default::default()
         }))
     }
+
+    pub async fn get_group_ptt_url(&self, group_code: i64, file_md5: Vec<u8>) -> RQResult<String> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_ptt_down_req(group_code, file_md5);
+        let resp = self.send_and_wait(req).await?;
+        self.engine.read().await.decode_group_ptt_down(resp.body)
+    }
 }
 
 pub struct ImageInfo {

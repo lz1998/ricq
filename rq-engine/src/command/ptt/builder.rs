@@ -3,6 +3,7 @@ use bytes::Bytes;
 use crate::command::common::PbToBytes;
 use crate::hex::encode_hex;
 use crate::pb;
+use crate::protocol::packet::Packet;
 
 impl super::super::super::Engine {
     pub fn build_group_try_up_ptt_req(
@@ -72,5 +73,27 @@ impl super::super::super::Engine {
             ..Default::default()
         };
         req.to_bytes()
+    }
+
+    pub fn build_group_ptt_down_req(&self, group_code: i64, file_md5: Vec<u8>) -> Packet {
+        let req = pb::cmd0x388::D388ReqBody {
+            net_type: Some(3),
+            subcmd: Some(4),
+            getptt_url_req: vec![pb::cmd0x388::GetPttUrlReq {
+                group_code: Some(group_code as u64),
+                dst_uin: Some(self.uin() as u64),
+                fileid: None,
+                file_md5: Some(file_md5),
+                req_term: Some(5),
+                req_platform_type: Some(9),
+                inner_ip: Some(0),
+                bu_type: Some(4),
+                build_ver: Some(self.transport.version.build_ver.into()),
+                codec: Some(0),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        self.uni_packet("PttStore.GroupPttDown", req.to_bytes())
     }
 }

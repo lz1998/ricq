@@ -23,4 +23,22 @@ impl super::super::super::Engine {
             .map(|r| r.uuid)
             .ok_or_else(|| RQError::Other("apply_upload_rsp is none".into()))
     }
+
+    pub fn decode_group_ptt_down(&self, payload: Bytes) -> RQResult<String> {
+        let mut rsp = pb::cmd0x388::D388RspBody::from_bytes(&payload)
+            .map_err(|_| RQError::Decode("D388RspBody".into()))?;
+        let ptt = rsp
+            .getptt_url_rsp
+            .pop()
+            .ok_or_else(|| RQError::Other("tryup_ptt_rsp is empty".into()))?;
+        Ok(format!(
+            "http://{}{}",
+            ptt.domain
+                .ok_or_else(|| RQError::Other("ptt_domain is none".into()))?,
+            String::from_utf8_lossy(
+                &ptt.down_para
+                    .ok_or_else(|| RQError::Other("ptt_domain is none".into()))?
+            )
+        ))
+    }
 }
