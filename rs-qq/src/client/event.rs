@@ -244,10 +244,26 @@ pub struct GroupAudioMessageEvent {
     pub message: GroupAudioMessage,
 }
 
+impl GroupAudioMessageEvent {
+    pub async fn url(&self) -> RQResult<String> {
+        self.client
+            .get_group_ptt_url(self.message.group_code, self.message.audio.clone())
+            .await
+    }
+}
+
 #[derive(Clone, derivative::Derivative)]
 #[derivative(Debug)]
 pub struct PrivateAudioMessageEvent {
     #[derivative(Debug = "ignore")]
     pub client: Arc<Client>,
     pub message: PrivateAudioMessage,
+}
+
+impl PrivateAudioMessageEvent {
+    pub async fn url(&self) -> RQResult<String> {
+        self.client
+            .get_private_ptt_url(self.message.from_uin, self.message.audio.clone())
+            .await
+    }
 }
