@@ -9,7 +9,7 @@ qq-android 协议的 rust 实现 移植于 MiraiGo、OICQ、Mirai
 本项目是协议 lib, 不推荐直接基于本项目开发。
 
 Rust 用户推荐使用 [RQ-Tower](https://github.com/lz1998/rq-tower),
-基于 [Demo](https://github.com/lz1998/rq-tower/tree/main/examples/demo) 修改。
+基于 [Demo](https://github.com/lz1998/rq-tower/tree/main/examples/demo) 修改，或 [rust_proc_qq](https://github.com/niuhuan/rust_proc_qq)。
 
 其他语言用户推荐使用 [(WIP)Walle-Q](https://github.com/abrahum/walle-q), 基于 OneBot 协议开发。
 
