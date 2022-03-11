@@ -34,7 +34,7 @@ impl Client {
             self.handler
                 .handle(QEvent::GroupAudioMessage(GroupAudioMessageEvent {
                     client: self.clone(),
-                    audio: GroupAudioMessage {
+                    message: GroupAudioMessage {
                         seqs: vec![group_message_part.seq],
                         rands: vec![group_message_part.rand],
                         group_code: group_message_part.group_code,

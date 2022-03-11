@@ -30,15 +30,25 @@ impl super::super::super::Engine {
         let ptt = rsp
             .getptt_url_rsp
             .pop()
-            .ok_or_else(|| RQError::Other("tryup_ptt_rsp is empty".into()))?;
+            .ok_or_else(|| RQError::Other("getptt_url_rsp is empty".into()))?;
         Ok(format!(
             "http://{}{}",
             ptt.domain
                 .ok_or_else(|| RQError::Other("ptt_domain is none".into()))?,
             String::from_utf8_lossy(
                 &ptt.down_para
-                    .ok_or_else(|| RQError::Other("ptt_domain is none".into()))?
+                    .ok_or_else(|| RQError::Other("ptt_down_para is none".into()))?
             )
         ))
+    }
+
+    pub fn decode_c2c_ptt_down(&self, payload: Bytes) -> RQResult<String> {
+        pb::cmd0x346::C346RspBody::from_bytes(&payload)
+            .map_err(|_| RQError::Decode("C346RspBody".into()))?
+            .apply_download_rsp
+            .ok_or_else(|| RQError::Other("apply_download_rsp is empty".into()))?
+            .download_info
+            .ok_or_else(|| RQError::Other("download_info is empty".into()))
+            .map(|info| info.download_url)
     }
 }

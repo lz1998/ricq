@@ -241,7 +241,7 @@ pub struct SelfInvitedEvent {
 pub struct GroupAudioMessageEvent {
     #[derivative(Debug = "ignore")]
     pub client: Arc<Client>,
-    pub audio: GroupAudioMessage,
+    pub message: GroupAudioMessage,
 }
 
 #[derive(Clone, derivative::Derivative)]
@@ -249,5 +249,5 @@ pub struct GroupAudioMessageEvent {
 pub struct PrivateAudioMessageEvent {
     #[derivative(Debug = "ignore")]
     pub client: Arc<Client>,
-    pub audio: PrivateAudioMessage,
+    pub message: PrivateAudioMessage,
 }

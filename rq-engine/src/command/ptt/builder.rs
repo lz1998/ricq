@@ -87,13 +87,33 @@ impl super::super::super::Engine {
                 req_term: Some(5),
                 req_platform_type: Some(9),
                 inner_ip: Some(0),
-                bu_type: Some(4),
+                bu_type: Some(4), // 3?
                 build_ver: Some(self.transport.version.build_ver.into()),
                 codec: Some(0),
+                // 11=file_key, 14=2, 15=1 ?
                 ..Default::default()
             }],
             ..Default::default()
         };
         self.uni_packet("PttStore.GroupPttDown", req.to_bytes())
+    }
+
+    pub fn build_c2c_ptt_down_req(&self, sender_uin: i64, file_uuid: Vec<u8>) -> Packet {
+        let req = pb::cmd0x346::C346ReqBody {
+            client_type: 104,
+            cmd: 1200,
+            business_id: 17, // 3?
+            apply_download_req: Some(pb::cmd0x346::ApplyDownloadReq {
+                uin: sender_uin,
+                uuid: file_uuid,
+                need_https_url: 1,
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        self.uni_packet(
+            "PttCenterSvr.pb_pttCenter_CMD_REQ_APPLY_DOWNLOAD-1200",
+            req.to_bytes(),
+        )
     }
 }

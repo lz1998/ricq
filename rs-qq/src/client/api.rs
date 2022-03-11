@@ -1410,14 +1410,32 @@ impl super::Client {
         }))
     }
 
-    pub async fn get_group_ptt_url(&self, group_code: i64, file_md5: Vec<u8>) -> RQResult<String> {
-        let req = self
-            .engine
-            .read()
-            .await
-            .build_group_ptt_down_req(group_code, file_md5);
+    pub async fn get_group_ptt_url(&self, group_code: i64, audio: GroupAudio) -> RQResult<String> {
+        let req = self.engine.read().await.build_group_ptt_down_req(
+            group_code,
+            audio
+                .0
+                .file_md5
+                .ok_or_else(|| RQError::Other("file_md5 is none".into()))?,
+        );
         let resp = self.send_and_wait(req).await?;
         self.engine.read().await.decode_group_ptt_down(resp.body)
+    }
+
+    pub async fn get_private_ptt_url(
+        &self,
+        sender_uin: i64,
+        audio: PrivateAudio,
+    ) -> RQResult<String> {
+        let req = self.engine.read().await.build_c2c_ptt_down_req(
+            sender_uin,
+            audio
+                .0
+                .file_uuid
+                .ok_or_else(|| RQError::Other("file_uuid is none".into()))?,
+        );
+        let resp = self.send_and_wait(req).await?;
+        self.engine.read().await.decode_c2c_ptt_down(resp.body)
     }
 }
 

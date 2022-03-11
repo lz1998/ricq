@@ -54,6 +54,7 @@ message ApplyDownloadReq {
   bytes uuid = 20;
   int32 ownerType = 30;
   int32 extIntype = 500;
+  int32 need_https_url = 501;
 }
 message ApplyDownloadRsp {
   int32 retCode = 10;

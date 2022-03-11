@@ -20,7 +20,7 @@ impl Client {
             self.handler
                 .handle(QEvent::PrivateAudioMessage(PrivateAudioMessageEvent {
                     client: self.clone(),
-                    audio: parse_private_audio_message(msg, ptt)?,
+                    message: parse_private_audio_message(msg, ptt)?,
                 }))
                 .await;
             return Ok(());
