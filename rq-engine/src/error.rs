@@ -29,8 +29,8 @@ pub enum RQError {
     #[error("io error, {0}")]
     IO(#[from] io::Error),
 
-    #[error("unknown flag")]
-    UnknownFlag,
+    #[error("unknown flag {0}")]
+    UnknownFlag(u8),
 
     #[error("unknown encrypt type")]
     UnknownEncryptType,

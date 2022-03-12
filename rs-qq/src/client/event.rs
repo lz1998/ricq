@@ -6,7 +6,7 @@ use rq_engine::structs::{
     GroupMessageRecall, GroupMute, GroupNameUpdate, MemberPermissionChange, NewMember,
     PrivateAudioMessage, TempMessage,
 };
-use rq_engine::RQResult;
+use rq_engine::{jce, RQResult};
 
 use crate::structs::{Group, GroupMemberInfo, GroupMessage, PrivateMessage};
 use crate::Client;
@@ -266,4 +266,12 @@ impl PrivateAudioMessageEvent {
             .get_private_ptt_url(self.message.from_uin, self.message.audio.clone())
             .await
     }
+}
+
+#[derive(Clone, derivative::Derivative)]
+#[derivative(Debug)]
+pub struct KickedOfflineEvent {
+    #[derivative(Debug = "ignore")]
+    pub client: Arc<Client>,
+    pub offline: jce::RequestPushForceOffline,
 }

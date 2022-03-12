@@ -6,25 +6,37 @@ use crate::{jce, RQError, RQResult};
 
 impl crate::Engine {
     // MessageSvc.PushNotify
-    pub fn decode_svc_notify(
-        &self,
-        mut payload: Bytes,
-    ) -> RQResult<Option<jce::RequestPushNotify>> {
+    pub fn decode_svc_notify(&self, mut payload: Bytes) -> RQResult<jce::RequestPushNotify> {
         payload.advance(4);
         let mut req: jce::RequestPacket = jcers::from_buf(&mut payload)?;
         let mut data: jce::RequestDataVersion2 = jcers::from_buf(&mut req.s_buffer)?;
-        if data.map.is_empty() {
-            return Ok(None);
-        }
-        let notify_data = data
+        let mut notify_data = data
             .map
-            .get_mut("req_PushNotify")
+            .remove("req_PushNotify")
             .ok_or_else(|| RQError::Decode("req_PushNotify".into()))?
-            .get_mut("PushNotifyPack.RequestPushNotify")
+            .remove("PushNotifyPack.RequestPushNotify")
             .ok_or_else(|| RQError::Decode("PushNotifyPack.RequestPushNotify".into()))?;
         notify_data.advance(1);
-        let notify: jce::RequestPushNotify = jcers::from_buf(notify_data)?;
-        Ok(Some(notify))
+        let notify: jce::RequestPushNotify = jcers::from_buf(&mut notify_data)?;
+        Ok(notify)
+    }
+
+    // MessageSvc.PushForceOffline
+    pub fn decode_force_offline(
+        &self,
+        mut payload: Bytes,
+    ) -> RQResult<jce::RequestPushForceOffline> {
+        let mut req: jce::RequestPacket = jcers::from_buf(&mut payload)?;
+        let mut data: jce::RequestDataVersion2 = jcers::from_buf(&mut req.s_buffer)?;
+        let mut data = data
+            .map
+            .remove("req_PushForceOffline")
+            .ok_or_else(|| RQError::Decode("req_PushForceOffline".into()))?
+            .remove("PushNotifyPack.RequestPushForceOffline")
+            .ok_or_else(|| RQError::Decode("PushNotifyPack.RequestPushForceOffline".into()))?;
+        data.advance(1);
+        let offline: jce::RequestPushForceOffline = jcers::from_buf(&mut data)?;
+        Ok(offline)
     }
 
     // MessageSvc.PbGetMsg

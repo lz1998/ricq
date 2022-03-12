@@ -119,6 +119,15 @@ impl super::Client {
                         .unwrap();
                     cli.process_push_trans(online_push_trans).await;
                 }
+                "MessageSvc.PushForceOffline" => {
+                    let offline = cli
+                        .engine
+                        .read()
+                        .await
+                        .decode_force_offline(pkt.body)
+                        .unwrap();
+                    cli.process_push_force_offline(offline).await;
+                }
                 "OnlinePush.PbC2CMsgSync" => {
                     // 其他设备发送消息，同步
                     let push = cli

@@ -8,9 +8,9 @@ use tokio::sync::{
 use crate::client::event::{
     DeleteFriendEvent, FriendMessageRecallEvent, FriendPokeEvent, FriendRequestEvent,
     GroupAudioMessageEvent, GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent,
-    GroupMuteEvent, GroupNameUpdateEvent, GroupRequestEvent, MemberPermissionChangeEvent,
-    NewFriendEvent, NewMemberEvent, PrivateAudioMessageEvent, PrivateMessageEvent,
-    SelfInvitedEvent, TempMessageEvent,
+    GroupMuteEvent, GroupNameUpdateEvent, GroupRequestEvent, KickedOfflineEvent,
+    MemberPermissionChangeEvent, NewFriendEvent, NewMemberEvent, PrivateAudioMessageEvent,
+    PrivateMessageEvent, SelfInvitedEvent, TempMessageEvent,
 };
 
 /// 所有需要外发的数据的枚举打包
@@ -59,6 +59,8 @@ pub enum QEvent {
     DeleteFriend(DeleteFriendEvent),
     /// 群成员权限变更
     MemberPermissionChange(MemberPermissionChangeEvent),
+    /// 被其他客户端踢下线
+    KickedOffline(KickedOfflineEvent),
     // FriendList(decoder::friendlist::FriendListResponse),
     // GroupMemberInfo(structs::GroupMemberInfo),
 
@@ -177,6 +179,7 @@ pub trait PartlyHandler: Sync {
     async fn handle_group_name_update(&self, _event: GroupNameUpdateEvent) {}
     async fn handle_delete_friend(&self, _event: DeleteFriendEvent) {}
     async fn handle_member_permission_change(&self, _event: MemberPermissionChangeEvent) {}
+    async fn handle_kicked_offline(&self, _event: KickedOfflineEvent) {}
 }
 
 #[async_trait]
@@ -208,6 +211,7 @@ where
             QEvent::GroupNameUpdate(m) => self.handle_group_name_update(m).await,
             QEvent::DeleteFriend(m) => self.handle_delete_friend(m).await,
             QEvent::MemberPermissionChange(m) => self.handle_member_permission_change(m).await,
+            QEvent::KickedOffline(m) => self.handle_kicked_offline(m).await,
         }
     }
 }

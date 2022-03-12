@@ -88,7 +88,7 @@ impl Codec {
     {
         let flag = reader.get_u8();
         if flag != 2 {
-            return Err(RQError::UnknownFlag);
+            return Err(RQError::UnknownFlag(flag));
         }
         let mut m = Message::default();
         reader.get_u16(); // len

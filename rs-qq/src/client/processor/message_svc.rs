@@ -5,40 +5,37 @@ use futures::{stream, StreamExt};
 
 use rq_engine::{jce, pb};
 
+use crate::client::event::KickedOfflineEvent;
+use crate::handler::QEvent;
 use crate::Client;
 
 impl Client {
-    pub(crate) async fn process_push_notify(
-        self: &Arc<Self>,
-        notify: Option<jce::RequestPushNotify>,
-    ) {
-        if let Some(notify) = notify {
-            match notify.msg_type {
-                35 | 36 | 37 | 45 | 46 | 84 | 85 | 86 | 87 => {
-                    // pull group system msg(group request), then process
-                    match self.get_all_group_system_messages().await {
-                        Ok(msgs) => {
-                            self.process_group_system_messages(msgs).await;
-                        }
-                        Err(err) => {
-                            tracing::warn!("failed to get group system message {}", err);
-                        }
+    pub(crate) async fn process_push_notify(self: &Arc<Self>, notify: jce::RequestPushNotify) {
+        match notify.msg_type {
+            35 | 36 | 37 | 45 | 46 | 84 | 85 | 86 | 87 => {
+                // pull group system msg(group request), then process
+                match self.get_all_group_system_messages().await {
+                    Ok(msgs) => {
+                        self.process_group_system_messages(msgs).await;
+                    }
+                    Err(err) => {
+                        tracing::warn!("failed to get group system message {}", err);
                     }
                 }
-                187 | 188 | 189 | 190 | 191 => {
-                    // pull friend system msg(friend request), then process
-                    match self.get_friend_system_messages().await {
-                        Ok(msgs) => {
-                            self.process_friend_system_messages(msgs).await;
-                        }
-                        Err(err) => {
-                            tracing::warn!("failed to get friend system message {}", err);
-                        }
+            }
+            187 | 188 | 189 | 190 | 191 => {
+                // pull friend system msg(friend request), then process
+                match self.get_friend_system_messages().await {
+                    Ok(msgs) => {
+                        self.process_friend_system_messages(msgs).await;
+                    }
+                    Err(err) => {
+                        tracing::warn!("failed to get friend system message {}", err);
                     }
                 }
-                _ => {
-                    // TODO tracing.warn!()
-                }
+            }
+            _ => {
+                // TODO tracing.warn!()
             }
         }
         // pull private msg and other, then process
@@ -51,6 +48,19 @@ impl Client {
                 tracing::warn!("failed to sync message {}", err);
             }
         }
+    }
+
+    pub(crate) async fn process_push_force_offline(
+        self: &Arc<Self>,
+        offline: jce::RequestPushForceOffline,
+    ) {
+        self.stop();
+        self.handler
+            .handle(QEvent::KickedOffline(KickedOfflineEvent {
+                client: self.clone(),
+                offline,
+            }))
+            .await;
     }
 
     pub(crate) async fn process_message_sync(self: &Arc<Self>, msgs: Vec<pb::msg::Message>) {

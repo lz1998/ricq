@@ -884,6 +884,18 @@ pub struct MsgType0x210 {
     pub v_protobuf: Bytes,
 }
 
+#[derive(Debug, Clone, JceGet, JcePut, Default)]
+pub struct RequestPushForceOffline {
+    #[jce(0)]
+    pub uin: i64,
+    #[jce(1)]
+    pub title: String,
+    #[jce(2)]
+    pub tips: String,
+    #[jce(3)]
+    pub same_device: u8,
+}
+
 #[cfg(test)]
 mod tests {
     use bytes::*;
