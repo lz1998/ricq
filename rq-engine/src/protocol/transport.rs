@@ -101,7 +101,7 @@ impl Transport {
         self.decode_sso_frame(&mut pkt, body)?;
         if pkt.encrypt_type == EncryptType::EmptyKey {
             // decrypt oicq_codec
-            pkt.body = self.oicq_codec.decode(pkt.body).unwrap().body;
+            pkt.body = self.oicq_codec.decode(pkt.body)?.body;
         }
         Ok(pkt)
     }
