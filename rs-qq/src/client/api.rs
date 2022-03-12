@@ -145,7 +145,10 @@ impl super::Client {
         self.request_change_sig(None).await
     }
 
-    async fn request_change_sig(&self, main_sig_map: Option<u32>) -> RQResult<LoginResponse> {
+    pub(crate) async fn request_change_sig(
+        &self,
+        main_sig_map: Option<u32>,
+    ) -> RQResult<LoginResponse> {
         let req = self
             .engine
             .read()
@@ -191,6 +194,16 @@ impl super::Client {
             .await
             .build_msf_force_offline_rsp(uin, seq_no);
         let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
+    pub(crate) async fn send_sid_ticket_expired_response(&self, seq: i32) -> RQResult<()> {
+        let rsp = self
+            .engine
+            .read()
+            .await
+            .build_sid_ticket_expired_response(seq);
+        self.send(rsp).await?;
         Ok(())
     }
 }

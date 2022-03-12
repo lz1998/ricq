@@ -446,4 +446,11 @@ impl Client {
         }
         Ok(())
     }
+
+    pub(crate) async fn process_sid_ticket_expired(self: &Arc<Self>, seq: i32) -> RQResult<()> {
+        self.request_change_sig(Some(3554528)).await?;
+        self.register_client().await?;
+        self.send_sid_ticket_expired_response(seq).await?;
+        Ok(())
+    }
 }

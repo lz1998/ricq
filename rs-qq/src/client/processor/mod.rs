@@ -151,6 +151,12 @@ impl super::Client {
                         "process group message part error: {:?}"
                     )
                 }
+                "OnlinePush.SidTicketExpired" => {
+                    log_error!(
+                        cli.process_sid_ticket_expired(pkt.seq_id).await,
+                        "process_sid_ticket_expired error: {:?}"
+                    )
+                }
                 "RegPrxySvc.GetMsgV2"
                 | "RegPrxySvc.PbGetMsg"
                 | "RegPrxySvc.NoticeEnd"

@@ -16,11 +16,11 @@ impl Engine {
         self.transport.oicq_codec.encode(req)
     }
 
-    pub fn uni_packet_with_seq(&self, seq: u16, command: &str, body: Bytes) -> Packet {
+    pub fn uni_packet_with_seq(&self, seq: i32, command: &str, body: Bytes) -> Packet {
         Packet {
             packet_type: PacketType::Simple,
             encrypt_type: EncryptType::D2Key,
-            seq_id: seq as i32,
+            seq_id: seq,
             body,
             command_name: command.to_owned(),
             uin: self.uin(),
@@ -30,7 +30,7 @@ impl Engine {
 
     pub fn uni_packet(&self, command: &str, body: Bytes) -> Packet {
         let seq = self.next_seq();
-        self.uni_packet_with_seq(seq, command, body)
+        self.uni_packet_with_seq(seq as i32, command, body)
     }
 }
 

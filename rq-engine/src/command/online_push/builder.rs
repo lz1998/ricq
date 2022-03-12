@@ -47,4 +47,8 @@ impl super::super::super::Engine {
         };
         self.uni_packet("OnlinePush.RespPush", pkt.freeze())
     }
+
+    pub fn build_sid_ticket_expired_response(&self, seq: i32) -> Packet {
+        self.uni_packet_with_seq(seq, "OnlinePush.SidTicketExpired", Bytes::new())
+    }
 }
