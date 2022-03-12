@@ -12,6 +12,7 @@ use rq_engine::command::profile_service::GroupSystemMessages;
 use crate::engine::protocol::packet::Packet;
 use crate::engine::structs::{AccountInfo, AddressInfo, FriendInfo, OtherClientInfo};
 use crate::engine::Engine;
+pub use crate::engine::Token;
 use crate::structs::Group;
 
 mod api;

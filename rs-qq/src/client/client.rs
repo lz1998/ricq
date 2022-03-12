@@ -1,13 +1,12 @@
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use bytes::{Buf, BufMut, Bytes, BytesMut};
 use tokio::sync::oneshot;
 use tokio::sync::RwLock;
 use tokio::time::{sleep, Duration};
 
 use rq_engine::protocol::version::Version;
+use rq_engine::token::Token;
 
-use crate::engine::binary::{BinaryReader, BinaryWriter};
 use crate::engine::protocol::{device::Device, packet::Packet};
 use crate::engine::Engine;
 use crate::{RQError, RQResult};
@@ -88,7 +87,7 @@ impl super::Client {
         match tokio::time::timeout(std::time::Duration::from_secs(15), receiver).await {
             Ok(p) => p.unwrap().check_command_name(&expect),
             Err(_) => {
-                tracing::trace!(target: "rs_qq", "waitting pkt {}-{} timeout", expect, seq);
+                tracing::trace!(target: "rs_qq", "waiting pkt {}-{} timeout", expect, seq);
                 self.packet_promises.write().await.remove(&seq);
                 Err(RQError::Timeout)
             }
@@ -137,34 +136,12 @@ impl super::Client {
         self.heartbeat_enabled.store(false, Ordering::SeqCst);
     }
 
-    pub async fn gen_token(&self) -> Bytes {
-        let mut token = BytesMut::with_capacity(1024); //todo
-        let engine = &self.engine.read().await;
-        token.put_i64(self.uin().await);
-        token.write_bytes_short(&engine.transport.sig.d2);
-        token.write_bytes_short(&engine.transport.sig.d2key);
-        token.write_bytes_short(&engine.transport.sig.tgt);
-        token.write_bytes_short(&engine.transport.sig.srm_token);
-        token.write_bytes_short(&engine.transport.sig.t133);
-        token.write_bytes_short(&engine.transport.sig.encrypted_a1);
-        token.write_bytes_short(&engine.transport.oicq_codec.wt_session_ticket_key);
-        token.write_bytes_short(&engine.transport.sig.out_packet_session_id);
-        token.write_bytes_short(&engine.transport.sig.tgtgt_key);
-        token.freeze()
+    pub async fn gen_token(&self) -> Token {
+        self.engine.read().await.gen_token()
     }
 
-    pub async fn load_token(&self, token: &mut impl Buf) {
-        let mut engine = self.engine.write().await;
-        engine.uin.store(token.get_i64(), Ordering::SeqCst);
-        engine.transport.sig.d2 = token.read_bytes_short();
-        engine.transport.sig.d2key = token.read_bytes_short();
-        engine.transport.sig.tgt = token.read_bytes_short();
-        engine.transport.sig.srm_token = token.read_bytes_short();
-        engine.transport.sig.t133 = token.read_bytes_short();
-        engine.transport.sig.encrypted_a1 = token.read_bytes_short();
-        engine.transport.oicq_codec.wt_session_ticket_key = token.read_bytes_short();
-        engine.transport.sig.out_packet_session_id = token.read_bytes_short();
-        engine.transport.sig.tgtgt_key = token.read_bytes_short();
+    pub async fn load_token(&self, token: Token) {
+        self.engine.write().await.load_token(token)
     }
 }
 

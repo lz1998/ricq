@@ -2,11 +2,11 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::Result;
-use bytes::Bytes;
 use tokio::net::TcpStream;
 use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+use rs_qq::client::Token;
 use rs_qq::device::Device;
 use rs_qq::ext::common::after_login;
 use rs_qq::handler::DefaultHandler;
@@ -33,9 +33,10 @@ async fn main() -> Result<()> {
         )
         .init();
 
-    let token = tokio::fs::read("session.token")
+    let token = tokio::fs::read_to_string("session.token")
         .await
         .expect("failed to read token");
+    let token: Token = serde_json::from_str(&token).expect("failed to parse token");
 
     let device = match Path::new("device.json").exists() {
         true => serde_json::from_str(
@@ -65,7 +66,7 @@ async fn main() -> Result<()> {
     let handle = tokio::spawn(async move { c.start(stream).await });
     tokio::task::yield_now().await; // 等一下，确保连上了
     let resp = client
-        .token_login(Bytes::from(token))
+        .token_login(token)
         .await
         .expect("failed to login with token");
 

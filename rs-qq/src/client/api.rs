@@ -2,7 +2,7 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 
-use bytes::{Buf, BufMut, Bytes};
+use bytes::{BufMut, Bytes};
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
@@ -17,6 +17,7 @@ use rq_engine::msg::elem::{calculate_image_resource_id, Anonymous, FriendImage, 
 use rq_engine::msg::MessageChain;
 use rq_engine::pb;
 use rq_engine::structs::{GroupAudio, PrivateAudio, Status};
+use rq_engine::token::Token;
 
 use crate::client::Group;
 use crate::engine::command::{friendlist::*, oidb_svc::*, profile_service::*, wtlogin::*};
@@ -140,8 +141,8 @@ impl super::Client {
     }
 
     /// token 登录
-    pub async fn token_login(&self, mut token: impl Buf) -> RQResult<LoginResponse> {
-        self.load_token(&mut token).await;
+    pub async fn token_login(&self, token: Token) -> RQResult<LoginResponse> {
+        self.load_token(token).await;
         self.request_change_sig(None).await
     }
 
