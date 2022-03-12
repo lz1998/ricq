@@ -80,7 +80,10 @@ pub trait FastLogin {
 #[async_trait]
 impl FastLogin for Token {
     async fn fast_login(&self, client: &Arc<Client>) -> RQResult<()> {
-        client.token_login(self.0.clone()).await
+        match client.token_login(self.0.clone()).await? {
+            LoginResponse::Success(_) => Ok(()),
+            _ => Err(RQError::Other("failed to token_login".into())),
+        }
     }
 }
 

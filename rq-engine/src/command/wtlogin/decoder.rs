@@ -108,11 +108,11 @@ impl super::super::super::Engine {
             ));
         }
         let encrypt_key = if sub_command == 11 {
-            &self.transport.sig.d2key
+            md5::compute(&self.transport.sig.d2key).to_vec()
         } else {
-            &self.transport.sig.tgtgt_key
+            self.transport.sig.tgtgt_key.to_vec()
         };
 
-        LoginResponse::decode(status, tlv_map, encrypt_key)
+        LoginResponse::decode(status, tlv_map, &encrypt_key)
     }
 }
