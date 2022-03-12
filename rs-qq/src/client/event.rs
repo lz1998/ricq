@@ -275,3 +275,11 @@ pub struct KickedOfflineEvent {
     pub client: Arc<Client>,
     pub offline: jce::RequestPushForceOffline,
 }
+
+#[derive(Clone, derivative::Derivative)]
+#[derivative(Debug)]
+pub struct MSFOfflineEvent {
+    #[derivative(Debug = "ignore")]
+    pub client: Arc<Client>,
+    pub offline: jce::RequestMSFForceOffline,
+}

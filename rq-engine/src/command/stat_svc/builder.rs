@@ -148,4 +148,27 @@ impl super::super::super::Engine {
         };
         self.uni_packet("StatSvc.GetDevLoginInfo", pkt.freeze())
     }
+
+    // StatSvc.RspMSFForceOffline
+    pub fn build_msf_force_offline_rsp(&self, uin: i64, seq_no: i64) -> Packet {
+        let rsp = jce::RspMSFForceOffline {
+            uin,
+            seq_no,
+            const_zero: 0,
+        };
+        let buf = jce::RequestDataVersion3 {
+            map: HashMap::from([(
+                "RspMSFForceOffline".to_string(),
+                pack_uni_request_data(&rsp.freeze()),
+            )]),
+        };
+        let pkt = jce::RequestPacket {
+            i_version: 3,
+            s_servant_name: "StatSvc".to_string(),
+            s_func_name: "RspMSFForceOffline".to_string(),
+            s_buffer: buf.freeze(),
+            ..Default::default()
+        };
+        self.uni_packet("StatSvc.RspMSFForceOffline", pkt.freeze())
+    }
 }

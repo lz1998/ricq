@@ -8,7 +8,7 @@ use tokio::sync::{
 use crate::client::event::{
     DeleteFriendEvent, FriendMessageRecallEvent, FriendPokeEvent, FriendRequestEvent,
     GroupAudioMessageEvent, GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent,
-    GroupMuteEvent, GroupNameUpdateEvent, GroupRequestEvent, KickedOfflineEvent,
+    GroupMuteEvent, GroupNameUpdateEvent, GroupRequestEvent, KickedOfflineEvent, MSFOfflineEvent,
     MemberPermissionChangeEvent, NewFriendEvent, NewMemberEvent, PrivateAudioMessageEvent,
     PrivateMessageEvent, SelfInvitedEvent, TempMessageEvent,
 };
@@ -61,6 +61,8 @@ pub enum QEvent {
     MemberPermissionChange(MemberPermissionChangeEvent),
     /// 被其他客户端踢下线
     KickedOffline(KickedOfflineEvent),
+    /// 服务端强制下线
+    MSFOffline(MSFOfflineEvent),
     // FriendList(decoder::friendlist::FriendListResponse),
     // GroupMemberInfo(structs::GroupMemberInfo),
 
@@ -180,6 +182,7 @@ pub trait PartlyHandler: Sync {
     async fn handle_delete_friend(&self, _event: DeleteFriendEvent) {}
     async fn handle_member_permission_change(&self, _event: MemberPermissionChangeEvent) {}
     async fn handle_kicked_offline(&self, _event: KickedOfflineEvent) {}
+    async fn handle_msf_offline(&self, _event: MSFOfflineEvent) {}
 }
 
 #[async_trait]
@@ -212,6 +215,7 @@ where
             QEvent::DeleteFriend(m) => self.handle_delete_friend(m).await,
             QEvent::MemberPermissionChange(m) => self.handle_member_permission_change(m).await,
             QEvent::KickedOffline(m) => self.handle_kicked_offline(m).await,
+            QEvent::MSFOffline(m) => self.handle_msf_offline(m).await,
         }
     }
 }

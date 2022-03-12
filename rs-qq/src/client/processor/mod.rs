@@ -9,6 +9,7 @@ pub mod config_push_svc;
 pub mod message_svc;
 pub mod online_push;
 pub mod reg_prxy_svc;
+pub mod stat_svc;
 pub mod wtlogin;
 
 macro_rules! log_error {
@@ -127,6 +128,15 @@ impl super::Client {
                         .decode_force_offline(pkt.body)
                         .unwrap();
                     cli.process_push_force_offline(offline).await;
+                }
+                "StatSvc.ReqMSFOffline" => {
+                    let offline = cli
+                        .engine
+                        .read()
+                        .await
+                        .decode_msf_force_offline(pkt.body)
+                        .unwrap();
+                    cli.process_msf_force_offline(offline).await;
                 }
                 "OnlinePush.PbC2CMsgSync" => {
                     // 其他设备发送消息，同步

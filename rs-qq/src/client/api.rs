@@ -182,6 +182,17 @@ impl super::Client {
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
+
+    // 系统强制下线 response
+    pub(crate) async fn send_msg_offline_rsp(&self, uin: i64, seq_no: i64) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_msf_force_offline_rsp(uin, seq_no);
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
 }
 
 /// API

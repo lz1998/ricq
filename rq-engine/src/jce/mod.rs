@@ -896,6 +896,36 @@ pub struct RequestPushForceOffline {
     pub same_device: u8,
 }
 
+#[derive(Debug, Clone, JceGet, JcePut, Default)]
+pub struct RequestMSFForceOffline {
+    #[jce(0)]
+    pub uin: i64,
+    #[jce(1)]
+    pub seq_no: i64,
+    #[jce(2)]
+    pub kick_type: u8,
+    #[jce(3)]
+    pub info: String,
+    #[jce(4)]
+    pub title: String,
+    #[jce(5)]
+    pub sig_kick: u8,
+    #[jce(6)]
+    pub sig_kick_data: Bytes,
+    #[jce(7)]
+    pub same_device: u8,
+}
+
+#[derive(Debug, Clone, JceGet, JcePut, Default)]
+pub struct RspMSFForceOffline {
+    #[jce(0)]
+    pub uin: i64,
+    #[jce(1)]
+    pub seq_no: i64,
+    #[jce(2)]
+    pub const_zero: u8,
+}
+
 #[cfg(test)]
 mod tests {
     use bytes::*;

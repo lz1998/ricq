@@ -56,4 +56,22 @@ impl super::super::super::Engine {
         }
         Err(RQError::Decode("decode_dev_list_response".into()))
     }
+
+    // StatSvc.ReqMSFOffline
+    pub fn decode_msf_force_offline(
+        &self,
+        mut payload: Bytes,
+    ) -> RQResult<jce::RequestMSFForceOffline> {
+        let mut request: jce::RequestPacket =
+            jcers::from_buf(&mut payload).map_err(RQError::from)?;
+        let mut data: jce::RequestDataVersion2 =
+            jcers::from_buf(&mut request.s_buffer).map_err(RQError::from)?;
+        let mut data = data
+            .map
+            .remove("RequestMSFForceOffline")
+            .ok_or_else(|| RQError::Decode("missing RequestMSFForceOffline".into()))?
+            .remove("QQService.RequestMSFForceOffline")
+            .ok_or_else(|| RQError::Decode("missing QQService.RequestMSFForceOffline".into()))?;
+        jcers::from_buf(&mut data).map_err(RQError::from)
+    }
 }
