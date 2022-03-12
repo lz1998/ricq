@@ -17,8 +17,6 @@ use crate::client::event::{
 #[derive(Clone, derivative::Derivative)]
 #[derivative(Debug)]
 pub enum QEvent {
-    TcpConnect,
-    TcpDisconnect,
     /// 登录成功事件
     Login(i64),
     /// 群消息
@@ -60,14 +58,11 @@ pub enum QEvent {
     /// 群成员权限变更
     MemberPermissionChange(MemberPermissionChangeEvent),
     /// 被其他客户端踢下线
+    /// 不能用于掉线重连，掉线重连以 start 返回为准
     KickedOffline(KickedOfflineEvent),
     /// 服务端强制下线
+    /// 不能用于掉线重连，掉线重连以 start 返回为准
     MSFOffline(MSFOfflineEvent),
-    // FriendList(decoder::friendlist::FriendListResponse),
-    // GroupMemberInfo(structs::GroupMemberInfo),
-
-    // 群消息发送成功事件 内部处理
-    // GroupMessageReceipt(GroupMessageReceiptEvent)
 }
 
 /// 处理外发数据的接口
@@ -159,8 +154,6 @@ impl Handler for WatchSender<QEvent> {
 
 #[async_trait]
 pub trait PartlyHandler: Sync {
-    async fn handle_connect(&self) {}
-    async fn handle_disconnect(&self) {}
     async fn handle_login(&self, _: i64) {}
     async fn handle_group_message(&self, _event: GroupMessageEvent) {}
     async fn handle_group_audio(&self, _event: GroupAudioMessageEvent) {}
@@ -192,8 +185,6 @@ where
 {
     async fn handle(&self, event: QEvent) {
         match event {
-            QEvent::TcpConnect => self.handle_connect().await,
-            QEvent::TcpDisconnect => self.handle_disconnect().await,
             QEvent::Login(uin) => self.handle_login(uin).await,
             QEvent::GroupMessage(m) => self.handle_group_message(m).await,
             QEvent::GroupAudioMessage(m) => self.handle_group_audio(m).await,
