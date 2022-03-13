@@ -29,7 +29,19 @@ impl Client {
         self: &Arc<Self>,
         group_message_part: GroupMessagePart,
     ) -> Result<(), RQError> {
-        // self.mark_group_message_readed(group_message_part.group_code, group_message_part.seq).await;
+        // receipt message
+        if group_message_part.from_uin == self.uin().await {
+            if let Some(tx) = self
+                .receipt_waiters
+                .lock()
+                .await
+                .remove(&group_message_part.rand)
+            {
+                let _ = tx.send(group_message_part.seq);
+            }
+            return Ok(());
+        }
+
         if let Some(ptt) = group_message_part.ptt {
             self.handler
                 .handle(QEvent::GroupAudioMessage(GroupAudioMessageEvent {
@@ -44,19 +56,6 @@ impl Client {
                     },
                 }))
                 .await;
-            return Ok(());
-        }
-
-        // receipt message
-        if group_message_part.from_uin == self.uin().await {
-            if let Some(tx) = self
-                .receipt_waiters
-                .lock()
-                .await
-                .remove(&group_message_part.rand)
-            {
-                let _ = tx.send(group_message_part.seq);
-            }
             return Ok(());
         }
 
