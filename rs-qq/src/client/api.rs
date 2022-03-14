@@ -25,6 +25,7 @@ use crate::engine::structs::{
     FriendInfo, GroupInfo, GroupMemberInfo, MessageReceipt, SummaryCardInfo,
 };
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
+use crate::structs::ImageInfo;
 use crate::{RQError, RQResult};
 
 /// 登录相关
@@ -1197,7 +1198,7 @@ impl super::Client {
         group_code: i64,
         image: Vec<u8>,
     ) -> RQResult<GroupImage> {
-        let image_info = get_image_info(&image)?;
+        let image_info = ImageInfo::try_new(&image)?;
 
         let image_store = self.get_group_image_store(group_code, &image_info).await?;
 
@@ -1263,7 +1264,7 @@ impl super::Client {
     }
 
     pub async fn upload_private_image(&self, target: i64, data: Vec<u8>) -> RQResult<FriendImage> {
-        let image_info = get_image_info(&data)?;
+        let image_info = ImageInfo::try_new(&data)?;
         let image_store = self.get_private_image_store(target, &image_info).await?;
 
         let res_id = match image_store {
@@ -1465,44 +1466,4 @@ impl super::Client {
         let resp = self.send_and_wait(req).await?;
         self.engine.read().await.decode_c2c_ptt_down(resp.body)
     }
-}
-
-pub struct ImageInfo {
-    pub md5: Vec<u8>,
-    pub width: u32,
-    pub height: u32,
-    pub image_type: i32,
-    pub size: u32,
-    pub filename: String,
-    pub format: image::ImageFormat,
-}
-
-fn get_image_info(data: &[u8]) -> RQResult<ImageInfo> {
-    let img_reader = image::io::Reader::new(std::io::Cursor::new(data))
-        .with_guessed_format()
-        .map_err(RQError::IO)?;
-    let format = img_reader.format().unwrap_or(image::ImageFormat::Png);
-    let md5 = md5::compute(data).to_vec();
-
-    let (width, height) = img_reader.into_dimensions().unwrap_or((720, 480));
-    Ok(ImageInfo {
-        filename: format!(
-            "{}.{}",
-            encode_hex(&md5),
-            format.extensions_str().first().expect("image_format error")
-        ),
-        md5,
-        width,
-        height,
-        image_type: match format {
-            image::ImageFormat::Jpeg => 1000,
-            image::ImageFormat::Png => 1001,
-            image::ImageFormat::WebP => 1002,
-            image::ImageFormat::Bmp => 1005,
-            image::ImageFormat::Gif => 2000,
-            _ => 1000,
-        },
-        size: data.len() as u32,
-        format,
-    })
 }
