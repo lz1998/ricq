@@ -13,7 +13,7 @@ use rq_engine::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget
 use rq_engine::common::group_code2uin;
 use rq_engine::hex::encode_hex;
 use rq_engine::highway::BdhInput;
-use rq_engine::msg::elem::{calculate_image_resource_id, Anonymous, FriendImage, GroupImage};
+use rq_engine::msg::elem::{Anonymous, FriendImage, GroupImage};
 use rq_engine::msg::MessageChain;
 use rq_engine::pb;
 use rq_engine::structs::{GroupAudio, PrivateAudio, Status};
