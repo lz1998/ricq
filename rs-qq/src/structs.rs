@@ -75,3 +75,24 @@ impl ImageInfo {
         }
     }
 }
+
+impl From<GroupImage> for ImageInfo {
+    fn from(image: GroupImage) -> Self {
+        Self {
+            md5: image.md5,
+            width: image.width as u32,
+            height: image.height as u32,
+            format: match image.image_type {
+                1000 => image::ImageFormat::Jpeg,
+                1001 => image::ImageFormat::Png,
+                1002 => image::ImageFormat::WebP,
+                1005 => image::ImageFormat::Bmp,
+                2000 => image::ImageFormat::Gif,
+                _ => image::ImageFormat::Jpeg,
+            },
+            image_type: image.image_type,
+            size: image.size as u32,
+            filename: image.image_id.clone(),
+        }
+    }
+}
