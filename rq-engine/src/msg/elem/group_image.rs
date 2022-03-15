@@ -1,10 +1,12 @@
 use std::fmt;
 
+use serde::{Deserialize, Serialize};
+
 use crate::msg::elem::flash_image::FlashImage;
 use crate::pb::msg;
 use crate::pb::msg::CustomFace;
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct GroupImage {
     pub image_id: String,
     pub file_id: i64,

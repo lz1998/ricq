@@ -1,9 +1,11 @@
 use std::fmt;
 
+use serde::{Deserialize, Serialize};
+
 use crate::msg::elem::flash_image::FlashImage;
 use crate::pb::msg;
 
-#[derive(Default, Debug, Clone)]
+#[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct FriendImage {
     pub image_id: String,
     pub md5: Vec<u8>,
