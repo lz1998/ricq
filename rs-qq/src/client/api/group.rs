@@ -1,7 +1,8 @@
-use bytes::Bytes;
-use futures::{stream, StreamExt};
 use std::sync::Arc;
 use std::time::Duration;
+
+use bytes::Bytes;
+use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
 use crate::client::Group;
@@ -592,6 +593,8 @@ impl super::super::Client {
                         ticket: upload_key,
                         ext: vec![],
                         encrypt: false,
+                        chunk_size: 256 * 1024,
+                        send_echo: true,
                     },
                 )
                 .await?;
@@ -640,6 +643,8 @@ impl super::super::Client {
                     ticket,
                     ext: ext.to_vec(),
                     encrypt: false,
+                    chunk_size: 256 * 1024,
+                    send_echo: true,
                 },
             )
             .await?;

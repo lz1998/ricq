@@ -1,16 +1,17 @@
-use crate::engine::command::long_conn::OffPicUpResp;
-use crate::engine::highway::BdhInput;
-use crate::engine::msg::elem::FriendImage;
-use crate::engine::msg::MessageChain;
-use crate::engine::structs::PrivateAudio;
-use bytes::BufMut;
 use std::sync::Arc;
 use std::time::Duration;
 
+use bytes::BufMut;
+
+use crate::engine::command::long_conn::OffPicUpResp;
 use crate::engine::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
 use crate::engine::command::{friendlist::*, profile_service::*};
 use crate::engine::hex::encode_hex;
+use crate::engine::highway::BdhInput;
+use crate::engine::msg::elem::FriendImage;
+use crate::engine::msg::MessageChain;
 use crate::engine::pb;
+use crate::engine::structs::PrivateAudio;
 use crate::engine::structs::{FriendInfo, MessageReceipt};
 use crate::internal::image_info::ImageInfo;
 use crate::{RQError, RQResult};
@@ -201,6 +202,8 @@ impl super::super::Client {
                         ticket: upload_key,
                         ext: vec![],
                         encrypt: false,
+                        chunk_size: 256 * 1024,
+                        send_echo: true,
                     },
                 )
                 .await?;
@@ -301,6 +304,8 @@ impl super::super::Client {
                     ticket,
                     ext: ext.to_vec(),
                     encrypt: false,
+                    chunk_size: 256 * 1024,
+                    send_echo: true,
                 },
             )
             .await?;
