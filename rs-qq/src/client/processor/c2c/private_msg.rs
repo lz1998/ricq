@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use rq_engine::msg::MessageChain;
-use rq_engine::structs::{PrivateAudio, PrivateAudioMessage, PrivateMessage};
-use rq_engine::{pb, RQResult};
+use crate::engine::msg::MessageChain;
+use crate::engine::structs::{PrivateAudio, PrivateAudioMessage, PrivateMessage};
+use crate::engine::{pb, RQResult};
 
 use crate::client::event::{PrivateAudioMessageEvent, PrivateMessageEvent};
 use crate::handler::QEvent;

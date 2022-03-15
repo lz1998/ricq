@@ -1,7 +1,7 @@
 use crate::client::event::FriendRequestEvent;
+use crate::engine::command::profile_service::FriendSystemMessages;
 use crate::handler::QEvent;
 use crate::Client;
-use rq_engine::command::profile_service::FriendSystemMessages;
 use std::sync::Arc;
 
 impl Client {

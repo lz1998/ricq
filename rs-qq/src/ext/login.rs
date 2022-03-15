@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use rq_engine::command::wtlogin::{LoginResponse, QRCodeConfirmed, QRCodeState};
-use rq_engine::{RQError, RQResult};
+use crate::engine::command::wtlogin::{LoginResponse, QRCodeConfirmed, QRCodeState};
+use crate::engine::{RQError, RQResult};
 
 use crate::Client;
 

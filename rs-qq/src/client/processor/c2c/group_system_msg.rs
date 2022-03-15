@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use rq_engine::command::profile_service::GroupSystemMessages;
+use crate::engine::command::profile_service::GroupSystemMessages;
 
 use crate::client::event::{GroupRequestEvent, SelfInvitedEvent};
 use crate::handler::QEvent;

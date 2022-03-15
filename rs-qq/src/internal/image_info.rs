@@ -1,6 +1,6 @@
-use rq_engine::hex::encode_hex;
-use rq_engine::msg::elem::{calculate_image_resource_id, FriendImage, GroupImage};
-use rq_engine::{RQError, RQResult};
+use crate::engine::hex::encode_hex;
+use crate::engine::msg::elem::{calculate_image_resource_id, FriendImage, GroupImage};
+use crate::engine::{RQError, RQResult};
 
 // 仅用于上传图片，一些临时变量，太多了放一起
 pub(crate) struct ImageInfo {

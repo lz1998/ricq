@@ -3,7 +3,7 @@ use std::sync::Arc;
 use cached::Cached;
 use futures::{stream, StreamExt};
 
-use rq_engine::{jce, pb};
+use crate::engine::{jce, pb};
 
 use crate::client::event::KickedOfflineEvent;
 use crate::handler::QEvent;

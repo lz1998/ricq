@@ -15,8 +15,6 @@ pub use engine::protocol::device;
 pub use engine::protocol::version;
 use rq_engine as engine;
 
-// pub use rq_engine::hex;
-
 pub mod client;
 mod config;
 pub mod ext;

@@ -4,16 +4,6 @@ use bytes::{Buf, Bytes};
 use cached::Cached;
 use futures::{stream, StreamExt};
 
-use rq_engine::command::common::PbToBytes;
-use rq_engine::command::online_push::{OnlinePushTrans, PushTransInfo};
-use rq_engine::msg::MessageChain;
-use rq_engine::pb::msg;
-use rq_engine::structs::{
-    DeleteFriend, FriendInfo, FriendMessageRecall, FriendPoke, GroupAudio, GroupAudioMessage,
-    GroupLeave, GroupMessage, GroupMessageRecall, GroupMute, GroupNameUpdate, NewMember,
-};
-use rq_engine::{jce, pb};
-
 use crate::client::event::{
     DeleteFriendEvent, FriendMessageRecallEvent, FriendPokeEvent, GroupAudioMessageEvent,
     GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent,
@@ -21,7 +11,16 @@ use crate::client::event::{
 };
 use crate::client::handler::QEvent;
 use crate::client::Client;
+use crate::engine::command::common::PbToBytes;
 use crate::engine::command::online_push::GroupMessagePart;
+use crate::engine::command::online_push::{OnlinePushTrans, PushTransInfo};
+use crate::engine::msg::MessageChain;
+use crate::engine::pb::msg;
+use crate::engine::structs::{
+    DeleteFriend, FriendInfo, FriendMessageRecall, FriendPoke, GroupAudio, GroupAudioMessage,
+    GroupLeave, GroupMessage, GroupMessageRecall, GroupMute, GroupNameUpdate, NewMember,
+};
+use crate::engine::{jce, pb};
 use crate::{RQError, RQResult};
 
 impl Client {

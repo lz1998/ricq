@@ -6,9 +6,8 @@ use std::sync::Arc;
 use tokio::sync::{broadcast, RwLock};
 use tokio::sync::{oneshot, Mutex};
 
-use rq_engine::command::online_push::GroupMessagePart;
-use rq_engine::command::profile_service::GroupSystemMessages;
-
+use crate::engine::command::online_push::GroupMessagePart;
+use crate::engine::command::profile_service::GroupSystemMessages;
 use crate::engine::protocol::packet::Packet;
 use crate::engine::structs::{AccountInfo, AddressInfo, FriendInfo, OtherClientInfo};
 use crate::engine::Engine;
@@ -61,6 +60,6 @@ pub struct Client {
     push_trans_cache: RwLock<cached::TimedCache<(i32, i64), ()>>,
     group_sys_message_cache: RwLock<GroupSystemMessages>,
 
-    highway_session: RwLock<rq_engine::highway::Session>,
+    highway_session: RwLock<crate::engine::highway::Session>,
     highway_addrs: RwLock<Vec<SocketAddr>>,
 }

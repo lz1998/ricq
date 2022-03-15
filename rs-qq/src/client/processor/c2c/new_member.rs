@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
-use rq_engine::common::group_uin2code;
-use rq_engine::structs::NewMember;
-use rq_engine::{pb, RQError, RQResult};
-
 use crate::client::event::NewMemberEvent;
+use crate::engine::common::group_uin2code;
+use crate::engine::structs::NewMember;
+use crate::engine::{pb, RQError, RQResult};
 use crate::handler::QEvent;
 use crate::Client;
 

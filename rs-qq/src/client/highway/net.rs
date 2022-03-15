@@ -5,9 +5,9 @@ use futures::{SinkExt, StreamExt};
 use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
 
-use rq_engine::command::common::PbToBytes;
-use rq_engine::highway::BdhInput;
-use rq_engine::{pb, RQError, RQResult};
+use crate::engine::command::common::PbToBytes;
+use crate::engine::highway::BdhInput;
+use crate::engine::{pb, RQError, RQResult};
 
 use crate::client::highway::codec::HighwayCodec;
 use crate::client::highway::HighwayFrame;

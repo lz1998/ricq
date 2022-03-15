@@ -1,7 +1,7 @@
 use bytes::{Buf, BufMut, BytesMut};
 use tokio_util::codec::{Decoder, Encoder};
 
-use rq_engine::RQError;
+use crate::engine::RQError;
 
 use crate::client::highway::HighwayFrame;
 

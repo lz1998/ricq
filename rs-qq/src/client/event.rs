@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
-use rq_engine::command::profile_service::{JoinGroupRequest, NewFriendRequest, SelfInvited};
-use rq_engine::structs::{
+use crate::engine::command::profile_service::{JoinGroupRequest, NewFriendRequest, SelfInvited};
+use crate::engine::structs::{
     DeleteFriend, FriendInfo, FriendMessageRecall, FriendPoke, GroupAudioMessage, GroupLeave,
     GroupMessageRecall, GroupMute, GroupNameUpdate, MemberPermissionChange, NewMember,
     PrivateAudioMessage, TempMessage,
 };
-use rq_engine::{jce, RQResult};
+use crate::engine::{jce, RQResult};
 
 use crate::structs::{Group, GroupMemberInfo, GroupMessage, PrivateMessage};
 use crate::Client;

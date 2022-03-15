@@ -4,8 +4,8 @@ use tokio::sync::oneshot;
 use tokio::sync::RwLock;
 use tokio::time::{sleep, Duration};
 
-use rq_engine::protocol::version::Version;
-use rq_engine::token::Token;
+use crate::engine::protocol::version::Version;
+use crate::engine::token::Token;
 
 use crate::engine::protocol::{device::Device, packet::Packet};
 use crate::engine::Engine;

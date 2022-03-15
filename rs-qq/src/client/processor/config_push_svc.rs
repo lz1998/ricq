@@ -2,8 +2,8 @@ use std::net::{Ipv4Addr, SocketAddr};
 
 use bytes::Bytes;
 
-use rq_engine::command::config_push_svc::ConfigPushBody;
-use rq_engine::common::RQIP;
+use crate::engine::command::config_push_svc::ConfigPushBody;
+use crate::engine::common::RQIP;
 
 use crate::client::Client;
 use crate::engine::command::config_push_svc::ConfigPushReq;

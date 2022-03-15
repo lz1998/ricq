@@ -1,10 +1,9 @@
 use std::sync::Arc;
 
-use rq_engine::msg::MessageChain;
-use rq_engine::structs::TempMessage;
-use rq_engine::{pb, RQError, RQResult};
-
 use crate::client::event::TempMessageEvent;
+use crate::engine::msg::MessageChain;
+use crate::engine::structs::TempMessage;
+use crate::engine::{pb, RQError, RQResult};
 use crate::handler::QEvent;
 use crate::Client;
 

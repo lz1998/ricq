@@ -4,7 +4,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 use tokio::net::TcpStream;
 
-use rq_engine::command::wtlogin::LoginResponse;
+use crate::engine::command::wtlogin::LoginResponse;
 
 use crate::ext::common::after_login;
 use crate::{Client, RQError, RQResult};
@@ -58,7 +58,7 @@ pub async fn auto_reconnect<C: Connector + Sync>(
     }
 }
 
-pub struct Token(pub rq_engine::Token);
+pub struct Token(pub crate::engine::Token);
 pub struct Password {
     pub uin: i64,
     pub password: String,
