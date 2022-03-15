@@ -206,7 +206,9 @@ impl super::super::Client {
             .get_group_info(group_code)
             .await?
             .ok_or(RQError::Other("failed to get group".into()))?;
-        let members = self.get_group_member_list(group_code).await?;
+        let members = self
+            .get_group_member_list(group_code, group_info.owner_uin)
+            .await?;
         let mut groups = self.groups.write().await;
         groups.insert(
             group_info.code,
@@ -236,7 +238,10 @@ impl super::super::Client {
 
         let group_list: Vec<(i64, Arc<Group>)> = stream::iter(groups)
             .map(|g| async move {
-                let mem_list = self.get_group_member_list(g.code).await.unwrap_or_default();
+                let mem_list = self
+                    .get_group_member_list(g.code, g.owner_uin)
+                    .await
+                    .unwrap_or_default();
                 (
                     g.code,
                     Arc::new(Group {
@@ -260,6 +265,7 @@ impl super::super::Client {
         &self,
         group_code: i64,
         next_uin: i64,
+        group_owner_uin: i64,
     ) -> RQResult<GroupMemberListResponse> {
         let req = self
             .engine
@@ -270,15 +276,21 @@ impl super::super::Client {
         self.engine
             .read()
             .await
-            .decode_group_member_list_response(resp.body)
+            .decode_group_member_list_response(resp.body, group_owner_uin)
     }
 
     /// 获取群成员列表
-    pub async fn get_group_member_list(&self, group_code: i64) -> RQResult<Vec<GroupMemberInfo>> {
+    pub async fn get_group_member_list(
+        &self,
+        group_code: i64,
+        group_owner_uin: i64,
+    ) -> RQResult<Vec<GroupMemberInfo>> {
         let mut next_uin = 0;
         let mut list = Vec::new();
         loop {
-            let mut resp = self._get_group_member_list(group_code, next_uin).await?;
+            let mut resp = self
+                ._get_group_member_list(group_code, next_uin, group_owner_uin)
+                .await?;
             if resp.list.is_empty() {
                 return Err(RQError::Other("member list is empty".to_string()));
             }

@@ -325,8 +325,12 @@ impl Client {
                                         .map(|m| m.join_time)
                                         .max()
                                         .unwrap_or_default();
-                                    if let Ok(refreshed_members) =
-                                        self.get_group_member_list(group.info.code).await
+                                    if let Ok(refreshed_members) = self
+                                        .get_group_member_list(
+                                            group.info.code,
+                                            group.info.owner_uin,
+                                        )
+                                        .await
                                     {
                                         let mut members = group.members.write().await;
                                         members.clear();

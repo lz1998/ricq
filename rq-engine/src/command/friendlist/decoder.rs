@@ -74,6 +74,7 @@ impl super::super::super::Engine {
     pub fn decode_group_member_list_response(
         &self,
         mut payload: Bytes,
+        group_owner_uin: i64,
     ) -> RQResult<GroupMemberListResponse> {
         let mut request: jce::RequestPacket =
             jcers::from_buf(&mut payload).map_err(RQError::from)?;
@@ -99,9 +100,13 @@ impl super::super::super::Engine {
                 special_title: m.special_title,
                 special_title_expire_time: m.special_title_expire_time,
                 shut_up_timestamp: m.shut_up_timestap,
-                permission: match m.flag {
-                    1 => GroupMemberPermission::Administrator,
-                    _ => GroupMemberPermission::Member,
+                permission: if group_owner_uin == m.member_uin {
+                    GroupMemberPermission::Owner
+                } else {
+                    match m.flag {
+                        1 => GroupMemberPermission::Administrator,
+                        _ => GroupMemberPermission::Member,
+                    }
                 },
                 ..Default::default()
             })
