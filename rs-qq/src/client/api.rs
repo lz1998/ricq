@@ -24,8 +24,8 @@ use crate::engine::command::{friendlist::*, oidb_svc::*, profile_service::*, wtl
 use crate::engine::structs::{
     FriendInfo, GroupInfo, GroupMemberInfo, MessageReceipt, SummaryCardInfo,
 };
+use crate::internal::image_info::ImageInfo;
 use crate::jce::{SvcDevLoginInfo, SvcRespRegister};
-use crate::structs::ImageInfo;
 use crate::{RQError, RQResult};
 
 /// 登录相关
@@ -338,6 +338,7 @@ impl super::Client {
         self.send_and_wait(pkt).await?;
         Ok(())
     }
+
     /// 获取好友列表
     /// 第一个参数offset，从0开始；第二个参数count，150，另外两个都是0
     pub async fn get_friend_list(
@@ -1170,8 +1171,7 @@ impl super::Client {
     }
 
     // 用 highway 上传群图片之前调用，获取 upload_key
-    // TODO 测试完 highway 改成 pub(crate)
-    pub async fn get_group_image_store(
+    async fn get_group_image_store(
         &self,
         group_code: i64,
         image_info: &ImageInfo,
@@ -1233,7 +1233,7 @@ impl super::Client {
         Ok(image_info.into_group_image(file_id))
     }
 
-    pub async fn get_private_image_store(
+    async fn get_private_image_store(
         &self,
         target: i64,
         image_info: &ImageInfo,

@@ -20,4 +20,5 @@ use rq_engine as engine;
 pub mod client;
 mod config;
 pub mod ext;
+pub(crate) mod internal;
 pub mod structs;
