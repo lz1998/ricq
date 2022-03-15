@@ -1230,16 +1230,7 @@ impl super::Client {
                 file_id
             }
         };
-        Ok(GroupImage {
-            image_id: calculate_image_resource_id(&image_info.md5, false),
-            file_id: file_id as i64,
-            size: image_info.size as i32,
-            width: image_info.width as i32,
-            height: image_info.height as i32,
-            md5: image_info.md5,
-            image_type: image_info.image_type,
-            ..Default::default()
-        })
+        Ok(image_info.into_group_image(file_id))
     }
 
     pub async fn get_private_image_store(
@@ -1294,12 +1285,7 @@ impl super::Client {
                 res_id
             }
         };
-        Ok(FriendImage {
-            image_id: res_id,
-            md5: image_info.md5,
-            size: image_info.size as i32,
-            ..Default::default()
-        })
+        Ok(image_info.into_friend_image(res_id))
     }
 
     /// 上传群音频 codec: 0-amr, 1-silk

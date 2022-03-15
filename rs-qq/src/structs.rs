@@ -1,5 +1,6 @@
 use crate::engine::hex::encode_hex;
 use crate::{RQError, RQResult};
+use rq_engine::msg::elem::{calculate_image_resource_id, FriendImage, GroupImage};
 use tokio::sync::RwLock;
 
 pub use crate::engine::structs::*;
@@ -50,5 +51,27 @@ impl ImageInfo {
             size: data.len() as u32,
             format,
         })
+    }
+
+    pub fn into_friend_image(self, image_id: String) -> FriendImage {
+        FriendImage {
+            image_id,
+            md5: self.md5,
+            size: self.size as i32,
+            ..Default::default()
+        }
+    }
+
+    pub fn into_group_image(self, file_id: u64) -> GroupImage {
+        GroupImage {
+            image_id: calculate_image_resource_id(&self.md5, false),
+            file_id: file_id as i64,
+            size: self.size as i32,
+            width: self.width as i32,
+            height: self.height as i32,
+            md5: self.md5,
+            image_type: self.image_type,
+            ..Default::default()
+        }
     }
 }
