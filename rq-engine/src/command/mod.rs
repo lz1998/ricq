@@ -7,6 +7,7 @@ pub mod heartbeat;
 pub mod img_store;
 pub mod long_conn;
 pub mod message_svc;
+pub mod multi_msg;
 pub mod oidb_svc;
 pub mod online_push;
 pub mod pb_message_svc;

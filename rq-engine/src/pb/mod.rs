@@ -34,6 +34,10 @@ pub mod msgtype0x210 {
     include!(concat!(env!("OUT_DIR"), "/msgtype0x210.rs"));
 }
 
+pub mod multimsg {
+    include!(concat!(env!("OUT_DIR"), "/multimsg.rs"));
+}
+
 pub mod notify {
     include!(concat!(env!("OUT_DIR"), "/notify.rs"));
 }
