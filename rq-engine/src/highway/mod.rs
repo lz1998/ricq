@@ -16,6 +16,7 @@ pub struct Session {
     pub seq: AtomicI32,
 }
 
+#[derive(Default, Debug, Clone)]
 pub struct BdhInput {
     // 1-friend, 2-group, 299-groupPtt
     pub command_id: i32,

@@ -2,7 +2,10 @@ use std::sync::atomic::Ordering;
 
 use bytes::Bytes;
 
-use rq_engine::common::group_code2uin;
+use rq_engine::command::common::PbToBytes;
+use rq_engine::common::{group_code2uin, RQIP};
+use rq_engine::highway::BdhInput;
+use rq_engine::structs::MessageNode;
 
 use crate::engine::command::message_svc::MessageSyncResponse;
 use crate::engine::command::oidb_svc::*;
@@ -247,20 +250,82 @@ impl super::Client {
     // 准备上传消息，获取 ukey, resid, ip, port
     async fn multi_msg_apply_up(
         &self,
-        group_code: i64,
+        dst_uin: i64,
         data: &[u8],
-        bu_type: i32,
+        is_long: bool,
     ) -> RQResult<pb::multimsg::MultiMsgApplyUpRsp> {
         let req = self.engine.read().await.build_multi_msg_apply_up_req(
             data.len() as i64,
             md5::compute(data).to_vec(),
-            bu_type,
-            group_code2uin(group_code),
+            if is_long { 1 } else { 2 },
+            dst_uin,
         );
         let resp = self.send_and_wait(req).await?;
         self.engine
             .read()
             .await
             .decode_multi_apply_up_resp(resp.body)
+    }
+
+    pub async fn upload_msgs(
+        &self,
+        group_code: i64,
+        msgs: Vec<MessageNode>,
+        is_long: bool,
+    ) -> RQResult<String> {
+        let data = self
+            .engine
+            .read()
+            .await
+            .calculate_validation_data(msgs, group_code);
+        let rsp = self
+            .multi_msg_apply_up(group_code2uin(group_code), &data, is_long)
+            .await?;
+        let resid = rsp.msg_resid;
+        if self.highway_session.read().await.session_key.is_empty() {
+            return Err(RQError::Other("highway_session_key is empty".into()));
+        }
+        let mut addrs: Vec<std::net::SocketAddr> = rsp
+            .uint32_up_ip
+            .into_iter()
+            .zip(rsp.uint32_up_port.into_iter())
+            .map(|(ip, port)| {
+                std::net::SocketAddr::new(
+                    std::net::Ipv4Addr::from(RQIP(ip as u32)).into(),
+                    port as u16,
+                )
+            })
+            .collect();
+        let addr = addrs
+            .pop()
+            .ok_or_else(|| RQError::Other("addr is none".into()))?;
+        self.highway_upload_bdh(
+            addr,
+            BdhInput {
+                command_id: 27,
+                body: pb::longmsg::LongReqBody {
+                    subcmd: 1,
+                    term_type: 5,
+                    platform_type: 9,
+                    msg_up_req: vec![pb::longmsg::LongMsgUpReq {
+                        msg_type: 3, // group
+                        dst_uin: group_code2uin(group_code),
+                        msg_id: 0,
+                        msg_content: data,
+                        store_type: 2,
+                        msg_ukey: rsp.msg_ukey,
+                        need_cache: 0,
+                    }],
+                    ..Default::default()
+                }
+                .to_bytes()
+                .to_vec(),
+                ticket: rsp.msg_sig,
+                chunk_size: 8192 * 8,
+                ..Default::default()
+            },
+        )
+        .await?;
+        Ok(resid)
     }
 }
