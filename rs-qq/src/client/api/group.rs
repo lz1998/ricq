@@ -689,21 +689,19 @@ impl super::super::Client {
         self.engine.read().await.decode_group_ptt_down(resp.body)
     }
 
-    // 群精华消息操作
-    // flag true 设置群精华消息 ｜ false 移除群精华消息
-    pub async fn group_essence_operation(
+    /// 设置群精华消息
+    pub async fn operate_group_essence(
         &self,
         group_code: i64,
-        message_id: i32,
-        msg_internal_id: i32,
+        msg_seq: i32,
+        msg_rand: i32,
         flag: bool,
     ) -> RQResult<pb::oidb::EacRspBody> {
-        let req = self.engine.read().await.build_essence_msg_operate_packet(
-            group_code,
-            message_id,
-            msg_internal_id,
-            flag,
-        );
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_essence_msg_operate_packet(group_code, msg_seq, msg_rand, flag);
         let resp = self.send_and_wait(req).await?;
         let decode = self
             .engine
