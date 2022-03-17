@@ -13,7 +13,7 @@ use crate::engine::msg::MessageChain;
 use crate::engine::pb;
 use crate::engine::structs::PrivateAudio;
 use crate::engine::structs::{FriendInfo, MessageReceipt};
-use crate::internal::image_info::ImageInfo;
+use crate::structs::ImageInfo;
 use crate::{RQError, RQResult};
 
 impl super::super::Client {
@@ -213,7 +213,7 @@ impl super::super::Client {
         Ok(image_info.into_friend_image(res_id))
     }
 
-    async fn get_private_image_store(
+    pub async fn get_private_image_store(
         &self,
         target: i64,
         image_info: &ImageInfo,

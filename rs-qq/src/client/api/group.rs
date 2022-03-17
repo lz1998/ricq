@@ -17,7 +17,7 @@ use crate::engine::msg::MessageChain;
 use crate::engine::pb;
 use crate::engine::structs::GroupAudio;
 use crate::engine::structs::{GroupInfo, GroupMemberInfo, MessageReceipt};
-use crate::internal::image_info::ImageInfo;
+use crate::structs::ImageInfo;
 use crate::{RQError, RQResult};
 
 impl super::super::Client {
@@ -540,7 +540,7 @@ impl super::super::Client {
     }
 
     // 用 highway 上传群图片之前调用，获取 upload_key
-    async fn get_group_image_store(
+    pub async fn get_group_image_store(
         &self,
         group_code: i64,
         image_info: &ImageInfo,
