@@ -1,5 +1,8 @@
-use bytes::Bytes;
 use std::sync::atomic::Ordering;
+
+use bytes::Bytes;
+
+use rq_engine::common::group_code2uin;
 
 use crate::engine::command::message_svc::MessageSyncResponse;
 use crate::engine::command::oidb_svc::*;
@@ -239,5 +242,25 @@ impl super::Client {
             .read()
             .await
             .decode_summary_card_response(resp.body)
+    }
+
+    // 准备上传消息，获取 ukey, resid, ip, port
+    async fn multi_msg_apply_up(
+        &self,
+        group_code: i64,
+        data: &[u8],
+        bu_type: i32,
+    ) -> RQResult<pb::multimsg::MultiMsgApplyUpRsp> {
+        let req = self.engine.read().await.build_multi_msg_apply_up_req(
+            data.len() as i64,
+            md5::compute(data).to_vec(),
+            bu_type,
+            group_code2uin(group_code),
+        );
+        let resp = self.send_and_wait(req).await?;
+        self.engine
+            .read()
+            .await
+            .decode_multi_apply_up_resp(resp.body)
     }
 }

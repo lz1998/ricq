@@ -1,8 +1,9 @@
+use crate::command::common::PbToBytes;
 use crate::pb;
 use crate::protocol::packet::Packet;
 
 impl super::super::super::Engine {
-    pub fn build_multi_msg_up_req(
+    pub fn build_multi_msg_apply_up_req(
         &self,
         msg_size: i64,
         msg_md5: Vec<u8>,
@@ -25,6 +26,6 @@ impl super::super::super::Engine {
             bu_type,
             ..Default::default()
         };
-        todo!()
+        self.uni_packet("MultiMsg.ApplyUp", req.to_bytes())
     }
 }
