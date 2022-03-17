@@ -16,7 +16,7 @@ impl super::super::super::Engine {
     }
 
     // PbMessageSvc.PbMsgReadedReport
-    pub fn build_private_msg_readed_packet(&self, uin: i64, time: i64) -> Packet {
+    pub fn build_friend_msg_readed_packet(&self, uin: i64, time: i64) -> Packet {
         let transport = &self.transport;
         let req = pb::msg::PbMsgReadedReportReq {
             c2_c_read_report: Some(pb::msg::PbC2cReadedReportReq {

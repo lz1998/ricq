@@ -1,5 +1,5 @@
 use crate::engine::hex::encode_hex;
-use crate::engine::msg::elem::{calculate_image_resource_id, GroupImage, PrivateImage};
+use crate::engine::msg::elem::{calculate_image_resource_id, FriendImage, GroupImage};
 use crate::engine::{RQError, RQResult};
 use serde::{Deserialize, Serialize};
 
@@ -44,8 +44,8 @@ impl ImageInfo {
         })
     }
 
-    pub fn into_private_image(self, image_id: String) -> PrivateImage {
-        PrivateImage {
+    pub fn into_friend_image(self, image_id: String) -> FriendImage {
+        FriendImage {
             image_id,
             md5: self.md5,
             size: self.size as i32,

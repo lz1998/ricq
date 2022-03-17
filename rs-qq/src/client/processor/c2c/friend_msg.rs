@@ -1,15 +1,15 @@
 use std::sync::Arc;
 
 use crate::engine::msg::MessageChain;
-use crate::engine::structs::{PrivateAudio, PrivateAudioMessage, PrivateMessage};
+use crate::engine::structs::{FriendAudio, FriendAudioMessage, FriendMessage};
 use crate::engine::{pb, RQResult};
 
-use crate::client::event::{PrivateAudioMessageEvent, PrivateMessageEvent};
+use crate::client::event::{FriendAudioMessageEvent, FriendMessageEvent};
 use crate::handler::QEvent;
 use crate::Client;
 
 impl Client {
-    pub(crate) async fn process_private_message(
+    pub(crate) async fn process_friend_message(
         self: &Arc<Self>,
         mut msg: pb::msg::Message,
     ) -> RQResult<()> {
@@ -18,33 +18,33 @@ impl Client {
         }
         if let Some(ptt) = take_ptt(&mut msg) {
             self.handler
-                .handle(QEvent::PrivateAudioMessage(PrivateAudioMessageEvent {
+                .handle(QEvent::FriendAudioMessage(FriendAudioMessageEvent {
                     client: self.clone(),
-                    message: parse_private_audio_message(msg, ptt)?,
+                    message: parse_friend_audio_message(msg, ptt)?,
                 }))
                 .await;
             return Ok(());
         }
 
-        let private_message = parse_private_message(msg)?;
-        if private_message.from_uin == self.uin().await {
-            // TODO dispatch self private message event
+        let message = parse_friend_message(msg)?;
+        if message.from_uin == self.uin().await {
+            // TODO dispatch self friend message event
             // TODO swap friend seq
             return Ok(());
         }
         self.handler
-            .handle(QEvent::PrivateMessage(PrivateMessageEvent {
+            .handle(QEvent::FriendMessage(FriendMessageEvent {
                 client: self.clone(),
-                message: private_message,
+                message,
             }))
             .await;
         Ok(())
     }
 }
 
-pub fn parse_private_message(msg: pb::msg::Message) -> RQResult<PrivateMessage> {
+pub fn parse_friend_message(msg: pb::msg::Message) -> RQResult<FriendMessage> {
     let head = msg.head.unwrap();
-    Ok(PrivateMessage {
+    Ok(FriendMessage {
         seqs: vec![head.msg_seq()],
         target: head.to_uin.unwrap(),
         time: head.msg_time.unwrap(),
@@ -61,12 +61,12 @@ pub fn parse_private_message(msg: pb::msg::Message) -> RQResult<PrivateMessage> 
     })
 }
 
-pub fn parse_private_audio_message(
+pub fn parse_friend_audio_message(
     msg: pb::msg::Message,
     ptt: pb::msg::Ptt,
-) -> RQResult<PrivateAudioMessage> {
+) -> RQResult<FriendAudioMessage> {
     let head = msg.head.unwrap();
-    Ok(PrivateAudioMessage {
+    Ok(FriendAudioMessage {
         seqs: vec![head.msg_seq()],
         target: head.to_uin.unwrap(),
         time: head.msg_time.unwrap(),
@@ -79,6 +79,6 @@ pub fn parse_private_audio_message(
                 0
             },
         ],
-        audio: PrivateAudio(ptt),
+        audio: FriendAudio(ptt),
     })
 }

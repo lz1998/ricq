@@ -2,13 +2,13 @@ use std::sync::Arc;
 
 use crate::engine::command::profile_service::{JoinGroupRequest, NewFriendRequest, SelfInvited};
 use crate::engine::structs::{
-    DeleteFriend, FriendInfo, FriendMessageRecall, FriendPoke, GroupAudioMessage, GroupLeave,
-    GroupMessageRecall, GroupMute, GroupNameUpdate, MemberPermissionChange, NewMember,
-    PrivateAudioMessage, TempMessage,
+    DeleteFriend, FriendAudioMessage, FriendInfo, FriendMessageRecall, FriendPoke,
+    GroupAudioMessage, GroupLeave, GroupMessageRecall, GroupMute, GroupNameUpdate,
+    MemberPermissionChange, NewMember, TempMessage,
 };
 use crate::engine::{jce, RQResult};
 
-use crate::structs::{Group, GroupMemberInfo, GroupMessage, PrivateMessage};
+use crate::structs::{FriendMessage, Group, GroupMemberInfo, GroupMessage};
 use crate::Client;
 
 #[derive(Clone, derivative::Derivative)]
@@ -48,13 +48,13 @@ impl GroupMessageEvent {
 
 #[derive(Clone, derivative::Derivative)]
 #[derivative(Debug)]
-pub struct PrivateMessageEvent {
+pub struct FriendMessageEvent {
     #[derivative(Debug = "ignore")]
     pub client: Arc<Client>,
-    pub message: PrivateMessage,
+    pub message: FriendMessage,
 }
 
-impl PrivateMessageEvent {
+impl FriendMessageEvent {
     pub async fn friend(&self) -> Option<Arc<FriendInfo>> {
         self.client.find_friend(self.message.from_uin).await
     }
@@ -254,16 +254,16 @@ impl GroupAudioMessageEvent {
 
 #[derive(Clone, derivative::Derivative)]
 #[derivative(Debug)]
-pub struct PrivateAudioMessageEvent {
+pub struct FriendAudioMessageEvent {
     #[derivative(Debug = "ignore")]
     pub client: Arc<Client>,
-    pub message: PrivateAudioMessage,
+    pub message: FriendAudioMessage,
 }
 
-impl PrivateAudioMessageEvent {
+impl FriendAudioMessageEvent {
     pub async fn url(&self) -> RQResult<String> {
         self.client
-            .get_private_ptt_url(self.message.from_uin, self.message.audio.clone())
+            .get_friend_ptt_url(self.message.from_uin, self.message.audio.clone())
             .await
     }
 }

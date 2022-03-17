@@ -199,7 +199,7 @@ impl super::super::super::Engine {
         self.uni_packet("MessageSvc.PbGetGroupMsg", req.to_bytes())
     }
 
-    pub fn build_private_recall_packet(
+    pub fn build_friend_recall_packet(
         &self,
         uin: i64,
         msg_time: i64,

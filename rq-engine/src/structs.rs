@@ -109,7 +109,7 @@ pub struct SummaryCardInfo {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct PrivateMessage {
+pub struct FriendMessage {
     pub seqs: Vec<i32>,
     pub rands: Vec<i32>,
     pub target: i64,
@@ -226,15 +226,15 @@ pub struct GroupAudioMessage {
 }
 
 #[derive(Debug, Clone, Default)]
-pub struct PrivateAudio(pub pb::msg::Ptt);
+pub struct FriendAudio(pub pb::msg::Ptt);
 
 #[derive(Debug, Clone, Default)]
-pub struct PrivateAudioMessage {
+pub struct FriendAudioMessage {
     pub seqs: Vec<i32>,
     pub rands: Vec<i32>,
     pub target: i64,
     pub time: i32,
     pub from_uin: i64,
     pub from_nick: String,
-    pub audio: PrivateAudio,
+    pub audio: FriendAudio,
 }

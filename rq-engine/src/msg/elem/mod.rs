@@ -9,7 +9,7 @@ pub use crate::msg::elem::{
     at::At,
     face::Face,
     flash_image::FlashImage,
-    friend_image::PrivateImage,
+    friend_image::FriendImage,
     group_image::GroupImage,
     light_app::LightApp,
     market_face::{Dice, FingerGuessing, MarketFace},
@@ -41,7 +41,7 @@ pub enum RQElem {
     FingerGuessing(market_face::FingerGuessing),
     LightApp(light_app::LightApp),
     RedBag(red_bag::RedBag),
-    FriendImage(friend_image::PrivateImage),
+    FriendImage(friend_image::FriendImage),
     GroupImage(group_image::GroupImage),
     FlashImage(flash_image::FlashImage),
     Other(Box<msg::elem::Elem>),
@@ -66,7 +66,7 @@ impl From<msg::elem::Elem> for RQElem {
                         if let Some(i) = flash.flash_troop_pic {
                             RQElem::FlashImage(group_image::GroupImage::from(i).flash())
                         } else if let Some(i) = flash.flash_c2c_pic {
-                            RQElem::FlashImage(friend_image::PrivateImage::from(i).flash())
+                            RQElem::FlashImage(friend_image::FriendImage::from(i).flash())
                         } else {
                             RQElem::Other(Box::new(elem))
                         }
@@ -96,7 +96,7 @@ impl From<msg::elem::Elem> for RQElem {
             msg::elem::Elem::LightApp(e) => RQElem::LightApp(light_app::LightApp::from(e)),
             msg::elem::Elem::QqWalletMsg(e) => RQElem::RedBag(red_bag::RedBag::from(e)),
             msg::elem::Elem::NotOnlineImage(e) => {
-                RQElem::FriendImage(friend_image::PrivateImage::from(e))
+                RQElem::FriendImage(friend_image::FriendImage::from(e))
             }
             msg::elem::Elem::CustomFace(e) => RQElem::GroupImage(group_image::GroupImage::from(e)),
             _ => RQElem::Other(Box::new(elem)),
@@ -136,7 +136,7 @@ impl_from!(Dice, market_face::Dice);
 impl_from!(FingerGuessing, market_face::FingerGuessing);
 impl_from!(LightApp, light_app::LightApp);
 impl_from!(RedBag, red_bag::RedBag);
-impl_from!(FriendImage, friend_image::PrivateImage);
+impl_from!(FriendImage, friend_image::FriendImage);
 impl_from!(GroupImage, group_image::GroupImage);
 impl_from!(FlashImage, flash_image::FlashImage);
 impl_from!(Other, Box<msg::elem::Elem>);

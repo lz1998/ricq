@@ -6,7 +6,7 @@ use crate::msg::elem::flash_image::FlashImage;
 use crate::pb::msg;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
-pub struct PrivateImage {
+pub struct FriendImage {
     pub image_id: String,
     pub md5: Vec<u8>,
     pub size: i32,
@@ -15,7 +15,7 @@ pub struct PrivateImage {
     pub download_path: Option<String>,
 }
 
-impl PrivateImage {
+impl FriendImage {
     pub fn flash(self) -> FlashImage {
         FlashImage::from(self)
     }
@@ -37,8 +37,8 @@ impl PrivateImage {
     }
 }
 
-impl From<PrivateImage> for msg::NotOnlineImage {
-    fn from(e: PrivateImage) -> Self {
+impl From<FriendImage> for msg::NotOnlineImage {
+    fn from(e: FriendImage) -> Self {
         msg::NotOnlineImage {
             file_path: Some(e.image_id.clone()),
             res_id: Some(e.image_id.clone()),
@@ -52,13 +52,13 @@ impl From<PrivateImage> for msg::NotOnlineImage {
     }
 }
 
-impl From<PrivateImage> for Vec<msg::elem::Elem> {
-    fn from(e: PrivateImage) -> Vec<msg::elem::Elem> {
+impl From<FriendImage> for Vec<msg::elem::Elem> {
+    fn from(e: FriendImage) -> Vec<msg::elem::Elem> {
         vec![msg::elem::Elem::NotOnlineImage(e.into())]
     }
 }
 
-impl From<msg::NotOnlineImage> for PrivateImage {
+impl From<msg::NotOnlineImage> for FriendImage {
     fn from(e: msg::NotOnlineImage) -> Self {
         Self {
             image_id: e.file_path.unwrap_or_default(),
@@ -71,7 +71,7 @@ impl From<msg::NotOnlineImage> for PrivateImage {
     }
 }
 
-impl fmt::Display for PrivateImage {
+impl fmt::Display for FriendImage {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "[FriendImage: {}]", self.url())
     }

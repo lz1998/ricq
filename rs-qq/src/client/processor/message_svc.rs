@@ -38,7 +38,7 @@ impl Client {
                 // TODO tracing.warn!()
             }
         }
-        // pull private msg and other, then process
+        // pull friend msg and other, then process
         let all_message = self.sync_all_message().await;
         match all_message {
             Ok(msgs) => {
@@ -76,8 +76,8 @@ impl Client {
             .for_each(|msg| async {
                 match msg.head.as_ref().unwrap().msg_type() {
                     9 | 10 | 31 | 79 | 97 | 120 | 132 | 133 | 166 | 167 => {
-                        if let Err(err)=self.process_private_message(msg).await{
-                            tracing::error!(target: "rs_qq", "failed to process private message {}",err);
+                        if let Err(err)=self.process_friend_message(msg).await{
+                            tracing::error!(target: "rs_qq", "failed to process friend message {}",err);
                         }
                     }
                     33 => {
@@ -91,7 +91,7 @@ impl Client {
                         }
                     }
                     208 => {
-                        // private ptt
+                        // friend ptt
                     }
                     _ => tracing::warn!("unhandled sync message type"),
                 }

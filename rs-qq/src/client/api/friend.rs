@@ -8,10 +8,10 @@ use crate::engine::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTa
 use crate::engine::command::{friendlist::*, profile_service::*};
 use crate::engine::hex::encode_hex;
 use crate::engine::highway::BdhInput;
-use crate::engine::msg::elem::PrivateImage;
+use crate::engine::msg::elem::FriendImage;
 use crate::engine::msg::MessageChain;
 use crate::engine::pb;
-use crate::engine::structs::PrivateAudio;
+use crate::engine::structs::FriendAudio;
 use crate::engine::structs::{FriendInfo, MessageReceipt};
 use crate::structs::ImageInfo;
 use crate::{RQError, RQResult};
@@ -129,27 +129,26 @@ impl super::super::Client {
         Ok(())
     }
 
-    /// 发送私聊消息
-    pub async fn send_private_message(
+    /// 发送好友消息
+    pub async fn send_friend_message(
         &self,
         target: i64,
         message_chain: MessageChain,
     ) -> RQResult<MessageReceipt> {
-        self._send_private_message(target, message_chain, None)
-            .await
+        self._send_friend_message(target, message_chain, None).await
     }
 
-    /// 发送私聊语音
-    pub async fn send_private_audio(
+    /// 发送好友语音
+    pub async fn send_friend_audio(
         &self,
         target: i64,
-        audio: PrivateAudio,
+        audio: FriendAudio,
     ) -> RQResult<MessageReceipt> {
-        self._send_private_message(target, MessageChain::default(), Some(audio.0))
+        self._send_friend_message(target, MessageChain::default(), Some(audio.0))
             .await
     }
 
-    async fn _send_private_message(
+    async fn _send_friend_message(
         &self,
         target: i64,
         message_chain: MessageChain,
@@ -177,9 +176,9 @@ impl super::super::Client {
         })
     }
 
-    pub async fn upload_private_image(&self, target: i64, data: Vec<u8>) -> RQResult<PrivateImage> {
+    pub async fn upload_friend_image(&self, target: i64, data: Vec<u8>) -> RQResult<FriendImage> {
         let image_info = ImageInfo::try_new(&data)?;
-        let image_store = self.get_private_image_store(target, &image_info).await?;
+        let image_store = self.get_off_pic_store(target, &image_info).await?;
 
         let res_id = match image_store {
             OffPicUpResp::Exist(res_id) => res_id,
@@ -188,15 +187,15 @@ impl super::super::Client {
                 upload_key,
                 upload_addrs,
             } => {
-                self._upload_private_image(upload_key, upload_addrs, data)
+                self._upload_friend_image(upload_key, upload_addrs, data)
                     .await?;
                 res_id
             }
         };
-        Ok(image_info.into_private_image(res_id))
+        Ok(image_info.into_friend_image(res_id))
     }
 
-    pub async fn _upload_private_image(
+    pub async fn _upload_friend_image(
         &self,
         upload_key: Vec<u8>,
         mut upload_addrs: Vec<std::net::SocketAddr>,
@@ -224,7 +223,7 @@ impl super::super::Client {
         Ok(())
     }
 
-    pub async fn get_private_image_store(
+    pub async fn get_off_pic_store(
         &self,
         target: i64,
         image_info: &ImageInfo,
@@ -261,8 +260,8 @@ impl super::super::Client {
         Ok(())
     }
 
-    // 撤回私聊消息
-    pub async fn recall_private_message(
+    // 撤回好友消息
+    pub async fn recall_friend_message(
         &self,
         uin: i64,
         msg_time: i64,
@@ -273,20 +272,20 @@ impl super::super::Client {
             .engine
             .read()
             .await
-            .build_private_recall_packet(uin, msg_time, seqs, rands);
+            .build_friend_recall_packet(uin, msg_time, seqs, rands);
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
 
-    pub async fn upload_private_audio(
+    pub async fn upload_friend_audio(
         &self,
         target: i64,
         data: Vec<u8>,
         audio_duration: Duration,
-    ) -> RQResult<PrivateAudio> {
+    ) -> RQResult<FriendAudio> {
         let md5 = md5::compute(&data).to_vec();
         let size = data.len();
-        let ext = self.engine.read().await.build_private_try_up_ptt_req(
+        let ext = self.engine.read().await.build_friend_try_up_ptt_req(
             target,
             md5.clone(),
             size as i64,
@@ -324,8 +323,8 @@ impl super::super::Client {
             .engine
             .read()
             .await
-            .decode_private_try_up_ptt_resp(resp)?;
-        Ok(PrivateAudio(pb::msg::Ptt {
+            .decode_friend_try_up_ptt_resp(resp)?;
+        Ok(FriendAudio(pb::msg::Ptt {
             file_type: Some(4),
             src_uin: Some(self.uin().await),
             file_uuid: Some(uuid),
@@ -357,10 +356,10 @@ impl super::super::Client {
         }))
     }
 
-    pub async fn get_private_ptt_url(
+    pub async fn get_friend_ptt_url(
         &self,
         sender_uin: i64,
-        audio: PrivateAudio,
+        audio: FriendAudio,
     ) -> RQResult<String> {
         let req = self.engine.read().await.build_c2c_ptt_down_req(
             sender_uin,
@@ -374,11 +373,13 @@ impl super::super::Client {
     }
 
     /// 标记私聊消息已读 TODO 待测试
-    pub async fn mark_private_message_readed(&self, _uin: i64, _time: i64) -> RQResult<()> {
-        // let resp = self
-        //     .send_and_wait(self.build_private_msg_read_packet(uin, time).await)
-        //     .await?;
-        // println!("{}", resp.command_name); // todo
+    pub async fn mark_friend_message_readed(&self, uin: i64, time: i64) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_friend_msg_readed_packet(uin, time);
+        let _ = self.send_and_wait(req).await?;
         Ok(())
     }
 }

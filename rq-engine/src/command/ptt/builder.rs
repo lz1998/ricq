@@ -41,7 +41,7 @@ impl super::super::super::Engine {
         req.to_bytes()
     }
 
-    pub fn build_private_try_up_ptt_req(
+    pub fn build_friend_try_up_ptt_req(
         &self,
         target: i64,
         file_md5: Vec<u8>,

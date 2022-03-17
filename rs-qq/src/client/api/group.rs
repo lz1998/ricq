@@ -314,7 +314,7 @@ impl super::super::Client {
             .read()
             .await
             .build_group_msg_readed_packet(group_code, seq);
-        let _resp = self.send_and_wait(req).await?;
+        let _ = self.send_and_wait(req).await?;
         Ok(())
     }
 
