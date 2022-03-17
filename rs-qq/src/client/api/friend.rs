@@ -8,7 +8,7 @@ use crate::engine::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTa
 use crate::engine::command::{friendlist::*, profile_service::*};
 use crate::engine::hex::encode_hex;
 use crate::engine::highway::BdhInput;
-use crate::engine::msg::elem::FriendImage;
+use crate::engine::msg::elem::PrivateImage;
 use crate::engine::msg::MessageChain;
 use crate::engine::pb;
 use crate::engine::structs::PrivateAudio;
@@ -177,7 +177,7 @@ impl super::super::Client {
         })
     }
 
-    pub async fn upload_private_image(&self, target: i64, data: Vec<u8>) -> RQResult<FriendImage> {
+    pub async fn upload_private_image(&self, target: i64, data: Vec<u8>) -> RQResult<PrivateImage> {
         let image_info = ImageInfo::try_new(&data)?;
         let image_store = self.get_private_image_store(target, &image_info).await?;
 
@@ -186,31 +186,42 @@ impl super::super::Client {
             OffPicUpResp::UploadRequired {
                 res_id,
                 upload_key,
-                mut upload_addrs,
+                upload_addrs,
             } => {
-                if self.highway_session.read().await.session_key.is_empty() {
-                    return Err(RQError::Other("highway_session_key is empty".into()));
-                }
-                let addr = upload_addrs
-                    .pop()
-                    .ok_or_else(|| RQError::Other("upload_addrs is empty".into()))?;
-                self.highway_upload_bdh(
-                    addr,
-                    BdhInput {
-                        command_id: 1,
-                        body: data,
-                        ticket: upload_key,
-                        ext: vec![],
-                        encrypt: false,
-                        chunk_size: 256 * 1024,
-                        send_echo: true,
-                    },
-                )
-                .await?;
+                self._upload_private_image(upload_key, upload_addrs, data)
+                    .await?;
                 res_id
             }
         };
-        Ok(image_info.into_friend_image(res_id))
+        Ok(image_info.into_private_image(res_id))
+    }
+
+    pub async fn _upload_private_image(
+        &self,
+        upload_key: Vec<u8>,
+        mut upload_addrs: Vec<std::net::SocketAddr>,
+        data: Vec<u8>,
+    ) -> RQResult<()> {
+        if self.highway_session.read().await.session_key.is_empty() {
+            return Err(RQError::Other("highway_session_key is empty".into()));
+        }
+        let addr = upload_addrs
+            .pop()
+            .ok_or_else(|| RQError::Other("upload_addrs is empty".into()))?;
+        self.highway_upload_bdh(
+            addr,
+            BdhInput {
+                command_id: 1,
+                body: data,
+                ticket: upload_key,
+                ext: vec![],
+                encrypt: false,
+                chunk_size: 256 * 1024,
+                send_echo: true,
+            },
+        )
+        .await?;
+        Ok(())
     }
 
     pub async fn get_private_image_store(

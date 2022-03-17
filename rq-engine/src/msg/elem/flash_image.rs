@@ -1,12 +1,12 @@
 use std::fmt;
 
 use crate::command::common::PbToBytes;
-use crate::msg::elem::{FriendImage, GroupImage};
+use crate::msg::elem::{PrivateImage, GroupImage};
 use crate::pb::msg;
 
 #[derive(Debug, Clone)]
 pub enum FlashImage {
-    FriendImage(FriendImage),
+    FriendImage(PrivateImage),
     GroupImage(GroupImage),
 }
 
@@ -48,8 +48,8 @@ impl From<FlashImage> for Vec<msg::elem::Elem> {
     }
 }
 
-impl From<FriendImage> for FlashImage {
-    fn from(e: FriendImage) -> Self {
+impl From<PrivateImage> for FlashImage {
+    fn from(e: PrivateImage) -> Self {
         Self::FriendImage(e)
     }
 }

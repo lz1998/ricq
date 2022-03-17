@@ -561,13 +561,38 @@ impl super::super::Client {
             .decode_group_image_store_response(resp.body)
     }
 
-    /// 上传群图片
-    pub async fn upload_group_image(
+    pub async fn _upload_group_image(
         &self,
-        group_code: i64,
-        image: Vec<u8>,
-    ) -> RQResult<GroupImage> {
-        let image_info = ImageInfo::try_new(&image)?;
+        upload_key: Vec<u8>,
+        mut upload_addrs: Vec<std::net::SocketAddr>,
+        data: Vec<u8>,
+    ) -> RQResult<()> {
+        // TODO addr ?
+        if self.highway_session.read().await.session_key.is_empty() {
+            return Err(RQError::Other("highway_session_key is empty".into()));
+        }
+        let addr = upload_addrs
+            .pop()
+            .ok_or_else(|| RQError::Other("upload_addrs is empty".into()))?;
+        self.highway_upload_bdh(
+            addr,
+            BdhInput {
+                command_id: 2,
+                body: data,
+                ticket: upload_key,
+                ext: vec![],
+                encrypt: false,
+                chunk_size: 256 * 1024,
+                send_echo: true,
+            },
+        )
+        .await?;
+        Ok(())
+    }
+
+    /// 上传群图片
+    pub async fn upload_group_image(&self, group_code: i64, data: Vec<u8>) -> RQResult<GroupImage> {
+        let image_info = ImageInfo::try_new(&data)?;
 
         let image_store = self.get_group_image_store(group_code, &image_info).await?;
 
@@ -576,28 +601,10 @@ impl super::super::Client {
             GroupImageStoreResp::NotExist {
                 file_id,
                 upload_key,
-                mut upload_addrs,
+                upload_addrs,
             } => {
-                // TODO addr ?
-                if self.highway_session.read().await.session_key.is_empty() {
-                    return Err(RQError::Other("highway_session_key is empty".into()));
-                }
-                let addr = upload_addrs
-                    .pop()
-                    .ok_or_else(|| RQError::Other("upload_addrs is empty".into()))?;
-                self.highway_upload_bdh(
-                    addr,
-                    BdhInput {
-                        command_id: 2,
-                        body: image,
-                        ticket: upload_key,
-                        ext: vec![],
-                        encrypt: false,
-                        chunk_size: 256 * 1024,
-                        send_echo: true,
-                    },
-                )
-                .await?;
+                self._upload_group_image(upload_key, upload_addrs, data)
+                    .await?;
                 file_id
             }
         };

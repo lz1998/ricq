@@ -1,10 +1,10 @@
 use crate::engine::hex::encode_hex;
-use crate::engine::msg::elem::{calculate_image_resource_id, FriendImage, GroupImage};
+use crate::engine::msg::elem::{calculate_image_resource_id, GroupImage, PrivateImage};
 use crate::engine::{RQError, RQResult};
 use serde::{Deserialize, Serialize};
 
 // 仅用于上传图片，一些临时变量，太多了放一起
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ImageInfo {
     pub md5: Vec<u8>,
     pub width: u32,
@@ -44,8 +44,8 @@ impl ImageInfo {
         })
     }
 
-    pub fn into_friend_image(self, image_id: String) -> FriendImage {
-        FriendImage {
+    pub fn into_private_image(self, image_id: String) -> PrivateImage {
+        PrivateImage {
             image_id,
             md5: self.md5,
             size: self.size as i32,
