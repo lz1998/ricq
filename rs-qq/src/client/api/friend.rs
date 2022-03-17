@@ -356,7 +356,7 @@ impl super::super::Client {
         }))
     }
 
-    pub async fn get_friend_ptt_url(
+    pub async fn get_friend_audio_url(
         &self,
         sender_uin: i64,
         audio: FriendAudio,

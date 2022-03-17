@@ -673,7 +673,11 @@ impl super::super::Client {
         }))
     }
 
-    pub async fn get_group_ptt_url(&self, group_code: i64, audio: GroupAudio) -> RQResult<String> {
+    pub async fn get_group_audio_url(
+        &self,
+        group_code: i64,
+        audio: GroupAudio,
+    ) -> RQResult<String> {
         let req = self.engine.read().await.build_group_ptt_down_req(
             group_code,
             audio

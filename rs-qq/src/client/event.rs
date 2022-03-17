@@ -247,7 +247,7 @@ pub struct GroupAudioMessageEvent {
 impl GroupAudioMessageEvent {
     pub async fn url(&self) -> RQResult<String> {
         self.client
-            .get_group_ptt_url(self.message.group_code, self.message.audio.clone())
+            .get_group_audio_url(self.message.group_code, self.message.audio.clone())
             .await
     }
 }
@@ -263,7 +263,7 @@ pub struct FriendAudioMessageEvent {
 impl FriendAudioMessageEvent {
     pub async fn url(&self) -> RQResult<String> {
         self.client
-            .get_friend_ptt_url(self.message.from_uin, self.message.audio.clone())
+            .get_friend_audio_url(self.message.from_uin, self.message.audio.clone())
             .await
     }
 }
