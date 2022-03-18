@@ -299,27 +299,16 @@ impl super::Client {
         let addr = addrs
             .pop()
             .ok_or_else(|| RQError::Other("addr is none".into()))?;
+        let body =
+            self.engine
+                .read()
+                .await
+                .build_long_req(group_code2uin(group_code), data, rsp.msg_ukey);
         self.highway_upload_bdh(
             addr,
             BdhInput {
                 command_id: 27,
-                body: pb::longmsg::LongReqBody {
-                    subcmd: 1,
-                    term_type: 5,
-                    platform_type: 9,
-                    msg_up_req: vec![pb::longmsg::LongMsgUpReq {
-                        msg_type: 3, // group
-                        dst_uin: group_code2uin(group_code),
-                        msg_id: 0,
-                        msg_content: data,
-                        store_type: 2,
-                        msg_ukey: rsp.msg_ukey,
-                        need_cache: 0,
-                    }],
-                    ..Default::default()
-                }
-                .to_bytes()
-                .to_vec(),
+                body,
                 ticket: rsp.msg_sig,
                 chunk_size: 8192 * 8,
                 ..Default::default()

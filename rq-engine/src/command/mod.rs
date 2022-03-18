@@ -6,6 +6,7 @@ pub mod group_member_card;
 pub mod heartbeat;
 pub mod img_store;
 pub mod long_conn;
+pub mod longmsg;
 pub mod message_svc;
 pub mod multi_msg;
 pub mod oidb_svc;

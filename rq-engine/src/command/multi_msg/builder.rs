@@ -1,9 +1,11 @@
+use std::io::Write;
+
+use flate2::write::GzEncoder;
+use flate2::Compression;
+
 use crate::command::common::PbToBytes;
 use crate::pb;
 use crate::protocol::packet::Packet;
-use flate2::write::GzEncoder;
-use flate2::Compression;
-use std::io::Write;
 
 impl super::super::super::Engine {
     pub fn build_multi_msg_apply_up_req(
@@ -44,11 +46,9 @@ impl super::super::super::Engine {
                 head: Some(pb::msg::MessageHead {
                     from_uin: Some(node.sender_id),
                     msg_type: Some(82), // troop
-                    c2c_cmd: None,
                     msg_seq: Some(self.next_group_seq()),
                     msg_time: Some(node.time),
-                    msg_uid: Some(0x01000000000000000 | rand::random::<i64>()), // TODO ?
-                    c2c_tmp_msg_head: None,
+                    msg_uid: Some(0x01000000000000000 | rand::random::<u16>() as i64), // TODO ?
                     group_info: Some(pb::msg::GroupInfo {
                         group_code: Some(group_code),
                         group_card: Some(node.sender_name),
@@ -77,7 +77,7 @@ impl super::super::super::Engine {
                 buffer: Some(pb::msg::PbMultiMsgNew { msg: msgs }),
             }],
         };
-        let mut encoder = GzEncoder::new(vec![1], Compression::default());
+        let mut encoder = GzEncoder::new(vec![], Compression::default());
         encoder.write_all(&trans.to_bytes()).ok();
         encoder.finish().unwrap_or_default()
     }
