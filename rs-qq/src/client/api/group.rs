@@ -5,6 +5,8 @@ use bytes::Bytes;
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
+use rq_engine::structs::MessageNode;
+
 use crate::client::Group;
 use crate::engine::command::img_store::GroupImageStoreResp;
 use crate::engine::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
@@ -97,7 +99,7 @@ impl super::super::Client {
         group_code: i64,
         message_chain: MessageChain,
     ) -> RQResult<MessageReceipt> {
-        self._send_group_message(group_code, message_chain, None)
+        self._send_group_message(group_code, message_chain.into(), None)
             .await
     }
 
@@ -107,15 +109,15 @@ impl super::super::Client {
         group_code: i64,
         group_audio: GroupAudio,
     ) -> RQResult<MessageReceipt> {
-        self._send_group_message(group_code, MessageChain::default(), Some(group_audio.0))
+        self._send_group_message(group_code, vec![], Some(group_audio.0))
             .await
     }
 
     async fn _send_group_message(
         &self,
         group_code: i64,
-        message_chain: MessageChain,
-        group_audio: Option<pb::msg::Ptt>,
+        elems: Vec<pb::msg::Elem>,
+        ptt: Option<pb::msg::Ptt>,
     ) -> RQResult<MessageReceipt> {
         let time = chrono::Utc::now().timestamp();
         let ran = (rand::random::<u32>() >> 1) as i32;
@@ -123,17 +125,11 @@ impl super::super::Client {
         {
             self.receipt_waiters.lock().await.insert(ran, tx);
         }
-        let req = self.engine.read().await.build_group_sending_packet(
-            group_code,
-            message_chain.into(),
-            group_audio,
-            ran,
-            time,
-            1,
-            0,
-            0,
-            false,
-        );
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_sending_packet(group_code, elems, ptt, ran, time, 1, 0, 0, false);
         let _ = self.send_and_wait(req).await?;
         let mut receipt = MessageReceipt {
             seqs: vec![0],
@@ -709,5 +705,56 @@ impl super::super::Client {
             .await
             .decode_essence_msg_response(resp.body)?;
         Ok(decode)
+    }
+
+    /// 发送群消息
+    /// 仅在多张图片时需要，发送文字不需要
+    pub async fn send_group_long_message(
+        &self,
+        group_code: i64,
+        message_chain: MessageChain,
+    ) -> RQResult<MessageReceipt> {
+        let brief = "[图片][图片][图片]"; // TODO brief
+        let res_id = self
+            .upload_msgs(
+                group_code,
+                vec![MessageNode {
+                    sender_id: self.uin().await,
+                    time: chrono::Utc::now().timestamp() as i32,
+                    sender_name: self.account_info.read().await.nickname.clone(),
+                    elements: message_chain,
+                }],
+                true,
+            )
+            .await?;
+        let template=format!(
+            "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><msg serviceID=\"35\" templateID=\"1\" action=\"viewMultiMsg\" brief=\"{}\" m_resid=\"{}\" m_fileName=\"{}\" sourceMsgId=\"0\" url=\"\" flag=\"3\" adverSign=\"0\" multiMsgFlag=\"1\"><item layout=\"1\"><title>{}</title><hr hidden=\"false\" style=\"0\" /><summary>点击查看完整消息</summary></item><source name=\"聊天记录\" icon=\"\" action=\"\" appid=\"-1\" /></msg>",
+            brief,
+            res_id,
+            chrono::Utc::now().timestamp_millis(),
+            brief);
+        println!("{}", template);
+        let elems = vec![
+            pb::msg::elem::Elem::RichMsg(pb::msg::RichMsg {
+                template1: Some(template.into_bytes()),
+                service_id: Some(35),
+                ..Default::default()
+            }),
+            pb::msg::elem::Elem::Text(pb::msg::Text {
+                str: Some("你的QQ暂不支持查看[转发多条消息]，请期待后续版本。".into()),
+                ..Default::default()
+            }),
+            pb::msg::elem::Elem::GeneralFlags(pb::msg::GeneralFlags {
+                long_text_flag: Some(1),
+                long_text_resid: Some(res_id),
+                pendant_id: Some(0),
+                pb_reserve: Some(vec![0x78, 0x00, 0xF8, 0x01, 0x00, 0xC8, 0x02, 0x00]), // TODO 15=73255?
+                ..Default::default()
+            }),
+        ]
+        .into_iter()
+        .map(|e| pb::msg::Elem { elem: Some(e) })
+        .collect();
+        self._send_group_message(group_code, elems, None).await
     }
 }

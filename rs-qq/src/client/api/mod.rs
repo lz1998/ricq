@@ -2,7 +2,6 @@ use std::sync::atomic::Ordering;
 
 use bytes::Bytes;
 
-use rq_engine::command::common::PbToBytes;
 use rq_engine::common::{group_code2uin, RQIP};
 use rq_engine::highway::BdhInput;
 use rq_engine::structs::MessageNode;
