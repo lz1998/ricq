@@ -1,7 +1,10 @@
+use std::io::Write;
 use std::sync::Arc;
 use std::time::Duration;
 
 use bytes::Bytes;
+use flate2::write::ZlibEncoder;
+use flate2::Compression;
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
@@ -738,7 +741,11 @@ impl super::super::Client {
             brief);
         let elems = vec![
             pb::msg::elem::Elem::RichMsg(pb::msg::RichMsg {
-                template1: Some(template.into_bytes()),
+                template1: Some({
+                    let mut encoder = ZlibEncoder::new(vec![1], Compression::default());
+                    encoder.write_all(template.as_bytes()).ok();
+                    encoder.finish().unwrap_or_default()
+                }),
                 service_id: Some(35),
                 ..Default::default()
             }),
