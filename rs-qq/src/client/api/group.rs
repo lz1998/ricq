@@ -766,4 +766,55 @@ impl super::super::Client {
         .collect();
         self._send_group_message(group_code, elems, None).await
     }
+
+    /// 发送转发消息
+    pub async fn send_group_forward_message(
+        &self,
+        group_code: i64,
+        msgs: Vec<MessageNode>,
+    ) -> RQResult<MessageReceipt> {
+        let t_sum = msgs.len();
+        let preview=msgs
+            .iter()
+            .take(4)
+            .map(|n| {
+                format!(
+                    r##"<title size="26" color="#777777" maxLines="4" lineSpace="12">{}: {}</title>"##,
+                    n.sender_name,
+                    n.elements.to_string()
+                )
+            })
+            .collect::<Vec<String>>()
+            .join("");
+        let res_id = self.upload_msgs(group_code, msgs, false).await?;
+        // TODO friend template?
+        let template = format!(
+            r##"<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><msg serviceID="35" templateID="1" action="viewMultiMsg" brief="[聊天记录]" m_resid="{}" m_fileName="{}" tSum="{}" sourceMsgId="0" url="" flag="3" adverSign="0" multiMsgFlag="0"><item layout="1" advertiser_id="0" aid="0"><title size="34" maxLines="2" lineSpace="12">群聊的聊天记录</title>{}<hr hidden="false" style="0" /><summary size="26" color="#777777">查看{}条转发消息</summary></item><source name="聊天记录" icon="" action="" appid="-1" /></msg>"##,
+            res_id,
+            chrono::Utc::now().timestamp_millis(), // TODO m_filename?
+            t_sum,
+            preview,
+            t_sum
+        );
+        let elems = vec![
+            pb::msg::elem::Elem::RichMsg(pb::msg::RichMsg {
+                template1: Some({
+                    let mut encoder = ZlibEncoder::new(vec![1], Compression::default());
+                    encoder.write_all(template.as_bytes()).ok();
+                    encoder.finish().unwrap_or_default()
+                }),
+                service_id: Some(35),
+                ..Default::default()
+            }),
+            pb::msg::elem::Elem::GeneralFlags(pb::msg::GeneralFlags {
+                pendant_id: Some(0),
+                pb_reserve: Some(vec![0x78, 0x00, 0xF8, 0x01, 0x00, 0xC8, 0x02, 0x00]),
+                ..Default::default()
+            }),
+        ]
+        .into_iter()
+        .map(|e| pb::msg::Elem { elem: Some(e) })
+        .collect();
+        self._send_group_message(group_code, elems, None).await
+    }
 }
