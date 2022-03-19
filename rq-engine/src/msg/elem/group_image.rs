@@ -2,6 +2,7 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
+use crate::hex::encode_hex;
 use crate::msg::elem::flash_image::FlashImage;
 use crate::pb::msg;
 use crate::pb::msg::CustomFace;
@@ -28,9 +29,8 @@ impl GroupImage {
             format!("https://gchat.qpic.cn{}", orig_url)
         } else {
             format!(
-                "https://gchat.qpic.cn/gchatpic_new/0/0-0-{}{}",
-                calculate_image_resource_id(&self.md5[1..37], true),
-                "/0?term=2"
+                "https://gchat.qpic.cn/gchatpic_new/0/0-0-{}/0?term=2",
+                encode_hex(&self.md5).to_uppercase()
             )
         }
     }
@@ -46,8 +46,8 @@ impl From<GroupImage> for msg::CustomFace {
             height: Some(e.height),
             file_id: Some(e.file_id as i32),
             file_path: Some(e.image_id),
-            // TODO decode type
-            image_type: Some(1000),
+            md5: Some(e.md5),
+            image_type: Some(e.image_type),
             size: Some(e.size),
             flag: Some(vec![0; 4]),
             ..Default::default()
