@@ -11,9 +11,9 @@ use crate::pb::msg::CustomFace;
 pub struct GroupImage {
     pub file_path: String, // hex(md5).jpg
     pub file_id: i64,
-    pub size: i32,
-    pub width: i32,
-    pub height: i32,
+    pub size: u32,
+    pub width: u32,
+    pub height: u32,
     pub md5: Vec<u8>,
     pub orig_url: Option<String>,
     pub image_type: i32,
@@ -56,10 +56,10 @@ impl From<GroupImage> for msg::CustomFace {
             signature: Some(e.signature),
             server_ip: Some(e.server_ip),
             server_port: Some(e.server_port),
-            source: Some(200),  // 200
-            origin: Some(0),    // 是否原图 0/1
-            show_len: None,     // ?
-            download_len: None, // ?
+            source: Some(200),     // 200
+            origin: Some(1),       // 是否原图 0/1，设为1不需要29，30
+            show_len: Some(0),     // ?
+            download_len: Some(0), // ?
             ..Default::default()
         }
     }

@@ -31,9 +31,13 @@ impl crate::Engine {
             ));
         }
         if img.file_exit() {
-            Ok(OffPicUpResp::Exist(img.up_resid.unwrap_or_default()))
+            Ok(OffPicUpResp::Exist {
+                uuid: String::from_utf8_lossy(img.up_uuid()).to_string(),
+                res_id: img.up_resid.unwrap_or_default(),
+            })
         } else {
             Ok(OffPicUpResp::UploadRequired {
+                uuid: String::from_utf8_lossy(img.up_uuid()).to_string(),
                 res_id: img.up_resid.unwrap_or_default(),
                 upload_key: img.up_ukey.unwrap_or_default(),
                 upload_addrs: img

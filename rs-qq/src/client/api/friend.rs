@@ -181,9 +181,10 @@ impl super::super::Client {
         let image_store = self.get_off_pic_store(target, &image_info).await?;
 
         let friend_image = match image_store {
-            OffPicUpResp::Exist(res_id) => image_info.into_friend_image(res_id),
+            OffPicUpResp::Exist { res_id, uuid } => image_info.into_friend_image(res_id, uuid),
             OffPicUpResp::UploadRequired {
                 res_id,
+                uuid,
                 upload_key,
                 mut upload_addrs,
             } => {
@@ -192,7 +193,7 @@ impl super::super::Client {
                     .ok_or_else(|| RQError::Other("addrs is empty".into()))?;
                 self._upload_friend_image(upload_key, addr.clone().into(), data)
                     .await?;
-                image_info.into_friend_image(res_id)
+                image_info.into_friend_image(res_id, uuid)
             }
         };
         Ok(friend_image)

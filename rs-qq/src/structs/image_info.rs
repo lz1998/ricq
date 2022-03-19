@@ -1,5 +1,6 @@
-use rq_engine::common::RQAddr;
 use serde::{Deserialize, Serialize};
+
+use rq_engine::common::RQAddr;
 
 use crate::engine::hex::encode_hex;
 use crate::engine::msg::elem::{FriendImage, GroupImage};
@@ -46,11 +47,17 @@ impl ImageInfo {
         })
     }
 
-    pub fn into_friend_image(self, image_id: String) -> FriendImage {
+    // download path: "/{to_uin}-{unknown?}-{md5}"
+    pub fn into_friend_image(self, res_id: String, download_path: String) -> FriendImage {
         FriendImage {
-            image_id,
+            res_id,
+            file_path: format!("{}.png", encode_hex(&self.md5)),
             md5: self.md5,
-            size: self.size as i32,
+            size: self.size,
+            width: self.width,
+            height: self.height,
+            image_type: self.image_type,
+            download_path,
             ..Default::default()
         }
     }
@@ -59,9 +66,9 @@ impl ImageInfo {
         GroupImage {
             file_path: format!("{}.png", encode_hex(&self.md5)),
             file_id: file_id as i64,
-            size: self.size as i32,
-            width: self.width as i32,
-            height: self.height as i32,
+            size: self.size,
+            width: self.width,
+            height: self.height,
             md5: self.md5,
             image_type: self.image_type,
             signature,
