@@ -24,6 +24,12 @@ impl super::super::super::Engine {
         Ok(if rsp.file_exit() {
             GroupImageStoreResp::Exist {
                 file_id: rsp.fileid.unwrap_or_default(),
+                addrs: rsp
+                    .up_ip
+                    .into_iter()
+                    .zip(rsp.up_port)
+                    .map(|(ip, port)| RQAddr(ip, port as u16))
+                    .collect(),
             }
         } else {
             GroupImageStoreResp::NotExist {

@@ -7,6 +7,7 @@ pub mod decoder;
 pub enum GroupImageStoreResp {
     Exist {
         file_id: u64,
+        addrs: Vec<RQAddr>,
     },
     NotExist {
         file_id: u64,
