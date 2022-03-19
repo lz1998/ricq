@@ -1,7 +1,7 @@
 use bytes::Bytes;
 
 use crate::command::common::PbToBytes;
-use crate::common::RQIP;
+use crate::common::RQAddr;
 use crate::{pb, RQError, RQResult};
 
 use super::OffPicUpResp;
@@ -40,12 +40,7 @@ impl crate::Engine {
                     .up_ip
                     .into_iter()
                     .zip(img.up_port)
-                    .map(|(ip, port)| {
-                        std::net::SocketAddr::new(
-                            std::net::Ipv4Addr::from(RQIP(ip)).into(),
-                            port as u16,
-                        )
-                    })
+                    .map(|(ip, port)| RQAddr(ip, port as u16))
                     .collect(),
             })
         }

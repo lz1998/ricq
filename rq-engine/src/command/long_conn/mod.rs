@@ -1,4 +1,4 @@
-use std::net::SocketAddr;
+use crate::common::RQAddr;
 
 mod builder;
 mod decoder;
@@ -9,6 +9,6 @@ pub enum OffPicUpResp {
     UploadRequired {
         res_id: String,
         upload_key: Vec<u8>,
-        upload_addrs: Vec<SocketAddr>,
+        upload_addrs: Vec<RQAddr>,
     },
 }

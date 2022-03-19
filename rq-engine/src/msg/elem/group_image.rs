@@ -9,7 +9,7 @@ use crate::pb::msg::CustomFace;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct GroupImage {
-    pub image_id: String,
+    pub file_path: String, // hex(md5).jpg
     pub file_id: i64,
     pub size: i32,
     pub width: i32,
@@ -17,6 +17,9 @@ pub struct GroupImage {
     pub md5: Vec<u8>,
     pub orig_url: Option<String>,
     pub image_type: i32,
+    pub signature: Vec<u8>, // highway session key
+    pub server_ip: u32,
+    pub server_port: u32,
 }
 
 impl GroupImage {
@@ -41,15 +44,22 @@ impl From<GroupImage> for msg::CustomFace {
         msg::CustomFace {
             file_type: Some(66),
             useful: Some(1),
-            biz_type: Some(5),
+            biz_type: Some(5), // 0?
             width: Some(e.width),
             height: Some(e.height),
             file_id: Some(e.file_id as i32),
-            file_path: Some(e.image_id),
+            file_path: Some(e.file_path),
             md5: Some(e.md5),
             image_type: Some(e.image_type),
             size: Some(e.size),
             flag: Some(vec![0; 4]),
+            signature: Some(e.signature),
+            server_ip: Some(e.server_ip),
+            server_port: Some(e.server_port),
+            source: Some(200),  // 200
+            origin: Some(0),    // 是否原图 0/1
+            show_len: None,     // ?
+            download_len: None, // ?
             ..Default::default()
         }
     }
@@ -69,13 +79,16 @@ impl From<msg::CustomFace> for GroupImage {
         // guild image todo
         return Self {
             file_id: custom_face.file_id() as i64,
-            image_id: custom_face.file_path().to_owned(),
+            file_path: custom_face.file_path().to_owned(),
             size: custom_face.size(),
             width: custom_face.width(),
             height: custom_face.height(),
             orig_url: custom_face.orig_url,
             md5: custom_face.md5.unwrap_or_default(),
             image_type: custom_face.image_type.unwrap_or(1000),
+            signature: custom_face.signature.unwrap_or_default(),
+            server_ip: custom_face.server_ip.unwrap_or_default(),
+            server_port: custom_face.server_port.unwrap_or_default(),
         };
     }
 }
@@ -91,16 +104,8 @@ fn to_uuid(md5: &str) -> String {
     )
 }
 
-pub fn calculate_image_resource_id(md5: &[u8], no_dash: bool) -> String {
-    let mut r = "{".to_owned();
-    let md5 = crate::hex::encode_hex(md5).to_uppercase();
-    if no_dash {
-        r.push_str(&md5);
-    } else {
-        r.push_str(&to_uuid(&md5));
-    }
-    r.push_str("}.png");
-    r
+pub fn calculate_image_resource_id(md5: &[u8]) -> String {
+    format!("{{{}}}.png", to_uuid(&encode_hex(md5)))
 }
 
 impl fmt::Display for GroupImage {

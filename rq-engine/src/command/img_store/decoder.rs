@@ -1,10 +1,8 @@
-use std::net::{Ipv4Addr, SocketAddr};
-
 use bytes::Bytes;
 
 use crate::command::common::PbToBytes;
 use crate::command::img_store::GroupImageStoreResp;
-use crate::common::RQIP;
+use crate::common::RQAddr;
 use crate::{pb, RQError, RQResult};
 
 impl super::super::super::Engine {
@@ -35,7 +33,7 @@ impl super::super::super::Engine {
                     .up_ip
                     .into_iter()
                     .zip(rsp.up_port)
-                    .map(|(ip, port)| SocketAddr::new(Ipv4Addr::from(RQIP(ip)).into(), port as u16))
+                    .map(|(ip, port)| RQAddr(ip, port as u16))
                     .collect(),
             }
         })

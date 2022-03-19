@@ -1,9 +1,7 @@
-use std::net::{Ipv4Addr, SocketAddr};
-
 use bytes::Bytes;
+use rq_engine::common::RQAddr;
 
 use crate::engine::command::config_push_svc::ConfigPushBody;
-use crate::engine::common::RQIP;
 
 use crate::client::Client;
 use crate::engine::command::config_push_svc::ConfigPushReq;
@@ -36,12 +34,12 @@ impl Client {
                     rsp_body.addrs.into_iter().for_each(|addr| {
                         let service_type = addr.service_type.unwrap_or_default();
                         if service_type == 10 {
-                            let addrs: Vec<SocketAddr> = addr
+                            let addrs: Vec<RQAddr> = addr
                                 .addrs
                                 .into_iter()
                                 .map(|addr| {
-                                    SocketAddr::new(
-                                        Ipv4Addr::from(RQIP(addr.ip.unwrap_or_default())).into(),
+                                    RQAddr(
+                                        addr.ip.unwrap_or_default(),
                                         addr.port.unwrap_or_default() as u16,
                                     )
                                 })

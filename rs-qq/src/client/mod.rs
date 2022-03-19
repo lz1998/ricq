@@ -1,8 +1,8 @@
 use std::collections::HashMap;
-use std::net::SocketAddr;
 use std::sync::atomic::{AtomicBool, AtomicI64};
 use std::sync::Arc;
 
+use rq_engine::common::RQAddr;
 use tokio::sync::{broadcast, RwLock};
 use tokio::sync::{oneshot, Mutex};
 
@@ -61,5 +61,5 @@ pub struct Client {
     group_sys_message_cache: RwLock<GroupSystemMessages>,
 
     highway_session: RwLock<crate::engine::highway::Session>,
-    highway_addrs: RwLock<Vec<SocketAddr>>,
+    highway_addrs: RwLock<Vec<RQAddr>>,
 }

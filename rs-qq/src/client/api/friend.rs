@@ -180,33 +180,33 @@ impl super::super::Client {
         let image_info = ImageInfo::try_new(&data)?;
         let image_store = self.get_off_pic_store(target, &image_info).await?;
 
-        let res_id = match image_store {
-            OffPicUpResp::Exist(res_id) => res_id,
+        let friend_image = match image_store {
+            OffPicUpResp::Exist(res_id) => image_info.into_friend_image(res_id),
             OffPicUpResp::UploadRequired {
                 res_id,
                 upload_key,
-                upload_addrs,
+                mut upload_addrs,
             } => {
-                self._upload_friend_image(upload_key, upload_addrs, data)
+                let addr = upload_addrs
+                    .pop()
+                    .ok_or_else(|| RQError::Other("addrs is empty".into()))?;
+                self._upload_friend_image(upload_key, addr.clone().into(), data)
                     .await?;
-                res_id
+                image_info.into_friend_image(res_id)
             }
         };
-        Ok(image_info.into_friend_image(res_id))
+        Ok(friend_image)
     }
 
     pub async fn _upload_friend_image(
         &self,
         upload_key: Vec<u8>,
-        mut upload_addrs: Vec<std::net::SocketAddr>,
+        addr: std::net::SocketAddr,
         data: Vec<u8>,
     ) -> RQResult<()> {
         if self.highway_session.read().await.session_key.is_empty() {
             return Err(RQError::Other("highway_session_key is empty".into()));
         }
-        let addr = upload_addrs
-            .pop()
-            .ok_or_else(|| RQError::Other("upload_addrs is empty".into()))?;
         self.highway_upload_bdh(
             addr,
             BdhInput {
@@ -307,7 +307,7 @@ impl super::super::Client {
             .to_vec();
         let resp = self
             .highway_upload_bdh(
-                addr,
+                addr.into(),
                 BdhInput {
                     command_id: 26,
                     body: data,

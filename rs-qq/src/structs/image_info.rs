@@ -1,7 +1,9 @@
-use crate::engine::hex::encode_hex;
-use crate::engine::msg::elem::{calculate_image_resource_id, FriendImage, GroupImage};
-use crate::engine::{RQError, RQResult};
+use rq_engine::common::RQAddr;
 use serde::{Deserialize, Serialize};
+
+use crate::engine::hex::encode_hex;
+use crate::engine::msg::elem::{FriendImage, GroupImage};
+use crate::engine::{RQError, RQResult};
 
 // 仅用于上传图片，一些临时变量，太多了放一起
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -53,16 +55,19 @@ impl ImageInfo {
         }
     }
 
-    pub fn into_group_image(self, file_id: u64) -> GroupImage {
+    pub fn into_group_image(self, file_id: u64, addr: RQAddr, signature: Vec<u8>) -> GroupImage {
         GroupImage {
-            image_id: calculate_image_resource_id(&self.md5, false),
+            file_path: format!("{}.png", encode_hex(&self.md5)),
             file_id: file_id as i64,
             size: self.size as i32,
             width: self.width as i32,
             height: self.height as i32,
             md5: self.md5,
             image_type: self.image_type,
-            ..Default::default()
+            signature,
+            server_ip: addr.0,
+            server_port: addr.1 as u32,
+            orig_url: None,
         }
     }
 }

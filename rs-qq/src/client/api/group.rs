@@ -5,6 +5,7 @@ use bytes::Bytes;
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
+use rq_engine::common::RQAddr;
 use rq_engine::structs::MessageNode;
 
 use crate::client::Group;
@@ -560,16 +561,13 @@ impl super::super::Client {
     pub async fn _upload_group_image(
         &self,
         upload_key: Vec<u8>,
-        mut upload_addrs: Vec<std::net::SocketAddr>,
+        addr: std::net::SocketAddr,
         data: Vec<u8>,
     ) -> RQResult<()> {
         // TODO addr ?
         if self.highway_session.read().await.session_key.is_empty() {
             return Err(RQError::Other("highway_session_key is empty".into()));
         }
-        let addr = upload_addrs
-            .pop()
-            .ok_or_else(|| RQError::Other("upload_addrs is empty".into()))?;
         self.highway_upload_bdh(
             addr,
             BdhInput {
@@ -592,19 +590,25 @@ impl super::super::Client {
 
         let image_store = self.get_group_image_store(group_code, &image_info).await?;
 
-        let file_id = match image_store {
-            GroupImageStoreResp::Exist { file_id } => file_id,
+        let group_image = match image_store {
+            GroupImageStoreResp::Exist { file_id } => {
+                image_info.into_group_image(file_id, RQAddr(0, 0), vec![])
+            }
             GroupImageStoreResp::NotExist {
                 file_id,
                 upload_key,
-                upload_addrs,
+                mut upload_addrs,
             } => {
-                self._upload_group_image(upload_key, upload_addrs, data)
+                let addr = upload_addrs
+                    .pop()
+                    .ok_or_else(|| RQError::Other("addrs is empty".into()))?;
+                self._upload_group_image(upload_key, addr.clone().into(), data)
                     .await?;
-                file_id
+                let signature = self.highway_session.read().await.session_key.to_vec();
+                image_info.into_group_image(file_id, addr, signature)
             }
         };
-        Ok(image_info.into_group_image(file_id))
+        Ok(group_image)
     }
 
     /// 上传群音频 codec: 0-amr, 1-silk
@@ -639,7 +643,7 @@ impl super::super::Client {
             .to_vec();
         let resp = self
             .highway_upload_bdh(
-                addr,
+                addr.into(),
                 BdhInput {
                     command_id: 29,
                     body: data,

@@ -2,7 +2,7 @@ use std::sync::atomic::Ordering;
 
 use bytes::Bytes;
 
-use rq_engine::common::{group_code2uin, RQIP};
+use rq_engine::common::{group_code2uin, RQAddr};
 use rq_engine::highway::BdhInput;
 use rq_engine::structs::MessageNode;
 
@@ -284,16 +284,11 @@ impl super::Client {
         if self.highway_session.read().await.session_key.is_empty() {
             return Err(RQError::Other("highway_session_key is empty".into()));
         }
-        let mut addrs: Vec<std::net::SocketAddr> = rsp
+        let mut addrs: Vec<RQAddr> = rsp
             .uint32_up_ip
             .into_iter()
             .zip(rsp.uint32_up_port.into_iter())
-            .map(|(ip, port)| {
-                std::net::SocketAddr::new(
-                    std::net::Ipv4Addr::from(RQIP(ip as u32)).into(),
-                    port as u16,
-                )
-            })
+            .map(|(ip, port)| RQAddr(ip as u32, port as u16))
             .collect();
         let addr = addrs
             .pop()
@@ -304,7 +299,7 @@ impl super::Client {
                 .await
                 .build_long_req(group_code2uin(group_code), data, rsp.msg_ukey);
         self.highway_upload_bdh(
-            addr,
+            addr.into(),
             BdhInput {
                 command_id: 27,
                 body,

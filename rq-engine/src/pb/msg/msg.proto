@@ -578,8 +578,8 @@ message CustomFace {
   optional bytes flag = 5;
   optional bytes oldData = 6;
   optional int32 fileId = 7;
-  optional int32 serverIp = 8;
-  optional int32 serverPort = 9;
+  optional uint32 serverIp = 8;
+  optional uint32 serverPort = 9;
   optional int32 fileType = 10;
   optional bytes signature = 11;
   optional int32 useful = 12;

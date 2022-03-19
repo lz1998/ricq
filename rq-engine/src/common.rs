@@ -1,4 +1,4 @@
-use std::net::Ipv4Addr;
+use std::net::{Ipv4Addr, SocketAddr};
 
 pub fn group_code2uin(code: i64) -> i64 {
     let mut left = code / 1000000;
@@ -47,13 +47,14 @@ pub fn group_uin2code(uin: i64) -> i64 {
     left * 1000000 + uin % 1000000
 }
 
-pub struct RQIP(pub u32);
+#[derive(Debug, Clone)]
+pub struct RQAddr(pub u32, pub u16);
 
-impl From<RQIP> for Ipv4Addr {
-    fn from(ip: RQIP) -> Self {
-        let mut ip: [u8; 4] = ip.0.to_be_bytes();
+impl From<RQAddr> for SocketAddr {
+    fn from(addr: RQAddr) -> Self {
+        let mut ip: [u8; 4] = addr.0.to_be_bytes();
         ip.reverse();
-        Ipv4Addr::from(ip)
+        SocketAddr::new(Ipv4Addr::from(ip).into(), addr.1 as u16)
     }
 }
 
