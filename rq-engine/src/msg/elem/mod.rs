@@ -14,6 +14,7 @@ pub use crate::msg::elem::{
     light_app::LightApp,
     market_face::{Dice, FingerGuessing, MarketFace},
     reply::Reply,
+    rich_msg::RichMsg,
     text::Text,
 };
 use crate::pb::msg;
@@ -27,6 +28,7 @@ mod group_image;
 mod light_app;
 mod market_face;
 mod reply;
+mod rich_msg;
 mod text;
 
 #[derive(Debug, Clone)]
@@ -38,6 +40,7 @@ pub enum RQElem {
     Dice(market_face::Dice),
     FingerGuessing(market_face::FingerGuessing),
     LightApp(light_app::LightApp),
+    RichMsg(rich_msg::RichMsg),
     FriendImage(friend_image::FriendImage),
     GroupImage(group_image::GroupImage),
     FlashImage(flash_image::FlashImage),
@@ -91,6 +94,7 @@ impl From<msg::elem::Elem> for RQElem {
                 }
             }
             msg::elem::Elem::LightApp(e) => RQElem::LightApp(light_app::LightApp::from(e)),
+            msg::elem::Elem::RichMsg(e) => RQElem::RichMsg(rich_msg::RichMsg::from(e)),
             msg::elem::Elem::NotOnlineImage(e) => {
                 RQElem::FriendImage(friend_image::FriendImage::from(e))
             }
@@ -131,6 +135,7 @@ impl_from!(MarketFace, market_face::MarketFace);
 impl_from!(Dice, market_face::Dice);
 impl_from!(FingerGuessing, market_face::FingerGuessing);
 impl_from!(LightApp, light_app::LightApp);
+impl_from!(RichMsg, rich_msg::RichMsg);
 impl_from!(FriendImage, friend_image::FriendImage);
 impl_from!(GroupImage, group_image::GroupImage);
 impl_from!(FlashImage, flash_image::FlashImage);
