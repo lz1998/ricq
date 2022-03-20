@@ -221,7 +221,7 @@ impl super::super::Client {
     }
 
     /// 刷新群列表
-    pub async fn reload_groups(&self) -> RQResult<()> {
+    pub async fn reload_groups(&self, buffered: usize) -> RQResult<()> {
         // 获取群列表
         let mut vec_cookie = Bytes::new();
         let mut groups = Vec::new();
@@ -250,7 +250,7 @@ impl super::super::Client {
                     }),
                 )
             })
-            .buffered(10)
+            .buffered(buffered)
             .collect()
             .await;
 
