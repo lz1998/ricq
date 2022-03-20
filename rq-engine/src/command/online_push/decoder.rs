@@ -105,9 +105,9 @@ impl super::super::super::Engine {
             Some(34) => {
                 data.get_i32();
                 data.get_u8();
-                let target = data.get_i32() as i64;
+                let target = data.get_u32() as i64;
                 let typ = data.get_u8() as i32;
-                let operator = data.get_i32() as i64;
+                let operator = data.get_u32() as i64;
                 match typ {
                     0x02 | 0x82 => {
                         return Ok(OnlinePushTrans {
