@@ -13,7 +13,6 @@ pub use crate::msg::elem::{
     group_image::GroupImage,
     light_app::LightApp,
     market_face::{Dice, FingerGuessing, MarketFace},
-    red_bag::RedBag,
     reply::Reply,
     text::Text,
 };
@@ -27,7 +26,6 @@ mod friend_image;
 mod group_image;
 mod light_app;
 mod market_face;
-mod red_bag;
 mod reply;
 mod text;
 
@@ -40,7 +38,6 @@ pub enum RQElem {
     Dice(market_face::Dice),
     FingerGuessing(market_face::FingerGuessing),
     LightApp(light_app::LightApp),
-    RedBag(red_bag::RedBag),
     FriendImage(friend_image::FriendImage),
     GroupImage(group_image::GroupImage),
     FlashImage(flash_image::FlashImage),
@@ -94,7 +91,6 @@ impl From<msg::elem::Elem> for RQElem {
                 }
             }
             msg::elem::Elem::LightApp(e) => RQElem::LightApp(light_app::LightApp::from(e)),
-            msg::elem::Elem::QqWalletMsg(e) => RQElem::RedBag(red_bag::RedBag::from(e)),
             msg::elem::Elem::NotOnlineImage(e) => {
                 RQElem::FriendImage(friend_image::FriendImage::from(e))
             }
@@ -135,7 +131,6 @@ impl_from!(MarketFace, market_face::MarketFace);
 impl_from!(Dice, market_face::Dice);
 impl_from!(FingerGuessing, market_face::FingerGuessing);
 impl_from!(LightApp, light_app::LightApp);
-impl_from!(RedBag, red_bag::RedBag);
 impl_from!(FriendImage, friend_image::FriendImage);
 impl_from!(GroupImage, group_image::GroupImage);
 impl_from!(FlashImage, flash_image::FlashImage);
