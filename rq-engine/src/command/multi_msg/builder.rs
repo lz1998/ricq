@@ -42,33 +42,7 @@ impl super::super::super::Engine {
     ) -> Vec<u8> {
         let msgs: Vec<pb::msg::Message> = msgs
             .into_iter()
-            .map(|node| pb::msg::Message {
-                head: Some(pb::msg::MessageHead {
-                    from_uin: Some(node.sender_id),
-                    msg_type: Some(82), // troop
-                    msg_seq: Some(self.next_group_seq()),
-                    msg_time: Some(node.time),
-                    msg_uid: Some(0x01000000000000000 | rand::random::<u16>() as i64), // TODO ?
-                    group_info: Some(pb::msg::GroupInfo {
-                        group_code: Some(group_code),
-                        group_card: Some(node.sender_name),
-                        ..Default::default()
-                    }),
-                    mutiltrans_head: Some(pb::msg::MutilTransHead {
-                        status: Some(0),
-                        msg_id: Some(1),
-                    }),
-                    ..Default::default()
-                }),
-                body: Some(pb::msg::MessageBody {
-                    rich_text: Some(pb::msg::RichText {
-                        elems: node.elements.into(),
-                        ..Default::default()
-                    }),
-                    ..Default::default()
-                }),
-                ..Default::default()
-            })
+            .map(|node| self.pack_msg(node, group_code))
             .collect();
         let trans = pb::msg::PbMultiMsgTransmit {
             msg: msgs.clone(),
@@ -80,5 +54,35 @@ impl super::super::super::Engine {
         let mut encoder = GzEncoder::new(vec![], Compression::default());
         encoder.write_all(&trans.to_bytes()).ok();
         encoder.finish().unwrap_or_default()
+    }
+
+    pub fn pack_msg(&self, node: super::MessageNode, group_code: i64) -> pb::msg::Message {
+        pb::msg::Message {
+            head: Some(pb::msg::MessageHead {
+                from_uin: Some(node.sender_id),
+                msg_type: Some(82), // troop
+                msg_seq: Some(self.next_group_seq()),
+                msg_time: Some(node.time),
+                msg_uid: Some(0x01000000000000000 | rand::random::<u16>() as i64), // TODO ?
+                group_info: Some(pb::msg::GroupInfo {
+                    group_code: Some(group_code),
+                    group_card: Some(node.sender_name),
+                    ..Default::default()
+                }),
+                mutiltrans_head: Some(pb::msg::MutilTransHead {
+                    status: Some(0),
+                    msg_id: Some(1),
+                }),
+                ..Default::default()
+            }),
+            body: Some(pb::msg::MessageBody {
+                rich_text: Some(pb::msg::RichText {
+                    elems: node.elements.into(),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
+            ..Default::default()
+        }
     }
 }
