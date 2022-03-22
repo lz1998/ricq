@@ -9,7 +9,6 @@ use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
 use rq_engine::command::multi_msg::gen_forward_preview;
-use rq_engine::common::RQAddr;
 use rq_engine::structs::{ForwardMessage, MessageNode};
 
 use crate::client::Group;
@@ -731,7 +730,8 @@ impl super::super::Client {
                     time: chrono::Utc::now().timestamp() as i32,
                     sender_name: self.account_info.read().await.nickname.clone(),
                     elements: message_chain,
-                }],
+                }
+                .into()],
                 true,
             )
             .await?;
@@ -769,48 +769,6 @@ impl super::super::Client {
         self._send_group_message(group_code, elems, None).await
     }
 
-    pub async fn upload_msgs_data(
-        &self,
-        group_code: i64,
-        msgs: Vec<ForwardMessage>,
-        is_long: bool,
-    ) -> RQResult<String> {
-        let data = self.engine.read().await.build_forward_msg(msgs, group_code);
-        let rsp = self
-            .multi_msg_apply_up(group_code2uin(group_code), &data, is_long)
-            .await?;
-        let resid = rsp.msg_resid;
-        if self.highway_session.read().await.session_key.is_empty() {
-            return Err(RQError::Other("highway_session_key is empty".into()));
-        }
-        let mut addrs: Vec<RQAddr> = rsp
-            .uint32_up_ip
-            .into_iter()
-            .zip(rsp.uint32_up_port.into_iter())
-            .map(|(ip, port)| RQAddr(ip as u32, port as u16))
-            .collect();
-        let addr = addrs
-            .pop()
-            .ok_or_else(|| RQError::Other("addr is none".into()))?;
-        let body =
-            self.engine
-                .read()
-                .await
-                .build_long_req(group_code2uin(group_code), data, rsp.msg_ukey);
-        self.highway_upload_bdh(
-            addr.into(),
-            BdhInput {
-                command_id: 27,
-                body,
-                ticket: rsp.msg_sig,
-                chunk_size: 8192 * 8,
-                ..Default::default()
-            },
-        )
-        .await?;
-        Ok(resid)
-    }
-
     /// 发送转发消息
     pub async fn send_group_forward_message(
         &self,
@@ -819,7 +777,7 @@ impl super::super::Client {
     ) -> RQResult<MessageReceipt> {
         let t_sum = msgs.len();
         let preview = gen_forward_preview(&msgs);
-        let res_id = self.upload_msgs_data(group_code, msgs, false).await?;
+        let res_id = self.upload_msgs(group_code, msgs, false).await?;
         // TODO friend template?
         let template = format!(
             r##"<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><msg serviceID="35" templateID="1" action="viewMultiMsg" brief="[聊天记录]" m_resid="{}" m_fileName="{}" tSum="{}" sourceMsgId="0" url="" flag="3" adverSign="0" multiMsgFlag="0"><item layout="1" advertiser_id="0" aid="0"><title size="34" maxLines="2" lineSpace="12">群聊的聊天记录</title>{}<hr hidden="false" style="0" /><summary size="26" color="#777777">查看{}条转发消息</summary></item><source name="聊天记录" icon="" action="" appid="-1" /></msg>"##,
@@ -849,20 +807,5 @@ impl super::super::Client {
         .map(|e| pb::msg::Elem { elem: Some(e) })
         .collect();
         self._send_group_message(group_code, elems, None).await
-    }
-
-    pub async fn build_forward_msg(&self, messages: Vec<ForwardMessage>, group_code: i64) {
-        let mut stack = messages;
-        let mut msgs = vec![];
-        while let Some(node) = stack.pop() {
-            match node {
-                ForwardMessage::Message(message) => {
-                    msgs.push(self.engine.read().await.pack_msg(message, group_code))
-                }
-                ForwardMessage::Forward(forward) => {
-                    stack.extend(forward.nodes);
-                }
-            }
-        }
     }
 }

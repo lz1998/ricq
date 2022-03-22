@@ -4,7 +4,7 @@ use bytes::Bytes;
 
 use rq_engine::common::{group_code2uin, RQAddr};
 use rq_engine::highway::BdhInput;
-use rq_engine::structs::MessageNode;
+use rq_engine::structs::ForwardMessage;
 
 use crate::engine::command::message_svc::MessageSyncResponse;
 use crate::engine::command::oidb_svc::*;
@@ -266,10 +266,11 @@ impl super::Client {
             .decode_multi_apply_up_resp(resp.body)
     }
 
+    // 上传长消息、转发消息 私聊未测试
     pub async fn upload_msgs(
         &self,
         group_code: i64,
-        msgs: Vec<MessageNode>,
+        msgs: Vec<ForwardMessage>,
         is_long: bool,
     ) -> RQResult<String> {
         let data = self

@@ -42,57 +42,6 @@ impl super::super::super::Engine {
 
     pub fn calculate_validation_data(
         &self,
-        msgs: Vec<super::MessageNode>,
-        group_code: i64,
-    ) -> Vec<u8> {
-        let msgs: Vec<pb::msg::Message> = msgs
-            .into_iter()
-            .map(|node| self.pack_msg(node, group_code))
-            .collect();
-        let trans = pb::msg::PbMultiMsgTransmit {
-            msg: msgs.clone(),
-            pb_item_list: vec![pb::msg::PbMultiMsgItem {
-                file_name: Some("MultiMsg".into()),
-                buffer: Some(pb::msg::PbMultiMsgNew { msg: msgs }),
-            }],
-        };
-        let mut encoder = GzEncoder::new(vec![], Compression::default());
-        encoder.write_all(&trans.to_bytes()).ok();
-        encoder.finish().unwrap_or_default()
-    }
-
-    pub fn pack_msg(&self, node: super::MessageNode, group_code: i64) -> pb::msg::Message {
-        pb::msg::Message {
-            head: Some(pb::msg::MessageHead {
-                from_uin: Some(node.sender_id),
-                msg_type: Some(82), // troop
-                msg_seq: Some(self.next_group_seq()),
-                msg_time: Some(node.time),
-                msg_uid: Some(0x01000000000000000 | rand::random::<u16>() as i64), // TODO ?
-                group_info: Some(pb::msg::GroupInfo {
-                    group_code: Some(group_code),
-                    group_card: Some(node.sender_name),
-                    ..Default::default()
-                }),
-                mutiltrans_head: Some(pb::msg::MutilTransHead {
-                    status: Some(0),
-                    msg_id: Some(1),
-                }),
-                ..Default::default()
-            }),
-            body: Some(pb::msg::MessageBody {
-                rich_text: Some(pb::msg::RichText {
-                    elems: node.elements.into(),
-                    ..Default::default()
-                }),
-                ..Default::default()
-            }),
-            ..Default::default()
-        }
-    }
-
-    pub fn build_forward_msg(
-        &self,
         messages: Vec<super::ForwardMessage>,
         group_code: i64,
     ) -> Vec<u8> {
@@ -132,21 +81,28 @@ impl super::super::super::Engine {
         let msgs: Vec<pb::msg::Message> = messages
             .into_iter()
             .map(|m| match m {
-                ForwardMessage::Message(message) => self.pack_msg(message, group_code),
+                ForwardMessage::Message(message) => {
+                    self.pack_msg(message, group_code)
+                }
                 ForwardMessage::Forward(forward) => {
                     let t_sum = forward.nodes.len();
                     let preview = super::gen_forward_preview(&forward.nodes);
                     let packed_message = self.pack_forward_msg(forward.nodes, group_code);
-                    let rich = self.build_forward_node(&packed_message.filename, t_sum, preview);
                     packed_buffers.extend(packed_message.buffer);
-                    let mut elements = MessageChain::default();
-                    elements.push(rich);
                     self.pack_msg(
                         super::MessageNode {
                             sender_id: forward.sender_id,
                             time: forward.time,
                             sender_name: forward.sender_name,
-                            elements,
+                            elements: MessageChain(
+                                RichMsg {
+                                    template1: format!(
+                                        r##"<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><msg serviceID="35" templateID="1" action="viewMultiMsg" brief="[聊天记录]" m_resid="" m_fileName="{}" tSum="{}" sourceMsgId="0" url="" flag="3" adverSign="0" multiMsgFlag="0"><item layout="1" advertiser_id="0" aid="0"><title size="34" maxLines="2" lineSpace="12">群聊的聊天记录</title>{}<hr hidden="false" style="0" /><summary size="26" color="#777777">查看{}条转发消息</summary></item><source name="聊天记录" icon="" action="" appid="-1" /></msg>"##,
+                                        packed_message.filename, t_sum, preview, t_sum
+                                    ),
+                                    service_id: 35,
+                                }.into()
+                            ),
                         },
                         group_code,
                     )
@@ -161,14 +117,33 @@ impl super::super::super::Engine {
         }
     }
 
-    fn build_forward_node(&self, filename: &str, t_sum: usize, preview: String) -> RichMsg {
-        let template = format!(
-            r##"<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><msg serviceID="35" templateID="1" action="viewMultiMsg" brief="[聊天记录]" m_resid="" m_fileName="{}" tSum="{}" sourceMsgId="0" url="" flag="3" adverSign="0" multiMsgFlag="0"><item layout="1" advertiser_id="0" aid="0"><title size="34" maxLines="2" lineSpace="12">群聊的聊天记录</title>{}<hr hidden="false" style="0" /><summary size="26" color="#777777">查看{}条转发消息</summary></item><source name="聊天记录" icon="" action="" appid="-1" /></msg>"##,
-            filename, t_sum, preview, t_sum
-        );
-        RichMsg {
-            template1: template,
-            service_id: 35,
+    fn pack_msg(&self, node: super::MessageNode, group_code: i64) -> pb::msg::Message {
+        pb::msg::Message {
+            head: Some(pb::msg::MessageHead {
+                from_uin: Some(node.sender_id),
+                msg_type: Some(82), // troop
+                msg_seq: Some(self.next_group_seq()),
+                msg_time: Some(node.time),
+                msg_uid: Some(0x01000000000000000 | rand::random::<u16>() as i64), // TODO ?
+                group_info: Some(pb::msg::GroupInfo {
+                    group_code: Some(group_code),
+                    group_card: Some(node.sender_name),
+                    ..Default::default()
+                }),
+                mutiltrans_head: Some(pb::msg::MutilTransHead {
+                    status: Some(0),
+                    msg_id: Some(1),
+                }),
+                ..Default::default()
+            }),
+            body: Some(pb::msg::MessageBody {
+                rich_text: Some(pb::msg::RichText {
+                    elems: node.elements.into(),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            }),
+            ..Default::default()
         }
     }
 }
