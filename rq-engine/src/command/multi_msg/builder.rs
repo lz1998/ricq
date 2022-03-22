@@ -1,10 +1,15 @@
+use std::collections::HashMap;
 use std::io::Write;
 
 use flate2::write::GzEncoder;
 use flate2::Compression;
 
 use crate::command::common::PbToBytes;
+use crate::command::multi_msg::{ForwardMessage, PackedMessage};
+use crate::msg::elem::RichMsg;
+use crate::msg::MessageChain;
 use crate::pb;
+use crate::protocol::device::random_string;
 use crate::protocol::packet::Packet;
 
 impl super::super::super::Engine {
@@ -83,6 +88,87 @@ impl super::super::super::Engine {
                 ..Default::default()
             }),
             ..Default::default()
+        }
+    }
+
+    pub fn build_forward_msg(
+        &self,
+        messages: Vec<super::ForwardMessage>,
+        group_code: i64,
+    ) -> Vec<u8> {
+        let PackedMessage {
+            mut buffer,
+            filename,
+        } = self.pack_forward_msg(messages, group_code);
+        let msgs = buffer.remove(&filename).expect("msgs not found");
+        let mut pb_item_list = vec![pb::msg::PbMultiMsgItem {
+            file_name: Some("MultiMsg".into()),
+            buffer: Some(pb::msg::PbMultiMsgNew { msg: msgs.clone() }),
+        }];
+        pb_item_list.extend(
+            buffer
+                .into_iter()
+                .map(|(filename, msg)| pb::msg::PbMultiMsgItem {
+                    file_name: Some(filename),
+                    buffer: Some(pb::msg::PbMultiMsgNew { msg }),
+                })
+                .collect::<Vec<pb::msg::PbMultiMsgItem>>(),
+        );
+        let trans = pb::msg::PbMultiMsgTransmit {
+            msg: msgs.clone(),
+            pb_item_list,
+        };
+        let mut encoder = GzEncoder::new(vec![], Compression::default());
+        encoder.write_all(&trans.to_bytes()).ok();
+        encoder.finish().unwrap_or_default()
+    }
+
+    fn pack_forward_msg(
+        &self,
+        messages: Vec<super::ForwardMessage>,
+        group_code: i64,
+    ) -> PackedMessage {
+        let mut packed_buffers = HashMap::default();
+        let msgs: Vec<pb::msg::Message> = messages
+            .into_iter()
+            .map(|m| match m {
+                ForwardMessage::Message(message) => self.pack_msg(message, group_code),
+                ForwardMessage::Forward(forward) => {
+                    let t_sum = forward.nodes.len();
+                    let preview = super::gen_forward_preview(&forward.nodes);
+                    let packed_message = self.pack_forward_msg(forward.nodes, group_code);
+                    let rich = self.build_forward_node(&packed_message.filename, t_sum, preview);
+                    packed_buffers.extend(packed_message.buffer);
+                    let mut elements = MessageChain::default();
+                    elements.push(rich);
+                    self.pack_msg(
+                        super::MessageNode {
+                            sender_id: forward.sender_id,
+                            time: forward.time,
+                            sender_name: forward.sender_name,
+                            elements,
+                        },
+                        group_code,
+                    )
+                }
+            })
+            .collect();
+        let filename = random_string(16);
+        packed_buffers.insert(filename.clone(), msgs);
+        PackedMessage {
+            filename,
+            buffer: packed_buffers,
+        }
+    }
+
+    fn build_forward_node(&self, filename: &str, t_sum: usize, preview: String) -> RichMsg {
+        let template = format!(
+            r##"<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><msg serviceID="35" templateID="1" action="viewMultiMsg" brief="[聊天记录]" m_resid="" m_fileName="{}" tSum="{}" sourceMsgId="0" url="" flag="3" adverSign="0" multiMsgFlag="0"><item layout="1" advertiser_id="0" aid="0"><title size="34" maxLines="2" lineSpace="12">群聊的聊天记录</title>{}<hr hidden="false" style="0" /><summary size="26" color="#777777">查看{}条转发消息</summary></item><source name="聊天记录" icon="" action="" appid="-1" /></msg>"##,
+            filename, t_sum, preview, t_sum
+        );
+        RichMsg {
+            template1: template,
+            service_id: 35,
         }
     }
 }

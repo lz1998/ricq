@@ -1,6 +1,6 @@
 use bytes::Bytes;
 
-pub use crate::command::multi_msg::MessageNode;
+pub use crate::command::multi_msg::{ForwardMessage, ForwardNode, MessageNode};
 pub use crate::command::oidb_svc::ProfileDetailUpdate;
 pub use crate::command::stat_svc::{CustomOnlineStatus, ExtOnlineStatus, OnlineStatus, Status};
 use crate::msg::MessageChain;
