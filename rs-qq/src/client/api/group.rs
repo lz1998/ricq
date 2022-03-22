@@ -8,7 +8,8 @@ use flate2::Compression;
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
-use rq_engine::structs::MessageNode;
+use rq_engine::command::multi_msg::gen_forward_preview;
+use rq_engine::structs::{ForwardMessage, MessageNode};
 
 use crate::client::Group;
 use crate::engine::command::img_store::GroupImageStoreResp;
@@ -729,7 +730,8 @@ impl super::super::Client {
                     time: chrono::Utc::now().timestamp() as i32,
                     sender_name: self.account_info.read().await.nickname.clone(),
                     elements: message_chain,
-                }],
+                }
+                .into()],
                 true,
             )
             .await?;
@@ -771,21 +773,10 @@ impl super::super::Client {
     pub async fn send_group_forward_message(
         &self,
         group_code: i64,
-        msgs: Vec<MessageNode>,
+        msgs: Vec<ForwardMessage>,
     ) -> RQResult<MessageReceipt> {
         let t_sum = msgs.len();
-        let preview=msgs
-            .iter()
-            .take(4)
-            .map(|n| {
-                format!(
-                    r##"<title size="26" color="#777777" maxLines="4" lineSpace="12">{}: {}</title>"##,
-                    n.sender_name,
-                    n.elements.to_string()
-                )
-            })
-            .collect::<Vec<String>>()
-            .join("");
+        let preview = gen_forward_preview(&msgs);
         let res_id = self.upload_msgs(group_code, msgs, false).await?;
         // TODO friend template?
         let template = format!(
