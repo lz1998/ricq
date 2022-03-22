@@ -1,14 +1,12 @@
-use std::io::Write;
 use std::sync::Arc;
 use std::time::Duration;
 
 use bytes::Bytes;
-use flate2::write::ZlibEncoder;
-use flate2::Compression;
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
 use rq_engine::command::multi_msg::gen_forward_preview;
+use rq_engine::msg::elem::RichMsg;
 use rq_engine::structs::{ForwardMessage, MessageNode};
 
 use crate::client::Group;
@@ -741,16 +739,12 @@ impl super::super::Client {
             res_id,
             chrono::Utc::now().timestamp_millis(),
             brief);
-        let elems = vec![
-            pb::msg::elem::Elem::RichMsg(pb::msg::RichMsg {
-                template1: Some({
-                    let mut encoder = ZlibEncoder::new(vec![1], Compression::default());
-                    encoder.write_all(template.as_bytes()).ok();
-                    encoder.finish().unwrap_or_default()
-                }),
-                service_id: Some(35),
-                ..Default::default()
-            }),
+        let mut chain = MessageChain::default();
+        chain.push(RichMsg {
+            service_id: 35,
+            template1: template,
+        });
+        chain.0.extend(vec![
             pb::msg::elem::Elem::Text(pb::msg::Text {
                 str: Some("你的QQ暂不支持查看[转发多条消息]，请期待后续版本。".into()),
                 ..Default::default()
@@ -762,11 +756,9 @@ impl super::super::Client {
                 pb_reserve: Some(vec![0x78, 0x00, 0xF8, 0x01, 0x00, 0xC8, 0x02, 0x00]), // TODO 15=73255?
                 ..Default::default()
             }),
-        ]
-        .into_iter()
-        .map(|e| pb::msg::Elem { elem: Some(e) })
-        .collect();
-        self._send_group_message(group_code, elems, None).await
+        ]);
+        self._send_group_message(group_code, chain.into(), None)
+            .await
     }
 
     /// 发送转发消息
@@ -787,25 +779,19 @@ impl super::super::Client {
             preview,
             t_sum
         );
-        let elems = vec![
-            pb::msg::elem::Elem::RichMsg(pb::msg::RichMsg {
-                template1: Some({
-                    let mut encoder = ZlibEncoder::new(vec![1], Compression::default());
-                    encoder.write_all(template.as_bytes()).ok();
-                    encoder.finish().unwrap_or_default()
-                }),
-                service_id: Some(35),
-                ..Default::default()
-            }),
-            pb::msg::elem::Elem::GeneralFlags(pb::msg::GeneralFlags {
+        let mut chain = MessageChain::default();
+        chain.push(RichMsg {
+            service_id: 35,
+            template1: template,
+        });
+        chain
+            .0
+            .push(pb::msg::elem::Elem::GeneralFlags(pb::msg::GeneralFlags {
                 pendant_id: Some(0),
                 pb_reserve: Some(vec![0x78, 0x00, 0xF8, 0x01, 0x00, 0xC8, 0x02, 0x00]),
                 ..Default::default()
-            }),
-        ]
-        .into_iter()
-        .map(|e| pb::msg::Elem { elem: Some(e) })
-        .collect();
-        self._send_group_message(group_code, elems, None).await
+            }));
+        self._send_group_message(group_code, chain.into(), None)
+            .await
     }
 }
