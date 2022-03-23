@@ -143,6 +143,10 @@ impl super::Client {
     pub async fn load_token(&self, token: Token) {
         self.engine.write().await.load_token(token)
     }
+
+    pub async fn _get_highway_session_key(&self) -> Vec<u8> {
+        self.highway_session.read().await.session_key.to_vec()
+    }
 }
 
 impl Drop for Client {
