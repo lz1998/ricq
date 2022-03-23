@@ -1,5 +1,6 @@
 #![feature(map_first_last)]
 #![feature(async_closure)]
+#![feature(let_chains)]
 
 pub use client::handler;
 pub use client::Client;

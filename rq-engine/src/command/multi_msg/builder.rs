@@ -13,6 +13,25 @@ use crate::protocol::device::random_string;
 use crate::protocol::packet::Packet;
 
 impl super::super::super::Engine {
+    pub fn build_multi_msg_apply_down_req(&self, res_id: String) -> Packet {
+        let req = pb::multimsg::MultiReqBody {
+            subcmd: 2,
+            term_type: 5,
+            platform_type: 9,
+            net_type: 3,
+            build_ver: self.transport.version.build_ver.into(),
+            multimsg_applydown_req: vec![pb::multimsg::MultiMsgApplyDownReq {
+                msg_resid: res_id.into_bytes(),
+                msg_type: 3,
+                ..Default::default()
+            }],
+            bu_type: 2,
+            req_channel_type: 2,
+            ..Default::default()
+        };
+        self.uni_packet("MultiMsg.ApplyDown", req.to_bytes())
+    }
+
     pub fn build_multi_msg_apply_up_req(
         &self,
         msg_size: i64,

@@ -14,8 +14,8 @@ message MultiMsgApplyDownRsp {
   int32 result = 1;
   bytes thumbDownPara = 2;
   bytes msgKey = 3;
-  repeated int32 uint32DownIp = 4;
-  repeated int32 uint32DownPort = 5;
+  repeated uint32 downIp = 4;
+  repeated uint32 downPort = 5;
   bytes msgResid = 6;
   ExternMsg msgExternInfo = 7;
   repeated bytes bytesDownIpV6 = 8;

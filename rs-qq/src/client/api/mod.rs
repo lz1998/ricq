@@ -1,3 +1,4 @@
+use std::net::SocketAddr;
 use std::sync::atomic::Ordering;
 
 use bytes::Bytes;
@@ -263,7 +264,7 @@ impl super::Client {
         self.engine
             .read()
             .await
-            .decode_multi_apply_up_resp(resp.body)
+            .decode_multi_msg_apply_up_resp(resp.body)
     }
 
     // 上传长消息、转发消息 私聊未测试
@@ -311,5 +312,49 @@ impl super::Client {
         )
         .await?;
         Ok(resid)
+    }
+
+    // 获取转发消息下载地址和 key
+    async fn multi_msg_apply_down(
+        &self,
+        res_id: String,
+    ) -> RQResult<pb::multimsg::MultiMsgApplyDownRsp> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_multi_msg_apply_down_req(res_id);
+        let resp = self.send_and_wait(req).await?;
+        self.engine
+            .read()
+            .await
+            .decode_multi_msg_apply_down_resp(resp.body)
+    }
+
+    pub async fn download_msgs(&self, res_id: String) -> RQResult<Vec<ForwardMessage>> {
+        let mut resp = self.multi_msg_apply_down(res_id).await?;
+        if resp.result != 0 {
+            return Err(RQError::Other(format!(
+                "multi_msg_apply_down result {}",
+                resp.result
+            )));
+        }
+        let prefix=if let Some(pb::multimsg::ExternMsg { channel_type }) = resp.msg_extern_info && channel_type == 2 {
+            "https://ssl.htdata.qq.com".into()
+        } else {
+            let addr = SocketAddr::from(RQAddr(resp.down_ip.pop().ok_or_else(||RQError::Other("ip is empty".into()))?,resp.down_port.pop().ok_or_else(||RQError::Other("port is empty".into()))? as u16));
+            format!("http://{}",addr.to_string())
+        };
+        let url = format!(
+            "{}{}",
+            prefix,
+            String::from_utf8_lossy(&resp.thumb_down_para)
+        );
+        let encrypt_key = resp.msg_key;
+        // TODO get data and decrypt
+        // TODO decoder -> LongRspBody
+        // TODO uncompress
+        // TODO link message, convert to Vec<ForwardMessage>
+        todo!()
     }
 }
