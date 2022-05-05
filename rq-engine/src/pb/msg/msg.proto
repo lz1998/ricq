@@ -649,7 +649,7 @@ message GroupInfo {
   optional int64 groupCode = 1;
   optional int32 groupType = 2;
   optional int64 groupInfoSeq = 3;
-  optional string groupCard = 4;
+  optional bytes groupCard = 4;
   optional bytes groupRank = 5;
   optional int32 groupLevel = 6;
   optional int32 groupCardType = 7;

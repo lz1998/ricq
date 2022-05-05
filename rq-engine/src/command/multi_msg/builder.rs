@@ -146,7 +146,7 @@ impl super::super::super::Engine {
                 msg_uid: Some(0x01000000000000000 | rand::random::<u16>() as i64), // TODO ?
                 group_info: Some(pb::msg::GroupInfo {
                     group_code: Some(group_code),
-                    group_card: Some(node.sender_name),
+                    group_card: Some(node.sender_name.into_bytes()),
                     ..Default::default()
                 }),
                 mutiltrans_head: Some(pb::msg::MutilTransHead {

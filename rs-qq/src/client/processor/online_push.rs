@@ -49,6 +49,8 @@ impl Client {
                         seqs: vec![group_message_part.seq],
                         rands: vec![group_message_part.rand],
                         group_code: group_message_part.group_code,
+                        group_name: group_message_part.group_name,
+                        group_card: group_message_part.group_card,
                         from_uin: group_message_part.from_uin,
                         time: group_message_part.time,
                         audio: GroupAudio(ptt),
@@ -103,6 +105,14 @@ impl Client {
             seqs: parts.iter().map(|p| p.seq).collect(),
             rands: parts.iter().map(|p| p.rand).collect(),
             group_code: parts.first().map(|p| p.group_code).unwrap_or_default(),
+            group_name: parts
+                .first()
+                .map(|p| p.group_name.clone())
+                .unwrap_or_default(),
+            group_card: parts
+                .first()
+                .map(|p| p.group_card.clone())
+                .unwrap_or_default(),
             from_uin: parts.first().map(|p| p.from_uin).unwrap_or_default(),
             time: parts.first().map(|p| p.time).unwrap_or_default(),
             elements: MessageChain::from(

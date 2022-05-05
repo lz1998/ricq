@@ -29,6 +29,8 @@ pub struct GroupMessagePart {
     pub seq: i32,
     pub rand: i32,
     pub group_code: i64,
+    pub group_name: String,
+    pub group_card: String,
     pub from_uin: i64,
     pub elems: Vec<pb::msg::Elem>,
     pub time: i32,

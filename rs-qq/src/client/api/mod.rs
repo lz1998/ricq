@@ -345,12 +345,12 @@ impl super::Client {
             let addr = SocketAddr::from(RQAddr(resp.down_ip.pop().ok_or_else(||RQError::Other("ip is empty".into()))?,resp.down_port.pop().ok_or_else(||RQError::Other("port is empty".into()))? as u16));
             format!("http://{}",addr.to_string())
         };
-        let url = format!(
+        let _url = format!(
             "{}{}",
             prefix,
             String::from_utf8_lossy(&resp.thumb_down_para)
         );
-        let encrypt_key = resp.msg_key;
+        let _encrypt_key = resp.msg_key;
         // TODO get data and decrypt
         // TODO decoder -> LongRspBody
         // TODO uncompress

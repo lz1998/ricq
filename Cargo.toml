@@ -5,10 +5,6 @@ members = [
     "examples/*"
 ]
 
-[patch.crates-io]
-prost = { git = "https://github.com/lz1998/prost" }
-prost-types = { git = "https://github.com/lz1998/prost" }
-
 [profile.release]
 opt-level = 'z'
 debug = false
