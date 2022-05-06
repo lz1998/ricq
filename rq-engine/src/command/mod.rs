@@ -18,5 +18,6 @@ pub mod reg_prxy_svc;
 pub mod signature;
 pub mod stat_svc;
 pub mod summary_card;
+pub mod video_store;
 pub mod visitor_svc;
 pub mod wtlogin;

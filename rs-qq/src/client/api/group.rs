@@ -6,6 +6,7 @@ use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
 use rq_engine::command::multi_msg::gen_forward_preview;
+use rq_engine::command::video_store::GroupVideoStoreResp;
 use rq_engine::msg::elem::RichMsg;
 use rq_engine::structs::{ForwardMessage, MessageNode};
 
@@ -21,7 +22,7 @@ use crate::engine::msg::MessageChain;
 use crate::engine::pb;
 use crate::engine::structs::GroupAudio;
 use crate::engine::structs::{GroupInfo, GroupMemberInfo, MessageReceipt};
-use crate::structs::ImageInfo;
+use crate::structs::{ImageInfo, VideoInfo};
 use crate::{RQError, RQResult};
 
 impl super::super::Client {
@@ -688,6 +689,27 @@ impl super::super::Client {
         );
         let resp = self.send_and_wait(req).await?;
         self.engine.read().await.decode_group_ptt_down(resp.body)
+    }
+
+    // 用 highway 上传群视频之前调用，获取 upload_key
+    pub async fn get_group_short_video_store(
+        &self,
+        group_code: i64,
+        video_info: &VideoInfo,
+    ) -> RQResult<GroupVideoStoreResp> {
+        let req = self.engine.read().await.build_group_video_store_packet(
+            group_code,
+            video_info.file_name.clone(),
+            video_info.file_md5.clone(),
+            video_info.thumb_file_md5.clone(),
+            video_info.file_size,
+            video_info.thumb_file_size,
+        );
+        let resp = self.send_and_wait(req).await?;
+        self.engine
+            .read()
+            .await
+            .decode_group_video_store_response(resp.body)
     }
 
     /// 设置群精华消息
