@@ -6,8 +6,8 @@ use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
 use rq_engine::command::multi_msg::gen_forward_preview;
-use rq_engine::command::video_store::GroupVideoStoreResp;
 use rq_engine::msg::elem::RichMsg;
+use rq_engine::pb::short_video::ShortVideoUploadRsp;
 use rq_engine::structs::{ForwardMessage, MessageNode};
 
 use crate::client::Group;
@@ -696,7 +696,7 @@ impl super::super::Client {
         &self,
         group_code: i64,
         video_info: &VideoInfo,
-    ) -> RQResult<GroupVideoStoreResp> {
+    ) -> RQResult<ShortVideoUploadRsp> {
         let req = self.engine.read().await.build_group_video_store_packet(
             group_code,
             video_info.file_name.clone(),
