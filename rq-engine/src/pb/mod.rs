@@ -65,3 +65,7 @@ pub mod sig_act {
 pub mod structmsg {
     include!(concat!(env!("OUT_DIR"), "/structmsg.rs"));
 }
+
+pub mod short_video {
+    include!(concat!(env!("OUT_DIR"), "/short_video.rs"));
+}
