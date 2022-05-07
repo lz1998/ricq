@@ -1,4 +1,4 @@
-# RS-QQ
+# OICQ-RS
 
 ![](https://socialify.git.ci/lz1998/oicq-rs/image?forks=1&issues=1&language=1&owner=1&pattern=Circuit%20Board&pulls=1&stargazers=1&theme=Dark)
 
