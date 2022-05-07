@@ -31,7 +31,7 @@ async fn main() -> Result<()> {
         )
         .with(
             tracing_subscriber::filter::Targets::new()
-                .with_target("oicq", Level::DEBUG)
+                .with_target("ricq", Level::DEBUG)
                 .with_target("password_login", Level::DEBUG),
         )
         .init();

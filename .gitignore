@@ -1,5 +1,8 @@
 .idea
-/target/
+/target
+/examples/target
+/examples/*/target
+.DS_Store
 Cargo.lock
 .vscode
 qrcode.png

@@ -30,7 +30,7 @@ async fn main() -> Result<()> {
         )
         .with(
             tracing_subscriber::filter::Targets::new()
-                .with_target("oicq", Level::DEBUG)
+                .with_target("ricq", Level::DEBUG)
                 .with_target("qrcode_login", Level::DEBUG),
         )
         .init();
