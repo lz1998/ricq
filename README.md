@@ -1,12 +1,12 @@
-# OICQ-RS
+# RICQ
 
-![](https://socialify.git.ci/lz1998/oicq-rs/image?forks=1&issues=1&language=1&owner=1&pattern=Circuit%20Board&pulls=1&stargazers=1&theme=Dark)
+![](https://socialify.git.ci/lz1998/ricq/image?forks=1&issues=1&language=1&owner=1&pattern=Circuit%20Board&pulls=1&stargazers=1&theme=Dark)
 
 qq-android 协议的 rust 实现 移植于 [MiraiGo](https://github.com/Mrs4s/MiraiGo)、[OICQ](https://github.com/takayama-lily/oicq)、[Mirai](https://github.com/mamoe/mirai)
 
 ## 如何使用
 
-本项目是协议 lib，如果需要直接使用，可以参考 [examples](https://github.com/lz1998/oicq-rs/tree/master/examples) 中的例子进行开发。
+本项目是协议 lib，如果需要直接使用，可以参考 [examples](https://github.com/lz1998/ricq/tree/master/examples) 中的例子进行开发。
 
 普通开发者推荐使用 SDK、框架进行开发：
 
