@@ -91,7 +91,7 @@ impl Client {
                         }
                     }
                     208 => {
-                        // friend ptt
+                        // friend ptt_store
                     }
                     _ => tracing::warn!("unhandled sync message type"),
                 }

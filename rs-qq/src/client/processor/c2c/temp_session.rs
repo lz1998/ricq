@@ -39,7 +39,7 @@ pub fn parse_temp_message(msg: pb::msg::Message) -> RQResult<TempMessage> {
         time: head.msg_time.unwrap(),
         from_uin: head.from_uin.unwrap_or_default(),
         from_nick: head.from_nick.unwrap_or_default(),
-        elements: MessageChain::from(msg.body.unwrap().rich_text.unwrap().elems), // todo ptt
+        elements: MessageChain::from(msg.body.unwrap().rich_text.unwrap().elems), // todo ptt_store
         group_code: tmp_head.group_code,
         sig: tmp_head.sig,
         service_type: tmp_head.service_type.unwrap_or_default(),

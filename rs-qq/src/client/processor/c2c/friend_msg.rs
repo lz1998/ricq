@@ -57,7 +57,7 @@ pub fn parse_friend_message(msg: pb::msg::Message) -> RQResult<FriendMessage> {
                 0
             },
         ],
-        elements: MessageChain::from(msg.body.unwrap().rich_text.unwrap().elems), // todo ptt
+        elements: MessageChain::from(msg.body.unwrap().rich_text.unwrap().elems), // todo ptt_store
     })
 }
 

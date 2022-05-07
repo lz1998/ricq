@@ -124,7 +124,7 @@ impl Client {
         };
         //todo extInfo
         //todo group_card_update
-        //todo ptt
+        //todo ptt_store
         Ok(group_message)
     }
 
