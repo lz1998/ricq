@@ -8,7 +8,7 @@ impl Client {
         &self,
         other_clients: Vec<OtherClientInfo>,
     ) -> Result<(), RQError> {
-        tracing::debug!(target = "rs_qq", "{:?}", other_clients);
+        tracing::debug!("{:?}", other_clients);
         // TODO merge part and dispatch to handler
         Ok(())
     }

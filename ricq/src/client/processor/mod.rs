@@ -15,14 +15,14 @@ pub mod wtlogin;
 macro_rules! log_error {
     ($process: expr, $info: expr) => {
         if let Err(e) = $process {
-            tracing::error!(target: "rs_qq", $info, e);
+            tracing::error!($info, e);
         }
     };
 }
 
 impl super::Client {
     pub async fn process_income_packet(self: &Arc<Self>, pkt: Packet) {
-        tracing::trace!(target: "rs_qq", "received pkt: {}", &pkt.command_name);
+        tracing::trace!("received pkt: {}", &pkt.command_name);
         // response
         {
             if let Some(sender) = self.packet_promises.write().await.remove(&pkt.seq_id) {
@@ -30,14 +30,14 @@ impl super::Client {
                 return;
             }
         }
-        tracing::trace!(target: "rs_qq", "pkt: {} passed packet_promises", &pkt.command_name);
+        tracing::trace!("pkt: {} passed packet_promises", &pkt.command_name);
         {
             if let Some(tx) = self.packet_waiters.write().await.remove(&pkt.command_name) {
                 tx.send(pkt).unwrap();
                 return;
             }
         }
-        tracing::trace!(target: "rs_qq", "pkt: {} passed packet_waiters", &pkt.command_name);
+        tracing::trace!("pkt: {} passed packet_waiters", &pkt.command_name);
 
         let cli = self.clone();
         tokio::spawn(async move {
@@ -89,7 +89,7 @@ impl super::Client {
                             cli.process_push_notify(notify).await;
                         }
                         Err(err) => {
-                            tracing::error!(target: "rs_qq", "failed to decode push_notify: {}", err);
+                            tracing::error!("failed to decode push_notify: {}", err);
                         }
                     }
                 }
@@ -161,10 +161,10 @@ impl super::Client {
                 | "RegPrxySvc.PbGetMsg"
                 | "RegPrxySvc.NoticeEnd"
                 | "MessageSvc.PushReaded" => {
-                    tracing::trace!(target: "rs_qq", "ignore pkt: {}", &pkt.command_name);
+                    tracing::trace!("ignore pkt: {}", &pkt.command_name);
                 }
                 _ => {
-                    tracing::debug!(target: "rs_qq", "unhandled pkt: {}", &pkt.command_name);
+                    tracing::debug!("unhandled pkt: {}", &pkt.command_name);
                 }
             }
         });

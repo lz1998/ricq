@@ -80,7 +80,6 @@ impl Handler for DefaultHandler {
         match e {
             QEvent::GroupMessage(m) => {
                 tracing::info!(
-                    target = "rs_qq",
                     "MESSAGE (GROUP={}): {}",
                     m.message.group_code,
                     m.message.elements
@@ -88,7 +87,6 @@ impl Handler for DefaultHandler {
             }
             QEvent::FriendMessage(m) => {
                 tracing::info!(
-                    target = "rs_qq",
                     "MESSAGE (FRIEND={}): {}",
                     m.message.from_uin,
                     m.message.elements
@@ -96,7 +94,6 @@ impl Handler for DefaultHandler {
             }
             QEvent::TempMessage(m) => {
                 tracing::info!(
-                    target = "rs_qq",
                     "MESSAGE (TEMP={}): {}",
                     m.message.from_uin,
                     m.message.elements
@@ -104,7 +101,6 @@ impl Handler for DefaultHandler {
             }
             QEvent::GroupRequest(m) => {
                 tracing::info!(
-                    target = "rs_qq",
                     "REQUEST (GROUP={}, UIN={}): {}",
                     m.request.group_code,
                     m.request.req_uin,
@@ -112,14 +108,9 @@ impl Handler for DefaultHandler {
                 )
             }
             QEvent::FriendRequest(m) => {
-                tracing::info!(
-                    target = "rs_qq",
-                    "REQUEST (UIN={}): {}",
-                    m.request.req_uin,
-                    m.request.message
-                )
+                tracing::info!("REQUEST (UIN={}): {}", m.request.req_uin, m.request.message)
             }
-            _ => tracing::info!(target = "rs_qq", "{:?}", e),
+            _ => tracing::info!("{:?}", e),
         }
     }
 }

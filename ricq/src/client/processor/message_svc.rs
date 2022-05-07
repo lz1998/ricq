@@ -76,18 +76,18 @@ impl Client {
             .for_each(|msg| async {
                 match msg.head.as_ref().unwrap().msg_type() {
                     9 | 10 | 31 | 79 | 97 | 120 | 132 | 133 | 166 | 167 => {
-                        if let Err(err)=self.process_friend_message(msg).await{
-                            tracing::error!(target: "rs_qq", "failed to process friend message {}",err);
+                        if let Err(err) = self.process_friend_message(msg).await {
+                            tracing::error!("failed to process friend message {}", err);
                         }
                     }
                     33 => {
-                        if let Err(err)=self.process_join_group(msg).await{
-                            tracing::error!(target: "rs_qq", "failed to process join group {}",err);
+                        if let Err(err) = self.process_join_group(msg).await {
+                            tracing::error!("failed to process join group {}", err);
                         }
                     }
                     140 | 141 => {
-                        if let Err(err)=self.process_temp_message(msg).await{
-                            tracing::error!(target: "rs_qq", "failed to process temp message {}",err);
+                        if let Err(err) = self.process_temp_message(msg).await {
+                            tracing::error!("failed to process temp message {}", err);
                         }
                     }
                     208 => {

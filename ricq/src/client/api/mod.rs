@@ -174,7 +174,7 @@ impl super::Client {
             let resp = match self.sync_message(sync_flag).await {
                 Ok(resp) => resp,
                 Err(_) => {
-                    tracing::warn!(target: "rs_qq", "failed to sync_message");
+                    tracing::warn!("failed to sync_message");
                     break;
                 }
             };
@@ -197,7 +197,7 @@ impl super::Client {
                 )
                 .await
             {
-                tracing::warn!(target: "rs_qq", "failed to delete_message: {}",err);
+                tracing::warn!("failed to delete_message: {}", err);
                 break;
             }
             match resp.msg_rsp_type {
