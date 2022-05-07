@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2021"
 description = "Packet encoders and decoders for oicq"
 license = "AGPLv3"
+homepage = "https://github.com/lz1998/ricq"
+repository = "https://github.com/lz1998/ricq"
+readme = "README.md"
+keywords = ["qq", "ricq", "oicq", "protocol", "android", "coolq", "bot", "mirai"]
 
 [dependencies]
 bytes = "1"
