@@ -1,19 +1,20 @@
 # RS-QQ
 
-![](https://socialify.git.ci/lz1998/rs-qq/image?forks=1&issues=1&language=1&owner=1&pattern=Circuit%20Board&pulls=1&stargazers=1&theme=Dark)
+![](https://socialify.git.ci/lz1998/oicq-rs/image?forks=1&issues=1&language=1&owner=1&pattern=Circuit%20Board&pulls=1&stargazers=1&theme=Dark)
 
-qq-android 协议的 rust 实现 移植于 MiraiGo、OICQ、Mirai
+qq-android 协议的 rust 实现 移植于 [MiraiGo](https://github.com/Mrs4s/MiraiGo)、[OICQ](https://github.com/takayama-lily/oicq)、[Mirai](https://github.com/mamoe/mirai)
 
 ## 如何使用
 
-本项目是协议 lib, 不推荐直接基于本项目开发。
+本项目是协议 lib，如果需要直接使用，可以参考 [examples](https://github.com/lz1998/oicq-rs/tree/master/examples) 中的例子进行开发。
 
-Rust 用户推荐使用 [RQ-Tower](https://github.com/lz1998/rq-tower),
-基于 [Demo](https://github.com/lz1998/rq-tower/tree/main/examples/demo) 修改，或 [rust_proc_qq](https://github.com/niuhuan/rust_proc_qq)。
+普通开发者推荐使用 SDK、框架进行开发：
 
-其他语言用户推荐使用 [(WIP)Walle-Q](https://github.com/abrahum/walle-q), 基于 OneBot 协议开发。
-
-如果一定要基于本项目开发，可以参考 `examples/password_login.rs` 或 `examples/qrcode_login.rs`。
+|  框架/SDK   | 语言  | 说明  |
+|  ----  | ----  | ----  |
+| [RQ-Tower](https://github.com/lz1998/rq-tower)  | Rust | 基于tower，模仿axum  |
+|  [rust_proc_qq](https://github.com/niuhuan/rust_proc_qq) | Rust | 模仿rocket  |
+|  [Walle-Q](https://github.com/abrahum/walle-q) | - | onebot协议  |
 
 > 本项目是一个年轻的项目，请使用 nightly channel 构建本项目哦（正经人谁用 stable 啊）
 
