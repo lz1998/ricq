@@ -14,3 +14,11 @@ serde_json = "1"
 bytes = "1"
 tracing-subscriber = { version = "0.3", features = ["fmt"] }
 time = { version = "0.3", features = ["macros", "local-offset"] }
+
+[profile.release]
+opt-level = 'z'
+debug = false
+lto = true
+incremental = false
+codegen-units = 1
+strip = true
