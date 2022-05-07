@@ -2,6 +2,8 @@
 name = "oicq-core"
 version = "0.1.0"
 edition = "2021"
+description = "Packet encoders and decoders for oicq"
+license = "AGPLv3"
 
 [dependencies]
 bytes = "1"

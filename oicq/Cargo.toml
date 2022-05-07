@@ -2,6 +2,8 @@
 name = "oicq"
 version = "0.1.0"
 edition = "2021"
+description = "Android IM protocol"
+license = "AGPLv3"
 
 [dependencies]
 bytes = "1"
