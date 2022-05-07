@@ -8,12 +8,12 @@ use tokio::time::{sleep, Duration};
 use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use oicq::client::handler::DefaultHandler;
-use oicq::client::Client;
-use oicq::device::Device;
-use oicq::ext::common::after_login;
-use oicq::version::{get_version, Protocol};
-use oicq::{LoginResponse, QRCodeConfirmed, QRCodeImageFetch, QRCodeState};
+use ricq::client::handler::DefaultHandler;
+use ricq::client::Client;
+use ricq::device::Device;
+use ricq::ext::common::after_login;
+use ricq::version::{get_version, Protocol};
+use ricq::{LoginResponse, QRCodeConfirmed, QRCodeImageFetch, QRCodeState};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
@@ -65,7 +65,7 @@ async fn main() -> Result<()> {
     let mut resp = client.fetch_qrcode().await.expect("failed to fetch qrcode");
 
     // // vvv 如果不关心二维码状态，可以用这个替换下面的 vvv
-    // use oicq::ext::login::auto_query_qrcode;
+    // use ricq::ext::login::auto_query_qrcode;
     // match resp {
     //     QRCodeState::QRCodeImageFetch {
     //         ref image_data,

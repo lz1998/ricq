@@ -1,5 +1,5 @@
 [workspace]
 members = [
-    "oicq",
-    "oicq-core"
+    "ricq",
+    "ricq-core"
 ]

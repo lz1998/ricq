@@ -8,13 +8,13 @@ use tokio_util::codec::{FramedRead, LinesCodec};
 use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use oicq::device::Device;
-use oicq::ext::common::after_login;
-use oicq::handler::DefaultHandler;
-use oicq::structs::ExtOnlineStatus;
-use oicq::version::{get_version, Protocol};
-use oicq::{Client, LoginDeviceLocked, LoginNeedCaptcha, LoginSuccess};
-use oicq::{LoginResponse, LoginUnknownStatus};
+use ricq::device::Device;
+use ricq::ext::common::after_login;
+use ricq::handler::DefaultHandler;
+use ricq::structs::ExtOnlineStatus;
+use ricq::version::{get_version, Protocol};
+use ricq::{Client, LoginDeviceLocked, LoginNeedCaptcha, LoginSuccess};
+use ricq::{LoginResponse, LoginUnknownStatus};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
@@ -159,7 +159,7 @@ async fn main() -> Result<()> {
     tracing::info!("{:?}", d);
 
     // 等一下，收到 ConfigPushSvc.PushReq 才可以发
-    // use oicq::msg::MessageChain;
+    // use ricq::msg::MessageChain;
     // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
     // let img_bytes = tokio::fs::read("test.png").await.unwrap();
     // let group_image = client
