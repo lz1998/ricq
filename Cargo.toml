@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "rs-qq",
-    "rq-engine",
+    "oicq",
+    "oicq-core",
     "examples/*"
 ]
 

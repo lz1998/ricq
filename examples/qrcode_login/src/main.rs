@@ -8,12 +8,12 @@ use tokio::time::{sleep, Duration};
 use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use rs_qq::client::handler::DefaultHandler;
-use rs_qq::client::Client;
-use rs_qq::device::Device;
-use rs_qq::ext::common::after_login;
-use rs_qq::version::{get_version, Protocol};
-use rs_qq::{LoginResponse, QRCodeConfirmed, QRCodeImageFetch, QRCodeState};
+use oicq::client::handler::DefaultHandler;
+use oicq::client::Client;
+use oicq::device::Device;
+use oicq::ext::common::after_login;
+use oicq::version::{get_version, Protocol};
+use oicq::{LoginResponse, QRCodeConfirmed, QRCodeImageFetch, QRCodeState};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
@@ -30,7 +30,7 @@ async fn main() -> Result<()> {
         )
         .with(
             tracing_subscriber::filter::Targets::new()
-                .with_target("rs_qq", Level::DEBUG)
+                .with_target("oicq", Level::DEBUG)
                 .with_target("qrcode_login", Level::DEBUG),
         )
         .init();
@@ -65,7 +65,7 @@ async fn main() -> Result<()> {
     let mut resp = client.fetch_qrcode().await.expect("failed to fetch qrcode");
 
     // // vvv 如果不关心二维码状态，可以用这个替换下面的 vvv
-    // use rs_qq::ext::login::auto_query_qrcode;
+    // use oicq::ext::login::auto_query_qrcode;
     // match resp {
     //     QRCodeState::QRCodeImageFetch {
     //         ref image_data,

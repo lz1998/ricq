@@ -6,12 +6,12 @@ use tokio::net::TcpStream;
 use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use rs_qq::client::Token;
-use rs_qq::device::Device;
-use rs_qq::ext::common::after_login;
-use rs_qq::handler::DefaultHandler;
-use rs_qq::version::{get_version, Protocol};
-use rs_qq::Client;
+use oicq::client::Token;
+use oicq::device::Device;
+use oicq::ext::common::after_login;
+use oicq::handler::DefaultHandler;
+use oicq::version::{get_version, Protocol};
+use oicq::Client;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
@@ -28,7 +28,7 @@ async fn main() -> Result<()> {
         )
         .with(
             tracing_subscriber::filter::Targets::new()
-                .with_target("rs_qq", Level::DEBUG)
+                .with_target("oicq", Level::DEBUG)
                 .with_target("token_login", Level::DEBUG),
         )
         .init();

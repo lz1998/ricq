@@ -8,13 +8,13 @@ use tokio_util::codec::{FramedRead, LinesCodec};
 use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use rs_qq::device::Device;
-use rs_qq::ext::common::after_login;
-use rs_qq::handler::DefaultHandler;
-use rs_qq::structs::ExtOnlineStatus;
-use rs_qq::version::{get_version, Protocol};
-use rs_qq::{Client, LoginDeviceLocked, LoginNeedCaptcha, LoginSuccess};
-use rs_qq::{LoginResponse, LoginUnknownStatus};
+use oicq::device::Device;
+use oicq::ext::common::after_login;
+use oicq::handler::DefaultHandler;
+use oicq::structs::ExtOnlineStatus;
+use oicq::version::{get_version, Protocol};
+use oicq::{Client, LoginDeviceLocked, LoginNeedCaptcha, LoginSuccess};
+use oicq::{LoginResponse, LoginUnknownStatus};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
@@ -31,7 +31,7 @@ async fn main() -> Result<()> {
         )
         .with(
             tracing_subscriber::filter::Targets::new()
-                .with_target("rs_qq", Level::DEBUG)
+                .with_target("oicq", Level::DEBUG)
                 .with_target("password_login", Level::DEBUG),
         )
         .init();
@@ -159,7 +159,7 @@ async fn main() -> Result<()> {
     tracing::info!("{:?}", d);
 
     // 等一下，收到 ConfigPushSvc.PushReq 才可以发
-    // use rs_qq::msg::MessageChain;
+    // use oicq::msg::MessageChain;
     // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
     // let img_bytes = tokio::fs::read("test.png").await.unwrap();
     // let group_image = client

@@ -5,7 +5,7 @@ edition = "2021"
 
 
 [dependencies]
-rs-qq = { path = "../../rs-qq" }
+oicq = { path = "../../oicq" }
 tokio = { version = "1", features = ["full"] }
 tokio-util = { version = "0.7", features = ["codec"] }
 anyhow = "1"
