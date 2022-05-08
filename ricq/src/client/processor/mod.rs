@@ -26,18 +26,11 @@ impl super::Client {
         // response
         {
             if let Some(sender) = self.packet_promises.write().await.remove(&pkt.seq_id) {
-                sender.send(pkt).unwrap(); //todo response
+                sender.send(pkt).unwrap();
                 return;
             }
         }
         tracing::trace!("pkt: {} passed packet_promises", &pkt.command_name);
-        {
-            if let Some(tx) = self.packet_waiters.write().await.remove(&pkt.command_name) {
-                tx.send(pkt).unwrap();
-                return;
-            }
-        }
-        tracing::trace!("pkt: {} passed packet_waiters", &pkt.command_name);
 
         let cli = self.clone();
         tokio::spawn(async move {

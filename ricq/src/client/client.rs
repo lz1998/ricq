@@ -31,7 +31,6 @@ impl super::Client {
             disconnect_signal,
             // out_going_packet_session_id: RwLock::new(Bytes::from_static(&[0x02, 0xb0, 0x5b, 0x8b])),
             packet_promises: Default::default(),
-            packet_waiters: Default::default(),
             receipt_waiters: Default::default(),
             account_info: Default::default(),
             address: Default::default(),
@@ -89,25 +88,6 @@ impl super::Client {
             Err(_) => {
                 tracing::trace!("waiting pkt {}-{} timeout", expect, seq);
                 self.packet_promises.write().await.remove(&seq);
-                Err(RQError::Timeout)
-            }
-        }
-    }
-
-    pub async fn wait_packet(&self, pkt_name: &str, delay: u64) -> RQResult<Packet> {
-        tracing::trace!("waitting pkt {}", pkt_name);
-        let (tx, rx) = oneshot::channel();
-        {
-            self.packet_waiters
-                .write()
-                .await
-                .insert(pkt_name.to_owned(), tx);
-        }
-        match tokio::time::timeout(std::time::Duration::from_secs(delay), rx).await {
-            Ok(i) => Ok(i.unwrap()),
-            Err(_) => {
-                tracing::trace!("waitting pkt {} timeout", pkt_name);
-                self.packet_waiters.write().await.remove(pkt_name);
                 Err(RQError::Timeout)
             }
         }

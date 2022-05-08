@@ -36,7 +36,6 @@ pub struct Client {
 
     out_pkt_sender: net::OutPktSender,
     packet_promises: RwLock<HashMap<i32, oneshot::Sender<Packet>>>,
-    packet_waiters: RwLock<HashMap<String, oneshot::Sender<Packet>>>,
     receipt_waiters: Mutex<HashMap<i32, oneshot::Sender<i32>>>,
 
     // account info
