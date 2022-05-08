@@ -1,10 +1,12 @@
+use std::collections::HashMap;
+
+use bytes::Bytes;
+use jcers::JcePut;
+
 use crate::command::common::pack_uni_request_data;
 use crate::hex::decode_hex;
 use crate::jce;
 use crate::protocol::packet::Packet;
-use bytes::Bytes;
-use jcers::JcePut;
-use std::collections::HashMap;
 
 impl super::super::super::Engine {
     // VisitorSvc.ReqFavorite
@@ -17,7 +19,9 @@ impl super::super::super::Engine {
                 i_seq: seq as i32,
                 b_req_type: 1,
                 b_triggered: 0,
-                v_cookies: Bytes::from(decode_hex("0C180001060131160131").unwrap()),
+                v_cookies: Bytes::from(
+                    decode_hex("0C180001060131160131").expect("failed to decode_hex"),
+                ),
             },
             l_mid: uin,
             c_op_type: 0,

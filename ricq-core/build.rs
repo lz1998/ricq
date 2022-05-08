@@ -9,7 +9,7 @@ fn recursion<P: AsRef<Path>>(v: &mut Vec<String>, dir: P) -> Result<()> {
         if path.is_dir() {
             recursion(v, path)?;
         } else {
-            let path = path.into_os_string().into_string().unwrap();
+            let path = path.into_os_string().into_string().expect("path error");
             if path.ends_with(".proto") {
                 v.push(path);
             }

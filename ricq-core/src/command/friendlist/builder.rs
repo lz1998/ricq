@@ -29,7 +29,7 @@ impl super::super::super::Engine {
             },
             &mut d50,
         )
-        .unwrap();
+        .expect("failed to encode pb");
 
         let req = jce::FriendListRequest {
             reqtype: 3,

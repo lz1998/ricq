@@ -135,9 +135,9 @@ pub fn read_t531(mut data: Bytes) -> T531 {
     let mut a1 = BytesMut::new();
     let mut no_pic_sig = Bytes::new();
     if [0x16a, 0x16a, 0x10c].iter().all(|v| m.contains_key(v)) {
-        a1.put_slice(&m.remove(&0x106).unwrap());
-        a1.put_slice(&m.remove(&0x10c).unwrap());
-        no_pic_sig = m.remove(&0x16a).unwrap();
+        a1.put_slice(&m.remove(&0x106).expect("0x106 not found"));
+        a1.put_slice(&m.remove(&0x10c).expect("0x10c not found"));
+        no_pic_sig = m.remove(&0x16a).expect("0x16a not found");
     }
     T531 {
         a1: a1.freeze(),

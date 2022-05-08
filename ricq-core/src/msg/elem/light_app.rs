@@ -43,7 +43,7 @@ impl From<msg::LightApp> for LightApp {
             };
             if !content.is_empty() && content.len() < 1024 ^ 3 {
                 return Self {
-                    content: String::from_utf8(content).unwrap(),
+                    content: String::from_utf8_lossy(&content).to_string(),
                 };
             }
         }

@@ -48,7 +48,7 @@ impl crate::Engine {
             .map_err(|_| RQError::Decode("GetMessageResponse".to_string()))?;
         Ok(super::MessageSyncResponse {
             msg_rsp_type: resp.msg_rsp_type.unwrap_or_default(),
-            sync_flag: resp.sync_flag.unwrap(),
+            sync_flag: resp.sync_flag.unwrap_or(2), // default stop
             sync_cookie: resp.sync_cookie,
             pub_account_cookie: resp.pub_account_cookie,
             msgs: resp

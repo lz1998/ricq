@@ -959,7 +959,7 @@ mod tests {
                 .get_mut("HttpServerListRes")
                 .expect("failed to get HttpServerListRes"),
         )
-        .unwrap();
+        .expect("failed to parse jce");
         for s in sso_server_infos.sso_server_infos {
             println!("Get Addrs server:{} port:{}", s.server, s.port);
         }

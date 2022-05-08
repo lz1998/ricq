@@ -42,7 +42,7 @@ impl From<msg::RichMsg> for RichMsg {
             if !content.is_empty() && content.len() < 1024 ^ 3 {
                 return Self {
                     service_id: e.service_id.unwrap_or_default(),
-                    template1: String::from_utf8(content).unwrap(),
+                    template1: String::from_utf8_lossy(&content).to_string(),
                 };
             }
         }
