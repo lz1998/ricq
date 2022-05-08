@@ -3,7 +3,7 @@ use std::sync::Arc;
 use ricq_core::command::profile_service::{JoinGroupRequest, NewFriendRequest, SelfInvited};
 use ricq_core::structs::{
     DeleteFriend, FriendAudioMessage, FriendInfo, FriendMessageRecall, FriendPoke,
-    GroupAudioMessage, GroupLeave, GroupMessageRecall, GroupMute, GroupNameUpdate,
+    GroupAudioMessage, GroupDisband, GroupLeave, GroupMessageRecall, GroupMute, GroupNameUpdate,
     MemberPermissionChange, NewMember, TempMessage,
 };
 use ricq_core::{jce, RQResult};
@@ -194,6 +194,14 @@ pub struct GroupLeaveEvent {
     #[derivative(Debug = "ignore")]
     pub client: Arc<Client>,
     pub leave: GroupLeave,
+}
+
+#[derive(Clone, derivative::Derivative)]
+#[derivative(Debug)]
+pub struct GroupDisbandEvent {
+    #[derivative(Debug = "ignore")]
+    pub client: Arc<Client>,
+    pub disband: GroupDisband,
 }
 
 #[derive(Clone, derivative::Derivative)]

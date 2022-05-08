@@ -7,10 +7,11 @@ use tokio::sync::{
 
 use crate::client::event::{
     DeleteFriendEvent, FriendAudioMessageEvent, FriendMessageEvent, FriendMessageRecallEvent,
-    FriendPokeEvent, FriendRequestEvent, GroupAudioMessageEvent, GroupLeaveEvent,
-    GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent, GroupNameUpdateEvent,
-    GroupRequestEvent, KickedOfflineEvent, MSFOfflineEvent, MemberPermissionChangeEvent,
-    NewFriendEvent, NewMemberEvent, SelfInvitedEvent, TempMessageEvent,
+    FriendPokeEvent, FriendRequestEvent, GroupAudioMessageEvent, GroupDisbandEvent,
+    GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent,
+    GroupNameUpdateEvent, GroupRequestEvent, KickedOfflineEvent, MSFOfflineEvent,
+    MemberPermissionChangeEvent, NewFriendEvent, NewMemberEvent, SelfInvitedEvent,
+    TempMessageEvent,
 };
 
 /// 所有需要外发的数据的枚举打包
@@ -49,6 +50,8 @@ pub enum QEvent {
     NewFriend(NewFriendEvent),
     /// 退群/被踢
     GroupLeave(GroupLeaveEvent),
+    /// 群解散
+    GroupDisband(GroupDisbandEvent),
     /// 好友戳一戳
     FriendPoke(FriendPokeEvent),
     /// 群名称修改
@@ -161,6 +164,7 @@ pub trait PartlyHandler: Sync {
     async fn handle_group_message_recall(&self, _event: GroupMessageRecallEvent) {}
     async fn handle_new_friend(&self, _event: NewFriendEvent) {}
     async fn handle_group_leave(&self, _event: GroupLeaveEvent) {}
+    async fn handle_group_disband(&self, _event: GroupDisbandEvent) {}
     async fn handle_friend_poke(&self, _event: FriendPokeEvent) {}
     async fn handle_group_name_update(&self, _event: GroupNameUpdateEvent) {}
     async fn handle_delete_friend(&self, _event: DeleteFriendEvent) {}
@@ -192,6 +196,7 @@ where
             QEvent::GroupMessageRecall(m) => self.handle_group_message_recall(m).await,
             QEvent::NewFriend(m) => self.handle_new_friend(m).await,
             QEvent::GroupLeave(m) => self.handle_group_leave(m).await,
+            QEvent::GroupDisband(m) => self.handle_group_disband(m).await,
             QEvent::FriendPoke(m) => self.handle_friend_poke(m).await,
             QEvent::GroupNameUpdate(m) => self.handle_group_name_update(m).await,
             QEvent::DeleteFriend(m) => self.handle_delete_friend(m).await,

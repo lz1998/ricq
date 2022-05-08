@@ -6,7 +6,7 @@ use futures::{stream, StreamExt};
 
 use crate::client::event::{
     DeleteFriendEvent, FriendMessageRecallEvent, FriendPokeEvent, GroupAudioMessageEvent,
-    GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent,
+    GroupDisbandEvent, GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent,
     GroupNameUpdateEvent, MemberPermissionChangeEvent, NewFriendEvent, NewMemberEvent,
 };
 use crate::client::handler::QEvent;
@@ -417,6 +417,14 @@ impl Client {
                             change,
                         },
                     ))
+                    .await;
+            }
+            PushTransInfo::GroupDisband(disband) => {
+                self.handler
+                    .handle(QEvent::GroupDisband(GroupDisbandEvent {
+                        client: self.clone(),
+                        disband,
+                    }))
                     .await;
             }
         }

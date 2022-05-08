@@ -116,9 +116,15 @@ impl super::Client {
                         .engine
                         .read()
                         .await
-                        .decode_online_push_trans_packet(pkt.body)
-                        .unwrap();
-                    cli.process_push_trans(online_push_trans).await;
+                        .decode_online_push_trans_packet(pkt.body);
+                    match online_push_trans {
+                        Ok(online_push_trans) => {
+                            cli.process_push_trans(online_push_trans).await;
+                        }
+                        Err(err) => {
+                            tracing::warn!("failed to decode online_push_trans: {}", err)
+                        }
+                    }
                 }
                 "MessageSvc.PushForceOffline" => {
                     let offline = cli
