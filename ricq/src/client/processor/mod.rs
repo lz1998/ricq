@@ -47,36 +47,46 @@ impl super::Client {
                         .engine
                         .read()
                         .await
-                        .decode_group_message_packet(pkt.body)
-                        .unwrap();
-                    log_error!(
-                        cli.process_group_message_part(p).await,
-                        "process group message part error: {:?}"
-                    )
+                        .decode_group_message_packet(pkt.body);
+                    match p {
+                        Ok(part) => {
+                            log_error!(
+                                cli.process_group_message_part(part).await,
+                                "process_group_message_part error: {:?}"
+                            )
+                        }
+                        Err(err) => {
+                            tracing::warn!("failed to decode [OnlinePush.PbPushGroupMsg]: {}", err);
+                        }
+                    }
                 }
                 "ConfigPushSvc.PushReq" => {
-                    let req = cli
-                        .engine
-                        .read()
-                        .await
-                        .decode_push_req_packet(pkt.body)
-                        .unwrap();
-                    log_error!(
-                        cli.process_config_push_req(req).await,
-                        "process config push req error: {:?}"
-                    )
+                    let req = cli.engine.read().await.decode_push_req_packet(pkt.body);
+                    match req {
+                        Ok(req) => {
+                            log_error!(
+                                cli.process_config_push_req(req).await,
+                                "process_config_push_req error: {:?}"
+                            )
+                        }
+                        Err(err) => {
+                            tracing::warn!("failed to decode [ConfigPushSvc.PushReq]: {}", err);
+                        }
+                    }
                 }
                 "RegPrxySvc.PushParam" => {
-                    let other_clients = cli
-                        .engine
-                        .read()
-                        .await
-                        .decode_push_param_packet(&pkt.body)
-                        .unwrap();
-                    log_error!(
-                        cli.process_push_param(other_clients).await,
-                        "process push param error: {:?}"
-                    )
+                    let other_clients = cli.engine.read().await.decode_push_param_packet(&pkt.body);
+                    match other_clients {
+                        Ok(other_clients) => {
+                            log_error!(
+                                cli.process_push_param(other_clients).await,
+                                "process_push_param error: {:?}"
+                            )
+                        }
+                        Err(err) => {
+                            tracing::warn!("failed to decode [RegPrxySvc.PushParam]: {}", err);
+                        }
+                    }
                 }
                 "MessageSvc.PushNotify" => {
                     // c2c流程：
@@ -89,7 +99,7 @@ impl super::Client {
                             cli.process_push_notify(notify).await;
                         }
                         Err(err) => {
-                            tracing::error!("failed to decode push_notify: {}", err);
+                            tracing::warn!("failed to decode [MessageSvc.PushNotify]: {}", err);
                         }
                     }
                 }
@@ -98,18 +108,26 @@ impl super::Client {
                         .engine
                         .read()
                         .await
-                        .decode_online_push_req_packet(pkt.body)
-                        .unwrap();
-                    let _ = cli
-                        .send(cli.engine.read().await.build_delete_online_push_packet(
-                            resp.uin,
-                            0,
-                            Bytes::new(),
-                            pkt.seq_id as u16,
-                            resp.msg_infos.clone(),
-                        ))
-                        .await;
-                    cli.process_push_req(resp.msg_infos).await;
+                        .decode_online_push_req_packet(pkt.body);
+                    match resp {
+                        Ok(resp) => {
+                            log_error!(
+                                cli.delete_online_push(
+                                    resp.uin,
+                                    0,
+                                    Bytes::new(),
+                                    pkt.seq_id as u16,
+                                    resp.msg_infos.clone(),
+                                )
+                                .await,
+                                "delete_online_push error: {:?}"
+                            );
+                            cli.process_push_req(resp.msg_infos).await;
+                        }
+                        Err(err) => {
+                            tracing::warn!("failed to decode [OnlinePush.ReqPush]: {}", err);
+                        }
+                    }
                 }
                 "OnlinePush.PbPushTransMsg" => {
                     let online_push_trans = cli
@@ -122,40 +140,49 @@ impl super::Client {
                             cli.process_push_trans(online_push_trans).await;
                         }
                         Err(err) => {
-                            tracing::warn!("failed to decode online_push_trans: {}", err)
+                            tracing::warn!("failed to decode [OnlinePush.PbPushTransMsg]: {}", err);
                         }
                     }
                 }
                 "MessageSvc.PushForceOffline" => {
-                    let offline = cli
-                        .engine
-                        .read()
-                        .await
-                        .decode_force_offline(pkt.body)
-                        .unwrap();
-                    cli.process_push_force_offline(offline).await;
+                    let offline = cli.engine.read().await.decode_force_offline(pkt.body);
+                    match offline {
+                        Ok(offline) => {
+                            cli.process_push_force_offline(offline).await;
+                        }
+                        Err(err) => {
+                            tracing::warn!(
+                                "failed to decode [MessageSvc.PushForceOffline]: {}",
+                                err
+                            );
+                        }
+                    }
                 }
                 "StatSvc.ReqMSFOffline" => {
-                    let offline = cli
-                        .engine
-                        .read()
-                        .await
-                        .decode_msf_force_offline(pkt.body)
-                        .unwrap();
-                    cli.process_msf_force_offline(offline).await;
+                    let offline = cli.engine.read().await.decode_msf_force_offline(pkt.body);
+                    match offline {
+                        Ok(offline) => {
+                            cli.process_msf_force_offline(offline).await;
+                        }
+                        Err(err) => {
+                            tracing::warn!("failed to decode [StatSvc.ReqMSFOffline]: {}", err);
+                        }
+                    }
                 }
                 "OnlinePush.PbC2CMsgSync" => {
                     // 其他设备发送消息，同步
-                    let push = cli
-                        .engine
-                        .read()
-                        .await
-                        .decode_c2c_sync_packet(pkt.body)
-                        .unwrap();
-                    log_error!(
-                        cli.process_c2c_sync(pkt.seq_id, push).await,
-                        "process group message part error: {:?}"
-                    )
+                    let push = cli.engine.read().await.decode_c2c_sync_packet(pkt.body);
+                    match push {
+                        Ok(push) => {
+                            log_error!(
+                                cli.process_c2c_sync(pkt.seq_id, push).await,
+                                "process_c2c_sync error: {:?}"
+                            )
+                        }
+                        Err(err) => {
+                            tracing::warn!("failed to decode [OnlinePush.PbC2CMsgSync]: {}", err);
+                        }
+                    }
                 }
                 "OnlinePush.SidTicketExpired" => {
                     log_error!(

@@ -207,6 +207,12 @@ pub struct MemberPermissionChange {
     pub new_permission: GroupMemberPermission,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct GroupDisband {
+    pub group_code: i64,
+    pub operator_uin: i64,
+}
+
 // 用于撤回
 #[derive(Debug, Clone, Default)]
 pub struct MessageReceipt {

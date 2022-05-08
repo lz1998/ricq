@@ -3,17 +3,17 @@ use std::sync::atomic::Ordering;
 
 use bytes::Bytes;
 
+use ricq_core::command::message_svc::MessageSyncResponse;
+use ricq_core::command::oidb_svc::*;
 use ricq_core::common::{group_code2uin, RQAddr};
 use ricq_core::highway::BdhInput;
+use ricq_core::pb;
 use ricq_core::structs::ForwardMessage;
+use ricq_core::structs::Status;
+use ricq_core::structs::SummaryCardInfo;
 
 use crate::jce::SvcDevLoginInfo;
 use crate::{RQError, RQResult};
-use ricq_core::command::message_svc::MessageSyncResponse;
-use ricq_core::command::oidb_svc::*;
-use ricq_core::pb;
-use ricq_core::structs::Status;
-use ricq_core::structs::SummaryCardInfo;
 
 mod friend;
 mod group;
@@ -144,6 +144,24 @@ impl super::Client {
             .await
             .build_delete_message_request_packet(items);
         let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
+    // 标记 online_push 已收到，server 不再重复推送
+    pub async fn delete_online_push(
+        &self,
+        uin: i64,
+        svrip: i32,
+        push_token: Bytes,
+        seq: u16,
+        del_msg: Vec<ricq_core::jce::PushMessageInfo>,
+    ) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_delete_online_push_packet(uin, svrip, push_token, seq, del_msg);
+        self.send(req).await?;
         Ok(())
     }
 

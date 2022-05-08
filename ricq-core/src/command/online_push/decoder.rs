@@ -4,7 +4,7 @@ use jcers::Jce;
 use crate::command::common::PbToBytes;
 use crate::command::online_push::{GroupMessagePart, OnlinePushTrans, PushTransInfo, ReqPush};
 use crate::common::group_uin2code;
-use crate::structs::{GroupLeave, GroupMemberPermission, MemberPermissionChange};
+use crate::structs::{GroupDisband, GroupLeave, GroupMemberPermission, MemberPermissionChange};
 use crate::{jce, pb, RQError, RQResult};
 
 impl super::super::super::Engine {
@@ -127,6 +127,17 @@ impl super::super::super::Engine {
                 let typ = data.get_u8() as i32;
                 let operator = data.get_u32() as i64;
                 match typ {
+                    0x01 | 0x81 => {
+                        return Ok(OnlinePushTrans {
+                            msg_seq,
+                            msg_uid,
+                            msg_time,
+                            info: PushTransInfo::GroupDisband(GroupDisband {
+                                group_code: group_uin2code(group_uin),
+                                operator_uin: operator,
+                            }),
+                        });
+                    }
                     0x02 | 0x82 => {
                         return Ok(OnlinePushTrans {
                             msg_seq,
@@ -182,9 +193,10 @@ impl super::super::super::Engine {
             }
             _ => {}
         }
-        Err(RQError::Decode(
-            "decode_online_push_trans_packet unknown error".to_string(),
-        ))
+        Err(RQError::Decode(format!(
+            "decode_online_push_trans_packet unknown error: {:?}",
+            info.msg_type
+        )))
     }
 
     // OnlinePush.PbC2CMsgSync

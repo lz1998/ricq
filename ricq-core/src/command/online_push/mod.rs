@@ -1,4 +1,4 @@
-use crate::structs::{GroupLeave, MemberPermissionChange};
+use crate::structs::{GroupDisband, GroupLeave, MemberPermissionChange};
 use crate::{jce, pb};
 
 pub mod builder;
@@ -14,6 +14,7 @@ pub struct ReqPush {
 pub enum PushTransInfo {
     MemberLeave(GroupLeave),
     MemberPermissionChange(MemberPermissionChange),
+    GroupDisband(GroupDisband),
     // TODO 转让
 }
 #[derive(Debug, Clone)]
