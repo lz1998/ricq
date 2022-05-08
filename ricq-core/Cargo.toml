@@ -1,6 +1,6 @@
 [package]
 name = "ricq-core"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 description = "Packet encoders and decoders for oicq"
 license = "AGPL-3.0"
