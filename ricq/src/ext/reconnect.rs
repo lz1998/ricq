@@ -50,7 +50,12 @@ pub async fn auto_reconnect<C: Connector + Sync>(
         if let Err(err) = fast_login(&client, &credential).await {
             // token 可能过期了
             tracing::error!("failed to fast_login: {}, break!", err);
-            break;
+            count += 1;
+            if count > max {
+                tracing::error!("reconnect_count: {}, break!", count);
+                break;
+            }
+            continue;
         }
         tracing::info!("succeed to reconnect");
         after_login(&client).await;
