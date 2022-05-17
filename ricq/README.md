@@ -4,8 +4,8 @@
 
 qq-android 协议的 rust 实现 移植于 [MiraiGo](https://github.com/Mrs4s/MiraiGo)、[OICQ](https://github.com/takayama-lily/oicq)、[Mirai](https://github.com/mamoe/mirai)
 
-- [ricq](https://github.com/lz1998/ricq/tree/master/ricq): 提供异步 API
-- [ricq-core](https://github.com/lz1998/ricq/tree/master/ricq-core): 不带 IO 的数据包构造器、解析器（通常用于ffi）
+- [ricq](https://crates.io/crates/ricq): 提供异步 API
+- [ricq-core](https://crates.io/crates/ricq-core): 不带 IO 的数据包构造器、解析器（通常用于ffi）
 
 ## 如何使用
 
