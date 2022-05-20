@@ -26,7 +26,7 @@ rand = "0.8"
 chrono = "0.4"
 derivative = "2"
 jcers = { version = "0.1", features = ["derive"] }
-ricq-core = { path = "../ricq-core", version = "0.1.1" }
+ricq-core = { path = "../ricq-core", version = "0.1.2" }
 image = { version = "0", features = ["png", "jpeg", "bmp", "gif", "webp"] }
 
 

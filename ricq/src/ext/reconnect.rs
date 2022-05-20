@@ -2,32 +2,38 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use async_trait::async_trait;
+use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::net::TcpStream;
 
 use ricq_core::command::wtlogin::LoginResponse;
 
-use crate::ext::common::after_login;
 use crate::{Client, RQError, RQResult};
+use crate::ext::common::after_login;
 
 #[async_trait]
-pub trait Connector {
+pub trait Connector<S: AsyncRead + AsyncWrite + Send + 'static> {
+    async fn connect(&self, client: &Arc<Client>) -> std::io::Result<S>;
+}
+
+pub struct DefaultConnector;
+
+#[async_trait]
+impl Connector<TcpStream> for DefaultConnector {
     async fn connect(&self, client: &Arc<Client>) -> std::io::Result<TcpStream> {
         TcpStream::connect(client.get_address()).await
     }
 }
 
-pub struct DefaultConnector;
-
-impl Connector for DefaultConnector {}
-
 /// 自动重连，在掉线后使用，会阻塞到重连结束
-pub async fn auto_reconnect<C: Connector + Sync>(
+pub async fn auto_reconnect<C, S>(
     client: Arc<Client>,
     credential: Credential,
     interval: Duration,
     max: usize,
     connector: C,
-) {
+)
+    where C: Connector<S>,
+          S: AsyncRead + AsyncWrite + Send + 'static {
     let mut count = 0;
     loop {
         client.stop();
@@ -64,6 +70,7 @@ pub async fn auto_reconnect<C: Connector + Sync>(
 }
 
 pub struct Token(pub ricq_core::Token);
+
 pub struct Password {
     pub uin: i64,
     pub password: String,
