@@ -5,25 +5,25 @@ use bytes::Bytes;
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
-use ricq_core::command::multi_msg::gen_forward_preview;
-use ricq_core::msg::elem::RichMsg;
-use ricq_core::pb::short_video::ShortVideoUploadRsp;
-use ricq_core::structs::{ForwardMessage, MessageNode};
-
-use crate::client::Group;
-use crate::structs::{ImageInfo, VideoInfo};
-use crate::{RQError, RQResult};
+use ricq_core::command::common::PbToBytes;
 use ricq_core::command::img_store::GroupImageStoreResp;
+use ricq_core::command::multi_msg::gen_forward_preview;
 use ricq_core::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
 use ricq_core::command::{friendlist::*, oidb_svc::*, profile_service::*};
 use ricq_core::common::group_code2uin;
 use ricq_core::hex::encode_hex;
 use ricq_core::highway::BdhInput;
-use ricq_core::msg::elem::{Anonymous, GroupImage};
+use ricq_core::msg::elem::{Anonymous, GroupImage, RichMsg, VideoFile};
 use ricq_core::msg::MessageChain;
 use ricq_core::pb;
+use ricq_core::pb::short_video::ShortVideoUploadRsp;
 use ricq_core::structs::GroupAudio;
+use ricq_core::structs::{ForwardMessage, MessageNode};
 use ricq_core::structs::{GroupInfo, GroupMemberInfo, MessageReceipt};
+
+use crate::client::Group;
+use crate::structs::ImageInfo;
+use crate::{RQError, RQResult};
 
 impl super::super::Client {
     /// 获取进群申请信息
@@ -694,22 +694,93 @@ impl super::super::Client {
     // 用 highway 上传群视频之前调用，获取 upload_key
     pub async fn get_group_short_video_store(
         &self,
-        group_code: i64,
-        video_info: &VideoInfo,
+        short_video_upload_req: pb::short_video::ShortVideoUploadReq,
     ) -> RQResult<ShortVideoUploadRsp> {
-        let req = self.engine.read().await.build_group_video_store_packet(
-            group_code,
-            video_info.file_name.clone(),
-            video_info.file_md5.clone(),
-            video_info.thumb_file_md5.clone(),
-            video_info.file_size,
-            video_info.thumb_file_size,
-        );
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_video_store_packet(short_video_upload_req);
         let resp = self.send_and_wait(req).await?;
         self.engine
             .read()
             .await
             .decode_group_video_store_response(resp.body)
+    }
+
+    /// 上传群短视频 参数：群号，视频数据，封面数据
+    /// TODO 未来可能会改成输入 std::io::Read
+    pub async fn upload_group_short_video(
+        &self,
+        group_code: i64,
+        video_data: Vec<u8>,
+        thumb_data: Vec<u8>,
+    ) -> RQResult<VideoFile> {
+        let video_md5 = md5::compute(&video_data).to_vec();
+        let thumb_md5 = md5::compute(&thumb_data).to_vec();
+        let video_size = video_data.len();
+        let thumb_size = thumb_data.len();
+        let short_video_up_req = self.engine.read().await.build_short_video_up_req(
+            group_code,
+            video_md5.clone(),
+            thumb_md5.clone(),
+            video_size as i64,
+            thumb_size as i64,
+        );
+        let video_store = self
+            .get_group_short_video_store(short_video_up_req.clone())
+            .await?;
+
+        if video_store.file_exists == 1 {
+            return Ok(VideoFile {
+                name: format!("{}.mp4", encode_hex(&video_md5)),
+                uuid: video_store.file_id,
+                size: video_size as i32,
+                thumb_size: thumb_size as i32,
+                md5: video_md5,
+                thumb_md5,
+            });
+        }
+
+        let addr = self
+            .highway_addrs
+            .read()
+            .await
+            .first()
+            .ok_or_else(|| RQError::Other("addrs is empty".into()))?
+            .clone();
+
+        if self.highway_session.read().await.session_key.is_empty() {
+            return Err(RQError::Other("highway_session_key is empty".into()));
+        }
+        let ticket = self.highway_session.read().await.sig_session.to_vec();
+        let mut data = thumb_data;
+        data.extend(video_data);
+
+        let rsp = self
+            .highway_upload_bdh(
+                addr.into(),
+                BdhInput {
+                    command_id: 25,
+                    body: data,
+                    ticket,
+                    ext: short_video_up_req.to_bytes().to_vec(),
+                    encrypt: true,
+                    chunk_size: 256 * 1024,
+                    send_echo: true,
+                },
+            )
+            .await?;
+        let rsp = pb::short_video::ShortVideoUploadRsp::from_bytes(&rsp)
+            .map_err(|_| RQError::Decode("ShortVideoUploadRsp".into()))?;
+        Ok(VideoFile {
+            name: format!("{}.mp4", encode_hex(&video_md5)),
+            uuid: rsp.file_id,
+            size: video_size as i32,
+            thumb_size: thumb_size as i32,
+            md5: video_md5,
+            thumb_md5,
+        })
     }
 
     /// 设置群精华消息

@@ -5,15 +5,25 @@ use futures::{SinkExt, StreamExt};
 use tokio::net::TcpStream;
 use tokio_util::codec::Framed;
 
-use crate::client::highway::codec::HighwayCodec;
-use crate::client::highway::HighwayFrame;
-use crate::Client;
 use ricq_core::command::common::PbToBytes;
+use ricq_core::crypto::qqtea_encrypt;
 use ricq_core::highway::BdhInput;
 use ricq_core::{pb, RQError, RQResult};
 
+use crate::client::highway::codec::HighwayCodec;
+use crate::client::highway::HighwayFrame;
+use crate::Client;
+
 impl Client {
-    pub async fn highway_upload_bdh(&self, addr: SocketAddr, input: BdhInput) -> RQResult<Bytes> {
+    pub async fn highway_upload_bdh(
+        &self,
+        addr: SocketAddr,
+        mut input: BdhInput,
+    ) -> RQResult<Bytes> {
+        if input.encrypt {
+            let session_key = self.highway_session.read().await.session_key.clone();
+            input.ext = qqtea_encrypt(&input.ext, &session_key)
+        }
         let stream = TcpStream::connect(&addr).await.map_err(RQError::IO)?;
         let mut stream = Framed::new(stream, HighwayCodec);
         // send heartbeat

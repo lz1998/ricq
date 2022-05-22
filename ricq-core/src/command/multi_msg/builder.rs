@@ -83,7 +83,7 @@ impl super::super::super::Engine {
                 .collect::<Vec<pb::msg::PbMultiMsgItem>>(),
         );
         let trans = pb::msg::PbMultiMsgTransmit {
-            msg: msgs.clone(),
+            msg: msgs,
             pb_item_list,
         };
         let mut encoder = GzEncoder::new(vec![], Compression::default());

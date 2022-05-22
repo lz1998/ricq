@@ -1,8 +1,9 @@
-use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::Result;
 use futures::StreamExt;
+use rand::prelude::StdRng;
+use rand::SeedableRng;
 use tokio::net::TcpStream;
 use tokio_util::codec::{FramedRead, LinesCodec};
 use tracing::Level;
@@ -43,21 +44,7 @@ async fn main() -> Result<()> {
         .expect("failed to parse UIN");
     let password = std::env::var("PASSWORD").expect("failed to read PASSWORD from env");
 
-    let device = match Path::new("device.json").exists() {
-        true => serde_json::from_str(
-            &tokio::fs::read_to_string("device.json")
-                .await
-                .expect("failed to read device.json"),
-        )
-        .expect("failed to parse device info"),
-        false => {
-            let d = Device::random();
-            tokio::fs::write("device.json", serde_json::to_string(&d).unwrap())
-                .await
-                .expect("failed to write device info to file");
-            d
-        }
-    };
+    let device = Device::random_with_rng(&mut StdRng::seed_from_u64(uin as u64));
 
     let client = Arc::new(Client::new(
         device,

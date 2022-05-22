@@ -60,7 +60,7 @@ message ShortVideoUploadRsp {
   string retMsg = 2;
   repeated ShortVideoIpList sameAreaOutAddr = 3;
   repeated ShortVideoIpList diffAreaOutAddr = 4;
-  string fileId = 5;
+  bytes fileId = 5;
   bytes uKey = 6;
   int32 fileExists = 7;
   repeated ShortVideoIpList sameAreaInnerAddr = 8;
