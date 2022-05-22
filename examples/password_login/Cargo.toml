@@ -14,3 +14,4 @@ futures = "0.3"
 serde_json = "1"
 tracing-subscriber = { version = "0.3", features = ["fmt", "local-time"] }
 time = { version = "0.3", features = ["macros", "local-offset"] }
+rand = "0.8"

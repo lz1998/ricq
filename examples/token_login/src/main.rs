@@ -1,4 +1,3 @@
-use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::Result;
@@ -6,12 +5,14 @@ use tokio::net::TcpStream;
 use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use oicq::client::Token;
-use oicq::device::Device;
-use oicq::ext::common::after_login;
-use oicq::handler::DefaultHandler;
-use oicq::version::{get_version, Protocol};
-use oicq::Client;
+use rand::prelude::StdRng;
+use rand::SeedableRng;
+use ricq::client::Token;
+use ricq::device::Device;
+use ricq::ext::common::after_login;
+use ricq::handler::DefaultHandler;
+use ricq::version::{get_version, Protocol};
+use ricq::Client;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
@@ -37,22 +38,7 @@ async fn main() -> Result<()> {
         .await
         .expect("failed to read token");
     let token: Token = serde_json::from_str(&token).expect("failed to parse token");
-
-    let device = match Path::new("device.json").exists() {
-        true => serde_json::from_str(
-            &tokio::fs::read_to_string("device.json")
-                .await
-                .expect("failed to read device.json"),
-        )
-        .expect("failed to parse device info"),
-        false => {
-            let d = Device::random();
-            tokio::fs::write("device.json", serde_json::to_string(&d).unwrap())
-                .await
-                .expect("failed to write device info to file");
-            d
-        }
-    };
+    let device = Device::random_with_rng(&mut StdRng::seed_from_u64(token.uin as u64));
 
     let client = Arc::new(Client::new(
         device,
