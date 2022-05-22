@@ -5,25 +5,25 @@ use bytes::Bytes;
 use futures::{stream, StreamExt};
 use tokio::sync::RwLock;
 
-use ricq_core::command::multi_msg::gen_forward_preview;
-use ricq_core::msg::elem::RichMsg;
-use ricq_core::pb::short_video::ShortVideoUploadRsp;
-use ricq_core::structs::{ForwardMessage, MessageNode};
-
-use crate::client::Group;
-use crate::structs::{ImageInfo, VideoInfo};
-use crate::{RQError, RQResult};
 use ricq_core::command::img_store::GroupImageStoreResp;
+use ricq_core::command::multi_msg::gen_forward_preview;
 use ricq_core::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
 use ricq_core::command::{friendlist::*, oidb_svc::*, profile_service::*};
 use ricq_core::common::group_code2uin;
 use ricq_core::hex::encode_hex;
 use ricq_core::highway::BdhInput;
+use ricq_core::msg::elem::RichMsg;
 use ricq_core::msg::elem::{Anonymous, GroupImage};
 use ricq_core::msg::MessageChain;
 use ricq_core::pb;
+use ricq_core::pb::short_video::ShortVideoUploadRsp;
 use ricq_core::structs::GroupAudio;
+use ricq_core::structs::{ForwardMessage, MessageNode};
 use ricq_core::structs::{GroupInfo, GroupMemberInfo, MessageReceipt};
+
+use crate::client::Group;
+use crate::structs::{ImageInfo, VideoInfo};
+use crate::{RQError, RQResult};
 
 impl super::super::Client {
     /// 获取进群申请信息
@@ -697,14 +697,14 @@ impl super::super::Client {
         group_code: i64,
         video_info: &VideoInfo,
     ) -> RQResult<ShortVideoUploadRsp> {
-        let req = self.engine.read().await.build_group_video_store_packet(
+        let req = self.engine.read().await.build_short_video_up_req(
             group_code,
-            video_info.file_name.clone(),
             video_info.file_md5.clone(),
             video_info.thumb_file_md5.clone(),
             video_info.file_size,
             video_info.thumb_file_size,
         );
+        let req = self.engine.read().await.build_group_video_store_packet(req);
         let resp = self.send_and_wait(req).await?;
         self.engine
             .read()
