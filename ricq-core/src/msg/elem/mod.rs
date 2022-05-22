@@ -16,6 +16,7 @@ pub use crate::msg::elem::{
     reply::Reply,
     rich_msg::RichMsg,
     text::Text,
+    video_file::VideoFile,
 };
 use crate::pb::msg;
 
@@ -30,6 +31,7 @@ mod market_face;
 mod reply;
 mod rich_msg;
 mod text;
+mod video_file;
 
 #[derive(Debug, Clone)]
 pub enum RQElem {
@@ -44,6 +46,7 @@ pub enum RQElem {
     FriendImage(friend_image::FriendImage),
     GroupImage(group_image::GroupImage),
     FlashImage(flash_image::FlashImage),
+    VideoFile(video_file::VideoFile),
     Other(Box<msg::elem::Elem>),
 }
 
@@ -95,6 +98,7 @@ impl From<msg::elem::Elem> for RQElem {
             }
             msg::elem::Elem::LightApp(e) => RQElem::LightApp(light_app::LightApp::from(e)),
             msg::elem::Elem::RichMsg(e) => RQElem::RichMsg(rich_msg::RichMsg::from(e)),
+            msg::elem::Elem::VideoFile(e) => RQElem::VideoFile(video_file::VideoFile::from(e)),
             msg::elem::Elem::NotOnlineImage(e) => {
                 RQElem::FriendImage(friend_image::FriendImage::from(e))
             }

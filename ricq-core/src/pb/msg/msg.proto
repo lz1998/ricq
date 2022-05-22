@@ -521,7 +521,7 @@ message AnonymousGroupMessage {
 message VideoFile {
   optional bytes fileUuid = 1;
   optional bytes fileMd5 = 2;
-  optional bytes fileName = 3;
+  optional string fileName = 3;
   optional int32 fileFormat = 4;
   optional int32 fileTime = 5;
   optional int32 fileSize = 6;
