@@ -37,7 +37,7 @@ impl Client {
         }
 
         let mut members = group.members.write().await;
-        if members.iter().find(|m| m.uin == member_uin).is_none() {
+        if !members.iter().any(|m| m.uin == member_uin) {
             let member_info = self.get_group_member_info(group_code, member_uin).await?;
             members.push(member_info);
             self.handler

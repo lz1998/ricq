@@ -361,7 +361,7 @@ impl super::Client {
             "https://ssl.htdata.qq.com".into()
         } else {
             let addr = SocketAddr::from(RQAddr(resp.down_ip.pop().ok_or_else(||RQError::Other("ip is empty".into()))?,resp.down_port.pop().ok_or_else(||RQError::Other("port is empty".into()))? as u16));
-            format!("http://{}",addr.to_string())
+            format!("http://{}", addr)
         };
         let _url = format!(
             "{}{}",

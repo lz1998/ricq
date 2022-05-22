@@ -13,7 +13,7 @@ impl super::super::super::Engine {
                 msg_id: 0,
                 msg_content,
                 store_type: 2,
-                msg_ukey: msg_ukey,
+                msg_ukey,
                 need_cache: 0,
             }],
             ..Default::default()

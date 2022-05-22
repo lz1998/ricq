@@ -23,7 +23,7 @@ impl Face {
     }
 
     pub fn new_from_name(name: &str) -> Option<Self> {
-        face_name_map(name).map(|id| Self::new(id))
+        face_name_map(name).map(Self::new)
     }
 }
 

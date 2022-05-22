@@ -20,7 +20,7 @@ pub fn gen_forward_preview(messages: &Vec<ForwardMessage>) -> String {
                 format!(
                     r##"<title size="26" color="#777777" maxLines="4" lineSpace="12">{}: {}</title>"##,
                     message.sender_name,
-                    message.elements.to_string()
+                    message.elements
                 )
             }
             ForwardMessage::Forward(forward) => {

@@ -709,6 +709,7 @@ impl super::super::Client {
     }
 
     /// 上传群短视频 参数：群号，视频数据，封面数据
+    /// TODO 未来可能会改成输入 std::io::Read
     pub async fn upload_group_short_video(
         &self,
         group_code: i64,
