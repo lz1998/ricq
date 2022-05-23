@@ -8,7 +8,7 @@ use ricq_core::structs::{
 };
 use ricq_core::{jce, RQResult};
 
-use crate::structs::{FriendMessage, Group, GroupMemberInfo, GroupMessage};
+use crate::structs::{FriendMessage, GroupMessage};
 use crate::Client;
 
 #[derive(Clone, derivative::Derivative)]
@@ -20,20 +20,6 @@ pub struct GroupMessageEvent {
 }
 
 impl GroupMessageEvent {
-    pub async fn group(&self) -> Option<Arc<Group>> {
-        self.client.find_group(self.message.group_code, true).await
-    }
-
-    pub async fn member(&self) -> Option<GroupMemberInfo> {
-        let group = self.group().await?;
-        let members = group.members.read().await;
-        members
-            .iter()
-            .filter(|m| m.uin == self.message.from_uin)
-            .last()
-            .cloned()
-    }
-
     pub async fn recall(&self) -> RQResult<()> {
         // TODO check permission
         self.client
@@ -52,12 +38,6 @@ pub struct FriendMessageEvent {
     #[derivative(Debug = "ignore")]
     pub client: Arc<Client>,
     pub message: FriendMessage,
-}
-
-impl FriendMessageEvent {
-    pub async fn friend(&self) -> Option<Arc<FriendInfo>> {
-        self.client.find_friend(self.message.from_uin).await
-    }
 }
 
 #[derive(Clone, derivative::Derivative)]
@@ -136,24 +116,6 @@ pub struct NewMemberEvent {
     #[derivative(Debug = "ignore")]
     pub client: Arc<Client>,
     pub new_member: NewMember,
-}
-
-impl NewMemberEvent {
-    pub async fn group(&self) -> Option<Arc<Group>> {
-        self.client
-            .find_group(self.new_member.group_code, true)
-            .await
-    }
-
-    pub async fn member(&self) -> Option<GroupMemberInfo> {
-        let group = self.group().await?;
-        let members = group.members.read().await;
-        members
-            .iter()
-            .filter(|m| m.uin == self.new_member.member_uin)
-            .last()
-            .cloned()
-    }
 }
 
 #[derive(Clone, derivative::Derivative)]

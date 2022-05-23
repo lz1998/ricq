@@ -12,6 +12,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use ricq::device::Device;
 use ricq::ext::common::after_login;
 use ricq::handler::DefaultHandler;
+use ricq::msg::MessageChain;
 use ricq::structs::ExtOnlineStatus;
 use ricq::version::{get_version, Protocol};
 use ricq::{Client, LoginDeviceLocked, LoginNeedCaptcha, LoginSuccess};
@@ -135,12 +136,7 @@ async fn main() -> Result<()> {
             .await
             .expect("failed to reload friend list");
         tracing::info!("{:?}", client.friends.read().await);
-        client
-            .reload_groups(50)
-            .await
-            .expect("failed to reload group list");
-        let group_list = client.groups.read().await;
-        tracing::info!("{:?}", group_list);
+        tracing::info!("{:?}", client.get_group_list().await);
     }
     let d = client.get_allowed_clients().await;
     tracing::info!("{:?}", d);
@@ -160,6 +156,17 @@ async fn main() -> Result<()> {
         .update_online_status(ExtOnlineStatus::StudyOnline)
         .await;
     println!("{:?}", aaa);
+
+    tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+    let video_data = tokio::fs::read("test.mp4").await.unwrap();
+    let thumb_data = tokio::fs::read("test.png").await.unwrap();
+    let video = client
+        .upload_group_short_video(982166018, video_data, thumb_data)
+        .await
+        .unwrap();
+    let mut chain = MessageChain::default();
+    chain.push(video);
+    client.send_group_message(982166018, chain).await;
 
     // client.delete_essence_message(1095020555, 8114, 2107692422).await
     // let mem_info = client.get_group_member_info(335783090, 875543543).await;

@@ -5,11 +5,11 @@ use tokio::sync::RwLock;
 use tokio::time::{sleep, Duration};
 
 use ricq_core::protocol::version::Version;
+use ricq_core::protocol::{device::Device, packet::Packet};
 use ricq_core::token::Token;
+use ricq_core::Engine;
 
 use crate::{RQError, RQResult};
-use ricq_core::protocol::{device::Device, packet::Packet};
-use ricq_core::Engine;
 
 use super::Client;
 
@@ -35,7 +35,6 @@ impl super::Client {
             account_info: Default::default(),
             address: Default::default(),
             friends: Default::default(),
-            groups: Default::default(),
             online_clients: Default::default(),
             last_message_time: Default::default(),
             start_time: chrono::Utc::now().timestamp() as i32,

@@ -2,13 +2,12 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI64};
 use std::sync::Arc;
 
-use ricq_core::common::RQAddr;
 use tokio::sync::{broadcast, RwLock};
 use tokio::sync::{oneshot, Mutex};
 
-use crate::structs::Group;
 use ricq_core::command::online_push::GroupMessagePart;
 use ricq_core::command::profile_service::GroupSystemMessages;
+use ricq_core::common::RQAddr;
 use ricq_core::protocol::packet::Packet;
 use ricq_core::structs::{AccountInfo, AddressInfo, FriendInfo, OtherClientInfo};
 use ricq_core::Engine;
@@ -44,7 +43,6 @@ pub struct Client {
     // address
     pub address: RwLock<AddressInfo>,
     pub friends: RwLock<HashMap<i64, Arc<FriendInfo>>>,
-    pub groups: RwLock<HashMap<i64, Arc<Group>>>,
     pub online_clients: RwLock<Vec<OtherClientInfo>>,
 
     // statics

@@ -1,9 +1,6 @@
-use std::sync::Arc;
 use std::time::Duration;
 
 use bytes::Bytes;
-use futures::{stream, StreamExt};
-use tokio::sync::RwLock;
 
 use ricq_core::command::common::PbToBytes;
 use ricq_core::command::img_store::GroupImageStoreResp;
@@ -21,7 +18,6 @@ use ricq_core::structs::GroupAudio;
 use ricq_core::structs::{ForwardMessage, MessageNode};
 use ricq_core::structs::{GroupInfo, GroupMemberInfo, MessageReceipt};
 
-use crate::client::Group;
 use crate::structs::ImageInfo;
 use crate::{RQError, RQResult};
 
@@ -83,7 +79,7 @@ impl super::super::Client {
 
     /// 获取群列表
     /// 第一个参数offset，从0开始；第二个参数count，150，另外两个都是0
-    pub async fn get_group_list(&self, vec_cookie: &[u8]) -> RQResult<GroupListResponse> {
+    pub async fn _get_group_list(&self, vec_cookie: &[u8]) -> RQResult<GroupListResponse> {
         let req = self
             .engine
             .read()
@@ -169,18 +165,6 @@ impl super::super::Client {
             .decode_group_member_info_response(resp.body)
     }
 
-    /// 通过群号获取群
-    pub async fn find_group(&self, code: i64, auto_reload: bool) -> Option<Arc<Group>> {
-        let group = self.groups.read().await.get(&code).cloned();
-        if group.is_some() {
-            return group;
-        }
-        if auto_reload {
-            self.reload_group(code).await.ok();
-        }
-        self.groups.read().await.get(&code).cloned()
-    }
-
     /// 批量获取群信息
     pub async fn get_group_infos(&self, group_codes: Vec<i64>) -> RQResult<Vec<GroupInfo>> {
         let req = self
@@ -200,33 +184,13 @@ impl super::super::Client {
         Ok(self.get_group_infos(vec![group_code]).await?.pop())
     }
 
-    /// 刷新单个群信息
-    pub async fn reload_group(&self, group_code: i64) -> RQResult<()> {
-        let group_info = self
-            .get_group_info(group_code)
-            .await?
-            .ok_or(RQError::Other("failed to get group".into()))?;
-        let members = self
-            .get_group_member_list(group_code, group_info.owner_uin)
-            .await?;
-        let mut groups = self.groups.write().await;
-        groups.insert(
-            group_info.code,
-            Arc::new(Group {
-                info: group_info,
-                members: RwLock::new(members),
-            }),
-        );
-        Ok(())
-    }
-
     /// 刷新群列表
-    pub async fn reload_groups(&self, buffered: usize) -> RQResult<()> {
+    pub async fn get_group_list(&self) -> RQResult<Vec<GroupInfo>> {
         // 获取群列表
         let mut vec_cookie = Bytes::new();
         let mut groups = Vec::new();
         loop {
-            let resp = self.get_group_list(&vec_cookie).await?;
+            let resp = self._get_group_list(&vec_cookie).await?;
             vec_cookie = resp.vec_cookie;
             for g in resp.groups {
                 groups.push(g);
@@ -235,29 +199,7 @@ impl super::super::Client {
                 break;
             }
         }
-
-        let group_list: Vec<(i64, Arc<Group>)> = stream::iter(groups)
-            .map(|g| async move {
-                let mem_list = self
-                    .get_group_member_list(g.code, g.owner_uin)
-                    .await
-                    .unwrap_or_default();
-                (
-                    g.code,
-                    Arc::new(Group {
-                        info: g,
-                        members: RwLock::new(mem_list),
-                    }),
-                )
-            })
-            .buffered(buffered)
-            .collect()
-            .await;
-
-        let mut groups = self.groups.write().await;
-        groups.clear();
-        groups.extend(group_list);
-        Ok(())
+        Ok(groups)
     }
 
     /// 获取群成员列表 (low level api)

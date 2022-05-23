@@ -4,14 +4,6 @@ use bytes::{Buf, Bytes};
 use cached::Cached;
 use futures::{stream, StreamExt};
 
-use crate::client::event::{
-    DeleteFriendEvent, FriendMessageRecallEvent, FriendPokeEvent, GroupAudioMessageEvent,
-    GroupDisbandEvent, GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent,
-    GroupNameUpdateEvent, MemberPermissionChangeEvent, NewFriendEvent, NewMemberEvent,
-};
-use crate::client::handler::QEvent;
-use crate::client::Client;
-use crate::{RQError, RQResult};
 use ricq_core::command::common::PbToBytes;
 use ricq_core::command::online_push::GroupMessagePart;
 use ricq_core::command::online_push::{OnlinePushTrans, PushTransInfo};
@@ -19,9 +11,18 @@ use ricq_core::msg::MessageChain;
 use ricq_core::pb::msg;
 use ricq_core::structs::{
     DeleteFriend, FriendInfo, FriendMessageRecall, FriendPoke, GroupAudio, GroupAudioMessage,
-    GroupLeave, GroupMessage, GroupMessageRecall, GroupMute, GroupNameUpdate, NewMember,
+    GroupLeave, GroupMessage, GroupMessageRecall, GroupMute, GroupNameUpdate,
 };
 use ricq_core::{jce, pb};
+
+use crate::client::event::{
+    DeleteFriendEvent, FriendMessageRecallEvent, FriendPokeEvent, GroupAudioMessageEvent,
+    GroupDisbandEvent, GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent,
+    GroupNameUpdateEvent, MemberPermissionChangeEvent, NewFriendEvent,
+};
+use crate::client::handler::QEvent;
+use crate::client::Client;
+use crate::{RQError, RQResult};
 
 impl Client {
     pub(crate) async fn process_group_message_part(
@@ -322,53 +323,8 @@ impl Client {
                             }
                         }
                         0x44 => {
-                            let b44 = pb::Sub44::from_bytes(&msg.v_protobuf).unwrap();
-                            if let Some(group_sync_msg) = b44.group_sync_msg {
-                                if let Some(group) =
-                                    self.find_group(group_sync_msg.grp_code, true).await
-                                {
-                                    let last_join_time = group
-                                        .members
-                                        .read()
-                                        .await
-                                        .iter()
-                                        .map(|m| m.join_time)
-                                        .max()
-                                        .unwrap_or_default();
-                                    if let Ok(refreshed_members) = self
-                                        .get_group_member_list(
-                                            group.info.code,
-                                            group.info.owner_uin,
-                                        )
-                                        .await
-                                    {
-                                        let mut members = group.members.write().await;
-                                        members.clear();
-                                        members.extend(refreshed_members);
-                                    }
-                                    let new_members: Vec<NewMember> = group
-                                        .members
-                                        .read()
-                                        .await
-                                        .iter()
-                                        .filter(|m| m.join_time > last_join_time)
-                                        .map(|m| NewMember {
-                                            group_code: group.info.code,
-                                            member_uin: m.uin,
-                                        })
-                                        .collect();
-                                    stream::iter(new_members)
-                                        .for_each(async move |new_member| {
-                                            self.handler
-                                                .handle(QEvent::NewMember(NewMemberEvent {
-                                                    client: self.clone(),
-                                                    new_member,
-                                                }))
-                                                .await;
-                                        })
-                                        .await;
-                                }
-                            }
+                            // group sync
+                            // friend sync
                         }
                         _ => {}
                     }
