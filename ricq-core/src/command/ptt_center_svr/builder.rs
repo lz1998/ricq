@@ -37,7 +37,7 @@ impl super::super::super::Engine {
         pb::short_video::ShortVideoUploadReq {
             from_uin: self.uin(),
             to_uin,
-            chat_type: 1,
+            chat_type: 1, // 私聊 0
             client_type: 2,
             info: Some(pb::short_video::ShortVideoFileInfo {
                 file_name: format!("{}.mp4", encode_hex(&file_md5)),
@@ -47,10 +47,12 @@ impl super::super::super::Engine {
                 file_res_length: 1280,
                 file_res_width: 720,
                 file_format: 3,
-                file_time: 120,
+                file_time: 120, // 视频时长 秒
                 thumb_file_size,
             }),
             group_code: to_uin,
+            agent_type: 0,
+            business_type: 0,
             support_large_size: 1,
             ..Default::default()
         }

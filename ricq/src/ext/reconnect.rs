@@ -1,4 +1,5 @@
 use std::net::{Ipv4Addr, SocketAddr};
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -8,8 +9,8 @@ use tokio::net::TcpStream;
 
 use ricq_core::command::wtlogin::LoginResponse;
 
-use crate::{Client, RQError, RQResult};
 use crate::ext::common::after_login;
+use crate::{Client, RQError, RQResult};
 
 #[async_trait]
 pub trait Connector<S: AsyncRead + AsyncWrite + Send + 'static> {
@@ -40,11 +41,17 @@ pub async fn auto_reconnect<C, S>(
     interval: Duration,
     max: usize,
     connector: C,
-)
-    where C: Connector<S>,
-          S: AsyncRead + AsyncWrite + Send + 'static {
+) where
+    C: Connector<S>,
+    S: AsyncRead + AsyncWrite + Send + 'static,
+{
     let mut count = 0;
     loop {
+        // 如果已停止，不重连
+        if !client.running.load(Ordering::Relaxed) {
+            tracing::warn!("client is not running");
+            break;
+        }
         client.stop();
         tracing::error!("client will reconnect after {} seconds", interval.as_secs());
         tokio::time::sleep(interval).await;

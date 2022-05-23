@@ -24,9 +24,11 @@ pub struct Client {
     handler: Box<dyn handler::Handler + Sync + Send + 'static>,
     engine: RwLock<Engine>,
 
-    // 是否正在运行（是否需要快速重连）
+    // 是否正在运行（可用于判断是否需要重连）
+    // 手动断开/服务端要求下线/其他客户端上线 -> running=false
+    // 网络原因/其他意外 -> running=true
     pub running: AtomicBool,
-    // 是否在线（是否可以快速重连）
+    // 是否在线
     pub online: AtomicBool,
     // 停止网络
     disconnect_signal: broadcast::Sender<()>,

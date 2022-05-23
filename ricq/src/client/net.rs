@@ -27,6 +27,7 @@ impl crate::Client {
 
     pub fn stop(&self) {
         self.running.store(false, Ordering::Relaxed);
+        self.online.store(false, Ordering::Relaxed);
         self.disconnect();
     }
 
