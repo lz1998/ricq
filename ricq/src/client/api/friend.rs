@@ -1,10 +1,7 @@
-use std::sync::Arc;
 use std::time::Duration;
 
 use bytes::BufMut;
 
-use crate::structs::ImageInfo;
-use crate::{RQError, RQResult};
 use ricq_core::command::long_conn::OffPicUpResp;
 use ricq_core::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
 use ricq_core::command::{friendlist::*, profile_service::*};
@@ -15,6 +12,9 @@ use ricq_core::msg::MessageChain;
 use ricq_core::pb;
 use ricq_core::structs::FriendAudio;
 use ricq_core::structs::{FriendInfo, MessageReceipt};
+
+use crate::structs::ImageInfo;
+use crate::{RQError, RQResult};
 
 impl super::super::Client {
     /// 获取好友请求
@@ -49,7 +49,7 @@ impl super::super::Client {
 
     /// 获取好友列表
     /// 第一个参数offset，从0开始；第二个参数count，150，另外两个都是0
-    pub async fn get_friend_list(
+    pub async fn _get_friend_list(
         &self,
         friend_start_index: i16,
         friend_list_count: i16,
@@ -98,28 +98,20 @@ impl super::super::Client {
     }
 
     /// 刷新好友列表
-    pub async fn reload_friends(&self) -> RQResult<()> {
+    pub async fn get_friend_list(&self) -> RQResult<Vec<FriendInfo>> {
         let mut cur_friend_count = 0;
         let mut friend_list = Vec::new();
         loop {
-            let resp = self.get_friend_list(cur_friend_count, 150, 0, 0).await?;
+            let resp = self._get_friend_list(cur_friend_count, 150, 0, 0).await?;
             cur_friend_count += resp.list.len() as i16;
             for f in resp.list {
-                friend_list.push((f.uin, Arc::new(f)));
+                friend_list.push(f);
             }
             if cur_friend_count >= resp.total_count {
                 break;
             }
         }
-        let mut friends = self.friends.write().await;
-        friends.clear();
-        friends.extend(friend_list);
-        Ok(())
-    }
-
-    /// 根据 uin 获取好友
-    pub async fn find_friend(&self, uin: i64) -> Option<Arc<FriendInfo>> {
-        self.friends.read().await.get(&uin).cloned()
+        Ok(friend_list)
     }
 
     /// 好友戳一戳

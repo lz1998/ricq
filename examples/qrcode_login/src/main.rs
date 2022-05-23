@@ -154,11 +154,7 @@ async fn main() -> Result<()> {
 
     after_login(&client).await;
     {
-        client
-            .reload_friends()
-            .await
-            .expect("failed to reload friend list");
-        tracing::info!("{:?}", client.friends.read().await);
+        tracing::info!("{:?}", client.get_friend_list().await);
         tracing::info!("{:?}", client.get_group_list().await);
     }
 

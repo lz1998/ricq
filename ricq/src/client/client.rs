@@ -34,7 +34,6 @@ impl super::Client {
             receipt_waiters: Default::default(),
             account_info: Default::default(),
             address: Default::default(),
-            friends: Default::default(),
             online_clients: Default::default(),
             last_message_time: Default::default(),
             start_time: chrono::Utc::now().timestamp() as i32,

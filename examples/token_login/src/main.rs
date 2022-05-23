@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
 use anyhow::Result;
+use rand::prelude::StdRng;
+use rand::SeedableRng;
 use tokio::net::TcpStream;
 use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use rand::prelude::StdRng;
-use rand::SeedableRng;
 use ricq::client::Token;
 use ricq::device::Device;
 use ricq::ext::common::after_login;
@@ -59,11 +59,7 @@ async fn main() -> Result<()> {
     tracing::info!("{:?}", resp);
     after_login(&client).await;
     {
-        client
-            .reload_friends()
-            .await
-            .expect("failed to reload friend list");
-        tracing::info!("{:?}", client.friends.read().await);
+        tracing::info!("{:?}", client.get_friend_list().await);
         tracing::info!("{:?}", client.get_group_list().await);
     }
     let d = client.get_allowed_clients().await;
