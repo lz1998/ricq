@@ -1,5 +1,4 @@
 use std::net::{Ipv4Addr, SocketAddr};
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -9,6 +8,7 @@ use tokio::net::TcpStream;
 
 use ricq_core::command::wtlogin::LoginResponse;
 
+use crate::client::NetworkStatus;
 use crate::ext::common::after_login;
 use crate::{Client, RQError, RQResult};
 
@@ -47,12 +47,12 @@ pub async fn auto_reconnect<C, S>(
 {
     let mut count = 0;
     loop {
-        // 如果已停止，不重连
-        if !client.running.load(Ordering::Relaxed) {
-            tracing::warn!("client is not running");
+        // 如果不是网络原因掉线，不重连（服务端强制下线/被踢下线/用户手动停止）
+        if client.get_status() != (NetworkStatus::NetworkOffline as u8) {
+            tracing::warn!("client status: {}", client.get_status());
             break;
         }
-        client.stop();
+        client.stop(NetworkStatus::NetworkOffline);
         tracing::error!("client will reconnect after {} seconds", interval.as_secs());
         tokio::time::sleep(interval).await;
         let stream = if let Ok(stream) = connector.connect(&client).await {

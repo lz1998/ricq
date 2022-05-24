@@ -3,7 +3,7 @@ use std::sync::Arc;
 use ricq_core::jce;
 
 use crate::client::event::MSFOfflineEvent;
-use crate::client::Client;
+use crate::client::{Client, NetworkStatus};
 use crate::handler::QEvent;
 
 impl Client {
@@ -15,7 +15,7 @@ impl Client {
         self.send_msg_offline_rsp(offline.uin, offline.seq_no)
             .await
             .ok();
-        self.stop();
+        self.stop(NetworkStatus::MsfOffline);
         self.handler
             .handle(QEvent::MSFOffline(MSFOfflineEvent {
                 client: self.clone(),

@@ -8,6 +8,8 @@ use tokio::io::{AsyncRead, AsyncWrite};
 use tokio::sync::broadcast;
 use tokio_util::codec::LengthDelimitedCodec;
 
+use crate::client::NetworkStatus;
+
 use super::Client;
 
 pub type OutPktSender = broadcast::Sender<Bytes>;
@@ -18,17 +20,26 @@ impl crate::Client {
         SocketAddr::new(Ipv4Addr::new(114, 221, 144, 215).into(), 80)
     }
 
-    // 开始处理流数据
-    pub async fn start<S: AsyncRead + AsyncWrite>(self: &Arc<Self>, stream: S) {
-        self.running.store(true, Ordering::Relaxed);
-        self.net_loop(stream).await; // 阻塞到断开
-        self.disconnect();
+    pub fn get_status(&self) -> u8 {
+        return self.status.load(Ordering::Relaxed);
     }
 
-    pub fn stop(&self) {
-        self.running.store(false, Ordering::Relaxed);
-        self.online.store(false, Ordering::Relaxed);
+    // 开始处理流数据
+    pub async fn start<S: AsyncRead + AsyncWrite>(self: &Arc<Self>, stream: S) {
+        self.status
+            .store(NetworkStatus::Running as u8, Ordering::Relaxed);
+        self.net_loop(stream).await; // 阻塞到断开
         self.disconnect();
+        if self.get_status() == (NetworkStatus::Running as u8) {
+            self.status
+                .store(NetworkStatus::NetworkOffline as u8, Ordering::Relaxed);
+        }
+    }
+
+    pub fn stop(&self, status: NetworkStatus) {
+        self.disconnect();
+        self.status.store(status as u8, Ordering::Relaxed);
+        self.online.store(false, Ordering::Relaxed);
     }
 
     fn disconnect(&self) {

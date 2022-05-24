@@ -6,6 +6,7 @@ use futures::{stream, StreamExt};
 use ricq_core::{jce, pb};
 
 use crate::client::event::KickedOfflineEvent;
+use crate::client::NetworkStatus;
 use crate::handler::QEvent;
 use crate::Client;
 
@@ -54,7 +55,7 @@ impl Client {
         self: &Arc<Self>,
         offline: jce::RequestPushForceOffline,
     ) {
-        self.stop();
+        self.stop(NetworkStatus::KickedOffline);
         self.handler
             .handle(QEvent::KickedOffline(KickedOfflineEvent {
                 client: self.clone(),

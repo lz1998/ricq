@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::sync::atomic::{AtomicBool, AtomicI64};
+use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU8};
 
 use tokio::sync::{broadcast, RwLock};
 use tokio::sync::{oneshot, Mutex};
@@ -24,10 +24,8 @@ pub struct Client {
     handler: Box<dyn handler::Handler + Sync + Send + 'static>,
     engine: RwLock<Engine>,
 
-    // 是否正在运行（可用于判断是否需要重连）
-    // 手动断开/服务端要求下线/其他客户端上线 -> running=false
-    // 网络原因/其他意外 -> running=true
-    pub running: AtomicBool,
+    // 网络状态
+    status: AtomicU8,
     // 是否在线
     pub online: AtomicBool,
     // 停止网络
@@ -59,4 +57,22 @@ pub struct Client {
 
     highway_session: RwLock<ricq_core::highway::Session>,
     highway_addrs: RwLock<Vec<RQAddr>>,
+}
+
+#[repr(u8)]
+pub enum NetworkStatus {
+    // 未启动
+    Unknown = 0,
+    // 运行中
+    Running = 1,
+    // 用户手动停止
+    Stop = 2,
+    // 内存释放
+    Drop = 3,
+    // 网络原因掉线
+    NetworkOffline = 4,
+    // 其他客户端踢下线
+    KickedOffline = 5,
+    // 服务端强制下线
+    MsfOffline = 6,
 }

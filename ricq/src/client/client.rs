@@ -1,4 +1,4 @@
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU8, Ordering};
 
 use tokio::sync::oneshot;
 use tokio::sync::RwLock;
@@ -9,6 +9,7 @@ use ricq_core::protocol::{device::Device, packet::Packet};
 use ricq_core::token::Token;
 use ricq_core::Engine;
 
+use crate::client::NetworkStatus;
 use crate::{RQError, RQResult};
 
 use super::Client;
@@ -24,7 +25,7 @@ impl super::Client {
         Client {
             handler: Box::new(handler),
             engine: RwLock::new(Engine::new(device, version)),
-            running: AtomicBool::new(false),
+            status: AtomicU8::new(NetworkStatus::Unknown as u8),
             heartbeat_enabled: AtomicBool::new(false),
             online: AtomicBool::new(false),
             out_pkt_sender,
@@ -129,6 +130,6 @@ impl super::Client {
 
 impl Drop for Client {
     fn drop(&mut self) {
-        self.stop();
+        self.stop(NetworkStatus::Drop);
     }
 }
