@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use bytes::Bytes;
 
 use crate::structs::*;
@@ -8,6 +10,7 @@ pub mod decoder;
 #[derive(Debug, Default)]
 pub struct FriendListResponse {
     pub list: Vec<FriendInfo>,
+    pub groups: HashMap<u8, FriendGroupInfo>,
     pub total_count: i16,
 }
 

@@ -631,6 +631,36 @@ JceStruct!(FriendListRequest {
     18 => sns_type_list: Vec<i64>,
 });
 
+/// 获取好友列表 response
+#[derive(Debug, Clone, JceGet, JcePut, Default)]
+pub struct FriendListResponse {
+    #[jce(5)]
+    pub total_friend_count: i16,
+    #[jce(7)]
+    pub friend_info_list: Vec<FriendInfo>,
+    #[jce(14)]
+    pub group_info_list: Vec<FriendListGroupInfo>,
+    #[jce(17)]
+    pub online_friend_count: i16,
+}
+
+/// 好友列表分组信息
+#[derive(Debug, Clone, JceGet, JcePut, Default)]
+pub struct FriendListGroupInfo {
+    #[jce(0)]
+    pub group_id: u8,
+    #[jce(1)]
+    pub group_name: String,
+    #[jce(2)]
+    pub friend_count: i32,
+    #[jce(3)]
+    pub online_friend_count: i32,
+    #[jce(4)]
+    pub seq_id: u8,
+    #[jce(4)]
+    pub sqq_online_count: i32,
+}
+
 JceStruct!(FriendInfo {
     0 => friend_uin: i64,
     1 => group_id: u8,

@@ -93,6 +93,16 @@ pub struct FriendInfo {
     pub nick: String,
     pub remark: String,
     pub face_id: i16,
+    pub group_id: u8,
+}
+
+/// 好友分组信息
+#[derive(Debug, Default, Clone)]
+pub struct FriendGroupInfo {
+    pub group_id: u8,
+    pub group_name: String,
+    pub friend_count: i32,
+    pub online_friend_count: i32,
 }
 
 #[derive(Debug, Default, Clone)]

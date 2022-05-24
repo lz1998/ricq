@@ -19,18 +19,33 @@ impl super::super::super::Engine {
             RQError::Decode("decode_friend_group_list_response FLRESP not found".into())
         })?;
         fl_resp.advance(1);
-        let mut r = Jce::new(&mut fl_resp);
-        let total_friend_count: i16 = r.get_by_tag(5).map_err(RQError::from)?;
-        let friends: Vec<jce::FriendInfo> = r.get_by_tag(7).map_err(RQError::from)?; // FIXME jce bug
+        let resp: jce::FriendListResponse = jcers::from_buf(&mut fl_resp).map_err(RQError::from)?;
         Ok(FriendListResponse {
-            total_count: total_friend_count,
-            list: friends
+            total_count: resp.total_friend_count,
+            list: resp
+                .friend_info_list
                 .into_iter()
                 .map(|f| FriendInfo {
                     uin: f.friend_uin,
                     nick: f.nick,
                     remark: f.remark,
                     face_id: f.face_id,
+                    group_id: f.group_id,
+                })
+                .collect(),
+            groups: resp
+                .group_info_list
+                .into_iter()
+                .map(|g| {
+                    (
+                        g.group_id,
+                        FriendGroupInfo {
+                            group_id: g.group_id,
+                            group_name: g.group_name,
+                            friend_count: g.friend_count,
+                            online_friend_count: g.online_friend_count,
+                        },
+                    )
                 })
                 .collect(),
         })
