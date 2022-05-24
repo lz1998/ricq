@@ -22,7 +22,8 @@ impl super::super::super::Engine {
         let resp: jce::FriendListResponse = jcers::from_buf(&mut fl_resp).map_err(RQError::from)?;
         Ok(FriendListResponse {
             total_count: resp.total_friend_count,
-            list: resp
+            online_friend_count: resp.online_friend_count,
+            friend_list: resp
                 .friend_info_list
                 .into_iter()
                 .map(|f| FriendInfo {
@@ -33,7 +34,7 @@ impl super::super::super::Engine {
                     group_id: f.group_id,
                 })
                 .collect(),
-            groups: resp
+            friend_group_list: resp
                 .group_info_list
                 .into_iter()
                 .map(|g| {

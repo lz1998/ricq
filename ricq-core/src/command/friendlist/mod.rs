@@ -9,9 +9,14 @@ pub mod decoder;
 
 #[derive(Debug, Default)]
 pub struct FriendListResponse {
-    pub list: Vec<FriendInfo>,
-    pub groups: HashMap<u8, FriendGroupInfo>,
+    /// 好友列表
+    pub friend_list: Vec<FriendInfo>,
+    /// 好友分组
+    pub friend_group_list: HashMap<u8, FriendGroupInfo>,
+    /// 好友数量
     pub total_count: i16,
+    /// 在线好友数量
+    pub online_friend_count: i16,
 }
 
 #[derive(Debug)]

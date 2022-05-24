@@ -38,7 +38,7 @@ impl super::super::super::Engine {
             start_index: friend_start_index,
             friend_count: friend_list_count,
             group_id: 0,
-            if_get_group_info: if group_list_count <= 0 { 0 } else { 1 },
+            if_get_group_info: 1,
             group_start_index: group_start_index as u8,
             group_count: group_list_count as u8,
             if_get_msf_group: 0,

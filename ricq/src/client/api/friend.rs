@@ -11,7 +11,7 @@ use ricq_core::msg::elem::FriendImage;
 use ricq_core::msg::MessageChain;
 use ricq_core::pb;
 use ricq_core::structs::FriendAudio;
-use ricq_core::structs::{FriendInfo, MessageReceipt};
+use ricq_core::structs::MessageReceipt;
 
 use crate::structs::ImageInfo;
 use crate::{RQError, RQResult};
@@ -98,20 +98,20 @@ impl super::super::Client {
     }
 
     /// 刷新好友列表
-    pub async fn get_friend_list(&self) -> RQResult<Vec<FriendInfo>> {
-        let mut cur_friend_count = 0;
-        let mut friend_list = Vec::new();
+    pub async fn get_friend_list(&self) -> RQResult<FriendListResponse> {
+        let mut output = FriendListResponse::default();
         loop {
-            let resp = self._get_friend_list(cur_friend_count, 150, 0, 0).await?;
-            cur_friend_count += resp.list.len() as i16;
-            for f in resp.list {
-                friend_list.push(f);
-            }
-            if cur_friend_count >= resp.total_count {
+            let resp = self
+                ._get_friend_list(output.friend_list.len() as i16, 150, 0, 0)
+                .await?;
+            output.friend_group_list.extend(resp.friend_group_list);
+            output.friend_list.extend(resp.friend_list);
+            output.total_count = resp.total_count;
+            if output.friend_list.len() as i16 >= resp.total_count {
                 break;
             }
         }
-        Ok(friend_list)
+        Ok(output)
     }
 
     /// 好友戳一戳
