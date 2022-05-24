@@ -102,12 +102,12 @@ impl super::super::Client {
         let mut output = FriendListResponse::default();
         loop {
             let resp = self
-                ._get_friend_list(output.friend_list.len() as i16, 150, 0, 0)
+                ._get_friend_list(output.friends.len() as i16, 150, 0, 0)
                 .await?;
-            output.friend_group_list.extend(resp.friend_group_list);
-            output.friend_list.extend(resp.friend_list);
+            output.friend_groups.extend(resp.friend_groups);
+            output.friends.extend(resp.friends);
             output.total_count = resp.total_count;
-            if output.friend_list.len() as i16 >= resp.total_count {
+            if output.friends.len() as i16 >= resp.total_count {
                 break;
             }
         }
