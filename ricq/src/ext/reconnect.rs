@@ -49,7 +49,10 @@ pub async fn auto_reconnect<C, S>(
     loop {
         // 如果不是网络原因掉线，不重连（服务端强制下线/被踢下线/用户手动停止）
         if client.get_status() != (NetworkStatus::NetworkOffline as u8) {
-            tracing::warn!("client status: {}", client.get_status());
+            tracing::warn!(
+                "client status: {}, auto_reconnect break",
+                client.get_status()
+            );
             break;
         }
         client.stop(NetworkStatus::NetworkOffline);
@@ -85,17 +88,14 @@ pub async fn auto_reconnect<C, S>(
     }
 }
 
-pub struct Token(pub ricq_core::Token);
-
 pub struct Password {
     pub uin: i64,
     pub password: String,
 }
 
 pub enum Credential {
-    Token(Token),
+    Token(ricq_core::Token),
     Password(Password),
-    Both(Token, Password),
 }
 
 /// 用于重连
@@ -105,9 +105,9 @@ pub trait FastLogin {
 }
 
 #[async_trait]
-impl FastLogin for Token {
+impl FastLogin for ricq_core::Token {
     async fn fast_login(&self, client: &Arc<Client>) -> RQResult<()> {
-        match client.token_login(self.0.clone()).await? {
+        match client.token_login(self.clone()).await? {
             LoginResponse::Success(_) => Ok(()),
             _ => Err(RQError::Other("failed to token_login".into())),
         }
@@ -134,12 +134,8 @@ impl FastLogin for Password {
 
 /// 如果你非常确定登录过程中不会遇到验证码，可以用 fast_login
 pub async fn fast_login(client: &Arc<Client>, credential: &Credential) -> RQResult<()> {
-    return match credential {
+    match credential {
         Credential::Token(token) => token.fast_login(client).await,
         Credential::Password(password) => password.fast_login(client).await,
-        Credential::Both(token, password) => match token.fast_login(client).await {
-            Ok(_) => Ok(()),
-            Err(_) => password.fast_login(client).await,
-        },
-    };
+    }
 }
