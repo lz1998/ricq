@@ -670,6 +670,48 @@ pub struct FriendListSetGroupReq {
     pub body: Bytes,
 }
 
+/// 获取签名request
+#[derive(Debug, Clone, JceGet, JcePut, Default)]
+pub struct GetRichSigReq {
+    #[jce(1)]
+    pub req_rich_infos: Vec<ReqRichInfo>,
+    #[jce(2)]
+    pub check_update: bool, // false
+    #[jce(3)]
+    pub show_date_sig: bool, // false
+    #[jce(4)]
+    pub get_large_tlv: bool, // true
+}
+
+#[derive(Debug, Clone, JceGet, JcePut, Default)]
+pub struct ReqRichInfo {
+    #[jce(1)]
+    pub uin: i64,
+    #[jce(2)]
+    pub dw_time: i64, // 0
+}
+
+/// 获取签名response
+#[derive(Debug, Clone, JceGet, JcePut, Default)]
+pub struct GetRichSigRes {
+    #[jce(1)]
+    pub result: u8,
+    #[jce(2)]
+    pub sig_infos: Vec<ResRichSigInfo>,
+}
+
+#[derive(Debug, Clone, JceGet, JcePut, Default)]
+pub struct ResRichSigInfo {
+    #[jce(1)]
+    pub status: u8,
+    #[jce(2)]
+    pub uin: i64,
+    #[jce(3)]
+    pub dw_time: i64,
+    #[jce(4)]
+    pub sig_info: Bytes,
+}
+
 JceStruct!(FriendInfo {
     0 => friend_uin: i64,
     1 => group_id: u8,

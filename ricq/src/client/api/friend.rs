@@ -408,4 +408,18 @@ impl super::super::Client {
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
+
+    /// 获取好友个性签名
+    pub async fn get_friend_rich_sig(&self, user_ids: Vec<i64>) -> RQResult<Vec<RichSigInfo>> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_get_rich_sig_request_packet(user_ids);
+        let resp = self.send_and_wait(req).await?;
+        self.engine
+            .read()
+            .await
+            .decode_get_rich_sig_response_packet(resp.body)
+    }
 }

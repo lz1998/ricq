@@ -1,8 +1,10 @@
-use bytes::Bytes;
+use std::collections::HashMap;
+
+use bytes::{Buf, Bytes};
 
 use crate::command::common::PbToBytes;
 use crate::command::profile_service::*;
-use crate::RQResult;
+use crate::{jce, RQResult};
 use crate::{pb, RQError};
 
 impl super::super::super::Engine {
@@ -108,5 +110,46 @@ impl super::super::super::Engine {
                 })
                 .collect(),
         })
+    }
+
+    pub fn decode_get_rich_sig_response_packet(
+        &self,
+        mut payload: Bytes,
+    ) -> RQResult<Vec<RichSigInfo>> {
+        let mut request: jce::RequestPacket =
+            jcers::from_buf(&mut payload).map_err(RQError::Jce)?;
+        let mut data: jce::RequestDataVersion2 =
+            jcers::from_buf(&mut request.s_buffer).map_err(RQError::Jce)?;
+        let mut a = data
+            .map
+            .remove("GetRichSigRes")
+            .ok_or_else(|| RQError::Decode("missing GetRichSigRes".into()))?;
+        let mut b = a
+            .remove("KQQ.GetRichSigRes")
+            .ok_or_else(|| RQError::Decode("missing KQQ.GetRichSigRes".into()))?;
+        b.advance(1);
+        let resp: jce::GetRichSigRes = jcers::from_buf(&mut b).map_err(RQError::Jce)?;
+        Ok(resp
+            .sig_infos
+            .into_iter()
+            .map(|mut info| RichSigInfo {
+                status: info.status,
+                uin: info.uin,
+                dw_time: info.dw_time,
+                infos: {
+                    let mut infos = HashMap::new();
+                    while info.sig_info.remaining() > 2 {
+                        let tag = info.sig_info.get_u8();
+                        let len = info.sig_info.get_u8();
+                        if info.sig_info.len() < len as usize {
+                            break;
+                        }
+                        let value = info.sig_info.copy_to_bytes(len as usize);
+                        infos.insert(tag, value);
+                    }
+                    infos
+                },
+            })
+            .collect())
     }
 }

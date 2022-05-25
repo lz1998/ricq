@@ -1,3 +1,7 @@
+use std::collections::HashMap;
+
+use bytes::Bytes;
+
 pub mod builder;
 pub mod decoder;
 
@@ -47,4 +51,25 @@ pub struct NewFriendRequest {
     pub message: String,
     pub req_uin: i64,
     pub req_nick: String,
+}
+
+#[derive(Debug, Default, Clone)]
+pub struct RichSigInfo {
+    pub status: u8,
+    pub uin: i64,
+    pub dw_time: i64,
+    /// 1-actionText
+    /// 2-dataText
+    /// 4-locationText
+    /// 130-经纬度
+    /// 129-actionId+dataId
+    /// 猜测A：[1,128) 范围内，且不是1,2,4，字符串拼一起作为签名
+    /// 猜测B：3是签名
+    pub infos: HashMap<u8, Bytes>,
+}
+
+impl RichSigInfo {
+    pub fn get_signature(&self) -> String {
+        String::from_utf8_lossy(&self.infos.get(&3).cloned().unwrap_or_default()).to_string()
+    }
 }

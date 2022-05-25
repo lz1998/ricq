@@ -150,4 +150,35 @@ impl super::super::super::Engine {
         };
         self.uni_packet("ProfileService.GroupMngReq", pkt.freeze())
     }
+
+    pub fn build_get_rich_sig_request_packet(&self, user_ids: Vec<i64>) -> Packet {
+        let payload = crate::jce::GetRichSigReq {
+            req_rich_infos: user_ids
+                .into_iter()
+                .map(|id| crate::jce::ReqRichInfo {
+                    uin: id,
+                    dw_time: 0,
+                })
+                .collect(),
+            check_update: false,
+            show_date_sig: false,
+            get_large_tlv: true,
+        };
+        let buf = crate::jce::RequestDataVersion3 {
+            map: [(
+                "GetRichSigReq".to_owned(),
+                crate::command::common::pack_uni_request_data(&payload.freeze()),
+            )]
+            .into(),
+        };
+        let pkt = crate::jce::RequestPacket {
+            i_version: 3,
+            i_request_id: self.next_packet_seq(),
+            s_servant_name: "KQQ.ProfileService.ProfileServantObj".to_owned(),
+            s_func_name: "GetRichSig".to_owned(),
+            s_buffer: buf.freeze(),
+            ..Default::default()
+        };
+        self.uni_packet("ProfileService.GetRichSig", pkt.freeze())
+    }
 }
