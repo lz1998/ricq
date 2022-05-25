@@ -87,6 +87,7 @@ pub enum GroupMemberPermission {
     Member = 3,
 }
 
+/// 好友信息
 #[derive(Debug, Default, Clone)]
 pub struct FriendInfo {
     pub uin: i64,
@@ -103,6 +104,7 @@ pub struct FriendGroupInfo {
     pub group_name: String,
     pub friend_count: i32,
     pub online_friend_count: i32,
+    pub seq_id: u8,
 }
 
 #[derive(Debug, Default, Clone)]

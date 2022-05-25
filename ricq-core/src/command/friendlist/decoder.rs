@@ -45,6 +45,7 @@ impl super::super::super::Engine {
                             group_name: g.group_name,
                             friend_count: g.friend_count,
                             online_friend_count: g.online_friend_count,
+                            seq_id: g.seq_id,
                         },
                     )
                 })

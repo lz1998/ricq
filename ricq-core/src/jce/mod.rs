@@ -657,8 +657,6 @@ pub struct FriendListGroupInfo {
     pub online_friend_count: i32,
     #[jce(4)]
     pub seq_id: u8,
-    #[jce(5)]
-    pub sqq_online_count: i32,
 }
 
 JceStruct!(FriendInfo {
