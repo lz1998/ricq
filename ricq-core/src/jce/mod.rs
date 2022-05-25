@@ -670,35 +670,6 @@ pub struct FriendListSetGroupReq {
     pub body: Bytes,
 }
 
-/// 好友列表-添加分组请求
-#[derive(Debug, Clone, JceGet, JcePut, Default)]
-pub struct FriendListAddGroupReq {
-    #[jce(0)]
-    pub sort_id: u8,
-    #[jce(1)]
-    pub len: u8,
-    #[jce(2)]
-    pub group_name: String,
-}
-
-/// 好友列表-删除分组请求
-#[derive(Debug, Clone, JceGet, JcePut, Default)]
-pub struct FriendListDelGroupReq {
-    #[jce(0)]
-    pub group_id: u8,
-}
-
-/// 好友列表-重命名分组请求
-#[derive(Debug, Clone, JceGet, JcePut, Default)]
-pub struct FriendListRenameGroupReq {
-    #[jce(0)]
-    pub group_id: u8,
-    #[jce(1)]
-    pub len: u8,
-    #[jce(2)]
-    pub group_name: String,
-}
-
 JceStruct!(FriendInfo {
     0 => friend_uin: i64,
     1 => group_id: u8,

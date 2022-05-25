@@ -114,6 +114,39 @@ impl super::super::Client {
         Ok(output)
     }
 
+    /// 好友列表-添加好友分组
+    pub async fn friend_list_add_group(&self, sort_id: u8, group_name: String) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_friend_list_add_group_req_packet(sort_id, &group_name);
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
+    /// 好友列表-重命名好友分组
+    pub async fn friend_list_rename_group(&self, group_id: u8, group_name: String) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_friend_list_rename_group_req_packet(group_id, &group_name);
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
+    /// 好友列表-删除好友分组
+    pub async fn friend_list_del_group(&self, group_id: u8) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_friend_list_del_group_req_packet(group_id);
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
     /// 好友戳一戳
     pub async fn friend_poke(&self, target: i64) -> RQResult<()> {
         let req = self.engine.read().await.build_friend_poke_packet(target);

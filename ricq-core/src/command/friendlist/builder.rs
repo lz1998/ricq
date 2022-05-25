@@ -189,4 +189,63 @@ impl super::super::super::Engine {
 
         self.uni_packet("friendlist.delFriend", pkt.freeze())
     }
+
+    /// 好友分组操作
+    fn build_friend_list_set_group_req_packet(&self, req_type: i32, body: Bytes) -> Packet {
+        let payload = jce::FriendListSetGroupReq {
+            req_type,
+            uin: self.uin(),
+            body,
+        };
+
+        let buf = jce::RequestDataVersion3 {
+            map: HashMap::from([(
+                "SetGroupReq".to_string(),
+                pack_uni_request_data(&payload.freeze()),
+            )]),
+        };
+
+        let pkt = jce::RequestPacket {
+            i_version: 3,
+            i_request_id: self.next_packet_seq(),
+            s_servant_name: "mqq.IMService.FriendListServiceServantObj".to_string(),
+            s_func_name: "SetGroupReq".to_string(),
+            s_buffer: buf.freeze(),
+            ..Default::default()
+        };
+
+        self.uni_packet("friendlist.SetGroupReq", pkt.freeze())
+    }
+
+    /// 添加好友分组
+    // friendlist.SetGroupReq
+    pub fn build_friend_list_add_group_req_packet(&self, sort_id: u8, group_name: &str) -> Packet {
+        let mut body = BytesMut::new();
+        body.put_u8(sort_id);
+        body.put_u8(group_name.len() as u8);
+        body.put_slice(group_name.as_bytes());
+        self.build_friend_list_set_group_req_packet(0, body.freeze())
+    }
+
+    /// 重命名好友分组
+    // friendlist.SetGroupReq
+    pub fn build_friend_list_rename_group_req_packet(
+        &self,
+        group_id: u8,
+        group_name: &str,
+    ) -> Packet {
+        let mut body = BytesMut::new();
+        body.put_u8(group_id);
+        body.put_u8(group_name.len() as u8);
+        body.put_slice(group_name.as_bytes());
+        self.build_friend_list_set_group_req_packet(1, body.freeze())
+    }
+
+    /// 删除好友分组
+    // friendlist.SetGroupReq
+    pub fn build_friend_list_del_group_req_packet(&self, group_id: u8) -> Packet {
+        let mut body = BytesMut::new();
+        body.put_u8(group_id);
+        self.build_friend_list_set_group_req_packet(2, body.freeze())
+    }
 }
