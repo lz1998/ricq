@@ -28,15 +28,6 @@ impl Client {
         }
 
         let message = parse_friend_message(msg)?;
-        if message.from_uin == self.uin().await {
-            self.handler
-                .handle(QEvent::SelfFriendMessage(FriendMessageEvent {
-                    client: self.clone(),
-                    message,
-                }))
-                .await;
-            return Ok(());
-        }
         self.handler
             .handle(QEvent::FriendMessage(FriendMessageEvent {
                 client: self.clone(),

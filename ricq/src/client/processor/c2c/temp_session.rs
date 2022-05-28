@@ -13,11 +13,6 @@ impl Client {
         msg: pb::msg::Message,
     ) -> RQResult<()> {
         let message = parse_temp_message(msg)?;
-        if message.from_uin == self.uin().await {
-            // TODO dispatch self temp message event
-            // TODO swap friend seq
-            return Ok(());
-        }
         self.handler
             .handle(QEvent::TempMessage(TempMessageEvent {
                 client: self.clone(),

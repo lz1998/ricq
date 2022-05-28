@@ -39,7 +39,6 @@ impl Client {
             {
                 let _ = tx.send(group_message_part.seq);
             }
-            return Ok(());
         }
 
         if let Some(ptt) = group_message_part.ptt {
