@@ -26,8 +26,10 @@ pub enum QEvent {
     GroupAudioMessage(GroupAudioMessageEvent),
     /// 群自身消息
     SelfGroupMessage(GroupMessageEvent),
-    /// 私聊消息
+    /// 好友消息
     FriendMessage(FriendMessageEvent),
+    /// 好友自身消息
+    SelfFriendMessage(FriendMessageEvent),
     /// 群语音
     FriendAudioMessage(FriendAudioMessageEvent),
     /// 私聊消息
@@ -153,6 +155,7 @@ pub trait PartlyHandler: Sync {
     async fn handle_group_audio(&self, _event: GroupAudioMessageEvent) {}
     async fn handle_self_group_message(&self, _event: GroupMessageEvent) {}
     async fn handle_friend_message(&self, _event: FriendMessageEvent) {}
+    async fn handle_self_friend_message(&self, _event: FriendMessageEvent) {}
     async fn handle_friend_audio(&self, _event: FriendAudioMessageEvent) {}
     async fn handle_temp_message(&self, _event: TempMessageEvent) {}
     async fn handle_group_request(&self, _event: GroupRequestEvent) {}
@@ -185,6 +188,7 @@ where
             QEvent::GroupAudioMessage(m) => self.handle_group_audio(m).await,
             QEvent::SelfGroupMessage(m) => self.handle_self_group_message(m).await,
             QEvent::FriendMessage(m) => self.handle_friend_message(m).await,
+            QEvent::SelfFriendMessage(m) => self.handle_self_friend_message(m).await,
             QEvent::FriendAudioMessage(m) => self.handle_friend_audio(m).await,
             QEvent::TempMessage(m) => self.handle_temp_message(m).await,
             QEvent::GroupRequest(m) => self.handle_group_request(m).await,

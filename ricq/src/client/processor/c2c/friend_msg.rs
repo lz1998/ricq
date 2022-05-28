@@ -17,6 +17,7 @@ impl Client {
             msg.body.as_mut()?.rich_text.as_mut()?.ptt.take()
         }
         if let Some(ptt) = take_ptt(&mut msg) {
+            // TODO self friend audio
             self.handler
                 .handle(QEvent::FriendAudioMessage(FriendAudioMessageEvent {
                     client: self.clone(),
@@ -28,8 +29,12 @@ impl Client {
 
         let message = parse_friend_message(msg)?;
         if message.from_uin == self.uin().await {
-            // TODO dispatch self friend message event
-            // TODO swap friend seq
+            self.handler
+                .handle(QEvent::SelfFriendMessage(FriendMessageEvent {
+                    client: self.clone(),
+                    message,
+                }))
+                .await;
             return Ok(());
         }
         self.handler
