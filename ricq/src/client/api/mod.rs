@@ -105,8 +105,20 @@ impl super::Client {
         Ok(translations)
     }
 
-    pub async fn send_like(&self, uin: i64, count: i32) -> RQResult<()> {
-        let req = self.engine.read().await.build_send_like_packet(uin, count);
+    // source 0-自己 1-好友 2-群成员
+    // cookie source=1时 在 summary info 获取
+    pub async fn send_like(
+        &self,
+        uin: i64,
+        count: i32,
+        source: i32,
+        cookies: Bytes,
+    ) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_send_like_packet(uin, count, source, cookies);
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }

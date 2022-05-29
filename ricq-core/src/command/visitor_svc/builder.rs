@@ -4,29 +4,32 @@ use bytes::Bytes;
 use jcers::JcePut;
 
 use crate::command::common::pack_uni_request_data;
-use crate::hex::decode_hex;
 use crate::jce;
 use crate::protocol::packet::Packet;
 
 impl super::super::super::Engine {
     // VisitorSvc.ReqFavorite
-    pub fn build_send_like_packet(&self, uin: i64, count: i32) -> Packet {
+    pub fn build_send_like_packet(
+        &self,
+        uin: i64,
+        count: i32,
+        source: i32,
+        cookies: Bytes,
+    ) -> Packet {
         let seq = self.next_seq();
         let req = jce::ReqFavorite {
-            st_header: jce::QQServiceReqHead {
-                l_uin: self.uin(),
+            header: jce::QQServiceReqHead {
+                uin: self.uin(),
                 sh_version: 1,
-                i_seq: seq as i32,
-                b_req_type: 1,
-                b_triggered: 0,
-                v_cookies: Bytes::from(
-                    decode_hex("0C180001060131160131").expect("failed to decode_hex"),
-                ),
+                seq: seq as i32,
+                req_type: 1,
+                triggered: 0,
+                cookies,
             },
-            l_mid: uin,
-            c_op_type: 0,
-            em_source: 1,
-            i_count: count,
+            mid: uin,
+            op_type: 0,
+            source,
+            count,
         };
         let buf = jce::RequestDataVersion3 {
             map: HashMap::from([(

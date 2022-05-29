@@ -1,6 +1,6 @@
 use bytes::{Buf, Bytes};
-use jcers::Jce;
 
+use crate::jce::{RespSummaryCard, RespSummaryCardHead};
 use crate::structs::SummaryCardInfo;
 use crate::{jce, RQError, RQResult};
 
@@ -11,34 +11,33 @@ impl super::super::super::Engine {
             jcers::from_buf(&mut payload).map_err(RQError::from)?;
         let mut data: jce::RequestDataVersion2 =
             jcers::from_buf(&mut request.s_buffer).map_err(RQError::from)?;
-        let mut rsp = {
-            let mut tmp = data
-                .map
-                .remove("RespSummaryCard")
-                .ok_or_else(|| RQError::Decode("missing RespSummaryCard".into()))?;
-            if let Some(resp) = tmp.remove("SummaryCard.RespSummaryCard") {
-                resp
-            } else {
-                tmp.remove("SummaryCard_Old.RespSummaryCard")
-                    .ok_or_else(|| {
-                        RQError::Decode("missing SummaryCard_Old.RespSummaryCard".into())
-                    })?
-            }
-        };
+        let mut head = data
+            .map
+            .remove("RespHead")
+            .ok_or_else(|| RQError::Decode("missing RespHead".into()))?
+            .remove("SummaryCard.RespHead")
+            .ok_or_else(|| RQError::Decode("missing SummaryCard.RespHead".into()))?;
+        head.advance(1);
+        let head: RespSummaryCardHead = jcers::from_buf(&mut head).map_err(RQError::Jce)?;
+        let mut rsp = data
+            .map
+            .remove("RespSummaryCard")
+            .ok_or_else(|| RQError::Decode("missing RespSummaryCard".into()))?
+            .remove("SummaryCard.RespSummaryCard")
+            .ok_or_else(|| RQError::Decode("missing SummaryCard.RespSummaryCard".into()))?;
         rsp.advance(1);
-        let mut rsp = Jce::new(&mut rsp);
-
+        let rsp: RespSummaryCard = jcers::from_buf(&mut rsp).map_err(RQError::Jce)?;
         let info = SummaryCardInfo {
-            sex: rsp.get_by_tag(1).map_err(RQError::Jce)?,
-            age: rsp.get_by_tag(2).map_err(RQError::Jce)?,
-            nickname: rsp.get_by_tag(3).map_err(RQError::Jce)?,
-            level: rsp.get_by_tag(5).map_err(RQError::Jce)?,
-            city: rsp.get_by_tag(7).map_err(RQError::Jce)?,
-            sign: rsp.get_by_tag(8).map_err(RQError::Jce)?,
-            mobile: rsp.get_by_tag(11).map_err(RQError::Jce)?,
-            uin: rsp.get_by_tag(23).map_err(RQError::Jce)?,
-            login_days: rsp.get_by_tag(36).map_err(RQError::Jce)?,
-            ..Default::default()
+            sex: rsp.sex,
+            age: rsp.age,
+            nickname: rsp.nickname,
+            level: rsp.level,
+            city: rsp.city,
+            sign: rsp.sign,
+            mobile: rsp.mobile,
+            uin: rsp.uin,
+            login_days: rsp.login_days,
+            cookie: head.cookie,
         };
         // TODO more info
         Ok(info)

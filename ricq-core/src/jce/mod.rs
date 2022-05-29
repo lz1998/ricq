@@ -906,6 +906,40 @@ JceStruct!(SummaryCardReq {
     22 => req_extend_card: u8,
 });
 
+#[derive(Debug, Clone, JceGet, JcePut, Default)]
+pub struct RespSummaryCard {
+    #[jce(1)]
+    pub sex: u8,
+    #[jce(2)]
+    pub age: u8,
+    #[jce(3)]
+    pub nickname: String,
+    #[jce(5)]
+    pub level: i32,
+    #[jce(7)]
+    pub city: String,
+    #[jce(8)]
+    pub sign: String,
+    #[jce(11)]
+    pub mobile: String,
+    #[jce(23)]
+    pub uin: i64,
+    #[jce(36)]
+    pub login_days: i64,
+}
+
+#[derive(Debug, Clone, JceGet, JcePut, Default)]
+pub struct RespSummaryCardHead {
+    #[jce(0)]
+    pub sex: i32,
+    #[jce(1)]
+    pub age: i32,
+    #[jce(2)]
+    pub err_str: String,
+    #[jce(3)]
+    pub cookie: Bytes,
+}
+
 JceStruct!(SummaryCardReqSearch {
     0 => keyword: String,
     1 => country_code: String,
@@ -930,31 +964,31 @@ JceStruct!(DelFriendResp{
 #[derive(Debug, Clone, JceGet, JcePut, Default)]
 pub struct QQServiceReqHead {
     #[jce(0)]
-    pub l_uin: i64,
+    pub uin: i64,
     #[jce(1)]
     pub sh_version: i16,
     #[jce(2)]
-    pub i_seq: i32,
+    pub seq: i32,
     #[jce(3)]
-    pub b_req_type: u8,
+    pub req_type: u8,
     #[jce(4)]
-    pub b_triggered: u8,
+    pub triggered: u8,
     #[jce(5)]
-    pub v_cookies: Bytes,
+    pub cookies: Bytes,
 }
 
 #[derive(Debug, Clone, JceGet, JcePut, Default)]
 pub struct ReqFavorite {
     #[jce(0)]
-    pub st_header: QQServiceReqHead,
+    pub header: QQServiceReqHead,
     #[jce(1)]
-    pub l_mid: i64,
+    pub mid: i64,
     #[jce(2)]
-    pub c_op_type: i32,
+    pub op_type: i32,
     #[jce(3)]
-    pub em_source: i32,
+    pub source: i32,
     #[jce(4)]
-    pub i_count: i32,
+    pub count: i32,
 }
 
 #[derive(Debug, Clone, JceGet, JcePut, Default)]

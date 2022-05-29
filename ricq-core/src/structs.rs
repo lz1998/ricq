@@ -118,7 +118,8 @@ pub struct SummaryCardInfo {
     pub sign: String,
     pub mobile: String,
     pub login_days: i64,
-    pub q_id: String,
+    /// 用于点赞
+    pub cookie: Bytes,
 }
 
 #[derive(Debug, Clone, Default)]
