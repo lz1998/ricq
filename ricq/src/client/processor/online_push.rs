@@ -22,13 +22,13 @@ use crate::client::event::{
 };
 use crate::client::handler::QEvent;
 use crate::client::Client;
-use crate::{RQError, RQResult};
+use crate::RQResult;
 
 impl Client {
     pub(crate) async fn process_group_message_part(
         self: &Arc<Self>,
         group_message_part: GroupMessagePart,
-    ) -> Result<(), RQError> {
+    ) -> RQResult<()> {
         // receipt message
         if group_message_part.from_uin == self.uin().await {
             if let Some(tx) = self
@@ -38,6 +38,7 @@ impl Client {
                 .remove(&group_message_part.rand)
             {
                 let _ = tx.send(group_message_part.seq);
+                return Ok(());
             }
         }
 
