@@ -107,12 +107,12 @@ impl Client {
             rands: parts.iter().map(|p| p.rand).collect(),
             group_code: parts.first().map(|p| p.group_code).unwrap_or_default(),
             group_name: parts
-                .first()
-                .map(|p| p.group_name.clone())
+                .first_mut()
+                .map(|p| std::mem::take(&mut p.group_name))
                 .unwrap_or_default(),
             group_card: parts
-                .first()
-                .map(|p| p.group_card.clone())
+                .first_mut()
+                .map(|p| std::mem::take(&mut p.group_card))
                 .unwrap_or_default(),
             from_uin: parts.first().map(|p| p.from_uin).unwrap_or_default(),
             time: parts.first().map(|p| p.time).unwrap_or_default(),
