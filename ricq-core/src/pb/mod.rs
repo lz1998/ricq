@@ -22,6 +22,10 @@ pub mod cmd0x6ff {
     include!(concat!(env!("OUT_DIR"), "/cmd0x6ff.rs"));
 }
 
+pub mod cmd0x899 {
+    include!(concat!(env!("OUT_DIR"), "/cmd0x899.rs"));
+}
+
 pub mod longmsg {
     include!(concat!(env!("OUT_DIR"), "/longmsg.rs"));
 }
