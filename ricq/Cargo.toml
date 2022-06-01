@@ -1,6 +1,6 @@
 [package]
 name = "ricq"
-version = "0.1.7"
+version = "0.1.8"
 edition = "2021"
 description = "Android IM protocol"
 license = "AGPL-3.0"
@@ -26,7 +26,7 @@ rand = "0.8"
 chrono = "0.4"
 derivative = "2"
 jcers = { version = "0.1", features = ["derive"] }
-ricq-core = { path = "../ricq-core", version = "0.1.7" }
+ricq-core = { path = "../ricq-core", version = "0.1.8" }
 image = { version = "0", features = ["png", "jpeg", "bmp", "gif", "webp"] }
 
 
