@@ -348,4 +348,21 @@ impl super::super::super::Engine {
         let payload = self.transport.encode_oidb_packet(0xb77, 9, body.to_bytes());
         self.uni_packet("OidbSvc.0xb77_9", payload)
     }
+
+    // OidbSvc.0x899_0
+    pub fn build_get_group_admin_list_request_packet(&self, group_code: u64) -> Packet {
+        let body = pb::cmd0x899::ReqBody {
+            group_code: Some(group_code),
+            start_uin: Some(0),
+            identify_flag: Some(2),
+            memberlist_opt: Some(pb::cmd0x899::Memberlist {
+                member_uin: Some(0),
+                privilege: Some(1),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let payload = self.transport.encode_oidb_packet(0x899, 0, body.to_bytes());
+        self.uni_packet("OidbSvc.0x899_0", payload)
+    }
 }

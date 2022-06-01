@@ -1,8 +1,10 @@
+use std::collections::HashMap;
+
 use bytes::Bytes;
 
 use crate::command::common::PbToBytes;
 use crate::command::oidb_svc::GroupAtAllRemainInfo;
-use crate::structs::GroupInfo;
+use crate::structs::{GroupInfo, GroupMemberPermission};
 use crate::{pb, RQError, RQResult};
 
 use super::OcrResponse;
@@ -86,5 +88,32 @@ impl super::super::super::Engine {
                 .text_detections,
             language: resp.ocr_rsp_body.unwrap_or_default().language,
         })
+    }
+
+    // OidbSvc.0x899_0
+    pub fn decode_get_group_admin_list_response(
+        &self,
+        payload: Bytes,
+    ) -> RQResult<HashMap<i64, GroupMemberPermission>> {
+        let pkg = pb::oidb::OidbssoPkg::from_bytes(&payload)
+            .map_err(|_| RQError::Decode("OidbssoPkg".into()))?;
+        let resp = pb::cmd0x899::RspBody::from_bytes(&pkg.bodybuffer)
+            .map_err(|_| RQError::Decode("D0x899RspBody".into()))?;
+        Ok(resp
+            .memberlist
+            .into_iter()
+            .map(|mem| {
+                (
+                    mem.member_uin.unwrap_or_default() as i64,
+                    if mem.privilege == Some(1) {
+                        GroupMemberPermission::Owner
+                    } else if mem.privilege == Some(2) {
+                        GroupMemberPermission::Administrator
+                    } else {
+                        GroupMemberPermission::Member
+                    },
+                )
+            })
+            .collect())
     }
 }

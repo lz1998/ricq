@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::time::Duration;
 
 use bytes::Bytes;
@@ -14,8 +15,8 @@ use ricq_core::msg::elem::{Anonymous, GroupImage, RichMsg, VideoFile};
 use ricq_core::msg::MessageChain;
 use ricq_core::pb;
 use ricq_core::pb::short_video::ShortVideoUploadRsp;
-use ricq_core::structs::GroupAudio;
 use ricq_core::structs::{ForwardMessage, MessageNode};
+use ricq_core::structs::{GroupAudio, GroupMemberPermission};
 use ricq_core::structs::{GroupInfo, GroupMemberInfo, MessageReceipt};
 
 use crate::structs::ImageInfo;
@@ -828,5 +829,22 @@ impl super::super::Client {
             }));
         self._send_group_message(group_code, chain.into(), None)
             .await
+    }
+
+    /// 获取群主/管理员列表
+    pub async fn get_group_admin_list(
+        &self,
+        group_code: i64,
+    ) -> RQResult<HashMap<i64, GroupMemberPermission>> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_get_group_admin_list_request_packet(group_code as u64);
+        let resp = self.send_and_wait(req).await?;
+        self.engine
+            .read()
+            .await
+            .decode_get_group_admin_list_response(resp.body)
     }
 }
