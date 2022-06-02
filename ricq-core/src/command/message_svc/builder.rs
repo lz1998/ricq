@@ -214,9 +214,9 @@ impl super::super::super::Engine {
                     .map(|(seq, ran)| pb::msg::C2cMsgInfo {
                         from_uin: Some(self.uin()),
                         to_uin: Some(uin),
-                        msg_time: Some(msg_time),
-                        msg_uid: Some(0x0100_0000_0000_0000 | (ran as i64 & 0xFFFFFFFF)),
                         msg_seq: Some(seq),
+                        msg_uid: Some(0x0100_0000_0000_0000 | (ran as i64 & 0xFFFFFFFF)), // TODO
+                        msg_time: Some(msg_time),
                         msg_random: Some(ran),
                         routing_head: Some(pb::msg::RoutingHead {
                             c2c: Some(pb::msg::C2c { to_uin: Some(uin) }),
