@@ -180,7 +180,7 @@ impl super::super::Client {
             .decode_group_info_response(resp.body)
     }
 
-    /// 获取群信息，请先尝试 find_group
+    /// 获取群信息
     pub async fn get_group_info(&self, group_code: i64) -> RQResult<Option<GroupInfo>> {
         Ok(self.get_group_infos(vec![group_code]).await?.pop())
     }

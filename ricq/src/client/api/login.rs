@@ -124,10 +124,8 @@ impl super::super::Client {
         self.request_change_sig(None).await
     }
 
-    pub(crate) async fn request_change_sig(
-        &self,
-        main_sig_map: Option<u32>,
-    ) -> RQResult<LoginResponse> {
+    /// 换 token，使用后需要重新 register
+    pub async fn request_change_sig(&self, main_sig_map: Option<u32>) -> RQResult<LoginResponse> {
         let req = self
             .engine
             .read()

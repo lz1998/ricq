@@ -18,16 +18,7 @@ use ricq::{LoginResponse, QRCodeConfirmed, QRCodeImageFetch, QRCodeState};
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
     tracing_subscriber::registry()
-        .with(
-            tracing_subscriber::fmt::layer()
-                .with_target(true)
-                .with_timer(tracing_subscriber::fmt::time::OffsetTime::new(
-                    time::UtcOffset::__from_hms_unchecked(8, 0, 0),
-                    time::macros::format_description!(
-                        "[year repr:last_two]-[month]-[day] [hour]:[minute]:[second]"
-                    ),
-                )),
-        )
+        .with(tracing_subscriber::fmt::layer().with_target(true))
         .with(
             tracing_subscriber::filter::Targets::new()
                 .with_target("ricq", Level::DEBUG)
