@@ -119,7 +119,6 @@ impl super::super::Client {
         elems: Vec<pb::msg::Elem>,
         ptt: Option<pb::msg::Ptt>,
     ) -> RQResult<MessageReceipt> {
-        let time = chrono::Utc::now().timestamp();
         let ran = (rand::random::<u32>() >> 1) as i32;
         let (tx, rx) = tokio::sync::oneshot::channel();
         {
@@ -129,12 +128,12 @@ impl super::super::Client {
             .engine
             .read()
             .await
-            .build_group_sending_packet(group_code, elems, ptt, ran, time, 1, 0, 0, false);
+            .build_group_sending_packet(group_code, elems, ptt, ran, 1, 0, 0, false);
         let _ = self.send_and_wait(req).await?;
         let mut receipt = MessageReceipt {
             seqs: vec![0],
             rands: vec![ran],
-            time,
+            time: chrono::Utc::now().timestamp(),
         };
         match tokio::time::timeout(Duration::from_secs(5), rx).await {
             Ok(Ok(seq)) => {

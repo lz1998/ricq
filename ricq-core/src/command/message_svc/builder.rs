@@ -4,7 +4,6 @@ use crate::command::common::PbToBytes;
 use crate::pb;
 use crate::protocol::packet::Packet;
 
-// TODO 待测试
 impl super::super::super::Engine {
     // MessageSvc.PbSendMsg
     pub fn build_group_sending_packet(
@@ -13,13 +12,11 @@ impl super::super::super::Engine {
         elems: Vec<pb::msg::Elem>,
         ptt: Option<pb::msg::Ptt>,
         ran: i32,
-        time: i64,
         pkg_num: i32,
         pkg_index: i32,
         pkg_div: i32,
         forward: bool,
     ) -> Packet {
-        let sync_cookie = self.sync_cookie(time);
         let req = pb::msg::SendMessageRequest {
             routing_head: Some(pb::msg::RoutingHead {
                 routing_head: Some(pb::msg::routing_head::RoutingHead::Grp(pb::msg::Grp {
@@ -43,9 +40,10 @@ impl super::super::super::Engine {
             }),
             msg_seq: Some(self.next_group_seq()),
             msg_rand: Some(ran),
-            sync_cookie: Some(sync_cookie),
-            msg_via: Some(1),
+            // 群消息没有 sync_cookie
+            msg_via: Some(1), // 从哪进入界面(联系人列表/搜索/...)
             msg_ctrl: if forward {
+                // 合并转发
                 Some(pb::msg::MsgCtrl { msg_flag: Some(4) })
             } else {
                 None
@@ -63,13 +61,13 @@ impl super::super::super::Engine {
         pb::msg::SyncCookie {
             time1: Some(time),
             time: Some(time),
-            last_sync_time: Some(time),
             ran1: Some(rand::random::<u32>() as i64),
             ran2: Some(rand::random::<u32>() as i64),
             const1: Some(self.transport.sig.sync_const1 as i64),
             const2: Some(self.transport.sig.sync_const2 as i64),
             const3: Some(self.transport.sig.sync_const3 as i64),
-            ..Default::default()
+            last_sync_time: Some(time),
+            const4: Some(0),
         }
         .encode_to_vec()
     }
