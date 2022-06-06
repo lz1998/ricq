@@ -22,9 +22,9 @@ impl super::super::super::Engine {
         let sync_cookie = self.sync_cookie(time);
         let req = pb::msg::SendMessageRequest {
             routing_head: Some(pb::msg::RoutingHead {
-                grp: Some(pb::msg::Grp {
+                routing_head: Some(pb::msg::routing_head::RoutingHead::Grp(pb::msg::Grp {
                     group_code: Some(group_code),
-                }),
+                })),
                 ..Default::default()
             }),
             content_head: Some(pb::msg::ContentHead {
@@ -117,9 +117,9 @@ impl super::super::super::Engine {
 
         let req = pb::msg::SendMessageRequest {
             routing_head: Some(pb::msg::RoutingHead {
-                c2c: Some(pb::msg::C2c {
+                routing_head: Some(pb::msg::routing_head::RoutingHead::C2c(pb::msg::C2c {
                     to_uin: Some(target),
-                }),
+                })),
                 ..Default::default()
             }),
             content_head: Some(pb::msg::ContentHead {
@@ -157,10 +157,12 @@ impl super::super::super::Engine {
         let sync_cookie = self.sync_cookie(time);
         let req = pb::msg::SendMessageRequest {
             routing_head: Some(pb::msg::RoutingHead {
-                grp_tmp: Some(pb::msg::GrpTmp {
-                    group_uin: Some(group_uin),
-                    to_uin: Some(user_uin),
-                }),
+                routing_head: Some(pb::msg::routing_head::RoutingHead::GrpTmp(
+                    pb::msg::GrpTmp {
+                        group_uin: Some(group_uin),
+                        to_uin: Some(user_uin),
+                    },
+                )),
                 ..Default::default()
             }),
             content_head: Some(pb::msg::ContentHead {
@@ -219,7 +221,9 @@ impl super::super::super::Engine {
                         msg_time: Some(msg_time),
                         msg_random: Some(ran),
                         routing_head: Some(pb::msg::RoutingHead {
-                            c2c: Some(pb::msg::C2c { to_uin: Some(uin) }),
+                            routing_head: Some(pb::msg::routing_head::RoutingHead::C2c(
+                                pb::msg::C2c { to_uin: Some(uin) },
+                            )),
                             ..Default::default()
                         }),
                         ..Default::default()

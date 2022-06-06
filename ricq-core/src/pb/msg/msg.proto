@@ -95,10 +95,12 @@ message C2CMsgInfo {
 }
 
 message RoutingHead {
-  optional C2C c2c = 1;
-  optional Grp grp = 2;
-  optional GrpTmp grpTmp = 3;
-  optional WPATmp wpaTmp = 6;
+  oneof RoutingHead{
+    C2C c2c = 1;
+    Grp grp = 2;
+    GrpTmp grpTmp = 3;
+    WPATmp wpaTmp = 6;
+  }
   /*
   Dis dis = 4;
   DisTmp disTmp = 5;
