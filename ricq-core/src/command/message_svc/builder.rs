@@ -143,11 +143,11 @@ impl super::super::super::Engine {
     }
 
     // MessageSvc.PbSendMsg
-    pub fn build_temp_sending_packet(
+    pub fn build_send_message_packet(
         &self,
-        group_uin: i64,
-        user_uin: i64,
+        routing_head: pb::msg::routing_head::RoutingHead,
         elems: Vec<pb::msg::Elem>,
+        ptt: Option<pb::msg::Ptt>,
         seq: i32,
         ran: i32,
         time: i64,
@@ -155,12 +155,7 @@ impl super::super::super::Engine {
         let sync_cookie = self.sync_cookie(time);
         let req = pb::msg::SendMessageRequest {
             routing_head: Some(pb::msg::RoutingHead {
-                routing_head: Some(pb::msg::routing_head::RoutingHead::GrpTmp(
-                    pb::msg::GrpTmp {
-                        group_uin: Some(group_uin),
-                        to_uin: Some(user_uin),
-                    },
-                )),
+                routing_head: Some(routing_head),
                 ..Default::default()
             }),
             content_head: Some(pb::msg::ContentHead {
@@ -170,6 +165,7 @@ impl super::super::super::Engine {
             msg_body: Some(pb::msg::MessageBody {
                 rich_text: Some(pb::msg::RichText {
                     elems,
+                    ptt,
                     ..Default::default()
                 }),
                 ..Default::default()

@@ -7,6 +7,7 @@ use ricq_core::command::message_svc::MessageSyncResponse;
 use ricq_core::command::oidb_svc::*;
 use ricq_core::common::{group_code2uin, RQAddr};
 use ricq_core::highway::BdhInput;
+use ricq_core::msg::MessageChain;
 use ricq_core::pb;
 use ricq_core::structs::ForwardMessage;
 use ricq_core::structs::Status;
@@ -386,5 +387,27 @@ impl super::Client {
         // TODO uncompress
         // TODO link message, convert to Vec<ForwardMessage>
         todo!()
+    }
+
+    /// 发送消息
+    pub async fn send_message(
+        &self,
+        routing_head: pb::msg::routing_head::RoutingHead,
+        message_chain: MessageChain,
+        ptt: Option<pb::msg::Ptt>,
+    ) -> RQResult<()> {
+        let time = chrono::Utc::now().timestamp();
+        let seq = self.engine.read().await.next_friend_seq();
+        let ran = (rand::random::<u32>() >> 1) as i32;
+        let req = self.engine.read().await.build_send_message_packet(
+            routing_head,
+            message_chain.into(),
+            ptt,
+            seq,
+            ran,
+            time,
+        );
+        self.send_and_wait(req).await?;
+        Ok(())
     }
 }

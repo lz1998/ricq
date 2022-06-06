@@ -8,7 +8,6 @@ use ricq_core::command::img_store::GroupImageStoreResp;
 use ricq_core::command::multi_msg::gen_forward_preview;
 use ricq_core::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
 use ricq_core::command::{friendlist::*, oidb_svc::*, profile_service::*};
-use ricq_core::common::group_code2uin;
 use ricq_core::hex::encode_hex;
 use ricq_core::highway::BdhInput;
 use ricq_core::msg::elem::{Anonymous, GroupImage, RichMsg, VideoFile};
@@ -423,28 +422,6 @@ impl super::super::Client {
             music_type.version(),
         );
         let _ = self.send_and_wait(req).await?;
-        Ok(())
-    }
-
-    /// 发送临时消息
-    pub async fn send_temp_message(
-        &self,
-        group_code: i64,
-        user_uin: i64,
-        message_chain: MessageChain,
-    ) -> RQResult<()> {
-        let time = chrono::Utc::now().timestamp();
-        let seq = self.engine.read().await.next_friend_seq();
-        let ran = (rand::random::<u32>() >> 1) as i32;
-        let req = self.engine.read().await.build_temp_sending_packet(
-            group_code2uin(group_code),
-            user_uin,
-            message_chain.into(),
-            seq,
-            ran,
-            time,
-        );
-        self.send(req).await?;
         Ok(())
     }
 
