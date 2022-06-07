@@ -131,6 +131,7 @@ impl super::super::super::Engine {
             msg_seq: Some(seq),
             msg_rand: Some(ran),
             sync_cookie: Some(sync_cookie),
+            msg_via: Some(1),
             ..Default::default()
         };
         self.uni_packet("MessageSvc.PbSendMsg", req.to_bytes())
@@ -182,7 +183,7 @@ impl super::super::super::Engine {
                     })
                     .collect(),
                 long_message_flag: Some(0),
-                reserved: Some(vec![0x08, 0x00]),
+                reserved: Some(vec![0x08, 0x00]), // TODO PB: GrpTmp {1: 1，2: group_uin}
                 sub_cmd: Some(1),
             }],
             ..Default::default()
