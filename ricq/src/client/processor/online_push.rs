@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use bytes::{Buf, Bytes};
 use cached::Cached;
@@ -148,7 +149,7 @@ impl Client {
                             }
                             r.advance(6);
                             let target = r.get_u32() as i64;
-                            let time = r.get_u32();
+                            let duration = Duration::from_secs(r.get_u32() as u64);
                             self.handler
                                 .handle(QEvent::GroupMute(GroupMuteEvent {
                                     client: self.clone(),
@@ -156,7 +157,7 @@ impl Client {
                                         group_code,
                                         operator_uin: operator,
                                         target_uin: target,
-                                        time,
+                                        duration,
                                     },
                                 }))
                                 .await;
@@ -335,8 +336,8 @@ impl Client {
     }
 
     async fn push_req_exists(&self, info: &jce::PushMessageInfo) -> bool {
-        let msg_time = info.msg_time as i32;
-        if self.start_time > msg_time {
+        let msg_time = info.msg_time as i32; // 可能是0，不过滤
+        if msg_time != 0 && self.start_time > msg_time {
             return true;
         }
         let mut push_req_cache = self.push_req_cache.write().await;

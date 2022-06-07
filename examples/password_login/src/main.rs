@@ -44,7 +44,8 @@ async fn main() -> Result<()> {
         .expect("failed to parse UIN");
     let password = std::env::var("PASSWORD").expect("failed to read PASSWORD from env");
 
-    let device = Device::random_with_rng(&mut StdRng::seed_from_u64(uin as u64));
+    let mut seed = StdRng::seed_from_u64(uin as u64);
+    let device = Device::random_with_rng(&mut seed);
 
     let client = Arc::new(Client::new(
         device,

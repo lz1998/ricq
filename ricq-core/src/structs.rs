@@ -1,4 +1,5 @@
 use bytes::Bytes;
+use std::time::Duration;
 
 pub use crate::command::multi_msg::{ForwardMessage, ForwardNode, MessageNode};
 pub use crate::command::oidb_svc::ProfileDetailUpdate;
@@ -167,7 +168,7 @@ pub struct GroupMute {
     pub group_code: i64,
     pub operator_uin: i64,
     pub target_uin: i64,
-    pub time: u32,
+    pub duration: Duration,
 }
 
 #[derive(Debug, Clone, Default)]
