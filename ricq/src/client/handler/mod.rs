@@ -9,9 +9,8 @@ use crate::client::event::{
     DeleteFriendEvent, FriendAudioMessageEvent, FriendMessageEvent, FriendMessageRecallEvent,
     FriendPokeEvent, FriendRequestEvent, GroupAudioMessageEvent, GroupDisbandEvent,
     GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent,
-    GroupNameUpdateEvent, GroupRequestEvent, KickedOfflineEvent, MSFOfflineEvent,
-    MemberPermissionChangeEvent, NewFriendEvent, NewMemberEvent, SelfInvitedEvent,
-    TempMessageEvent,
+    GroupNameUpdateEvent, GroupRequestEvent, GroupTempMessageEvent, KickedOfflineEvent,
+    MSFOfflineEvent, MemberPermissionChangeEvent, NewFriendEvent, NewMemberEvent, SelfInvitedEvent,
 };
 
 /// 所有需要外发的数据的枚举打包
@@ -28,8 +27,8 @@ pub enum QEvent {
     FriendMessage(FriendMessageEvent),
     /// 群语音
     FriendAudioMessage(FriendAudioMessageEvent),
-    /// 私聊消息
-    TempMessage(TempMessageEvent),
+    /// 群临时消息
+    GroupTempMessage(GroupTempMessageEvent),
     /// 加群申请
     GroupRequest(GroupRequestEvent),
     /// 加群申请
@@ -93,7 +92,7 @@ impl Handler for DefaultHandler {
                     m.message.elements
                 )
             }
-            QEvent::TempMessage(m) => {
+            QEvent::GroupTempMessage(m) => {
                 tracing::info!(
                     "MESSAGE (TEMP={}): {}",
                     m.message.from_uin,
@@ -151,7 +150,7 @@ pub trait PartlyHandler: Sync {
     async fn handle_group_audio(&self, _event: GroupAudioMessageEvent) {}
     async fn handle_friend_message(&self, _event: FriendMessageEvent) {}
     async fn handle_friend_audio(&self, _event: FriendAudioMessageEvent) {}
-    async fn handle_temp_message(&self, _event: TempMessageEvent) {}
+    async fn handle_group_temp_message(&self, _event: GroupTempMessageEvent) {}
     async fn handle_group_request(&self, _event: GroupRequestEvent) {}
     async fn handle_self_invited(&self, _event: SelfInvitedEvent) {}
     async fn handle_friend_request(&self, _event: FriendRequestEvent) {}
@@ -182,7 +181,7 @@ where
             QEvent::GroupAudioMessage(m) => self.handle_group_audio(m).await,
             QEvent::FriendMessage(m) => self.handle_friend_message(m).await,
             QEvent::FriendAudioMessage(m) => self.handle_friend_audio(m).await,
-            QEvent::TempMessage(m) => self.handle_temp_message(m).await,
+            QEvent::GroupTempMessage(m) => self.handle_group_temp_message(m).await,
             QEvent::GroupRequest(m) => self.handle_group_request(m).await,
             QEvent::SelfInvited(m) => self.handle_self_invited(m).await,
             QEvent::FriendRequest(m) => self.handle_friend_request(m).await,

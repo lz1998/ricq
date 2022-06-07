@@ -4,7 +4,7 @@ use ricq_core::command::profile_service::{JoinGroupRequest, NewFriendRequest, Se
 use ricq_core::structs::{
     DeleteFriend, FriendAudioMessage, FriendInfo, FriendMessageRecall, FriendPoke,
     GroupAudioMessage, GroupDisband, GroupLeave, GroupMessageRecall, GroupMute, GroupNameUpdate,
-    MemberPermissionChange, NewMember, TempMessage,
+    GroupTempMessage, MemberPermissionChange, NewMember,
 };
 use ricq_core::{jce, RQResult};
 
@@ -42,10 +42,10 @@ pub struct FriendMessageEvent {
 
 #[derive(Clone, derivative::Derivative)]
 #[derivative(Debug)]
-pub struct TempMessageEvent {
+pub struct GroupTempMessageEvent {
     #[derivative(Debug = "ignore")]
     pub client: Arc<Client>,
-    pub message: TempMessage,
+    pub message: GroupTempMessage,
 }
 
 #[derive(Clone, derivative::Derivative)]
