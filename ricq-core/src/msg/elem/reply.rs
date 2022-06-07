@@ -8,7 +8,6 @@ use super::super::MessageChain;
 pub struct Reply {
     pub reply_seq: i32,
     pub sender: i64,
-    pub group_id: i64,
     pub time: i32,
     pub elements: MessageChain,
 }
@@ -36,7 +35,6 @@ impl From<msg::SourceMsg> for Reply {
             reply_seq: e.orig_seqs[0],
             time: e.time(),
             sender: e.sender_uin(),
-            group_id: e.to_uin(),
             elements: MessageChain::from(e.elems),
         }
     }
