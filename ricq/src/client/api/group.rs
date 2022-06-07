@@ -8,6 +8,7 @@ use ricq_core::command::img_store::GroupImageStoreResp;
 use ricq_core::command::multi_msg::gen_forward_preview;
 use ricq_core::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
 use ricq_core::command::{friendlist::*, oidb_svc::*, profile_service::*};
+use ricq_core::common::group_code2uin;
 use ricq_core::hex::encode_hex;
 use ricq_core::highway::BdhInput;
 use ricq_core::msg::elem::{Anonymous, GroupImage, RichMsg, VideoFile};
@@ -144,6 +145,24 @@ impl super::super::Client {
             Err(_) => {}
         }
         Ok(receipt)
+    }
+
+    /// 发送群成员临时消息
+    pub async fn send_group_temp_message(
+        &self,
+        group_code: i64,
+        user_uin: i64,
+        message_chain: MessageChain,
+    ) -> RQResult<MessageReceipt> {
+        self.send_message(
+            pb::msg::routing_head::RoutingHead::GrpTmp(pb::msg::GrpTmp {
+                group_uin: Some(group_code2uin(group_code)),
+                to_uin: Some(user_uin),
+            }),
+            message_chain,
+            None,
+        )
+        .await
     }
 
     /// 获取群成员信息
