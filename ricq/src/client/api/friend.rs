@@ -10,6 +10,7 @@ use ricq_core::highway::BdhInput;
 use ricq_core::msg::elem::FriendImage;
 use ricq_core::msg::MessageChain;
 use ricq_core::pb;
+use ricq_core::pb::msg::routing_head::RoutingHead;
 use ricq_core::structs::FriendAudio;
 use ricq_core::structs::MessageReceipt;
 
@@ -179,26 +180,14 @@ impl super::super::Client {
         message_chain: MessageChain,
         ptt: Option<pb::msg::Ptt>,
     ) -> RQResult<MessageReceipt> {
-        let time = chrono::Utc::now().timestamp();
-        let seq = self.engine.read().await.next_friend_seq();
-        let ran = (rand::random::<u32>() >> 1) as i32;
-        let req = self.engine.read().await.build_friend_sending_packet(
-            target,
-            message_chain.into(),
+        self.send_message(
+            RoutingHead::C2c(pb::msg::C2c {
+                to_uin: Some(target),
+            }),
+            message_chain,
             ptt,
-            seq,
-            ran,
-            time,
-            1,
-            0,
-            0,
-        );
-        let _ = self.send_and_wait(req).await?;
-        Ok(MessageReceipt {
-            seqs: vec![seq],
-            rands: vec![ran],
-            time,
-        })
+        )
+        .await
     }
 
     pub async fn upload_friend_image(&self, target: i64, data: Vec<u8>) -> RQResult<FriendImage> {

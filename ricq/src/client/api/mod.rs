@@ -9,9 +9,9 @@ use ricq_core::common::{group_code2uin, RQAddr};
 use ricq_core::highway::BdhInput;
 use ricq_core::msg::MessageChain;
 use ricq_core::pb;
-use ricq_core::structs::ForwardMessage;
 use ricq_core::structs::Status;
 use ricq_core::structs::SummaryCardInfo;
+use ricq_core::structs::{ForwardMessage, MessageReceipt};
 
 use crate::jce::SvcDevLoginInfo;
 use crate::{RQError, RQResult};
@@ -395,7 +395,7 @@ impl super::Client {
         routing_head: pb::msg::routing_head::RoutingHead,
         message_chain: MessageChain,
         ptt: Option<pb::msg::Ptt>,
-    ) -> RQResult<()> {
+    ) -> RQResult<MessageReceipt> {
         let time = chrono::Utc::now().timestamp();
         let seq = self.engine.read().await.next_friend_seq();
         let ran = (rand::random::<u32>() >> 1) as i32;
@@ -408,6 +408,10 @@ impl super::Client {
             time,
         );
         self.send_and_wait(req).await?;
-        Ok(())
+        Ok(MessageReceipt {
+            seqs: vec![seq],
+            rands: vec![ran],
+            time,
+        })
     }
 }

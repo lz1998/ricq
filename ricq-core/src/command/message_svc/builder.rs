@@ -99,50 +99,6 @@ impl super::super::super::Engine {
     }
 
     // MessageSvc.PbSendMsg
-    pub fn build_friend_sending_packet(
-        &self,
-        target: i64,
-        elems: Vec<pb::msg::Elem>,
-        ptt: Option<pb::msg::Ptt>,
-        seq: i32,
-        ran: i32,
-        time: i64,
-        pkg_num: i32,
-        pkg_index: i32,
-        pkg_div: i32,
-    ) -> Packet {
-        let sync_cookie = self.sync_cookie(time);
-
-        let req = pb::msg::SendMessageRequest {
-            routing_head: Some(pb::msg::RoutingHead {
-                routing_head: Some(pb::msg::routing_head::RoutingHead::C2c(pb::msg::C2c {
-                    to_uin: Some(target),
-                })),
-                ..Default::default()
-            }),
-            content_head: Some(pb::msg::ContentHead {
-                pkg_num: Some(pkg_num),
-                pkg_index: Some(pkg_index),
-                div_seq: Some(pkg_div),
-                ..Default::default()
-            }),
-            msg_body: Some(pb::msg::MessageBody {
-                rich_text: Some(pb::msg::RichText {
-                    elems,
-                    ptt,
-                    ..Default::default()
-                }),
-                ..Default::default()
-            }),
-            msg_seq: Some(seq),
-            msg_rand: Some(ran),
-            sync_cookie: Some(sync_cookie),
-            ..Default::default()
-        };
-        self.uni_packet("MessageSvc.PbSendMsg", req.to_bytes())
-    }
-
-    // MessageSvc.PbSendMsg
     pub fn build_send_message_packet(
         &self,
         routing_head: pb::msg::routing_head::RoutingHead,
@@ -160,6 +116,8 @@ impl super::super::super::Engine {
             }),
             content_head: Some(pb::msg::ContentHead {
                 pkg_num: Some(1),
+                pkg_index: Some(0),
+                div_seq: Some(0),
                 ..Default::default()
             }),
             msg_body: Some(pb::msg::MessageBody {
