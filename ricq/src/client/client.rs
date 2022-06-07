@@ -123,6 +123,14 @@ impl super::Client {
         self.engine.write().await.load_token(token)
     }
 
+    pub async fn device(&self) -> Device {
+        self.engine.read().await.transport.device.clone()
+    }
+
+    pub async fn version(&self) -> Version {
+        self.engine.read().await.transport.version.clone()
+    }
+
     pub async fn _get_highway_session_key(&self) -> Vec<u8> {
         self.highway_session.read().await.session_key.to_vec()
     }
