@@ -842,4 +842,16 @@ impl super::super::Client {
             .await
             .decode_get_group_admin_list_response(resp.body)
     }
+
+    /// 发送群聊打卡消息
+    pub async fn send_group_sign(&self, group_code: i64, scene: u32) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_sign_packet(group_code, scene);
+        self.send_and_wait(req).await?;
+
+        Ok(())
+    }
 }
