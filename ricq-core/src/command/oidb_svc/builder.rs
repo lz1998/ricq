@@ -365,4 +365,18 @@ impl super::super::super::Engine {
         let payload = self.transport.encode_oidb_packet(0x899, 0, body.to_bytes());
         self.uni_packet("OidbSvc.0x899_0", payload)
     }
+
+    pub fn build_group_sign_packet(&self, group_code: i64, scene: u32) -> Packet {
+        let body = pb::oidb::Deb7ReqBody {
+            sign_in_status_req: Some(pb::oidb::StSignInStatusReq {
+                uid: Some(self.uin().to_string()),
+                group_id: Some(group_code.to_string()),
+                scene: Some(scene),
+                client_version: Some(self.transport.version.sort_version_name.to_string()),
+            }),
+            ..Default::default()
+        };
+        let payload = self.transport.encode_oidb_packet(0xeb7, 0, body.to_bytes());
+        self.uni_packet("OidbSvc.0xeb7", payload)
+    }
 }
