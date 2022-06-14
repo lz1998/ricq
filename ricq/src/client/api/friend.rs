@@ -312,7 +312,7 @@ impl super::super::Client {
             .await
             .first()
             .cloned()
-            .ok_or(RQError::Other("highway_addrs is empty".into()))?;
+            .ok_or_else(|| RQError::Other("highway_addrs is empty".into()))?;
         let ticket = self
             .highway_session
             .read()

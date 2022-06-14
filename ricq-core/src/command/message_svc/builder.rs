@@ -6,6 +6,7 @@ use crate::protocol::packet::Packet;
 
 impl super::super::super::Engine {
     // MessageSvc.PbSendMsg
+    #[allow(clippy::too_many_arguments)]
     pub fn build_group_sending_packet(
         &self,
         group_code: i64,
@@ -22,7 +23,6 @@ impl super::super::super::Engine {
                 routing_head: Some(pb::msg::routing_head::RoutingHead::Grp(pb::msg::Grp {
                     group_code: Some(group_code),
                 })),
-                ..Default::default()
             }),
             content_head: Some(pb::msg::ContentHead {
                 pkg_num: Some(pkg_num),
@@ -112,7 +112,6 @@ impl super::super::super::Engine {
         let req = pb::msg::SendMessageRequest {
             routing_head: Some(pb::msg::RoutingHead {
                 routing_head: Some(routing_head),
-                ..Default::default()
             }),
             content_head: Some(pb::msg::ContentHead {
                 pkg_num: Some(1),
@@ -177,7 +176,6 @@ impl super::super::super::Engine {
                             routing_head: Some(pb::msg::routing_head::RoutingHead::C2c(
                                 pb::msg::C2c { to_uin: Some(uin) },
                             )),
-                            ..Default::default()
                         }),
                         ..Default::default()
                     })

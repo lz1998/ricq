@@ -21,7 +21,7 @@ impl crate::Client {
     }
 
     pub fn get_status(&self) -> u8 {
-        return self.status.load(Ordering::Relaxed);
+        self.status.load(Ordering::Relaxed)
     }
 
     // 开始处理流数据

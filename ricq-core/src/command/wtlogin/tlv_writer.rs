@@ -773,7 +773,7 @@ pub fn t536(login_extra_data: &[u8]) -> Bytes {
 pub fn guid_flag() -> u32 {
     let mut flag: u32 = 0;
     flag |= 1 << 24 & 0xFF000000;
-    flag |= 0 << 8 & 0xFF00;
+    flag |= 0; // flag |= 0 << 8 & 0xFF00;
     flag
 }
 

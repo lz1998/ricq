@@ -11,7 +11,7 @@ pub enum ForwardMessage {
     Forward(ForwardNode),
 }
 
-pub fn gen_forward_preview(messages: &Vec<ForwardMessage>) -> String {
+pub fn gen_forward_preview(messages: &[ForwardMessage]) -> String {
     messages
         .iter()
         .take(4)

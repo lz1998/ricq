@@ -83,7 +83,7 @@ pub fn read_t11a(mut data: Bytes) -> T11A {
     let face = data.get_u16();
     let age = data.get_u8();
     let gender = data.get_u8();
-    let limit = (data.get_u8() & 0xff) as usize;
+    let limit = data.get_u8() as usize;
     let nick = data.read_string_limit(limit);
     T11A {
         face,

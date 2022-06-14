@@ -48,6 +48,7 @@ impl super::super::Client {
     }
 
     /// 处理加群申请
+    #[allow(clippy::too_many_arguments)]
     pub async fn solve_group_system_message(
         &self,
         msg_seq: i64,
@@ -573,7 +574,7 @@ impl super::super::Client {
             .await
             .first()
             .cloned()
-            .ok_or(RQError::Other("highway_addrs is empty".into()))?;
+            .ok_or_else(|| RQError::Other("highway_addrs is empty".into()))?;
         let ticket = self
             .highway_session
             .read()

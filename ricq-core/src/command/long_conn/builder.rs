@@ -3,6 +3,7 @@ use crate::protocol::packet::Packet;
 
 impl crate::Engine {
     // LongConn.OffPicUp
+    #[allow(clippy::too_many_arguments)]
     pub fn build_off_pic_up_packet(
         &self,
         target: i64,

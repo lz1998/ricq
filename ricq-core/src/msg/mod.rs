@@ -16,14 +16,6 @@ impl MessageChain {
         Self(e.into())
     }
 
-    pub fn from_iter<ES, E>(es: ES) -> Self
-    where
-        ES: IntoIterator<Item = E>,
-        E: Into<Vec<msg::elem::Elem>>,
-    {
-        Self(es.into_iter().flat_map(Into::into).collect())
-    }
-
     pub fn push<E: Into<Vec<msg::elem::Elem>>>(&mut self, e: E) {
         self.0.extend(e.into())
     }
@@ -49,6 +41,15 @@ impl MessageChain {
     pub fn with_reply(&mut self, reply: Reply) {
         let index = if self.anonymous().is_some() { 1 } else { 0 };
         self.0.insert(index, msg::elem::Elem::from(reply))
+    }
+}
+
+impl<E> FromIterator<E> for MessageChain
+where
+    E: Into<Vec<msg::elem::Elem>>,
+{
+    fn from_iter<T: IntoIterator<Item = E>>(iter: T) -> Self {
+        Self(iter.into_iter().flat_map(Into::into).collect())
     }
 }
 

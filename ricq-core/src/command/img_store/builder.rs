@@ -3,6 +3,7 @@ use crate::pb;
 use crate::protocol::packet::Packet;
 
 impl super::super::super::Engine {
+    #[allow(clippy::too_many_arguments)]
     pub fn build_group_image_store_packet(
         &self,
         group_code: i64,

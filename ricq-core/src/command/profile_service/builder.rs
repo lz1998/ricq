@@ -60,6 +60,7 @@ impl super::super::super::Engine {
     }
 
     // ProfileService.Pb.ReqSystemMsgAction.Group
+    #[allow(clippy::too_many_arguments)]
     pub fn build_system_msg_group_action_packet(
         &self,
         msg_seq: i64,

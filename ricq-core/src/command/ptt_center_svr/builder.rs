@@ -54,7 +54,6 @@ impl super::super::super::Engine {
             agent_type: 0,
             business_type: 0,
             support_large_size: 1,
-            ..Default::default()
         }
     }
 
