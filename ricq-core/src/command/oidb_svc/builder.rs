@@ -366,14 +366,13 @@ impl super::super::super::Engine {
         self.uni_packet("OidbSvc.0x899_0", payload)
     }
 
-    pub fn build_group_sign_packet(&self, group_code: i64) -> Packet {
+    // OidbSvc.0xeb7
+    pub fn build_group_sign_in_packet(&self, group_code: i64) -> Packet {
         let body = pb::oidb::Deb7ReqBody {
             sign_in_write_req: Some(pb::oidb::StSignInWriteReq {
                 uid: Some(self.uin().to_string()),
                 group_id: Some(group_code.to_string()),
-                // scene: Some(1),
                 client_version: Some(self.transport.version.sort_version_name.to_string()),
-                ..Default::default()
             }),
             ..Default::default()
         };
