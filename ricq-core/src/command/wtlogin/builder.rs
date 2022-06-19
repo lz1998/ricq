@@ -26,8 +26,8 @@ impl super::super::super::Engine {
                 w.put_u16(6);
                 w.put_slice(&t16(
                     transport.version.sso_version,
-                    16,
-                    transport.version.app_id,
+                    16, // app id ?
+                    transport.version.sub_app_id,
                     &transport.sig.guid,
                     transport.version.apk_id,
                     transport.version.sort_version_name,
