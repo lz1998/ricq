@@ -1,5 +1,4 @@
 use bytes::{BufMut, BytesMut};
-use chrono::Utc;
 
 use crate::binary::BinaryWriter;
 use crate::command::wtlogin::builder::utils::*;
@@ -7,51 +6,53 @@ use crate::command::wtlogin::tlv_writer::*;
 use crate::protocol::{
     oicq::{self, EncryptionMethod},
     packet::{EncryptType, Packet, PacketType},
-    version::{get_version, Protocol},
 };
 
 impl super::super::super::Engine {
     // wtlogin.trans_emp
     pub fn build_qrcode_fetch_request_packet(&self) -> Packet {
-        let watch = get_version(Protocol::AndroidWatch);
         let transport = &self.transport;
         let seq = self.next_seq();
         let req = self.build_oicq_request_packet(0, 0x812, &{
             let mut w = BytesMut::new();
-            w.write_hex("0001110000001000000072000000");
-            w.put_u32(Utc::now().timestamp() as u32);
-            w.put_slice(&build_code2d_request_packet(0, 0, 0x31, &{
+            let req_body = build_code2d_request_packet(0, 0, 0x31, &{
                 let mut w = BytesMut::new();
                 w.put_u16(0); // const
                 w.put_u32(16); // app id
-                w.put_u64(0); // const
+                w.put_u64(0); // const long user
                 w.put_u8(8); // const
                 w.write_bytes_short(&[]);
 
                 w.put_u16(6);
                 w.put_slice(&t16(
-                    watch.sso_version,
+                    transport.version.sso_version,
                     16,
-                    watch.app_id,
+                    transport.version.app_id,
                     &transport.sig.guid,
-                    watch.apk_id,
-                    watch.sort_version_name,
-                    watch.apk_sign,
+                    transport.version.apk_id,
+                    transport.version.sort_version_name,
+                    transport.version.apk_sign,
                 ));
                 w.put_slice(&t1b(0, 0, 3, 4, 72, 2, 2));
-                w.put_slice(&t1d(watch.misc_bitmap));
+                w.put_slice(&t1d(transport.version.misc_bitmap));
                 w.put_slice(&t1f(
                     false,
                     &transport.device.os_type,
                     "7.1.2",
-                    "China Mobile GSM",
+                    &transport.device.sim_info,
                     &transport.device.apn,
-                    2,
+                    2, // wifi
                 ));
                 w.put_slice(&t33(&transport.sig.guid));
                 w.put_slice(&t35(8));
                 w
-            }));
+            });
+            w.put_u8(0);
+            w.put_u16(req_body.len() as u16);
+            w.put_u32(transport.version.app_id);
+            w.put_u32(114); // const role
+            w.write_hex("000000");
+            w.put_slice(&req_body);
             w
         });
         Packet {
@@ -69,13 +70,11 @@ impl super::super::super::Engine {
         let seq = self.next_seq();
         let req = self.build_oicq_request_packet(0, 0x812, &{
             let mut w = BytesMut::new();
-            w.write_hex("0000620000001000000072000000"); // trans header
-            w.put_u32(Utc::now().timestamp() as u32);
-            w.put_slice(&build_code2d_request_packet(1, 0, 0x12, &{
+            let req_body = build_code2d_request_packet(1, 0, 0x12, &{
                 let mut w = Vec::new();
                 w.put_u16(5);
                 w.put_u8(1);
-                w.put_u32(8);
+                w.put_u32(8); // 0x68 ?
                 w.put_u32(16);
                 w.write_bytes_short(sig);
                 w.put_u64(0);
@@ -83,7 +82,13 @@ impl super::super::super::Engine {
                 w.write_bytes_short(&[]);
                 w.put_u16(0);
                 w
-            }));
+            });
+            w.put_u8(0);
+            w.put_u16(req_body.len() as u16);
+            w.put_u32(self.transport.version.app_id);
+            w.put_u32(114); // const role
+            w.write_hex("000000");
+            w.put_slice(&req_body);
             w
         });
 
@@ -679,6 +684,7 @@ mod utils {
 
     pub fn build_code2d_request_packet(seq: u32, j: u64, cmd: u16, body: &[u8]) -> Bytes {
         let mut w = BytesMut::new();
+        w.put_u32(chrono::Utc::now().timestamp() as u32);
         w.put_u8(2);
         w.put_u16((43 + body.len() + 1) as u16);
         w.put_u16(cmd);
