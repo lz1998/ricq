@@ -44,7 +44,7 @@ async fn main() -> Result<()> {
 
     let client = Arc::new(Client::new(
         device,
-        get_version(Protocol::AndroidWatch),
+        get_version(Protocol::MacOS),
         DefaultHandler,
     ));
     let stream = TcpStream::connect(client.get_address())

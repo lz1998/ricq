@@ -3,6 +3,7 @@ use bytes::{BufMut, BytesMut};
 use crate::binary::BinaryWriter;
 use crate::command::wtlogin::builder::utils::*;
 use crate::command::wtlogin::tlv_writer::*;
+use crate::protocol::version::Protocol;
 use crate::protocol::{
     oicq::{self, EncryptionMethod},
     packet::{EncryptType, Packet, PacketType},
@@ -35,16 +36,32 @@ impl super::super::super::Engine {
                 ));
                 w.put_slice(&t1b(0, 0, 3, 4, 72, 2, 2));
                 w.put_slice(&t1d(transport.version.misc_bitmap));
-                w.put_slice(&t1f(
-                    false,
-                    &transport.device.os_type,
-                    "7.1.2",
-                    &transport.device.sim_info,
-                    &transport.device.apn,
-                    2, // wifi
-                ));
+                if matches!(transport.version.protocol, Protocol::MacOS) {
+                    w.put_slice(&t1f(
+                        false,
+                        "Mac OSX",
+                        "10",
+                        "mac carrier",
+                        &transport.device.apn,
+                        2, // wifi
+                    ));
+                } else {
+                    w.put_slice(&t1f(
+                        false,
+                        &transport.device.os_type,
+                        "7.1.2",
+                        &transport.device.sim_info,
+                        &transport.device.apn,
+                        2, // wifi
+                    ));
+                }
+
                 w.put_slice(&t33(&transport.sig.guid));
-                w.put_slice(&t35(8));
+                if matches!(transport.version.protocol, Protocol::MacOS) {
+                    w.put_slice(&t35(5));
+                } else {
+                    w.put_slice(&t35(8));
+                }
                 w
             });
             w.put_u8(0);

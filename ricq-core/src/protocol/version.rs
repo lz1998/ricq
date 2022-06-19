@@ -95,20 +95,18 @@ pub static ANDROID_WATCH: &Version = &Version {
 };
 
 pub static MACOS: &Version = &Version {
-    apk_id: "com.tencent.minihd.qq",
-    app_id: 537064315,
-    sub_app_id: 537064315,
-    sort_version_name: "5.8.9",
-    build_ver: "5.8.9.3460",
-    build_time: 1595836208,
-    apk_sign: &[
-        170, 57, 120, 244, 31, 217, 111, 249, 145, 74, 102, 158, 24, 100, 116, 199,
-    ],
-    sdk_version: "6.0.0.2433",
-    sso_version: 12,
-    misc_bitmap: 150470524,
-    sub_sig_map: 66560,
-    main_sig_map: 1970400,
+    apk_id: "com.tencent.qq",              // ok
+    app_id: 0x2003ca32,                    // ok
+    sub_app_id: 0x2003ca32,                // ok
+    sort_version_name: "6.7.9",            // ok
+    build_ver: "5.8.9.3460",               // 6.7.9.xxx?
+    build_time: 0,                         // ok
+    apk_sign: "com.tencent.qq".as_bytes(), // ok
+    sdk_version: "6.2.0.1023",             // ok
+    sso_version: 7,                        // ok
+    misc_bitmap: 0x7ffc,                   // ok
+    sub_sig_map: 66560,                    // ?
+    main_sig_map: 1970400,                 // ?
     protocol: Protocol::MacOS,
 };
 
