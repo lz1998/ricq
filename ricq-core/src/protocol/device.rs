@@ -61,7 +61,7 @@ impl Device {
 
     pub fn random_with_rng<RNG: RngCore>(rng: &mut RNG) -> Self {
         Self {
-            display: format!("GMC.{}.001", rng.gen_range(100000..999999)),
+            display: format!("RICQ.{}.001", rng.gen_range(100000..999999)),
             product: "iarim".into(),
             device: "sagit".into(),
             board: "eomam".into(),
@@ -90,7 +90,7 @@ impl Device {
             android_id: encode_hex(&rng.gen::<[u8; 8]>()),
             apn: "wifi".into(),
             vendor_name: "MIUI".into(),
-            vendor_os_name: "gmc".into(),
+            vendor_os_name: "ricq".into(),
         }
     }
 
