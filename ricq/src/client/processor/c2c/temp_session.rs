@@ -17,7 +17,7 @@ impl Client {
         self.handler
             .handle(QEvent::GroupTempMessage(GroupTempMessageEvent {
                 client: self.clone(),
-                message,
+                inner: message,
             }))
             .await;
         Ok(())

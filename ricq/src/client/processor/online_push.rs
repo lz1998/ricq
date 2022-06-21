@@ -47,7 +47,7 @@ impl Client {
             self.handler
                 .handle(QEvent::GroupAudioMessage(GroupAudioMessageEvent {
                     client: self.clone(),
-                    message: GroupAudioMessage {
+                    inner: GroupAudioMessage {
                         seqs: vec![group_message_part.seq],
                         rands: vec![group_message_part.rand],
                         group_code: group_message_part.group_code,
@@ -91,7 +91,7 @@ impl Client {
             self.handler
                 .handle(QEvent::GroupMessage(GroupMessageEvent {
                     client: self.clone(),
-                    message: self.parse_group_message(group_msg).await?,
+                    inner: self.parse_group_message(group_msg).await?,
                 }))
                 .await; //todo
         }
@@ -153,7 +153,7 @@ impl Client {
                             self.handler
                                 .handle(QEvent::GroupMute(GroupMuteEvent {
                                     client: self.clone(),
-                                    group_mute: GroupMute {
+                                    inner: GroupMute {
                                         group_code,
                                         operator_uin: operator,
                                         target_uin: target,
@@ -186,7 +186,7 @@ impl Client {
                                             .handle(QEvent::GroupMessageRecall(
                                                 GroupMessageRecallEvent {
                                                     client: self.clone(),
-                                                    recall,
+                                                    inner: recall,
                                                 },
                                             ))
                                             .await;
@@ -215,7 +215,7 @@ impl Client {
                                         .handle(QEvent::FriendMessageRecall(
                                             FriendMessageRecallEvent {
                                                 client: self.clone(),
-                                                recall: m,
+                                                inner: m,
                                             },
                                         ))
                                         .await;
@@ -229,7 +229,7 @@ impl Client {
                                 self.handler
                                     .handle(QEvent::NewFriend(NewFriendEvent {
                                         client: self.clone(),
-                                        friend: FriendInfo {
+                                        inner: FriendInfo {
                                             uin: f.uin,
                                             nick: f.nick,
                                             ..Default::default()
@@ -243,7 +243,7 @@ impl Client {
                             self.handler
                                 .handle(QEvent::GroupLeave(GroupLeaveEvent {
                                     client: self.clone(),
-                                    leave: GroupLeave {
+                                    inner: GroupLeave {
                                         group_code: d4.uin,
                                         member_uin: self.uin().await,
                                         operator_uin: None,
@@ -267,7 +267,7 @@ impl Client {
                                 self.handler
                                     .handle(QEvent::FriendPoke(FriendPokeEvent {
                                         client: self.clone(),
-                                        poke: FriendPoke { sender, receiver },
+                                        inner: FriendPoke { sender, receiver },
                                     }))
                                     .await;
                             }
@@ -297,7 +297,7 @@ impl Client {
                                                 .handle(QEvent::GroupNameUpdate(
                                                     GroupNameUpdateEvent {
                                                         client: self.clone(),
-                                                        update,
+                                                        inner: update,
                                                     },
                                                 ))
                                                 .await;
@@ -315,7 +315,7 @@ impl Client {
                                             self.handler
                                                 .handle(QEvent::DeleteFriend(DeleteFriendEvent {
                                                     client: self.clone(),
-                                                    delete,
+                                                    inner: delete,
                                                 }))
                                                 .await;
                                         })
@@ -362,7 +362,7 @@ impl Client {
                 self.handler
                     .handle(QEvent::GroupLeave(GroupLeaveEvent {
                         client: self.clone(),
-                        leave,
+                        inner: leave,
                     }))
                     .await;
             }
@@ -371,7 +371,7 @@ impl Client {
                     .handle(QEvent::MemberPermissionChange(
                         MemberPermissionChangeEvent {
                             client: self.clone(),
-                            change,
+                            inner: change,
                         },
                     ))
                     .await;
@@ -380,7 +380,7 @@ impl Client {
                 self.handler
                     .handle(QEvent::GroupDisband(GroupDisbandEvent {
                         client: self.clone(),
-                        disband,
+                        inner: disband,
                     }))
                     .await;
             }

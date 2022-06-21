@@ -59,7 +59,7 @@ impl Client {
         self.handler
             .handle(QEvent::KickedOffline(KickedOfflineEvent {
                 client: self.clone(),
-                offline,
+                inner: offline,
             }))
             .await;
     }

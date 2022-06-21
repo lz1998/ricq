@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use ricq_core::command::profile_service::GroupSystemMessages;
 
-use crate::client::event::{GroupRequestEvent, SelfInvitedEvent};
+use crate::client::event::{JoinGroupRequestEvent, SelfInvitedEvent};
 use crate::handler::QEvent;
 use crate::Client;
 
@@ -18,7 +18,7 @@ impl Client {
             self.handler
                 .handle(QEvent::SelfInvited(SelfInvitedEvent {
                     client: self.clone(),
-                    request,
+                    inner: request,
                 }))
                 .await;
         }
@@ -30,9 +30,9 @@ impl Client {
                 continue;
             }
             self.handler
-                .handle(QEvent::GroupRequest(GroupRequestEvent {
+                .handle(QEvent::GroupRequest(JoinGroupRequestEvent {
                     client: self.clone(),
-                    request,
+                    inner: request,
                 }))
                 .await;
         }

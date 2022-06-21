@@ -19,7 +19,7 @@ impl Client {
         self.handler
             .handle(QEvent::MSFOffline(MSFOfflineEvent {
                 client: self.clone(),
-                offline,
+                inner: offline,
             }))
             .await;
     }

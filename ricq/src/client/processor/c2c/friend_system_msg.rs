@@ -1,4 +1,4 @@
-use crate::client::event::FriendRequestEvent;
+use crate::client::event::NewFriendRequestEvent;
 use crate::handler::QEvent;
 use crate::Client;
 use ricq_core::command::profile_service::FriendSystemMessages;
@@ -11,9 +11,9 @@ impl Client {
     ) {
         for request in msgs.requests {
             self.handler
-                .handle(QEvent::FriendRequest(FriendRequestEvent {
+                .handle(QEvent::NewFriendRequest(NewFriendRequestEvent {
                     client: self.clone(),
-                    request,
+                    inner: request,
                 }))
                 .await;
         }
