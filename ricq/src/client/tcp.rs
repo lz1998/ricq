@@ -64,7 +64,7 @@ where
     }
     Err(tokio::io::Error::new(
         tokio::io::ErrorKind::NotConnected,
-        "failed to connect",
+        "NotConnected",
     ))
 }
 

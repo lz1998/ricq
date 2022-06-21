@@ -4,13 +4,13 @@ use anyhow::Result;
 use futures::StreamExt;
 use rand::prelude::StdRng;
 use rand::SeedableRng;
-use tokio::net::TcpStream;
 use tokio_util::codec::{FramedRead, LinesCodec};
 use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use ricq::device::Device;
 use ricq::ext::common::after_login;
+use ricq::ext::reconnect::{Connector, DefaultConnector};
 use ricq::handler::DefaultHandler;
 use ricq::structs::ExtOnlineStatus;
 use ricq::version::{get_version, Protocol};
@@ -52,7 +52,8 @@ async fn main() -> Result<()> {
         get_version(Protocol::IPad),
         DefaultHandler,
     ));
-    let stream = TcpStream::connect(client.get_address())
+    // 连接所有服务器，哪个最快用哪个，可以使用 TcpStream::connect 代替
+    let stream = DefaultConnector::connect(&DefaultConnector, &client)
         .await
         .expect("failed to connect");
     let c = client.clone();
