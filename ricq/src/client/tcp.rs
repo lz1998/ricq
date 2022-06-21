@@ -62,10 +62,10 @@ where
             return Ok(stream);
         }
     }
-    return Err(tokio::io::Error::new(
+    Err(tokio::io::Error::new(
         tokio::io::ErrorKind::NotConnected,
         "failed to connect",
-    ));
+    ))
 }
 
 #[cfg(test)]

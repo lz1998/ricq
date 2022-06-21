@@ -202,10 +202,13 @@ impl super::super::Client {
                 upload_key,
                 mut upload_addrs,
             } => {
-                let addr = upload_addrs
-                    .pop()
-                    .ok_or_else(|| RQError::Other("addrs is empty".into()))?;
-                self._upload_friend_image(upload_key, addr.clone().into(), data)
+                let addr = match self.highway_addrs.read().await.first() {
+                    Some(addr) => addr.clone(),
+                    None => upload_addrs
+                        .pop()
+                        .ok_or_else(|| RQError::Other("addrs is empty".into()))?,
+                };
+                self._upload_friend_image(upload_key, addr.into(), data)
                     .await?;
                 image_info.into_friend_image(res_id, uuid)
             }
