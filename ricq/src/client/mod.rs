@@ -22,6 +22,7 @@ pub mod handler;
 mod highway;
 mod net;
 mod processor;
+pub mod tcp;
 
 pub struct Client {
     handler: Box<dyn handler::Handler + Sync + Send + 'static>,
