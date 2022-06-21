@@ -317,32 +317,36 @@ impl super::Client {
         if self.highway_session.read().await.session_key.is_empty() {
             return Err(RQError::Other("highway_session_key is empty".into()));
         }
-        let mut addrs: Vec<RQAddr> = rsp
+        let addrs: Vec<RQAddr> = rsp
             .uint32_up_ip
             .into_iter()
             .zip(rsp.uint32_up_port.into_iter())
             .map(|(ip, port)| RQAddr(ip as u32, port as u16))
             .collect();
-        let addr = addrs
-            .pop()
-            .ok_or_else(|| RQError::Other("addr is none".into()))?;
         let body =
             self.engine
                 .read()
                 .await
                 .build_long_req(group_code2uin(group_code), data, rsp.msg_ukey);
-        self.highway_upload_bdh(
-            addr.into(),
-            BdhInput {
-                command_id: 27,
-                body,
-                ticket: rsp.msg_sig,
-                chunk_size: 8192 * 8,
-                ..Default::default()
-            },
-        )
-        .await?;
-        Ok(resid)
+        for addr in addrs {
+            match self
+                .highway_upload_bdh(
+                    addr.into(),
+                    BdhInput {
+                        command_id: 27,
+                        body: body.clone(),
+                        ticket: rsp.msg_sig.clone(),
+                        chunk_size: 8192 * 8,
+                        ..Default::default()
+                    },
+                )
+                .await
+            {
+                Ok(_) => return Ok(resid),
+                Err(_) => continue,
+            }
+        }
+        Err(RQError::Other("failed to upload long message".into()))
     }
 
     // 获取转发消息下载地址和 key
