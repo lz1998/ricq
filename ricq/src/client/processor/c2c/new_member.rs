@@ -22,7 +22,7 @@ impl Client {
         self.handler
             .handle(QEvent::NewMember(NewMemberEvent {
                 client: self.clone(),
-                new_member: NewMember {
+                inner: NewMember {
                     group_code,
                     member_uin,
                 },

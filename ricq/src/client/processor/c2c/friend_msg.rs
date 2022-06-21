@@ -21,7 +21,7 @@ impl Client {
             self.handler
                 .handle(QEvent::FriendAudioMessage(FriendAudioMessageEvent {
                     client: self.clone(),
-                    message: parse_friend_audio_message(msg, ptt)?,
+                    inner: parse_friend_audio_message(msg, ptt)?,
                 }))
                 .await;
             return Ok(());
@@ -31,7 +31,7 @@ impl Client {
         self.handler
             .handle(QEvent::FriendMessage(FriendMessageEvent {
                 client: self.clone(),
-                message,
+                inner: message,
             }))
             .await;
         Ok(())

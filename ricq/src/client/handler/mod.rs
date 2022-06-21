@@ -7,10 +7,10 @@ use tokio::sync::{
 
 use crate::client::event::{
     DeleteFriendEvent, FriendAudioMessageEvent, FriendMessageEvent, FriendMessageRecallEvent,
-    FriendPokeEvent, FriendRequestEvent, GroupAudioMessageEvent, GroupDisbandEvent,
-    GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent,
-    GroupNameUpdateEvent, GroupRequestEvent, GroupTempMessageEvent, KickedOfflineEvent,
-    MSFOfflineEvent, MemberPermissionChangeEvent, NewFriendEvent, NewMemberEvent, SelfInvitedEvent,
+    FriendPokeEvent, GroupAudioMessageEvent, GroupDisbandEvent, GroupLeaveEvent, GroupMessageEvent,
+    GroupMessageRecallEvent, GroupMuteEvent, GroupNameUpdateEvent, GroupTempMessageEvent,
+    JoinGroupRequestEvent, KickedOfflineEvent, MSFOfflineEvent, MemberPermissionChangeEvent,
+    NewFriendEvent, NewFriendRequestEvent, NewMemberEvent, SelfInvitedEvent,
 };
 
 /// 所有需要外发的数据的枚举打包
@@ -30,11 +30,11 @@ pub enum QEvent {
     /// 群临时消息
     GroupTempMessage(GroupTempMessageEvent),
     /// 加群申请
-    GroupRequest(GroupRequestEvent),
+    GroupRequest(JoinGroupRequestEvent),
     /// 加群申请
     SelfInvited(SelfInvitedEvent),
     /// 加好友申请
-    FriendRequest(FriendRequestEvent),
+    NewFriendRequest(NewFriendRequestEvent),
     /// 新成员入群
     NewMember(NewMemberEvent),
     /// 成员被禁言
@@ -81,34 +81,30 @@ impl Handler for DefaultHandler {
             QEvent::GroupMessage(m) => {
                 tracing::info!(
                     "MESSAGE (GROUP={}): {}",
-                    m.message.group_code,
-                    m.message.elements
+                    m.inner.group_code,
+                    m.inner.elements
                 )
             }
             QEvent::FriendMessage(m) => {
                 tracing::info!(
                     "MESSAGE (FRIEND={}): {}",
-                    m.message.from_uin,
-                    m.message.elements
+                    m.inner.from_uin,
+                    m.inner.elements
                 )
             }
             QEvent::GroupTempMessage(m) => {
-                tracing::info!(
-                    "MESSAGE (TEMP={}): {}",
-                    m.message.from_uin,
-                    m.message.elements
-                )
+                tracing::info!("MESSAGE (TEMP={}): {}", m.inner.from_uin, m.inner.elements)
             }
             QEvent::GroupRequest(m) => {
                 tracing::info!(
                     "REQUEST (GROUP={}, UIN={}): {}",
-                    m.request.group_code,
-                    m.request.req_uin,
-                    m.request.message
+                    m.inner.group_code,
+                    m.inner.req_uin,
+                    m.inner.message
                 )
             }
-            QEvent::FriendRequest(m) => {
-                tracing::info!("REQUEST (UIN={}): {}", m.request.req_uin, m.request.message)
+            QEvent::NewFriendRequest(m) => {
+                tracing::info!("REQUEST (UIN={}): {}", m.inner.req_uin, m.inner.message)
             }
             _ => tracing::info!("{:?}", e),
         }
@@ -151,9 +147,9 @@ pub trait PartlyHandler: Sync {
     async fn handle_friend_message(&self, _event: FriendMessageEvent) {}
     async fn handle_friend_audio(&self, _event: FriendAudioMessageEvent) {}
     async fn handle_group_temp_message(&self, _event: GroupTempMessageEvent) {}
-    async fn handle_group_request(&self, _event: GroupRequestEvent) {}
+    async fn handle_group_request(&self, _event: JoinGroupRequestEvent) {}
     async fn handle_self_invited(&self, _event: SelfInvitedEvent) {}
-    async fn handle_friend_request(&self, _event: FriendRequestEvent) {}
+    async fn handle_friend_request(&self, _event: NewFriendRequestEvent) {}
     async fn handle_new_member(&self, _event: NewMemberEvent) {}
     async fn handle_group_mute(&self, _event: GroupMuteEvent) {}
     async fn handle_friend_message_recall(&self, _event: FriendMessageRecallEvent) {}
@@ -184,7 +180,7 @@ where
             QEvent::GroupTempMessage(m) => self.handle_group_temp_message(m).await,
             QEvent::GroupRequest(m) => self.handle_group_request(m).await,
             QEvent::SelfInvited(m) => self.handle_self_invited(m).await,
-            QEvent::FriendRequest(m) => self.handle_friend_request(m).await,
+            QEvent::NewFriendRequest(m) => self.handle_friend_request(m).await,
             QEvent::NewMember(m) => self.handle_new_member(m).await,
             QEvent::GroupMute(m) => self.handle_group_mute(m).await,
             QEvent::FriendMessageRecall(m) => self.handle_friend_message_recall(m).await,
