@@ -38,7 +38,7 @@ pub struct Client {
 
     out_pkt_sender: net::OutPktSender,
     packet_promises: RwLock<HashMap<i32, oneshot::Sender<Packet>>>,
-    receipt_waiters: Mutex<HashMap<i32, oneshot::Sender<i32>>>,
+    receipt_waiters: Mutex<cached::TimedCache<i32, oneshot::Sender<i32>>>,
 
     // account info
     pub account_info: RwLock<AccountInfo>,
@@ -81,7 +81,7 @@ impl super::Client {
             disconnect_signal,
             // out_going_packet_session_id: RwLock::new(Bytes::from_static(&[0x02, 0xb0, 0x5b, 0x8b])),
             packet_promises: Default::default(),
-            receipt_waiters: Default::default(),
+            receipt_waiters: Mutex::new(cached::TimedCache::with_lifespan(60)),
             account_info: Default::default(),
             address: Default::default(),
             online_clients: Default::default(),

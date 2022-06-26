@@ -2,6 +2,7 @@ use std::net::SocketAddr;
 use std::sync::atomic::Ordering;
 
 use bytes::Bytes;
+use cached::Cached;
 
 use ricq_core::command::message_svc::MessageSyncResponse;
 use ricq_core::command::oidb_svc::*;
@@ -403,6 +404,10 @@ impl super::Client {
         let time = chrono::Utc::now().timestamp();
         let seq = self.engine.read().await.next_friend_seq();
         let ran = (rand::random::<u32>() >> 1) as i32;
+        let (tx, _) = tokio::sync::oneshot::channel();
+        {
+            self.receipt_waiters.lock().await.cache_set(ran, tx);
+        }
         let req = self.engine.read().await.build_send_message_packet(
             routing_head,
             message_chain.into(),
@@ -412,10 +417,12 @@ impl super::Client {
             time,
         );
         self.send_and_wait(req).await?;
-        Ok(MessageReceipt {
+        let receipt = MessageReceipt {
             seqs: vec![seq],
             rands: vec![ran],
-            time,
-        })
+            time: chrono::Utc::now().timestamp(),
+        };
+        // 除了群聊，都不需要等 receipt 的 seq
+        Ok(receipt)
     }
 }

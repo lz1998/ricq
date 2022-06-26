@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use bytes::Bytes;
+use cached::Cached;
 
 use ricq_core::command::common::PbToBytes;
 use ricq_core::command::img_store::GroupImageStoreResp;
@@ -123,7 +124,7 @@ impl super::super::Client {
         let ran = (rand::random::<u32>() >> 1) as i32;
         let (tx, rx) = tokio::sync::oneshot::channel();
         {
-            self.receipt_waiters.lock().await.insert(ran, tx);
+            self.receipt_waiters.lock().await.cache_set(ran, tx);
         }
         let req = self
             .engine

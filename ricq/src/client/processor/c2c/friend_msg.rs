@@ -1,3 +1,4 @@
+use cached::Cached;
 use std::sync::Arc;
 
 use ricq_core::msg::MessageChain;
@@ -28,6 +29,17 @@ impl Client {
         }
 
         let message = parse_friend_message(msg)?;
+        if message.from_uin == self.uin().await {
+            if let Some(tx) = self
+                .receipt_waiters
+                .lock()
+                .await
+                .cache_remove(&message.rands.get(0).cloned().unwrap_or_default())
+            {
+                let _ = tx.send(message.seqs.get(0).cloned().unwrap_or_default());
+                return Ok(());
+            }
+        }
         self.handler
             .handle(QEvent::FriendMessage(FriendMessageEvent {
                 client: self.clone(),
