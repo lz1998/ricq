@@ -1,6 +1,6 @@
 [package]
 name = "ricq-axum-api"
-version = "0.1.0"
+version = "0.0.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -17,5 +17,5 @@ async-trait = "0.1"
 rand = "0.8"
 tracing = "0.1"
 base64 = "0.13"
-tower = { version = "0.4", features = ["util", "timeout", "load-shed", "limit"] }
+tower = { version = "0.4" }
 tower-http = { version = "0.3", features = ["fs"] }
