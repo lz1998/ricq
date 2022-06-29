@@ -2,6 +2,12 @@
 name = "ricq-axum-api"
 version = "0.1.0"
 edition = "2021"
+description = "ricq axum api"
+license = "AGPL-3.0"
+homepage = "https://github.com/lz1998/ricq"
+repository = "https://github.com/lz1998/ricq"
+readme = "README.md"
+keywords = ["ricq", "axum", "http", "api"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
