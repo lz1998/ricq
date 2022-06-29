@@ -8,6 +8,8 @@
 
 2. 实现 Processor trait（仅包含登录后处理逻辑）
 
+> 参考 [processor.rs](https://github.com/lz1998/ricq/blob/master/examples/ricq-axum-api/src/processor.rs#L28)
+
 ```rust
 #[async_trait::async_trait]
 pub trait Processor {
