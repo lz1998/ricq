@@ -1,13 +1,13 @@
 [package]
 name = "ricq-axum-api"
-version = "0.0.0"
+version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
-ricq = { path = "../../ricq" }
+ricq = { version = "0.1.15", path = "../../ricq" }
 dashmap = "5.2"
 bytes = "1"
 serde = { version = "1.0", features = ["derive"] }
