@@ -1,3 +1,4 @@
+#![allow(clippy::large_enum_variant)]
 use std::collections::HashMap;
 
 use bytes::{Buf, Bytes};

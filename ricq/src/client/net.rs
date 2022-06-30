@@ -24,7 +24,9 @@ impl crate::Client {
         self.status.load(Ordering::Relaxed)
     }
 
-    // 开始处理流数据
+    /// 开始处理流数据
+    ///
+    ///**Notice: 该方法仅开始处理包，需要手动登录并开始心跳包**
     pub async fn start<S: AsyncRead + AsyncWrite>(self: &Arc<Self>, stream: S) {
         self.status
             .store(NetworkStatus::Running as u8, Ordering::Relaxed);
@@ -55,24 +57,25 @@ impl crate::Client {
             .new_framed(stream)
             .split();
         let cli = self.clone();
+        // 外发包 Channel Receiver
         let mut rx = self.out_pkt_sender.subscribe();
         let mut disconnect_signal = self.disconnect_signal.subscribe();
         loop {
             tokio::select! {
                 input = read_half.next() => {
                     if let Some(Ok(mut input)) = input {
-                        if let Ok(pkt)=cli.engine.read().await.transport.decode_packet(&mut input){
+                        if let Ok(pkt) = cli.engine.read().await.transport.decode_packet(&mut input) {
                             cli.process_income_packet(pkt).await;
-                        }else {
+                        } else {
                             break;
                         }
-                    }else {
+                    } else {
                         break;
                     }
                 }
                 output = rx.recv() => {
                     if let Ok(output) = output {
-                        if write_half.send(output).await.is_err(){
+                        if write_half.send(output).await.is_err() {
                             break;
                         }
                     }

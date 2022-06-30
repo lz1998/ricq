@@ -20,7 +20,7 @@ where
         &'a ImageInfo,
     ) -> Pin<Box<dyn Future<Output = RQResult<Vec<u8>>> + Send + 'a>>,
 {
-    let sign = cli._get_highway_session_key().await;
+    let sign = cli.get_highway_session_key().await;
     let group_image = match cli.get_group_image_store(group_code, &image_info).await? {
         GroupImageStoreResp::Exist { file_id, addrs } => {
             image_info.into_group_image(file_id, addrs.first().cloned().unwrap_or_default(), sign)
