@@ -1,4 +1,5 @@
 use std::net::SocketAddr;
+use std::time::Duration;
 
 use bytes::Bytes;
 use futures::{SinkExt, StreamExt};
@@ -12,6 +13,7 @@ use ricq_core::{pb, RQError, RQResult};
 
 use crate::client::highway::codec::HighwayCodec;
 use crate::client::highway::HighwayFrame;
+use crate::client::tcp::tcp_connect_timeout;
 use crate::Client;
 
 impl Client {
@@ -24,7 +26,9 @@ impl Client {
             let session_key = self.highway_session.read().await.session_key.clone();
             input.ext = qqtea_encrypt(&input.ext, &session_key)
         }
-        let stream = TcpStream::connect(&addr).await.map_err(RQError::IO)?;
+        let stream = tcp_connect_timeout(addr, Duration::from_secs(5))
+            .await
+            .map_err(RQError::IO)?;
         let mut stream = Framed::new(stream, HighwayCodec);
         // send heartbeat
         let sum = md5::compute(&input.body).to_vec();

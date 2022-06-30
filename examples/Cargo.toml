@@ -1,6 +1,6 @@
 [workspace]
 members = ["*"]
-exclude = ["target"]
+exclude = ["target", "static"]
 
 [profile.release]
 opt-level = 'z'

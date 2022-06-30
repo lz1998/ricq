@@ -46,7 +46,7 @@ impl From<FriendImage> for msg::NotOnlineImage {
             old_pic_md5: Some(false),
             pic_md5: Some(e.md5),
             download_path: Some(e.download_path),
-            original: Some(1), // 是否原图，如果是0需要写 24，25
+            original: Some(0), // 是否原图，如果是0需要写 24，25
             file_len: Some(e.size),
             img_type: Some(e.image_type),
             pic_width: Some(e.width),

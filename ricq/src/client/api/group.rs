@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::time::Duration;
 
 use bytes::Bytes;
+use cached::Cached;
 
 use ricq_core::command::common::PbToBytes;
 use ricq_core::command::img_store::GroupImageStoreResp;
@@ -123,7 +124,7 @@ impl super::super::Client {
         let ran = (rand::random::<u32>() >> 1) as i32;
         let (tx, rx) = tokio::sync::oneshot::channel();
         {
-            self.receipt_waiters.lock().await.insert(ran, tx);
+            self.receipt_waiters.lock().await.cache_set(ran, tx);
         }
         let req = self
             .engine
@@ -541,9 +542,12 @@ impl super::super::Client {
                 upload_key,
                 mut upload_addrs,
             } => {
-                let addr = upload_addrs
-                    .pop()
-                    .ok_or_else(|| RQError::Other("addrs is empty".into()))?;
+                let addr = match self.highway_addrs.read().await.first() {
+                    Some(addr) => addr.clone(),
+                    None => upload_addrs
+                        .pop()
+                        .ok_or_else(|| RQError::Other("addrs is empty".into()))?,
+                };
                 self._upload_group_image(upload_key, addr.clone().into(), data)
                     .await?;
                 image_info.into_group_image(file_id, addr, signature)

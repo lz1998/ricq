@@ -57,7 +57,7 @@ impl From<GroupImage> for msg::CustomFace {
             server_ip: Some(e.server_ip),
             server_port: Some(e.server_port),
             source: Some(200),     // 200
-            origin: Some(1),       // 是否原图 0/1，设为1不需要29，30
+            origin: Some(0),       // 是否原图 0/1，设为1不需要29，30
             show_len: Some(0),     // ?
             download_len: Some(0), // ?
             ..Default::default()

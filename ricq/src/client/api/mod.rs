@@ -2,6 +2,7 @@ use std::net::SocketAddr;
 use std::sync::atomic::Ordering;
 
 use bytes::Bytes;
+use cached::Cached;
 
 use ricq_core::command::message_svc::MessageSyncResponse;
 use ricq_core::command::oidb_svc::*;
@@ -317,32 +318,36 @@ impl super::Client {
         if self.highway_session.read().await.session_key.is_empty() {
             return Err(RQError::Other("highway_session_key is empty".into()));
         }
-        let mut addrs: Vec<RQAddr> = rsp
+        let addrs: Vec<RQAddr> = rsp
             .uint32_up_ip
             .into_iter()
             .zip(rsp.uint32_up_port.into_iter())
             .map(|(ip, port)| RQAddr(ip as u32, port as u16))
             .collect();
-        let addr = addrs
-            .pop()
-            .ok_or_else(|| RQError::Other("addr is none".into()))?;
         let body =
             self.engine
                 .read()
                 .await
                 .build_long_req(group_code2uin(group_code), data, rsp.msg_ukey);
-        self.highway_upload_bdh(
-            addr.into(),
-            BdhInput {
-                command_id: 27,
-                body,
-                ticket: rsp.msg_sig,
-                chunk_size: 8192 * 8,
-                ..Default::default()
-            },
-        )
-        .await?;
-        Ok(resid)
+        for addr in addrs {
+            match self
+                .highway_upload_bdh(
+                    addr.into(),
+                    BdhInput {
+                        command_id: 27,
+                        body: body.clone(),
+                        ticket: rsp.msg_sig.clone(),
+                        chunk_size: 8192 * 8,
+                        ..Default::default()
+                    },
+                )
+                .await
+            {
+                Ok(_) => return Ok(resid),
+                Err(_) => continue,
+            }
+        }
+        Err(RQError::Other("failed to upload long message".into()))
     }
 
     // 获取转发消息下载地址和 key
@@ -399,6 +404,10 @@ impl super::Client {
         let time = chrono::Utc::now().timestamp();
         let seq = self.engine.read().await.next_friend_seq();
         let ran = (rand::random::<u32>() >> 1) as i32;
+        let (tx, _) = tokio::sync::oneshot::channel();
+        {
+            self.receipt_waiters.lock().await.cache_set(ran, tx);
+        }
         let req = self.engine.read().await.build_send_message_packet(
             routing_head,
             message_chain.into(),
@@ -408,10 +417,12 @@ impl super::Client {
             time,
         );
         self.send_and_wait(req).await?;
-        Ok(MessageReceipt {
+        let receipt = MessageReceipt {
             seqs: vec![seq],
             rands: vec![ran],
-            time,
-        })
+            time: chrono::Utc::now().timestamp(),
+        };
+        // 除了群聊，都不需要等 receipt 的 seq
+        Ok(receipt)
     }
 }

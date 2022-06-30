@@ -6,6 +6,7 @@ qq-android 协议的 rust 实现 移植于 [MiraiGo](https://github.com/Mrs4s/Mi
 
 - [ricq](https://crates.io/crates/ricq): 提供异步 API
 - [ricq-core](https://crates.io/crates/ricq-core): 不带 IO 的数据包构造器、解析器（通常用于ffi）
+- [ricq-axum-api](https://github.com/lz1998/ricq/tree/master/examples/ricq-axum-api)：提供 HTTP API 形式的登录接口，配合 [ricq-react-ui](https://github.com/lz1998/ricq-react-ui)，只需要开发登录后的逻辑。
 
 ## 如何使用
 
@@ -15,11 +16,18 @@ qq-android 协议的 rust 实现 移植于 [MiraiGo](https://github.com/Mrs4s/Mi
 
 |  框架/SDK   | 语言  | 说明  |
 |  ----  | ----  | ----  |
-| [RQ-Tower](https://github.com/lz1998/rq-tower)  | Rust | 基于tower，模仿axum  |
-|  [rust_proc_qq](https://github.com/niuhuan/rust_proc_qq) | Rust | 模仿rocket  |
-|  [Walle-Q](https://github.com/abrahum/walle-q) | - | onebot协议  |
+|  [rust_proc_qq](https://github.com/niuhuan/rust_proc_qq) | Rust | 模仿rocket |
+|  [Walle-Q](https://github.com/abrahum/walle-q) | - | onebot协议 |
+|  [pbrq](https://github.com/ProtobufBot/pbrq) | - | websocket+protobuf协议（附带[Web-UI](https://github.com/ProtobufBot/pbrq-react-ui)） |
 
 > 本项目是一个年轻的项目，请使用 nightly channel 构建本项目哦（正经人谁用 stable 啊）
+
+## 相关项目
+
+|  项目名称   | 作者  | 描述  |
+|  ----  | ----  | ----  |
+|  [gtk-qq](https://github.com/lomirus/gtk-qq) | [lomirus](https://github.com/lomirus) | Unofficial Linux QQ client, based on GTK4 and libadwaita, developed with Rust and Relm4.  |
+|  [esp32c3-rs-qq](https://github.com/a1967629423/esp32c3-rs-qq) | [a1967629423](https://github.com/a1967629423) | 在单片机上运行QQ  |
 
 ## 已完成功能/开发计划
 

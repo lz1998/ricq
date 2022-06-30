@@ -8,6 +8,7 @@ use tokio::net::TcpStream;
 
 use ricq_core::command::wtlogin::LoginResponse;
 
+use crate::client::tcp::tcp_connect_fastest;
 use crate::client::NetworkStatus;
 use crate::ext::common::after_login;
 use crate::{Client, RQError, RQResult};
@@ -22,15 +23,18 @@ pub struct DefaultConnector;
 #[async_trait]
 impl Connector<TcpStream> for DefaultConnector {
     async fn connect(&self, _: &Arc<Client>) -> std::io::Result<TcpStream> {
-        tokio::select! {
-            Ok(conn) = TcpStream::connect(SocketAddr::new(Ipv4Addr::new(42, 81, 172, 81).into(), 80)) => Ok(conn),
-            Ok(conn) = TcpStream::connect(SocketAddr::new(Ipv4Addr::new(114, 221, 148, 59).into(), 14000)) => Ok(conn),
-            Ok(conn) = TcpStream::connect(SocketAddr::new(Ipv4Addr::new(42, 81, 172, 147).into(), 443)) => Ok(conn),
-            Ok(conn) = TcpStream::connect(SocketAddr::new(Ipv4Addr::new(125, 94, 60, 146).into(), 80)) => Ok(conn),
-            Ok(conn) = TcpStream::connect(SocketAddr::new(Ipv4Addr::new(114, 221, 144, 215).into(), 80)) => Ok(conn),
-            Ok(conn) = TcpStream::connect(SocketAddr::new(Ipv4Addr::new(42, 81, 172, 22).into(), 80)) => Ok(conn),
-            else => Err(std::io::Error::new(std::io::ErrorKind::NotConnected, "NotConnected"))
-        }
+        tcp_connect_fastest(
+            vec![
+                SocketAddr::new(Ipv4Addr::new(42, 81, 172, 81).into(), 80),
+                SocketAddr::new(Ipv4Addr::new(114, 221, 148, 59).into(), 14000),
+                SocketAddr::new(Ipv4Addr::new(42, 81, 172, 147).into(), 443),
+                SocketAddr::new(Ipv4Addr::new(125, 94, 60, 146).into(), 80),
+                SocketAddr::new(Ipv4Addr::new(114, 221, 144, 215).into(), 80),
+                SocketAddr::new(Ipv4Addr::new(42, 81, 172, 22).into(), 80),
+            ],
+            Duration::from_secs(5),
+        )
+        .await
     }
 }
 

@@ -1,0 +1,27 @@
+[package]
+name = "ricq-axum-api"
+version = "0.1.0"
+edition = "2021"
+description = "ricq axum api"
+license = "AGPL-3.0"
+homepage = "https://github.com/lz1998/ricq"
+repository = "https://github.com/lz1998/ricq"
+readme = "README.md"
+keywords = ["ricq", "axum", "http", "api"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+ricq = { version = "0.1.15", path = "../../ricq" }
+dashmap = "5.2"
+bytes = "1"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+axum = { version = "0.5", features = ["json"] }
+async-trait = "0.1"
+rand = "0.8"
+tracing = "0.1"
+base64 = "0.13"
+tower = { version = "0.4" }
+tower-http = { version = "0.3", features = ["fs"] }
