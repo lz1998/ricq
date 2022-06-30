@@ -21,9 +21,10 @@ macro_rules! log_error {
 }
 
 impl super::Client {
+    /// 接收到的 Packet 统一分发
     pub async fn process_income_packet(self: &Arc<Self>, pkt: Packet) {
         tracing::trace!("received pkt: {}", &pkt.command_name);
-        // response
+        // response, send_and_wait 的包将会在此被截流
         {
             if let Some(sender) = self.packet_promises.write().await.remove(&pkt.seq_id) {
                 sender.send(pkt).unwrap();

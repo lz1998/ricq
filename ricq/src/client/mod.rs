@@ -25,19 +25,26 @@ mod processor;
 pub mod tcp;
 
 pub struct Client {
+    /// QEvent Handler 调用 handle 方法外发 QEvent
     handler: Box<dyn handler::Handler + Sync + Send + 'static>,
     engine: RwLock<Engine>,
 
-    // 网络状态
+    // 状态相关
+    /// 网络状态
     status: AtomicU8,
-    // 是否在线
-    pub online: AtomicBool,
-    // 停止网络
+    /// 停止网络信号 Sender
     disconnect_signal: broadcast::Sender<()>,
+    /// 是否在线
+    pub online: AtomicBool,
+    /// 心跳包是否已启用
     pub heartbeat_enabled: AtomicBool,
 
+    // 包相关
+    /// 外发包 Sender
     out_pkt_sender: net::OutPktSender,
+    /// send_and_wait WaitMap
     packet_promises: RwLock<HashMap<i32, oneshot::Sender<Packet>>>,
+    /// 当前客户端发送消息后使用 cache 避免上报自身消息事件
     receipt_waiters: Mutex<cached::TimedCache<i32, oneshot::Sender<i32>>>,
 
     // account info
@@ -45,10 +52,12 @@ pub struct Client {
 
     // address
     pub address: RwLock<AddressInfo>,
+    /// 其他同时在线客户端
     pub online_clients: RwLock<Vec<OtherClientInfo>>,
 
     // statics
     pub last_message_time: AtomicI64,
+    /// 调用 new 方法时的时间戳
     pub start_time: i32,
 
     /// 群消息 builder 寄存 <div_seq, parts> : parts is sorted by pkg_index
@@ -64,6 +73,9 @@ pub struct Client {
 }
 
 impl super::Client {
+    /// 新建 Clinet
+    ///
+    /// **Notice: 该方法仅新建 Client 需要调用 start 方法连接到服务器**
     pub fn new<H>(device: Device, version: &'static Version, handler: H) -> Client
     where
         H: crate::client::handler::Handler + 'static + Sync + Send,
@@ -97,6 +109,9 @@ impl super::Client {
         }
     }
 
+    /// 新建 Clinet
+    ///
+    /// **Notice: 该方法仅新建 Client 需要调用 start 方法连接到服务器**
     pub fn new_with_config<H>(config: crate::Config, handler: H) -> Self
     where
         H: crate::client::handler::Handler + 'static + Sync + Send,
@@ -104,10 +119,12 @@ impl super::Client {
         Self::new(config.device, config.version, handler)
     }
 
+    /// 获取当前 Client uin
     pub async fn uin(&self) -> i64 {
-        return self.engine.read().await.uin.load(Ordering::Relaxed);
+        self.engine.read().await.uin.load(Ordering::Relaxed)
     }
 
+    /// 向服务器发包
     pub async fn send(&self, pkt: Packet) -> RQResult<usize> {
         tracing::trace!("sending pkt {}-{},", pkt.command_name, pkt.seq_id);
         let data = self.engine.read().await.transport.encode_packet(pkt);
@@ -116,6 +133,7 @@ impl super::Client {
             .map_err(|_| RQError::Other("failed to send out_pkt".into()))
     }
 
+    /// 向服务器发包并等待接收返回的包，15 秒后超时返回 `Err(RQError::Timeout)`
     pub async fn send_and_wait(&self, pkt: Packet) -> RQResult<Packet> {
         tracing::trace!("send_and_waitting pkt {}-{},", pkt.command_name, pkt.seq_id);
         let seq = pkt.seq_id;
@@ -141,33 +159,33 @@ impl super::Client {
         }
     }
 
+    /// 向服务器发送心跳包，并自动注册客户端
+    ///
+    /// 该方法会阻塞当前协程，通常 spawn 使用
     pub async fn do_heartbeat(&self) {
         self.heartbeat_enabled.store(true, Ordering::SeqCst);
         let mut times = 0;
         while self.online.load(Ordering::SeqCst) {
             sleep(Duration::from_secs(30)).await;
-            match self.heartbeat().await {
-                Err(_) => {
-                    continue;
-                }
-                Ok(_) => {
-                    times += 1;
-                    if times >= 7 {
-                        if self.register_client().await.is_err() {
-                            break;
-                        }
-                        times = 0;
+            if self.heartbeat().await.is_ok() {
+                times += 1;
+                if times >= 7 {
+                    if self.register_client().await.is_err() {
+                        break;
                     }
+                    times = 0;
                 }
             }
         }
         self.heartbeat_enabled.store(false, Ordering::SeqCst);
     }
 
+    /// 生成 token
     pub async fn gen_token(&self) -> Token {
         self.engine.read().await.gen_token()
     }
 
+    /// 从 token 恢复
     pub async fn load_token(&self, token: Token) {
         self.engine.write().await.load_token(token)
     }
@@ -180,7 +198,7 @@ impl super::Client {
         self.engine.read().await.transport.version.clone()
     }
 
-    pub async fn _get_highway_session_key(&self) -> Vec<u8> {
+    pub async fn get_highway_session_key(&self) -> Vec<u8> {
         self.highway_session.read().await.session_key.to_vec()
     }
 }

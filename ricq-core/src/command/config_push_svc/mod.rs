@@ -1,3 +1,4 @@
+#![allow(clippy::large_enum_variant)]
 use bytes::Bytes;
 
 use crate::{jce, pb};

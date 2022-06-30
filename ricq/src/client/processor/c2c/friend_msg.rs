@@ -34,9 +34,9 @@ impl Client {
                 .receipt_waiters
                 .lock()
                 .await
-                .cache_remove(&message.rands.get(0).cloned().unwrap_or_default())
+                .cache_remove(&message.rands.first().cloned().unwrap_or_default())
             {
-                let _ = tx.send(message.seqs.get(0).cloned().unwrap_or_default());
+                let _ = tx.send(message.seqs.first().cloned().unwrap_or_default());
                 return Ok(());
             }
         }

@@ -5,13 +5,7 @@ use tokio::sync::{
     watch::Sender as WatchSender,
 };
 
-use crate::client::event::{
-    DeleteFriendEvent, FriendAudioMessageEvent, FriendMessageEvent, FriendMessageRecallEvent,
-    FriendPokeEvent, GroupAudioMessageEvent, GroupDisbandEvent, GroupLeaveEvent, GroupMessageEvent,
-    GroupMessageRecallEvent, GroupMuteEvent, GroupNameUpdateEvent, GroupTempMessageEvent,
-    JoinGroupRequestEvent, KickedOfflineEvent, MSFOfflineEvent, MemberPermissionChangeEvent,
-    NewFriendEvent, NewFriendRequestEvent, NewMemberEvent, SelfInvitedEvent,
-};
+use crate::client::event::*;
 
 /// 所有需要外发的数据的枚举打包
 #[derive(Clone, derivative::Derivative)]
@@ -68,7 +62,7 @@ pub enum QEvent {
 /// 处理外发数据的接口
 #[async_trait]
 pub trait Handler: Sync {
-    async fn handle(&self, _event: QEvent);
+    async fn handle(&self, event: QEvent);
 }
 
 /// 一个默认 Handler，只是把信息打印出来
