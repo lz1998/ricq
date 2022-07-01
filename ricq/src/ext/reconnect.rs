@@ -78,7 +78,8 @@ pub async fn auto_reconnect<C, S>(
         tokio::task::yield_now().await; // 等一下，确保连上了
         if let Err(err) = fast_login(&client, &credential).await {
             // token 可能过期了
-            tracing::error!("failed to fast_login: {}, break!", err);
+            tracing::error!("failed to fast_login: {}", err);
+            client.stop(NetworkStatus::NetworkOffline);
             count += 1;
             if count > max {
                 tracing::error!("reconnect_count: {}, break!", count);
