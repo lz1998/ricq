@@ -1,6 +1,10 @@
-use bytes::{Buf, BufMut};
 use std::fmt;
 
+use bytes::{Buf, BufMut};
+
+use crate::{push_builder_impl, to_elem_vec_impl};
+use crate::msg::{MessageElem, PushElem};
+use crate::msg::{MessageChainBuilder, PushBuilder};
 use crate::pb::msg;
 
 #[derive(Default, Debug, Clone)]
@@ -18,22 +22,22 @@ impl At {
     }
 }
 
-impl From<At> for Vec<msg::elem::Elem> {
-    fn from(e: At) -> Self {
-        vec![msg::elem::Elem::Text(msg::Text {
+impl PushElem for At {
+    fn push_to(elem: Self, vec: &mut Vec<MessageElem>) {
+        vec.push(MessageElem::Text(msg::Text {
             attr6_buf: Some({
                 let mut w = Vec::new();
                 w.put_u16(1);
                 w.put_u16(0);
-                w.put_u16(e.display.chars().count() as u16);
-                w.put_u8(if e.target == 0 { 1 } else { 0 });
-                w.put_u32(e.target as u32);
+                w.put_u16(elem.display.chars().count() as u16);
+                w.put_u8(if elem.target == 0 { 1 } else { 0 });
+                w.put_u32(elem.target as u32);
                 w.put_u16(0);
                 w
             }),
-            str: Some(e.display),
+            str: Some(elem.display),
             ..Default::default()
-        })]
+        }));
     }
 }
 
@@ -53,3 +57,6 @@ impl fmt::Display for At {
         write!(f, "[{}]", self.display)
     }
 }
+
+to_elem_vec_impl!(At);
+push_builder_impl!(At);

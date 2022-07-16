@@ -1,3 +1,4 @@
+use crate::msg::{MessageChainBuilder, MessageElem, PushBuilder};
 use crate::pb::msg;
 use crate::pb::msg::AnonymousGroupMessage;
 
@@ -12,9 +13,9 @@ pub struct Anonymous {
     pub color: String,
 }
 
-impl From<Anonymous> for msg::elem::Elem {
+impl From<Anonymous> for MessageElem {
     fn from(e: Anonymous) -> Self {
-        msg::elem::Elem::AnonGroupMsg(msg::AnonymousGroupMessage {
+        MessageElem::AnonGroupMsg(msg::AnonymousGroupMessage {
             flags: Some(2),
             anon_id: None,
             anon_nick: Some(e.nick.into_bytes()),
@@ -23,6 +24,12 @@ impl From<Anonymous> for msg::elem::Elem {
             bubble_id: Some(e.bubble_index),
             rank_color: Some(e.color.into_bytes()),
         })
+    }
+}
+
+impl PushBuilder for Anonymous {
+    fn push_builder(elem: Self, builder: &mut MessageChainBuilder) {
+        builder.elems.insert(0, elem.into());
     }
 }
 

@@ -3,6 +3,7 @@ use std::fmt;
 use prost::Message;
 
 pub use group_image::calculate_image_resource_id;
+pub(crate) use text::flush_builder;
 
 pub use crate::msg::elem::{
     anonymous::Anonymous,
