@@ -2,6 +2,9 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
+use crate::{push_builder_impl, to_elem_vec_impl};
+use crate::msg::{MessageElem, PushElem};
+use crate::msg::{MessageChainBuilder, PushBuilder};
 use crate::msg::elem::flash_image::FlashImage;
 use crate::pb::msg;
 
@@ -60,9 +63,9 @@ impl From<FriendImage> for msg::NotOnlineImage {
     }
 }
 
-impl From<FriendImage> for Vec<msg::elem::Elem> {
-    fn from(e: FriendImage) -> Vec<msg::elem::Elem> {
-        vec![msg::elem::Elem::NotOnlineImage(e.into())]
+impl PushElem for FriendImage {
+    fn push_to(elem: Self, vec: &mut Vec<MessageElem>) {
+        vec.push(MessageElem::NotOnlineImage(elem.into()));
     }
 }
 
@@ -87,3 +90,6 @@ impl fmt::Display for FriendImage {
         write!(f, "[FriendImage: {}]", self.url())
     }
 }
+
+to_elem_vec_impl!(FriendImage);
+push_builder_impl!(FriendImage);

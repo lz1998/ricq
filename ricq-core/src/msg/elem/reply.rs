@@ -1,5 +1,6 @@
 use std::fmt;
 
+use crate::msg::{MessageChainBuilder, MessageElem, PushBuilder};
 use crate::pb::msg;
 
 use super::super::MessageChain;
@@ -12,9 +13,9 @@ pub struct Reply {
     pub elements: MessageChain,
 }
 
-impl From<Reply> for msg::elem::Elem {
+impl From<Reply> for MessageElem {
     fn from(e: Reply) -> Self {
-        msg::elem::Elem::SrcMsg(msg::SourceMsg {
+        MessageElem::SrcMsg(msg::SourceMsg {
             orig_seqs: vec![e.reply_seq],
             sender_uin: Some(e.sender),
             time: Some(e.time),
@@ -26,6 +27,15 @@ impl From<Reply> for msg::elem::Elem {
             troop_name: Some(vec![]),
             ..Default::default()
         })
+    }
+}
+
+impl PushBuilder for Reply {
+    fn push_builder(elem: Self, builder: &mut MessageChainBuilder) {
+        let index = if let Some(MessageElem::AnonGroupMsg(..)) = builder.elems.get(0) {
+            1
+        } else { 0 };
+        builder.elems.insert(index, elem.into());
     }
 }
 

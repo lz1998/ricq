@@ -1,29 +1,18 @@
 use std::io::{Read, Write};
 
+use flate2::Compression;
 use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
-use flate2::Compression;
 
+use crate::{push_builder_impl, to_elem_vec_impl};
+use crate::msg::{MessageElem, PushElem};
+use crate::msg::{MessageChainBuilder, PushBuilder};
 use crate::pb::msg;
 
 #[derive(Default, Debug, Clone)]
 pub struct RichMsg {
     pub service_id: i32,
     pub template1: String,
-}
-
-impl From<RichMsg> for Vec<msg::elem::Elem> {
-    fn from(e: RichMsg) -> Self {
-        vec![msg::elem::Elem::RichMsg(msg::RichMsg {
-            template1: Some({
-                let mut encoder = ZlibEncoder::new(vec![1], Compression::default());
-                encoder.write_all(e.template1.as_bytes()).ok();
-                encoder.finish().unwrap_or_default()
-            }),
-            service_id: Some(e.service_id),
-            ..Default::default()
-        })]
-    }
 }
 
 impl From<msg::RichMsg> for RichMsg {
@@ -49,3 +38,20 @@ impl From<msg::RichMsg> for RichMsg {
         Self::default()
     }
 }
+
+impl PushElem for RichMsg {
+    fn push_to(elem: Self, vec: &mut Vec<MessageElem>) {
+        vec.push(MessageElem::RichMsg(msg::RichMsg {
+            template1: Some({
+                let mut encoder = ZlibEncoder::new(vec![1], Compression::default());
+                encoder.write_all(elem.template1.as_bytes()).ok();
+                encoder.finish().unwrap_or_default()
+            }),
+            service_id: Some(elem.service_id),
+            ..Default::default()
+        }));
+    }
+}
+
+to_elem_vec_impl!(RichMsg);
+push_builder_impl!(RichMsg);

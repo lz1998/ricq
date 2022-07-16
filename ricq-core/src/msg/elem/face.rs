@@ -2,6 +2,9 @@ use std::fmt;
 
 use prost::Message;
 
+use crate::{push_builder_impl, to_elem_vec_impl};
+use crate::msg::{MessageElem, PushElem};
+use crate::msg::{MessageChainBuilder, PushBuilder};
 use crate::pb::msg;
 
 #[derive(Default, Debug, Clone)]
@@ -27,9 +30,9 @@ impl Face {
     }
 }
 
-impl From<Face> for Vec<msg::elem::Elem> {
-    fn from(e: Face) -> Self {
-        vec![if e.index >= 260 {
+impl PushElem for Face {
+    fn push_to(e: Self, vec: &mut Vec<MessageElem>) {
+        let elem = if e.index >= 260 {
             let text = format!("/{}", e.name).as_bytes().to_vec();
             let elem = msg::MsgElemInfoServtype33 {
                 index: Some(e.index as u32),
@@ -37,7 +40,7 @@ impl From<Face> for Vec<msg::elem::Elem> {
                 compat: Some(text),
                 buf: None,
             }
-            .encode_to_vec();
+                .encode_to_vec();
             msg::elem::Elem::CommonElem(msg::CommonElem {
                 service_type: Some(33),
                 pb_elem: Some(elem),
@@ -49,7 +52,8 @@ impl From<Face> for Vec<msg::elem::Elem> {
                 old: Some(((0x1445 - 4 + e.index) as u16).to_be_bytes().to_vec()),
                 buf: Some(vec![0x00, 0x01, 0x00, 0x04, 0x52, 0xCC, 0xF5, 0xD0]),
             })
-        }]
+        };
+        vec.push(elem);
     }
 }
 
@@ -70,6 +74,9 @@ impl fmt::Display for Face {
         write!(f, "[{}]", self.name)
     }
 }
+
+to_elem_vec_impl!(Face);
+push_builder_impl!(Face);
 
 #[cfg(test)]
 mod tests {
