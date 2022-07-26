@@ -4,7 +4,7 @@ use ricq_core::common::RQAddr;
 
 use ricq_core::hex::encode_hex;
 use ricq_core::msg::elem::{FriendImage, GroupImage};
-use ricq_core::{RQError, RQResult};
+use ricq_core::RQResult;
 
 // 仅用于上传图片，一些临时变量，太多了放一起
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -19,22 +19,27 @@ pub struct ImageInfo {
 
 impl ImageInfo {
     pub fn try_new(data: &[u8]) -> RQResult<Self> {
-        let img_reader = image::io::Reader::new(std::io::Cursor::new(data))
-            .with_guessed_format()
-            .map_err(RQError::IO)?;
-        let format = img_reader.format().unwrap_or(image::ImageFormat::Png);
         let md5 = md5::compute(data).to_vec();
 
-        let (width, height) = img_reader.into_dimensions().unwrap_or((720, 480));
+        #[cfg(feature = "img-detail")]
+        let (width, height, format, ext_name) = {
+            let img_reader = image::io::Reader::new(std::io::Cursor::new(data))
+                .with_guessed_format()
+                .map_err(ricq_core::RQError::IO)?;
+            let format = img_reader.format().unwrap_or(image::ImageFormat::Png);
+            let (width, height) = img_reader.into_dimensions().unwrap_or((720, 480));
+            let ext_name = format.extensions_str().first().expect("image_format error");
+            (width, height, format, ext_name)
+        };
+        #[cfg(not(feature = "img-detail"))]
+        let (width, height, ext_name) = (1280, 720, "png");
+
         Ok(ImageInfo {
-            filename: format!(
-                "{}.{}",
-                encode_hex(&md5),
-                format.extensions_str().first().expect("image_format error")
-            ),
+            filename: format!("{}.{}", encode_hex(&md5), ext_name),
             md5,
             width,
             height,
+            #[cfg(feature = "img-detail")]
             image_type: match format {
                 image::ImageFormat::Jpeg => 1000,
                 image::ImageFormat::Png => 1001,
@@ -43,6 +48,8 @@ impl ImageInfo {
                 image::ImageFormat::Gif => 2000,
                 _ => 1000,
             },
+            #[cfg(not(feature = "img-detail"))]
+            image_type: 1001, // PNG
             size: data.len() as u32,
         })
     }

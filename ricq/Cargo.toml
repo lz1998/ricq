@@ -9,6 +9,10 @@ repository = "https://github.com/lz1998/ricq"
 readme = "README.md"
 keywords = ["qq", "protocol", "android", "mirai"]
 
+[features]
+default = []
+img-detail = ["image"]
+
 [dependencies]
 bytes = "1"
 serde = { version = "1", features = ["derive"] }
@@ -26,4 +30,4 @@ chrono = "0.4"
 derivative = "2"
 jcers = { version = "0.1", features = ["derive"] }
 ricq-core = { path = "../ricq-core", version = "0.1.16" }
-image = { version = "0", features = ["png", "jpeg", "bmp", "gif", "webp"] }
+image = { version = "0", features = ["png", "jpeg", "bmp", "gif", "webp"], optional = true }
