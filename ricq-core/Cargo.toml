@@ -20,7 +20,6 @@ generic-array = "0.14"
 flate2 = { version = "1", features = ["rust_backend"], default-features = false }
 thiserror = "1"
 derivative = "2"
-lazy_static = "1"
 
 # patch due to permission of abnormal utf8
 prost = "~0.9"
@@ -30,4 +29,3 @@ jcers = { version = "0.1", features = ["derive"] }
 
 [build-dependencies]
 prost-build = { version = "0.9" }
-

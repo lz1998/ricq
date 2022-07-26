@@ -779,56 +779,54 @@ pub fn guid_flag() -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use lazy_static::*;
 
     use crate::command::wtlogin::tlv_writer::*;
 
-    lazy_static! {
-        static ref GUID: [u8; 16] =
-            [142, 27, 163, 177, 172, 31, 181, 137, 118, 115, 8, 126, 24, 49, 54, 169];
-        static ref TGTGT_KEY: [u8; 16] =
-            [199, 12, 183, 107, 3, 28, 81, 148, 116, 20, 229, 112, 0, 64, 152, 255];
-        static ref UIN: u32 = 349195854;
-        static ref OS_NAME: String = "android".to_string();
-        static ref OS_VERSION: String = "7.1.2".to_string();
-        static ref SIM_INFO: String = "T-Mobile".to_string();
-        static ref IMEI: String = "468356291846738".to_string();
-        static ref IMEI_MD5: &'static [u8] = "9792b1bba1867318bf782af418306ef8".as_bytes();
-        static ref WIFI_BSSID: String = "00:50:56:C0:00:08".to_string();
-        static ref WIFI_SSID: String = "<unknown ssid>".to_string();
-        static ref APN: String = "wifi".to_string();
-        static ref APK_SIGN: [u8; 16] = [
-            0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E,
-            0xB6, 0x8D
-        ];
-        static ref APK_ID: String = "com.tencent.mobileqq".to_string();
-        static ref APP_ID: u32 = 537066738;
-        static ref SUB_APP_ID: u32 = 537066738;
-        static ref SSO_VERSION: u32 = 15;
-        static ref SDK_VERSION: &'static str = "6.0.0.2454";
-        static ref MISC_BITMAP: u32 = 184024956;
-        static ref SUB_SIG_MAP: u32 = 0x10400;
-        static ref MAIN_SIG_MAP: u32 = 34869472;
-        static ref MAC_ADDRESS: String = "00:50:56:C0:00:08".to_string();
-        static ref IS_ROOT: bool = false;
-        static ref ANDROID_ID: String = "QKQ1.191117.002".to_string();
-        static ref APK_VERSION_NAME: String = "2.0.5".to_string();
-        static ref DEV_INFO: &'static [u8] =
-            "dev_info_dev_info_dev_info_dev_info_dev_info_".as_bytes();
-        static ref BUILD_MODEL: String = "mirai".to_string();
-        static ref BUILD_BRAND: String = "mamoe".to_string();
-        static ref OS_TYPE: String = "android".to_string();
-    }
+    const GUID: [u8; 16] = [
+        142, 27, 163, 177, 172, 31, 181, 137, 118, 115, 8, 126, 24, 49, 54, 169,
+    ];
+    const TGTGT_KEY: [u8; 16] = [
+        199, 12, 183, 107, 3, 28, 81, 148, 116, 20, 229, 112, 0, 64, 152, 255,
+    ];
+    const UIN: u32 = 349195854;
+    const OS_NAME: &str = "android";
+    const OS_VERSION: &str = "7.1.2";
+    const SIM_INFO: &str = "T-Mobile";
+    const IMEI: &str = "468356291846738";
+    const IMEI_MD5: &'static [u8] = "9792b1bba1867318bf782af418306ef8".as_bytes();
+    const WIFI_BSSID: &str = "00:50:56:C0:00:08";
+    const WIFI_SSID: &str = "<unknown ssid>";
+    const APN: &str = "wifi";
+    const APK_SIGN: [u8; 16] = [
+        0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E, 0xB6,
+        0x8D,
+    ];
+    const APK_ID: &str = "com.tencent.mobileqq";
+    const APP_ID: u32 = 537066738;
+    const SUB_APP_ID: u32 = 537066738;
+    const SSO_VERSION: u32 = 15;
+    const SDK_VERSION: &'static str = "6.0.0.2454";
+    const MISC_BITMAP: u32 = 184024956;
+    const SUB_SIG_MAP: u32 = 0x10400;
+    const MAIN_SIG_MAP: u32 = 34869472;
+    const MAC_ADDRESS: &str = "00:50:56:C0:00:08";
+    const IS_ROOT: bool = false;
+    const ANDROID_ID: &str = "QKQ1.191117.002";
+    const APK_VERSION_NAME: &str = "2.0.5";
+    const DEV_INFO: &'static [u8] = "dev_info_dev_info_dev_info_dev_info_dev_info_".as_bytes();
+    const BUILD_MODEL: &str = "mirai";
+    const BUILD_BRAND: &str = "mamoe";
+    const OS_TYPE: &str = "android";
 
     #[test]
     fn test_param() {
-        println!("{:?}", *GUID);
+        println!("{:?}", GUID);
         println!("{:?}", "test param");
     }
 
     #[test]
     fn test_t1() {
-        let result = t1(*UIN, &[192, 168, 1, 1]);
+        let result = t1(UIN, &[192, 168, 1, 1]);
         println!("{:?}", result.len());
         println!("{:?}", result)
     }
@@ -842,14 +840,14 @@ mod tests {
 
     #[test]
     fn test_t1d() {
-        let result = t1d(*MISC_BITMAP);
+        let result = t1d(MISC_BITMAP);
         println!("{}", result.len());
         println!("{:?}", result)
     }
 
     #[test]
     fn test_t1f() {
-        let result = t1f(*IS_ROOT, &OS_NAME, &OS_VERSION, "China Mobile GSM", &APN, 2);
+        let result = t1f(IS_ROOT, &OS_NAME, &OS_VERSION, "China Mobile GSM", &APN, 2);
         println!("{}", result.len());
         println!("{:?}", result)
     }
@@ -878,13 +876,13 @@ mod tests {
     #[test]
     fn test_t16() {
         let result = t16(
-            *SSO_VERSION,
-            *APP_ID,
-            *SUB_APP_ID,
-            &*GUID,
+            SSO_VERSION,
+            APP_ID,
+            SUB_APP_ID,
+            &GUID,
             &APK_ID,
             &APK_VERSION_NAME,
-            &*APK_SIGN,
+            &APK_SIGN,
         );
         println!("{}", result.len());
         println!("{:?}", result)
@@ -906,7 +904,7 @@ mod tests {
 
     #[test]
     fn test_t17a() {
-        let result = t17a(*UIN as i32);
+        let result = t17a(UIN as i32);
         println!("{}", result.len());
         println!("{:?}", result)
     }
@@ -920,14 +918,14 @@ mod tests {
 
     #[test]
     fn test_t18() {
-        let result = t18(*APP_ID, *UIN);
+        let result = t18(APP_ID, UIN);
         println!("{}", result.len());
         println!("{:?}", result)
     }
 
     #[test]
     fn test_t33() {
-        let result = t33(&*GUID);
+        let result = t33(&GUID);
         println!("{}", result.len());
         println!("{:?}", result)
     }
@@ -942,21 +940,21 @@ mod tests {
 
     #[test]
     fn test_t52d() {
-        let result = t52d(*DEV_INFO);
+        let result = t52d(DEV_INFO);
         println!("{}", result.len());
         println!("{:?}", result)
     }
 
     #[test]
     fn test_t100() {
-        let result = t100(*SSO_VERSION, 2, *MAIN_SIG_MAP);
+        let result = t100(SSO_VERSION, 2, MAIN_SIG_MAP);
         println!("{}", result.len());
         println!("{:?}", result)
     }
 
     #[test]
     fn test_t104() {
-        let result = t104(&*GUID);
+        let result = t104(&GUID);
         println!("{}", result.len());
         println!("{:?}", result)
     }
@@ -964,14 +962,14 @@ mod tests {
     #[test]
     fn test_t106() {
         let result = t106(
-            *UIN,
+            UIN,
             0,
-            *APP_ID,
-            *SSO_VERSION,
+            APP_ID,
+            SSO_VERSION,
             &[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             true,
-            &*GUID,
-            &*TGTGT_KEY,
+            &GUID,
+            &TGTGT_KEY,
             0,
         );
         println!("{}", result.len());
@@ -1001,7 +999,7 @@ mod tests {
 
     #[test]
     fn test_t116() {
-        let result = t116(*MAIN_SIG_MAP, *SUB_SIG_MAP);
+        let result = t116(MAIN_SIG_MAP, SUB_SIG_MAP);
         println!("{}", result.len());
         println!("{:?}", result);
     }
@@ -1015,7 +1013,7 @@ mod tests {
 
     #[test]
     fn test_t128() {
-        let result = t128(false, true, false, 16, &BUILD_MODEL, &*GUID, &BUILD_BRAND);
+        let result = t128(false, true, false, 16, &BUILD_MODEL, &GUID, &BUILD_BRAND);
         println!("{}", result.len());
         println!("{:?}", result);
     }
@@ -1045,7 +1043,7 @@ mod tests {
     fn test_t144() {
         let result = t144(
             &IMEI,
-            *DEV_INFO,
+            DEV_INFO,
             &OS_TYPE,
             &OS_VERSION,
             &SIM_INFO,
@@ -1055,9 +1053,9 @@ mod tests {
             false,
             16,
             &BUILD_MODEL,
-            &*GUID,
+            &GUID,
             &BUILD_BRAND,
-            &*TGTGT_KEY,
+            &TGTGT_KEY,
         );
         println!("{}", result.len());
         println!("{:?}", result);
@@ -1065,14 +1063,14 @@ mod tests {
 
     #[test]
     fn test_t145() {
-        let result = t145(&*GUID);
+        let result = t145(&GUID);
         println!("{}", result.len());
         println!("{:?}", result);
     }
 
     #[test]
     fn test_t147() {
-        let result = t147(16, &APK_VERSION_NAME, &*APK_SIGN);
+        let result = t147(16, &APK_VERSION_NAME, &APK_SIGN);
         println!("{}", result.len());
         println!("{:?}", result);
     }
@@ -1095,14 +1093,14 @@ mod tests {
 
     #[test]
     fn test_t174() {
-        let result = t174(&*GUID);
+        let result = t174(&GUID);
         println!("{}", result.len());
         println!("{:?}", result);
     }
 
     #[test]
     fn test_t177() {
-        let result = t177(*MISC_BITMAP, *SDK_VERSION);
+        let result = t177(MISC_BITMAP, SDK_VERSION);
         println!("{}", result.len());
         println!("{:?}", result);
     }
@@ -1137,7 +1135,7 @@ mod tests {
 
     #[test]
     fn test_t194() {
-        let result = t194(*IMEI_MD5);
+        let result = t194(IMEI_MD5);
         println!("{}", result.len());
         println!("{:?}", result);
     }
@@ -1165,14 +1163,14 @@ mod tests {
 
     #[test]
     fn test_t400() {
-        let result = t400(&*GUID, *UIN as i64, &*GUID, &*GUID, 2, 2, &*GUID);
+        let result = t400(&GUID, UIN as i64, &GUID, &GUID, 2, 2, &GUID);
         println!("{}", result.len());
         println!("{:?}", result);
     }
 
     #[test]
     fn test_t401() {
-        let result = t401(&*GUID);
+        let result = t401(&GUID);
         println!("{}", result.len());
         println!("{:?}", result);
     }
@@ -1215,7 +1213,7 @@ mod tests {
 
     #[test]
     fn test_t525() {
-        let result = t525(&t536(&*GUID));
+        let result = t525(&t536(&GUID));
         println!("{}", result.len());
         println!("{:?}", result);
     }
