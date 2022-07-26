@@ -1,6 +1,9 @@
 use std::fmt;
 
+use crate::{push_builder_impl, to_elem_vec_impl};
 use crate::command::common::PbToBytes;
+use crate::msg::{MessageElem, PushElem};
+use crate::msg::{MessageChainBuilder, PushBuilder};
 use crate::msg::elem::{FriendImage, GroupImage};
 use crate::pb::msg;
 
@@ -19,10 +22,10 @@ impl FlashImage {
     }
 }
 
-impl From<FlashImage> for Vec<msg::elem::Elem> {
-    fn from(e: FlashImage) -> Self {
+impl PushElem for FlashImage {
+    fn push_to(elem: Self, vec: &mut Vec<MessageElem>) {
         let flash = {
-            match e {
+            match elem {
                 FlashImage::FriendImage(image) => msg::MsgElemInfoServtype3 {
                     flash_c2c_pic: Some(image.into()),
                     ..Default::default()
@@ -33,18 +36,17 @@ impl From<FlashImage> for Vec<msg::elem::Elem> {
                 },
             }
         }
-        .to_bytes();
-        vec![
-            msg::elem::Elem::CommonElem(msg::CommonElem {
-                service_type: Some(3),
-                pb_elem: Some(flash.to_vec()),
-                ..Default::default()
-            }),
-            msg::elem::Elem::Text(msg::Text {
-                str: Some("[闪照]请使用新版手机QQ查看闪照。".to_owned()),
-                ..Default::default()
-            }),
-        ]
+            .to_bytes();
+
+        vec.push(MessageElem::CommonElem(msg::CommonElem {
+            service_type: Some(3),
+            pb_elem: Some(flash.to_vec()),
+            ..Default::default()
+        }));
+        vec.push(MessageElem::Text(msg::Text {
+            str: Some("[闪照]请使用新版手机QQ查看闪照。".to_owned()),
+            ..Default::default()
+        }));
     }
 }
 
@@ -53,6 +55,7 @@ impl From<FriendImage> for FlashImage {
         Self::FriendImage(e)
     }
 }
+
 impl From<GroupImage> for FlashImage {
     fn from(e: GroupImage) -> Self {
         Self::GroupImage(e)
@@ -71,3 +74,6 @@ impl fmt::Display for FlashImage {
         }
     }
 }
+
+to_elem_vec_impl!(FlashImage);
+push_builder_impl!(FlashImage);

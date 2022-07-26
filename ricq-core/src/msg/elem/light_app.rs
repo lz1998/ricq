@@ -1,7 +1,10 @@
 use std::io::{Read, Write};
 
-use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
+use flate2::{Compression, read::ZlibDecoder, write::ZlibEncoder};
 
+use crate::{push_builder_impl, to_elem_vec_impl};
+use crate::msg::{MessageElem, PushElem};
+use crate::msg::{MessageChainBuilder, PushBuilder};
 use crate::pb::msg;
 
 #[derive(Default, Debug, Clone)]
@@ -15,16 +18,18 @@ impl LightApp {
     }
 }
 
-impl From<LightApp> for Vec<msg::elem::Elem> {
-    fn from(e: LightApp) -> Self {
-        vec![msg::elem::Elem::LightApp(msg::LightApp {
-            data: Some({
-                let mut encoder = ZlibEncoder::new(vec![1], Compression::default());
-                encoder.write_all(e.content.as_bytes()).ok();
-                encoder.finish().unwrap_or_default()
-            }),
-            ..Default::default()
-        })]
+impl PushElem for LightApp {
+    fn push_to(elem: Self, vec: &mut Vec<MessageElem>) {
+        vec.push(
+            MessageElem::LightApp(msg::LightApp {
+                data: Some({
+                    let mut encoder = ZlibEncoder::new(vec![1], Compression::default());
+                    encoder.write_all(elem.content.as_bytes()).ok();
+                    encoder.finish().unwrap_or_default()
+                }),
+                ..Default::default()
+            })
+        );
     }
 }
 
@@ -50,3 +55,6 @@ impl From<msg::LightApp> for LightApp {
         Self::default()
     }
 }
+
+to_elem_vec_impl!(LightApp);
+push_builder_impl!(LightApp);

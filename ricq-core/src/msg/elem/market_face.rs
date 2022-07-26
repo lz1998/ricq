@@ -1,5 +1,8 @@
 use derivative;
 
+use crate::{push_builder_impl, to_elem_vec_impl};
+use crate::msg::{MessageElem, PushElem};
+use crate::msg::{MessageChainBuilder, PushBuilder};
 use crate::pb::msg;
 
 // 不需要实现 Display，因为后面一定会跟 Text
@@ -15,28 +18,28 @@ pub struct MarketFace {
     pub magic_value: String,
 }
 
-impl From<MarketFace> for Vec<msg::elem::Elem> {
-    fn from(e: MarketFace) -> Self {
-        vec![
-            msg::elem::Elem::MarketFace(msg::MarketFace {
-                face_name: Some(e.name.as_bytes().to_vec()),
-                item_type: Some(e.item_type as u32),
-                face_info: Some(1),
-                face_id: Some(e.face_id),
-                tab_id: Some(e.tab_id as u32),
-                sub_type: Some(e.sub_type as u32),
-                key: Some(e.encrypt_key),
-                media_type: Some(e.media_type as u32),
-                image_width: Some(200),
-                image_height: Some(200),
-                mobileparam: Some(e.magic_value.as_bytes().to_vec()),
+impl PushElem for MarketFace {
+    fn push_to(elem: Self, vec: &mut Vec<MessageElem>) {
+        vec.push(MessageElem::MarketFace(msg::MarketFace {
+            face_name: Some(elem.name.as_bytes().to_vec()),
+            item_type: Some(elem.item_type as u32),
+            face_info: Some(1),
+            face_id: Some(elem.face_id),
+            tab_id: Some(elem.tab_id as u32),
+            sub_type: Some(elem.sub_type as u32),
+            key: Some(elem.encrypt_key),
+            media_type: Some(elem.media_type as u32),
+            image_width: Some(200),
+            image_height: Some(200),
+            mobileparam: Some(elem.magic_value.as_bytes().to_vec()),
+            ..Default::default()
+        }));
+        vec.push(
+            MessageElem::Text(msg::Text {
+                str: Some(elem.name),
                 ..Default::default()
-            }),
-            msg::elem::Elem::Text(msg::Text {
-                str: Some(e.name),
-                ..Default::default()
-            }),
-        ]
+            })
+        );
     }
 }
 
@@ -65,6 +68,7 @@ impl Dice {
         Self { value }
     }
 }
+
 impl From<Dice> for MarketFace {
     fn from(e: Dice) -> Self {
         Self {
@@ -95,9 +99,9 @@ impl From<MarketFace> for Dice {
     }
 }
 
-impl From<Dice> for Vec<msg::elem::Elem> {
-    fn from(e: Dice) -> Self {
-        MarketFace::from(e).into()
+impl PushElem for Dice {
+    fn push_to(elem: Self, vec: &mut Vec<MessageElem>) {
+        MarketFace::push_to(MarketFace::from(elem), vec);
     }
 }
 
@@ -109,6 +113,7 @@ pub enum FingerGuessing {
     Scissors,
     Paper,
 }
+
 impl From<FingerGuessing> for MarketFace {
     fn from(e: FingerGuessing) -> Self {
         let value = match e {
@@ -133,9 +138,9 @@ impl From<FingerGuessing> for MarketFace {
     }
 }
 
-impl From<FingerGuessing> for Vec<msg::elem::Elem> {
-    fn from(e: FingerGuessing) -> Self {
-        MarketFace::from(e).into()
+impl PushElem for FingerGuessing {
+    fn push_to(elem: Self, vec: &mut Vec<MessageElem>) {
+        MarketFace::push_to(MarketFace::from(elem), vec);
     }
 }
 
@@ -152,3 +157,12 @@ impl From<MarketFace> for FingerGuessing {
         }
     }
 }
+
+to_elem_vec_impl!(MarketFace);
+push_builder_impl!(MarketFace);
+
+to_elem_vec_impl!(Dice);
+push_builder_impl!(Dice);
+
+to_elem_vec_impl!(FingerGuessing);
+push_builder_impl!(FingerGuessing);

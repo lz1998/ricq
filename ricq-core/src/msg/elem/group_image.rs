@@ -2,14 +2,18 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
+use crate::{push_builder_impl, to_elem_vec_impl};
 use crate::hex::encode_hex;
+use crate::msg::{MessageElem, PushElem};
+use crate::msg::{MessageChainBuilder, PushBuilder};
 use crate::msg::elem::flash_image::FlashImage;
 use crate::pb::msg;
 use crate::pb::msg::CustomFace;
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct GroupImage {
-    pub file_path: String, // hex(md5).jpg
+    pub file_path: String,
+    // hex(md5).jpg
     pub file_id: i64,
     pub size: u32,
     pub width: u32,
@@ -17,7 +21,8 @@ pub struct GroupImage {
     pub md5: Vec<u8>,
     pub orig_url: Option<String>,
     pub image_type: i32,
-    pub signature: Vec<u8>, // highway session key
+    pub signature: Vec<u8>,
+    // highway session key
     pub server_ip: u32,
     pub server_port: u32,
 }
@@ -65,9 +70,9 @@ impl From<GroupImage> for msg::CustomFace {
     }
 }
 
-impl From<GroupImage> for Vec<msg::elem::Elem> {
-    fn from(e: GroupImage) -> Self {
-        vec![{ msg::elem::Elem::CustomFace(e.into()) }]
+impl PushElem for GroupImage {
+    fn push_to(elem: Self, vec: &mut Vec<MessageElem>) {
+        vec.push(MessageElem::CustomFace(elem.into()));
     }
 }
 
@@ -113,3 +118,6 @@ impl fmt::Display for GroupImage {
         write!(f, "[GroupImage: {}]", self.url())
     }
 }
+
+to_elem_vec_impl!(GroupImage);
+push_builder_impl!(GroupImage);
