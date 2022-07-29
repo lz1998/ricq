@@ -1,7 +1,7 @@
 use std::net::SocketAddr;
 use std::time::Duration;
 
-use futures::StreamExt;
+use futures_util::StreamExt;
 use tokio::net::TcpStream;
 
 pub async fn tcp_connect_timeout<Addr>(
@@ -37,7 +37,7 @@ where
     Addr: Clone,
 {
     let len = addrs.len();
-    let mut result = futures::stream::iter(addrs)
+    let mut result = futures_util::stream::iter(addrs)
         .map(|addr| async move { (addr.clone(), tcp_ping(addr, timeout).await) })
         .buffer_unordered(len)
         .collect::<Vec<_>>()
@@ -54,7 +54,7 @@ where
     SocketAddr: From<Addr>,
 {
     let len = addrs.len();
-    let mut output = futures::stream::iter(addrs)
+    let mut output = futures_util::stream::iter(addrs)
         .map(|addr| tcp_connect_timeout(addr, timeout))
         .buffer_unordered(len);
     while let Some(result) = output.next().await {

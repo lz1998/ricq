@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use bytes::{Buf, Bytes};
 use cached::Cached;
-use futures::{stream, StreamExt};
+use futures_util::{stream, StreamExt};
 
 use ricq_core::command::common::PbToBytes;
 use ricq_core::command::online_push::GroupMessagePart;

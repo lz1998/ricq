@@ -1,7 +1,8 @@
 use std::sync::Arc;
+use std::time::SystemTime;
 
 use cached::Cached;
-use futures::{stream, StreamExt};
+use futures_util::{stream, StreamExt};
 
 use ricq_core::{jce, pb};
 
@@ -101,7 +102,7 @@ impl Client {
     }
 
     async fn msg_exists(&self, head: &pb::msg::MessageHead) -> bool {
-        let now = chrono::Utc::now().timestamp() as i32;
+        let now = SystemTime::UNIX_EPOCH.elapsed().unwrap().as_secs() as i32;
         let msg_time = head.msg_time.unwrap_or_default();
         if now - msg_time > 60 || self.start_time > msg_time {
             return true;

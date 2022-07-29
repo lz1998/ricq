@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 use bytes::Bytes;
 use cached::Cached;
@@ -135,7 +135,7 @@ impl super::super::Client {
         let mut receipt = MessageReceipt {
             seqs: vec![0],
             rands: vec![ran],
-            time: chrono::Utc::now().timestamp(),
+            time: SystemTime::UNIX_EPOCH.elapsed().unwrap().as_secs() as i64,
         };
         match tokio::time::timeout(Duration::from_secs(5), rx).await {
             Ok(Ok(seq)) => {
@@ -761,7 +761,7 @@ impl super::super::Client {
                 group_code,
                 vec![MessageNode {
                     sender_id: self.uin().await,
-                    time: chrono::Utc::now().timestamp() as i32,
+                    time: SystemTime::UNIX_EPOCH.elapsed().unwrap().as_secs() as i32,
                     sender_name: self.account_info.read().await.nickname.clone(),
                     elements: message_chain,
                 }
@@ -773,7 +773,7 @@ impl super::super::Client {
             "<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><msg serviceID=\"35\" templateID=\"1\" action=\"viewMultiMsg\" brief=\"{}\" m_resid=\"{}\" m_fileName=\"{}\" sourceMsgId=\"0\" url=\"\" flag=\"3\" adverSign=\"0\" multiMsgFlag=\"1\"><item layout=\"1\"><title>{}</title><hr hidden=\"false\" style=\"0\" /><summary>点击查看完整消息</summary></item><source name=\"聊天记录\" icon=\"\" action=\"\" appid=\"-1\" /></msg>",
             brief,
             res_id,
-            chrono::Utc::now().timestamp_millis(),
+            SystemTime::UNIX_EPOCH.elapsed().unwrap().as_millis(),
             brief);
         let mut chain = MessageChain::default();
         chain.push(RichMsg {
@@ -810,7 +810,7 @@ impl super::super::Client {
         let template = format!(
             r##"<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><msg serviceID="35" templateID="1" action="viewMultiMsg" brief="[聊天记录]" m_resid="{}" m_fileName="{}" tSum="{}" sourceMsgId="0" url="" flag="3" adverSign="0" multiMsgFlag="0"><item layout="1" advertiser_id="0" aid="0"><title size="34" maxLines="2" lineSpace="12">群聊的聊天记录</title>{}<hr hidden="false" style="0" /><summary size="26" color="#777777">查看{}条转发消息</summary></item><source name="聊天记录" icon="" action="" appid="-1" /></msg>"##,
             res_id,
-            chrono::Utc::now().timestamp_millis(), // TODO m_filename?
+            SystemTime::UNIX_EPOCH.elapsed().unwrap().as_millis(), // TODO m_filename?
             t_sum,
             preview,
             t_sum
