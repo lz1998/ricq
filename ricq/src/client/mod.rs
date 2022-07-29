@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::time::SystemTime;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU8, Ordering};
 
 use tokio::sync::{broadcast, RwLock};
@@ -98,7 +99,7 @@ impl super::Client {
             address: Default::default(),
             online_clients: Default::default(),
             last_message_time: Default::default(),
-            start_time: chrono::Utc::now().timestamp() as i32,
+            start_time: SystemTime::UNIX_EPOCH.elapsed().unwrap().as_secs() as i32,
             group_message_builder: RwLock::new(cached::TimedCache::with_lifespan(600)),
             c2c_cache: RwLock::new(cached::TimedCache::with_lifespan(3600)),
             push_req_cache: RwLock::new(cached::TimedCache::with_lifespan(30)),

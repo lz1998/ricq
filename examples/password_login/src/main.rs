@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use anyhow::Result;
-use futures::StreamExt;
+use futures_util::StreamExt;
 use rand::prelude::StdRng;
 use rand::SeedableRng;
 use tokio_util::codec::{FramedRead, LinesCodec};
