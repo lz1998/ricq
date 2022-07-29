@@ -24,7 +24,7 @@ tokio-util = { version = "0.7", features = ["codec"] }
 futures-util = "0.3"
 tracing = "0.1"
 async-trait = "0.1"
-cached = "0.37"
+cached = { version = "0.30", features = ["async"], default-features = false }
 rand = "0.8"
 derivative = "2"
 jcers = { version = "0.1", features = ["derive"] }
