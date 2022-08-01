@@ -8,7 +8,7 @@ macro_rules! to_elem_vec_impl {
                 vec
             }
         }
-    }
+    };
 }
 
 #[macro_export]
@@ -20,5 +20,5 @@ macro_rules! push_builder_impl {
                 Self::push_to(elem, &mut builder.elems);
             }
         }
-    }
+    };
 }

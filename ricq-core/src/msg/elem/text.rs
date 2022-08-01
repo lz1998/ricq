@@ -43,12 +43,10 @@ impl PushBuilder for Text {
 pub fn flush_builder(builder: &mut MessageChainBuilder) {
     if !builder.buf_string.is_empty() {
         let s = mem::take(&mut builder.buf_string);
-        builder.elems.push(
-            MessageElem::Text(msg::Text {
-                str: Some(s),
-                ..Default::default()
-            })
-        );
+        builder.elems.push(MessageElem::Text(msg::Text {
+            str: Some(s),
+            ..Default::default()
+        }));
     }
 }
 

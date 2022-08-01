@@ -34,7 +34,9 @@ impl PushBuilder for Reply {
     fn push_builder(elem: Self, builder: &mut MessageChainBuilder) {
         let index = if let Some(MessageElem::AnonGroupMsg(..)) = builder.elems.get(0) {
             1
-        } else { 0 };
+        } else {
+            0
+        };
         builder.elems.insert(index, elem.into());
     }
 }
