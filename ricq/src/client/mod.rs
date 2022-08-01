@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU8, Ordering};
-use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
 
 use tokio::sync::{broadcast, RwLock};
 use tokio::sync::{oneshot, Mutex};
@@ -15,15 +15,17 @@ use ricq_core::structs::{AccountInfo, AddressInfo, OtherClientInfo};
 use ricq_core::Engine;
 pub use ricq_core::Token;
 
+pub use net::{Connector, DefaultConnector};
+
 use crate::{RQError, RQResult};
 
 mod api;
 pub mod event;
 pub mod handler;
 mod highway;
-mod net;
+pub(crate) mod net;
 mod processor;
-pub mod tcp;
+mod tcp;
 
 pub struct Client {
     /// QEvent Handler 调用 handle 方法外发 QEvent
@@ -100,7 +102,7 @@ impl super::Client {
             address: Default::default(),
             online_clients: Default::default(),
             last_message_time: Default::default(),
-            start_time: SystemTime::UNIX_EPOCH.elapsed().unwrap().as_secs() as i32,
+            start_time: UNIX_EPOCH.elapsed().unwrap().as_secs() as i32,
             group_message_builder: RwLock::new(cached::TimedCache::with_lifespan(600)),
             c2c_cache: RwLock::new(cached::TimedCache::with_lifespan(3600)),
             push_req_cache: RwLock::new(cached::TimedCache::with_lifespan(30)),
@@ -127,7 +129,7 @@ impl super::Client {
     }
 
     /// 向服务器发包
-    pub async fn send(&self, pkt: Packet) -> RQResult<usize> {
+    async fn send(&self, pkt: Packet) -> RQResult<usize> {
         tracing::trace!("sending pkt {}-{},", pkt.command_name, pkt.seq_id);
         let data = self.engine.read().await.transport.encode_packet(pkt);
         self.out_pkt_sender
@@ -136,7 +138,7 @@ impl super::Client {
     }
 
     /// 向服务器发包并等待接收返回的包，15 秒后超时返回 `Err(RQError::Timeout)`
-    pub async fn send_and_wait(&self, pkt: Packet) -> RQResult<Packet> {
+    async fn send_and_wait(&self, pkt: Packet) -> RQResult<Packet> {
         tracing::trace!("send_and_waitting pkt {}-{},", pkt.command_name, pkt.seq_id);
         let seq = pkt.seq_id;
         let expect = pkt.command_name.clone();
