@@ -17,12 +17,12 @@ use crate::{oicq, pb, RQError, RQResult};
 pub struct Transport {
     pub sig: Sig,
     pub device: Device,
-    pub version: &'static Version,
+    pub version: Version,
     pub oicq_codec: oicq::Codec,
 }
 
 impl Transport {
-    pub fn new(device: Device, version: &'static Version) -> Self {
+    pub fn new(device: Device, version: Version) -> Self {
         Self {
             sig: Sig::new(&device),
             device,

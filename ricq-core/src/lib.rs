@@ -45,7 +45,7 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn new(device: Device, version: &'static Version) -> Self {
+    pub fn new(device: Device, version: Version) -> Self {
         Self {
             uin: AtomicI64::new(0),
             transport: Transport::new(device, version),

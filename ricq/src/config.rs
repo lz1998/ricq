@@ -9,7 +9,7 @@ use ricq_core::protocol::{
 #[derive(Debug)]
 pub struct Config {
     pub device: Device,
-    pub version: &'static Version,
+    pub version: Version,
 }
 
 impl Default for Config {
@@ -22,7 +22,7 @@ impl Default for Config {
 }
 
 impl Config {
-    pub fn new(device: Device, version: &'static Version) -> Self {
+    pub fn new(device: Device, version: Version) -> Self {
         Self { device, version }
     }
 }
