@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 use std::sync::atomic::Ordering;
-use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
 
 use bytes::Bytes;
 use cached::Cached;
@@ -182,7 +182,7 @@ impl super::Client {
 
     // sync message
     async fn sync_message(&self, sync_flag: i32) -> RQResult<MessageSyncResponse> {
-        let time = SystemTime::UNIX_EPOCH.elapsed().unwrap().as_secs() as i64;
+        let time = UNIX_EPOCH.elapsed().unwrap().as_secs() as i64;
         let req = self
             .engine
             .read()
@@ -402,7 +402,7 @@ impl super::Client {
         message_chain: MessageChain,
         ptt: Option<pb::msg::Ptt>,
     ) -> RQResult<MessageReceipt> {
-        let time = SystemTime::UNIX_EPOCH.elapsed().unwrap().as_secs() as i64;
+        let time = UNIX_EPOCH.elapsed().unwrap().as_secs() as i64;
         let seq = self.engine.read().await.next_friend_seq();
         let ran = (rand::random::<u32>() >> 1) as i32;
         let (tx, _) = tokio::sync::oneshot::channel();
@@ -421,7 +421,7 @@ impl super::Client {
         let receipt = MessageReceipt {
             seqs: vec![seq],
             rands: vec![ran],
-            time: SystemTime::UNIX_EPOCH.elapsed().unwrap().as_secs() as i64,
+            time: UNIX_EPOCH.elapsed().unwrap().as_secs() as i64,
         };
         // 除了群聊，都不需要等 receipt 的 seq
         Ok(receipt)

@@ -693,6 +693,7 @@ impl super::super::super::Engine {
 }
 
 mod utils {
+    use std::time::UNIX_EPOCH;
     use bytes::{BufMut, Bytes, BytesMut};
 
     use crate::command::common::PbToBytes;
@@ -701,7 +702,7 @@ mod utils {
 
     pub fn build_code2d_request_packet(seq: u32, j: u64, cmd: u16, body: &[u8]) -> Bytes {
         let mut w = BytesMut::new();
-        w.put_u32(chrono::Utc::now().timestamp() as u32);
+        w.put_u32(UNIX_EPOCH.elapsed().unwrap().as_secs() as u32);
         w.put_u8(2);
         w.put_u16((43 + body.len() + 1) as u16);
         w.put_u16(cmd);

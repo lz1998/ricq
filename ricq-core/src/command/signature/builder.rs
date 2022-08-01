@@ -1,12 +1,13 @@
 use crate::command::common::PbToBytes;
 use crate::pb::sig_act;
 use crate::protocol::packet::Packet;
+use std::time::UNIX_EPOCH;
 
 impl super::super::super::Engine {
     pub fn build_update_signature_packet(&self, signature: String) -> Packet {
         let req = sig_act::ReqBody {
             cmd: Some(2),
-            seq: Some(chrono::Utc::now().timestamp_millis() as u64),
+            seq: Some(UNIX_EPOCH.elapsed().unwrap().as_millis() as u64),
             plf: Some(sig_act::Platform {
                 platform: Some(109),
                 osver: Some(self.transport.device.version.release.to_owned()),

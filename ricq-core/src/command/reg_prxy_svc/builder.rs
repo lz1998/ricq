@@ -1,7 +1,7 @@
 use std::collections::HashMap;
+use std::time::UNIX_EPOCH;
 
 use bytes::{BufMut, BytesMut};
-use chrono::Utc;
 use jcers::JcePut;
 
 use crate::command::common::pack_uni_request_data;
@@ -37,7 +37,7 @@ impl super::super::super::Engine {
                 filter: 1,
                 ..Default::default()
             },
-            end_seq: Utc::now().timestamp(),
+            end_seq: UNIX_EPOCH.elapsed().unwrap().as_secs() as i64,
             ..Default::default()
         };
         let flag = 0; // flag := msg.SyncFlag_START

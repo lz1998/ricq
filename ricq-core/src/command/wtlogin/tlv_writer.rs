@@ -1,7 +1,6 @@
 #![allow(clippy::too_many_arguments)]
-
 use bytes::{BufMut, Bytes, BytesMut};
-use chrono::Utc;
+use std::time::UNIX_EPOCH;
 
 use crate::binary::BinaryWriter;
 
@@ -16,7 +15,7 @@ pub fn t1(uin: u32, ip: &[u8]) -> Bytes {
         w.put_u16(1);
         w.put_u32(rand::random());
         w.put_u32(uin);
-        w.put_u32(Utc::now().timestamp() as u32);
+        w.put_u32(UNIX_EPOCH.elapsed().unwrap().as_secs() as u32);
         w.put_slice(ip);
         w.put_u16(0);
         w.freeze()
@@ -281,7 +280,7 @@ pub fn t106(
         } else {
             w.put_u64(uin as u64)
         }
-        w.put_u32(Utc::now().timestamp() as u32);
+        w.put_u32(UNIX_EPOCH.elapsed().unwrap().as_secs() as u32);
         w.put_slice(&[0x00, 0x00, 0x00, 0x00]); // fake ip
         w.put_u8(0x01);
         w.put_slice(password_md5);
@@ -656,7 +655,7 @@ pub fn t400(
             ww.put_slice(dpwd);
             ww.put_u32(j2 as u32);
             ww.put_u32(j3 as u32);
-            ww.put_u32(Utc::now().timestamp_millis() as u32);
+            ww.put_u32(UNIX_EPOCH.elapsed().unwrap().as_millis() as u32);
             ww.put_slice(rand_seed);
             ww.freeze()
         });

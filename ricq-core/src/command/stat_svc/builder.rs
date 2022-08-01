@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::time::UNIX_EPOCH;
 
 use bytes::{BufMut, Bytes, BytesMut};
 use jcers::JcePut;
@@ -39,7 +40,7 @@ impl super::super::super::Engine {
             vendor_name: transport.device.vendor_name.to_owned(),
             vendor_os_name: transport.device.vendor_os_name.to_owned(),
             ext_online_status,
-            timestamp: chrono::Utc::now().timestamp(),
+            timestamp: UNIX_EPOCH.elapsed().unwrap().as_secs() as i64,
             custom_status: custom_status
                 .map(|custom_status| {
                     crate::pb::online_status::CustomStatus {
