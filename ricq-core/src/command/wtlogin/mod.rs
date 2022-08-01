@@ -1,5 +1,6 @@
 #![allow(clippy::large_enum_variant)]
 use std::collections::HashMap;
+use std::time::UNIX_EPOCH;
 
 use bytes::{Buf, Bytes};
 
@@ -141,7 +142,7 @@ impl LoginResponse {
                     user_st_key: t119.remove(&0x10e),
                     user_st_web_sig: t119.remove(&0x103),
                     s_key: t119.remove(&0x120),
-                    s_key_expired_time: chrono::Utc::now().timestamp() + 21600,
+                    s_key_expired_time: UNIX_EPOCH.elapsed().unwrap().as_secs() as i64 + 21600,
                     d2: t119.remove(&0x143),
                     d2key: t119.remove(&0x305),
                     device_token: t119.remove(&0x322),
