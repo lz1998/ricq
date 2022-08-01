@@ -1,9 +1,9 @@
 use derivative;
 
-use crate::{push_builder_impl, to_elem_vec_impl};
-use crate::msg::{MessageElem, PushElem};
 use crate::msg::{MessageChainBuilder, PushBuilder};
+use crate::msg::{MessageElem, PushElem};
 use crate::pb::msg;
+use crate::{push_builder_impl, to_elem_vec_impl};
 
 // 不需要实现 Display，因为后面一定会跟 Text
 #[derive(Default, Debug, Clone)]
@@ -34,12 +34,10 @@ impl PushElem for MarketFace {
             mobileparam: Some(elem.magic_value.as_bytes().to_vec()),
             ..Default::default()
         }));
-        vec.push(
-            MessageElem::Text(msg::Text {
-                str: Some(elem.name),
-                ..Default::default()
-            })
-        );
+        vec.push(MessageElem::Text(msg::Text {
+            str: Some(elem.name),
+            ..Default::default()
+        }));
     }
 }
 

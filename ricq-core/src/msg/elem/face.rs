@@ -2,10 +2,10 @@ use std::fmt;
 
 use prost::Message;
 
-use crate::{push_builder_impl, to_elem_vec_impl};
-use crate::msg::{MessageElem, PushElem};
 use crate::msg::{MessageChainBuilder, PushBuilder};
+use crate::msg::{MessageElem, PushElem};
 use crate::pb::msg;
+use crate::{push_builder_impl, to_elem_vec_impl};
 
 #[derive(Default, Debug, Clone)]
 pub struct Face {
@@ -40,7 +40,7 @@ impl PushElem for Face {
                 compat: Some(text),
                 buf: None,
             }
-                .encode_to_vec();
+            .encode_to_vec();
             msg::elem::Elem::CommonElem(msg::CommonElem {
                 service_type: Some(33),
                 pb_elem: Some(elem),

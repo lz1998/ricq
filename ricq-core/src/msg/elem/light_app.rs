@@ -1,11 +1,11 @@
 use std::io::{Read, Write};
 
-use flate2::{Compression, read::ZlibDecoder, write::ZlibEncoder};
+use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
 
-use crate::{push_builder_impl, to_elem_vec_impl};
-use crate::msg::{MessageElem, PushElem};
 use crate::msg::{MessageChainBuilder, PushBuilder};
+use crate::msg::{MessageElem, PushElem};
 use crate::pb::msg;
+use crate::{push_builder_impl, to_elem_vec_impl};
 
 #[derive(Default, Debug, Clone)]
 pub struct LightApp {
@@ -20,16 +20,14 @@ impl LightApp {
 
 impl PushElem for LightApp {
     fn push_to(elem: Self, vec: &mut Vec<MessageElem>) {
-        vec.push(
-            MessageElem::LightApp(msg::LightApp {
-                data: Some({
-                    let mut encoder = ZlibEncoder::new(vec![1], Compression::default());
-                    encoder.write_all(elem.content.as_bytes()).ok();
-                    encoder.finish().unwrap_or_default()
-                }),
-                ..Default::default()
-            })
-        );
+        vec.push(MessageElem::LightApp(msg::LightApp {
+            data: Some({
+                let mut encoder = ZlibEncoder::new(vec![1], Compression::default());
+                encoder.write_all(elem.content.as_bytes()).ok();
+                encoder.finish().unwrap_or_default()
+            }),
+            ..Default::default()
+        }));
     }
 }
 
