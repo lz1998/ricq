@@ -28,7 +28,7 @@ pub struct Version {
     pub protocol: Protocol,
 }
 
-pub fn get_version(p: Protocol) -> &'static Version {
+pub const fn get_version(p: Protocol) -> &'static Version {
     match p {
         Protocol::IPad => IPAD,
         Protocol::AndroidPhone => ANDROID_PHONE,
@@ -38,7 +38,13 @@ pub fn get_version(p: Protocol) -> &'static Version {
     }
 }
 
-pub static ANDROID_PHONE: &Version = &Version {
+impl From<Protocol> for &'static Version {
+    fn from(p: Protocol) -> &'static Version {
+        get_version(p)
+    }
+}
+
+pub const ANDROID_PHONE: &Version = &Version {
     apk_id: "com.tencent.mobileqq",
     app_id: 537100432,
     sub_app_id: 537100432,
@@ -57,7 +63,7 @@ pub static ANDROID_PHONE: &Version = &Version {
     protocol: Protocol::AndroidPhone,
 };
 
-pub static IPAD: &Version = &Version {
+pub const IPAD: &Version = &Version {
     apk_id: "com.tencent.minihd.qq",
     app_id: 537097188,
     sub_app_id: 537097188,
@@ -75,7 +81,7 @@ pub static IPAD: &Version = &Version {
     protocol: Protocol::IPad,
 };
 
-pub static ANDROID_WATCH: &Version = &Version {
+pub const ANDROID_WATCH: &Version = &Version {
     apk_id: "com.tencent.qqlite",
     app_id: 537064446,
     sub_app_id: 537064446,
@@ -94,7 +100,7 @@ pub static ANDROID_WATCH: &Version = &Version {
     protocol: Protocol::AndroidWatch,
 };
 
-pub static MACOS: &Version = &Version {
+pub const MACOS: &Version = &Version {
     apk_id: "com.tencent.qq",              // ok
     app_id: 0x2003ca32,                    // ok
     sub_app_id: 0x2003ca32,                // ok
@@ -110,7 +116,7 @@ pub static MACOS: &Version = &Version {
     protocol: Protocol::MacOS,
 };
 
-pub static QIDIAN: &Version = &Version {
+pub const QIDIAN: &Version = &Version {
     apk_id: "com.tencent.qidian",
     app_id: 537061386,
     sub_app_id: 537036590,

@@ -15,15 +15,17 @@ use ricq_core::structs::{AccountInfo, AddressInfo, OtherClientInfo};
 use ricq_core::Engine;
 pub use ricq_core::Token;
 
+pub use net::{Connector, DefaultConnector};
+
 use crate::{RQError, RQResult};
 
 mod api;
 pub mod event;
 pub mod handler;
 mod highway;
-mod net;
+pub(crate) mod net;
 mod processor;
-pub mod tcp;
+mod tcp;
 
 pub struct Client {
     /// QEvent Handler 调用 handle 方法外发 QEvent
@@ -77,16 +79,17 @@ impl super::Client {
     /// 新建 Clinet
     ///
     /// **Notice: 该方法仅新建 Client 需要调用 start 方法连接到服务器**
-    pub fn new<H>(device: Device, version: &'static Version, handler: H) -> Client
+    pub fn new<H, V>(device: Device, version: V, handler: H) -> Client
     where
         H: crate::client::handler::Handler + 'static + Sync + Send,
+        V: Into<&'static Version>,
     {
         let (out_pkt_sender, _) = tokio::sync::broadcast::channel(1024);
         let (disconnect_signal, _) = tokio::sync::broadcast::channel(8);
 
         Client {
             handler: Box::new(handler),
-            engine: RwLock::new(Engine::new(device, version)),
+            engine: RwLock::new(Engine::new(device, version.into())),
             status: AtomicU8::new(NetworkStatus::Unknown as u8),
             heartbeat_enabled: AtomicBool::new(false),
             online: AtomicBool::new(false),
@@ -126,7 +129,7 @@ impl super::Client {
     }
 
     /// 向服务器发包
-    pub async fn send(&self, pkt: Packet) -> RQResult<usize> {
+    async fn send(&self, pkt: Packet) -> RQResult<usize> {
         tracing::trace!("sending pkt {}-{},", pkt.command_name, pkt.seq_id);
         let data = self.engine.read().await.transport.encode_packet(pkt);
         self.out_pkt_sender
@@ -135,7 +138,7 @@ impl super::Client {
     }
 
     /// 向服务器发包并等待接收返回的包，15 秒后超时返回 `Err(RQError::Timeout)`
-    pub async fn send_and_wait(&self, pkt: Packet) -> RQResult<Packet> {
+    async fn send_and_wait(&self, pkt: Packet) -> RQResult<Packet> {
         tracing::trace!("send_and_waitting pkt {}-{},", pkt.command_name, pkt.seq_id);
         let seq = pkt.seq_id;
         let expect = pkt.command_name.clone();
