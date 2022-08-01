@@ -1,7 +1,7 @@
 use std::io::Result;
 use std::path::Path;
 
-fn recursion<P: AsRef<Path>>(v: &mut Vec<String>, dir: P) -> Result<()> {
+fn recursion(v: &mut Vec<String>, dir: impl AsRef<Path>) -> Result<()> {
     let rd = std::fs::read_dir(dir)?;
     for x in rd {
         let de = x?;
