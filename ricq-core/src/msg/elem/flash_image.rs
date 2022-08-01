@@ -1,11 +1,11 @@
 use std::fmt;
 
-use crate::{push_builder_impl, to_elem_vec_impl};
 use crate::command::common::PbToBytes;
-use crate::msg::{MessageElem, PushElem};
-use crate::msg::{MessageChainBuilder, PushBuilder};
 use crate::msg::elem::{FriendImage, GroupImage};
+use crate::msg::{MessageChainBuilder, PushBuilder};
+use crate::msg::{MessageElem, PushElem};
 use crate::pb::msg;
+use crate::{push_builder_impl, to_elem_vec_impl};
 
 #[derive(Debug, Clone)]
 pub enum FlashImage {
@@ -36,7 +36,7 @@ impl PushElem for FlashImage {
                 },
             }
         }
-            .to_bytes();
+        .to_bytes();
 
         vec.push(MessageElem::CommonElem(msg::CommonElem {
             service_type: Some(3),

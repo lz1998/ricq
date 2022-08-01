@@ -1,13 +1,13 @@
 use std::io::{Read, Write};
 
-use flate2::Compression;
 use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
+use flate2::Compression;
 
-use crate::{push_builder_impl, to_elem_vec_impl};
-use crate::msg::{MessageElem, PushElem};
 use crate::msg::{MessageChainBuilder, PushBuilder};
+use crate::msg::{MessageElem, PushElem};
 use crate::pb::msg;
+use crate::{push_builder_impl, to_elem_vec_impl};
 
 #[derive(Default, Debug, Clone)]
 pub struct RichMsg {

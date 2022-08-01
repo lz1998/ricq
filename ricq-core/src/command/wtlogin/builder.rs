@@ -693,8 +693,8 @@ impl super::super::super::Engine {
 }
 
 mod utils {
-    use std::time::UNIX_EPOCH;
     use bytes::{BufMut, Bytes, BytesMut};
+    use std::time::UNIX_EPOCH;
 
     use crate::command::common::PbToBytes;
     use crate::pb;

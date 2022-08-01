@@ -35,7 +35,8 @@ where
                 .pop()
                 .ok_or_else(|| RQError::Other("addrs is empty".into()))?;
             cli._upload_group_image(upload_key, addr.clone().into(), data)
-                .await.map(|_| image_info.into_group_image(file_id, addr, sign))?
+                .await
+                .map(|_| image_info.into_group_image(file_id, addr, sign))?
         }
     };
     Ok(group_image)
@@ -65,7 +66,8 @@ where
                 .pop()
                 .ok_or_else(|| RQError::Other("addrs is empty".into()))?;
             cli._upload_friend_image(upload_key, addr.clone().into(), data)
-                .await.map(|_| image_info.into_friend_image(res_id, uuid))?
+                .await
+                .map(|_| image_info.into_friend_image(res_id, uuid))?
         }
     };
     Ok(friend_image)

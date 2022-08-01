@@ -2,13 +2,13 @@ use std::fmt;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{push_builder_impl, to_elem_vec_impl};
 use crate::hex::encode_hex;
-use crate::msg::{MessageElem, PushElem};
-use crate::msg::{MessageChainBuilder, PushBuilder};
 use crate::msg::elem::flash_image::FlashImage;
+use crate::msg::{MessageChainBuilder, PushBuilder};
+use crate::msg::{MessageElem, PushElem};
 use crate::pb::msg;
 use crate::pb::msg::CustomFace;
+use crate::{push_builder_impl, to_elem_vec_impl};
 
 #[derive(Default, Debug, Clone, Serialize, Deserialize)]
 pub struct GroupImage {

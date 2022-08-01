@@ -1,7 +1,7 @@
 use std::fmt;
 
-use elem::*;
 use elem::RQElem;
+use elem::*;
 
 use crate::pb::msg;
 
@@ -48,17 +48,17 @@ impl MessageChain {
 }
 
 impl<E> FromIterator<E> for MessageChain
-    where
-        E: Into<Vec<MessageElem>>,
+where
+    E: Into<Vec<MessageElem>>,
 {
-    fn from_iter<T: IntoIterator<Item=E>>(iter: T) -> Self {
+    fn from_iter<T: IntoIterator<Item = E>>(iter: T) -> Self {
         Self(iter.into_iter().flat_map(Into::into).collect())
     }
 }
 
 impl IntoIterator for MessageChain {
     type Item = RQElem;
-    type IntoIter = impl Iterator<Item=RQElem> + 'static;
+    type IntoIter = impl Iterator<Item = RQElem> + 'static;
 
     fn into_iter(self) -> Self::IntoIter {
         self.0
