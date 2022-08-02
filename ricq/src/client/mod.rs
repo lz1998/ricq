@@ -129,7 +129,7 @@ impl super::Client {
     }
 
     /// 向服务器发包
-    async fn send(&self, pkt: Packet) -> RQResult<usize> {
+    pub async fn send(&self, pkt: Packet) -> RQResult<usize> {
         tracing::trace!("sending pkt {}-{},", pkt.command_name, pkt.seq_id);
         let data = self.engine.read().await.transport.encode_packet(pkt);
         self.out_pkt_sender
@@ -138,7 +138,7 @@ impl super::Client {
     }
 
     /// 向服务器发包并等待接收返回的包，15 秒后超时返回 `Err(RQError::Timeout)`
-    async fn send_and_wait(&self, pkt: Packet) -> RQResult<Packet> {
+    pub async fn send_and_wait(&self, pkt: Packet) -> RQResult<Packet> {
         tracing::trace!("send_and_waitting pkt {}-{},", pkt.command_name, pkt.seq_id);
         let seq = pkt.seq_id;
         let expect = pkt.command_name.clone();

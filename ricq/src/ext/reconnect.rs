@@ -31,7 +31,7 @@ pub async fn auto_reconnect(
         client.stop(NetworkStatus::NetworkOffline);
         tracing::error!("client will reconnect after {} seconds", interval.as_secs());
         tokio::time::sleep(interval).await;
-        let stream = if let Ok(stream) = connector.stream().await {
+        let stream = if let Ok(stream) = connector.connect(&client).await {
             count = 0;
             stream
         } else {
