@@ -9,7 +9,7 @@ use crate::Client;
 /// 扫码登录：自动查询二维码状态，忽略中间结果，成功或失败返回
 pub async fn auto_query_qrcode(client: &Arc<Client>, sig: &[u8]) -> RQResult<()> {
     loop {
-        tokio::time::sleep(Duration::from_secs(5)).await;
+        tokio::time::sleep(Duration::from_secs(1)).await;
         let qrcode_state = client.query_qrcode_result(sig).await?;
         match qrcode_state {
             QRCodeState::Timeout => return Err(RQError::Other("timeout".into())),
@@ -24,11 +24,9 @@ pub async fn auto_query_qrcode(client: &Arc<Client>, sig: &[u8]) -> RQResult<()>
                 return match login_resp {
                     LoginResponse::Success { .. } => Ok(()),
                     LoginResponse::DeviceLockLogin { .. } => {
-                        let login_resp = client.device_lock_login().await?;
-                        if let LoginResponse::Success { .. } = login_resp {
-                            Ok(())
-                        } else {
-                            Err(RQError::Other("unknown error".into()))
+                        match client.device_lock_login().await? {
+                            LoginResponse::Success { .. } => Ok(()),
+                            _ => Err(RQError::Other("device_lock_login failed".into())),
                         }
                     }
                     _ => Err(RQError::Other("unknown error".into())),
@@ -38,5 +36,6 @@ pub async fn auto_query_qrcode(client: &Arc<Client>, sig: &[u8]) -> RQResult<()>
                 // do nothing
             }
         }
+        tokio::time::sleep(Duration::from_secs(4)).await;
     }
 }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU8, Ordering};
-use std::time::SystemTime;
+use std::time::UNIX_EPOCH;
 
 use tokio::sync::{broadcast, RwLock};
 use tokio::sync::{oneshot, Mutex};
@@ -15,15 +15,17 @@ use ricq_core::structs::{AccountInfo, AddressInfo, OtherClientInfo};
 use ricq_core::Engine;
 pub use ricq_core::Token;
 
+pub use net::{Connector, DefaultConnector};
+
 use crate::{RQError, RQResult};
 
 mod api;
 pub mod event;
 pub mod handler;
 mod highway;
-mod net;
+pub(crate) mod net;
 mod processor;
-pub mod tcp;
+mod tcp;
 
 pub struct Client {
     /// QEvent Handler 调用 handle 方法外发 QEvent
@@ -100,7 +102,7 @@ impl super::Client {
             address: Default::default(),
             online_clients: Default::default(),
             last_message_time: Default::default(),
-            start_time: SystemTime::UNIX_EPOCH.elapsed().unwrap().as_secs() as i32,
+            start_time: UNIX_EPOCH.elapsed().unwrap().as_secs() as i32,
             group_message_builder: RwLock::new(cached::TimedCache::with_lifespan(600)),
             c2c_cache: RwLock::new(cached::TimedCache::with_lifespan(3600)),
             push_req_cache: RwLock::new(cached::TimedCache::with_lifespan(30)),

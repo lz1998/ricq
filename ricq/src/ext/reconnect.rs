@@ -1,54 +1,24 @@
-use std::net::{Ipv4Addr, SocketAddr};
 use std::sync::Arc;
 use std::time::Duration;
 
 use async_trait::async_trait;
-use tokio::io::{AsyncRead, AsyncWrite};
-use tokio::net::TcpStream;
 
 use ricq_core::command::wtlogin::LoginResponse;
+use tokio::io::{AsyncRead, AsyncWrite};
 
-use crate::client::tcp::tcp_connect_fastest;
+use crate::client::net::Connector;
 use crate::client::NetworkStatus;
 use crate::ext::common::after_login;
 use crate::{Client, RQError, RQResult};
 
-#[async_trait]
-pub trait Connector<S: AsyncRead + AsyncWrite + Send + 'static> {
-    async fn connect(&self, client: &Arc<Client>) -> std::io::Result<S>;
-}
-
-pub struct DefaultConnector;
-
-#[async_trait]
-impl Connector<TcpStream> for DefaultConnector {
-    async fn connect(&self, _: &Arc<Client>) -> std::io::Result<TcpStream> {
-        tcp_connect_fastest(
-            vec![
-                SocketAddr::new(Ipv4Addr::new(42, 81, 172, 81).into(), 80),
-                SocketAddr::new(Ipv4Addr::new(114, 221, 148, 59).into(), 14000),
-                SocketAddr::new(Ipv4Addr::new(42, 81, 172, 147).into(), 443),
-                SocketAddr::new(Ipv4Addr::new(125, 94, 60, 146).into(), 80),
-                SocketAddr::new(Ipv4Addr::new(114, 221, 144, 215).into(), 80),
-                SocketAddr::new(Ipv4Addr::new(42, 81, 172, 22).into(), 80),
-            ],
-            Duration::from_secs(5),
-        )
-        .await
-    }
-}
-
 /// 自动重连，在掉线后使用，会阻塞到重连结束
-pub async fn auto_reconnect<C, S>(
+pub async fn auto_reconnect<T: AsyncRead + AsyncWrite + 'static + Send>(
     client: Arc<Client>,
     credential: Credential,
     interval: Duration,
     max: usize,
-    connector: C,
-) where
-    C: Connector<S>,
-    S: AsyncRead + AsyncWrite + Send + 'static,
-{
+    connector: impl Connector<T>,
+) {
     let mut count = 0;
     loop {
         // 如果不是网络原因掉线，不重连（服务端强制下线/被踢下线/用户手动停止）
