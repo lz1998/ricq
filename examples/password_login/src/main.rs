@@ -8,14 +8,12 @@ use tokio_util::codec::{FramedRead, LinesCodec};
 use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use ricq::device::Device;
+use ricq::client::{Connector as _, DefaultConnector};
 use ricq::ext::common::after_login;
-use ricq::ext::reconnect::{Connector, DefaultConnector};
 use ricq::handler::DefaultHandler;
 use ricq::structs::ExtOnlineStatus;
-use ricq::version::{get_version, Protocol};
-use ricq::{Client, LoginDeviceLocked, LoginNeedCaptcha, LoginSuccess};
-use ricq::{LoginResponse, LoginUnknownStatus};
+use ricq::{Client, Device, Protocol};
+use ricq::{LoginDeviceLocked, LoginNeedCaptcha, LoginResponse, LoginSuccess, LoginUnknownStatus};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
@@ -47,17 +45,14 @@ async fn main() -> Result<()> {
     let mut seed = StdRng::seed_from_u64(uin as u64);
     let device = Device::random_with_rng(&mut seed);
 
-    let client = Arc::new(Client::new(
-        device,
-        get_version(Protocol::IPad),
-        DefaultHandler,
-    ));
-    // 连接所有服务器，哪个最快用哪个，可以使用 TcpStream::connect 代替
-    let stream = DefaultConnector::connect(&DefaultConnector, &client)
-        .await
-        .expect("failed to connect");
-    let c = client.clone();
-    let handle = tokio::spawn(async move { c.start(stream).await });
+    let client = Arc::new(Client::new(device, Protocol::IPad, DefaultHandler));
+    let handle = tokio::spawn({
+        let client = client.clone();
+        // 连接所有服务器，哪个最快用哪个，可以使用 TcpStream::connect 代替
+        let stream = DefaultConnector.connect(&client).await.unwrap();
+        async move { client.start(stream).await }
+    });
+
     tokio::task::yield_now().await; // 等一下，确保连上了
     let mut resp = client
         .password_login(uin, &password)

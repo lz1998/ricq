@@ -3,16 +3,13 @@ use std::sync::Arc;
 use anyhow::Result;
 use rand::prelude::StdRng;
 use rand::SeedableRng;
-use tokio::net::TcpStream;
 use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use ricq::client::Token;
-use ricq::device::Device;
+use ricq::client::{Connector as _, DefaultConnector, Token};
 use ricq::ext::common::after_login;
 use ricq::handler::DefaultHandler;
-use ricq::version::{get_version, Protocol};
-use ricq::Client;
+use ricq::{Client, Device, Protocol};
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() -> Result<()> {
@@ -40,16 +37,20 @@ async fn main() -> Result<()> {
     let token: Token = serde_json::from_str(&token).expect("failed to parse token");
     let device = Device::random_with_rng(&mut StdRng::seed_from_u64(token.uin as u64));
 
-    let client = Arc::new(Client::new(
-        device,
-        get_version(Protocol::IPad),
-        DefaultHandler,
-    ));
-    let stream = TcpStream::connect(client.get_address())
-        .await
-        .expect("failed to connect");
-    let c = client.clone();
-    let handle = tokio::spawn(async move { c.start(stream).await });
+    let client = Arc::new(Client::new(device, Protocol::IPad, DefaultHandler));
+
+    let handle = tokio::spawn({
+        let client = client.clone();
+        let stream = DefaultConnector.connect(&client).await.unwrap();
+        async move { client.start(stream).await }
+    });
+    // 直接使用 TcpStream，目前不推荐
+    // let stream = TcpStream::connect(client.get_address())
+    //     .await
+    //     .expect("failed to connect");
+    // let c = client.clone();
+    // let handle = tokio::spawn(async move { c.start(stream).await });
+
     tokio::task::yield_now().await; // 等一下，确保连上了
     let resp = client
         .token_login(token)
