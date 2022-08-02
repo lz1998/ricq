@@ -19,14 +19,14 @@ use super::Client;
 pub type OutPktSender = broadcast::Sender<Bytes>;
 
 #[async_trait]
-pub trait Connector {
-    async fn connect(&self, client: &Client) -> io::Result<TcpStream>;
+pub trait Connector<T: AsyncRead + AsyncWrite> {
+    async fn connect(&self, client: &Client) -> io::Result<T>;
 }
 
 pub struct DefaultConnector;
 
 #[async_trait]
-impl Connector for DefaultConnector {
+impl Connector<TcpStream> for DefaultConnector {
     async fn connect(&self, client: &Client) -> io::Result<TcpStream> {
         tcp_connect_fastest(client.get_address_list().await, Duration::from_secs(5)).await
     }

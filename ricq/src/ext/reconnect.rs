@@ -4,6 +4,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 
 use ricq_core::command::wtlogin::LoginResponse;
+use tokio::io::{AsyncRead, AsyncWrite};
 
 use crate::client::net::Connector;
 use crate::client::NetworkStatus;
@@ -11,12 +12,12 @@ use crate::ext::common::after_login;
 use crate::{Client, RQError, RQResult};
 
 /// 自动重连，在掉线后使用，会阻塞到重连结束
-pub async fn auto_reconnect(
+pub async fn auto_reconnect<T: AsyncRead + AsyncWrite + 'static + Send>(
     client: Arc<Client>,
     credential: Credential,
     interval: Duration,
     max: usize,
-    connector: impl Connector,
+    connector: impl Connector<T>,
 ) {
     let mut count = 0;
     loop {
