@@ -7,6 +7,7 @@ use rand::{prelude::StdRng, SeedableRng};
 use serde::{Deserialize, Serialize};
 
 use ricq::client::NetworkStatus;
+use ricq::client::{Connector as _, DefaultConnector};
 use ricq::device::Device;
 use ricq::ext::reconnect::Credential;
 use ricq::version::{get_version, Protocol};
@@ -65,7 +66,9 @@ pub async fn create(
     };
     let (sender, receiver) = tokio::sync::broadcast::channel(10);
     let cli = Arc::new(Client::new(device, get_version(protocol), sender));
-    let stream = tokio::net::TcpStream::connect(cli.get_address())
+    let connector = DefaultConnector;
+    let stream = connector
+        .connect(&cli)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let c = cli.clone();

@@ -6,11 +6,8 @@ edition = "2021"
 [dependencies]
 ricq = { path = "../../ricq" }
 tokio = { version = "1", features = ["full"] }
-tokio-util = { version = "0.7", features = ["codec"] }
 anyhow = "1"
-tracing = "0.1"
-futures = "0.3"
 serde_json = "1"
 bytes = "1"
+tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["fmt"] }
-time = { version = "0.3", features = ["macros", "local-offset"] }

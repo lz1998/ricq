@@ -7,8 +7,8 @@ use tokio::task::JoinHandle;
 
 use crate::u8_protocol::U8Protocol;
 use crate::ClientInfo;
-use ricq::client::NetworkStatus;
-use ricq::ext::reconnect::{auto_reconnect, DefaultConnector};
+use ricq::client::{DefaultConnector, NetworkStatus};
+use ricq::ext::reconnect::auto_reconnect;
 use ricq::{ext::reconnect::Credential, handler::QEvent, Client};
 
 #[async_trait::async_trait]

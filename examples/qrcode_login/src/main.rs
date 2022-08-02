@@ -3,16 +3,14 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use bytes::Bytes;
-use tokio::net::TcpStream;
 use tokio::time::{sleep, Duration};
 use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-use ricq::client::handler::DefaultHandler;
-use ricq::client::Client;
-use ricq::device::Device;
+use ricq::client::{Connector as _, DefaultConnector};
 use ricq::ext::common::after_login;
-use ricq::version::{get_version, Protocol};
+use ricq::handler::DefaultHandler;
+use ricq::{Client, Device, Protocol};
 use ricq::{LoginResponse, QRCodeConfirmed, QRCodeImageFetch, QRCodeState};
 
 #[tokio::main(flavor = "current_thread")]
@@ -42,16 +40,12 @@ async fn main() -> Result<()> {
         }
     };
 
-    let client = Arc::new(Client::new(
-        device,
-        get_version(Protocol::AndroidWatch),
-        DefaultHandler,
-    ));
-    let stream = TcpStream::connect(client.get_address())
-        .await
-        .expect("failed to connect");
-    let c = client.clone();
-    let handle = tokio::spawn(async move { c.start(stream).await });
+    let client = Arc::new(Client::new(device, Protocol::AndroidWatch, DefaultHandler));
+    let handle = tokio::spawn({
+        let client = client.clone();
+        let stream = DefaultConnector.connect(&client).await.unwrap();
+        async move { client.start(stream).await }
+    });
     tokio::task::yield_now().await; // 等一下，确保连上了
     let mut resp = client.fetch_qrcode().await.expect("failed to fetch qrcode");
 

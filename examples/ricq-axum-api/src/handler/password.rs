@@ -5,12 +5,9 @@ use axum::{Extension, Json};
 use rand::{prelude::StdRng, SeedableRng};
 use serde::{Deserialize, Serialize};
 
-use ricq::client::NetworkStatus;
-use ricq::device::Device;
-use ricq::ext::reconnect::{Connector, Password};
-use ricq::ext::reconnect::{Credential, DefaultConnector};
-use ricq::version::{get_version, Protocol};
-use ricq::{Client, LoginDeviceLocked, LoginNeedCaptcha, LoginResponse};
+use ricq::client::{Connector as _, DefaultConnector, NetworkStatus};
+use ricq::ext::reconnect::{Credential, Password};
+use ricq::{Client, Device, LoginDeviceLocked, LoginNeedCaptcha, LoginResponse, Protocol};
 
 use crate::processor::Processor;
 use crate::u8_protocol::U8Protocol;
@@ -107,7 +104,7 @@ pub async fn login(
     let device = Device::random_with_rng(&mut StdRng::seed_from_u64(rand_seed));
     let protocol = Protocol::from_u8(req.protocol);
     let (sender, receiver) = tokio::sync::broadcast::channel(10);
-    let cli = Arc::new(Client::new(device, get_version(protocol.clone()), sender));
+    let cli = Arc::new(Client::new(device, protocol.clone(), sender));
     let connector = DefaultConnector;
     let stream = connector
         .connect(&cli)
