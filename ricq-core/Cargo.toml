@@ -9,22 +9,19 @@ repository = "https://github.com/lz1998/ricq"
 keywords = ["qq", "protocol", "android", "mirai"]
 
 [dependencies]
-bytes = "1"
-rand = "0.8"
-p256 = { version = "0.10", features = ["ecdh"] }
-serde = { version = "1", features = ["derive"] }
-md5 = "0.7"
 byteorder = "1"
-generic-array = "0.14"
-flate2 = { version = "1", features = ["rust_backend"], default-features = false }
-thiserror = "1"
+bytes = "1"
 derivative = "2"
-
-# patch due to permission of abnormal utf8
-prost = "~0.9"
-prost-types = "~0.9"
-
+flate2 = { version = "1", features = ["rust_backend"], default-features = false }
+generic-array = "0.14"
 jcers = { version = "0.1", features = ["derive"] }
+md5 = "0.7"
+p256 = { version = "0.10", features = ["ecdh"], default-features = false }
+prost = { version = "0.9", features = ["std"], default-features = false }
+prost-types = "0.9"
+rand = "0.8"
+serde = { version = "1", features = ["derive"] }
+thiserror = "1"
 
 [build-dependencies]
-prost-build = { version = "0.9" }
+prost-build = "0.9"

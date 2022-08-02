@@ -14,19 +14,19 @@ default = []
 img-detail = ["image"]
 
 [dependencies]
+ricq-core = { version = "0.1.16", path = "../ricq-core" }
+async-trait = "0.1"
 bytes = "1"
-serde = { version = "1", features = ["derive"] }
-md5 = "0.7"
+cached = { version = "0.30", features = ["async"], default-features = false }
+derivative = "2"
 flate2 = { version = "1", features = ["rust_backend"], default-features = false }
-prost = { version = "0.9" }
+futures-util = "0.3"
+image = { version = "0.24", optional = true }
+jcers = "0.1"
+md5 = "0.7"
+prost = { version = "0.9", features = ["std"], default-features = false }
+rand = "0.8"
+serde = { version = "1", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
 tokio-util = { version = "0.7", features = ["codec"] }
-futures-util = "0.3"
 tracing = "0.1"
-async-trait = "0.1"
-cached = { version = "0.30", features = ["async"], default-features = false }
-rand = "0.8"
-derivative = "2"
-jcers = { version = "0.1", features = ["derive"] }
-ricq-core = { path = "../ricq-core", version = "0.1.16" }
-image = { version = "0", features = ["png", "jpeg", "bmp", "gif", "webp"], optional = true }
