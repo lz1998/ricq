@@ -1,28 +1,17 @@
-use std::{env, fs};
-use std::io::Result;
 use std::path::{Path, PathBuf};
-
-fn recursion(v: &mut Vec<String>, dir: impl AsRef<Path>) -> Result<()> {
-    let rd = std::fs::read_dir(dir)?;
-    for x in rd {
-        let de = x?;
-        let path = de.path();
+fn recurse_dir(v: &mut Vec<PathBuf>, dir: impl AsRef<Path>) {
+    for entry in std::fs::read_dir(&dir).expect(&format!("Unable to read dir: {:?}", dir.as_ref()))
+    {
+        let path = entry.expect("Unable to get direntry").path();
         if path.is_dir() {
-            recursion(v, path)?;
-        } else {
-            let path = path.into_os_string().into_string().expect("path error");
-            if path.ends_with(".proto") {
-                v.push(path);
-            }
+            recurse_dir(v, path);
+        } else if let Some(true) = path.extension().map(|v| v == "proto") {
+            v.push(path);
         }
     }
-    Ok(())
 }
-
-fn main() -> Result<()> {
-    let mut v = Vec::<String>::new();
-    recursion(&mut v, "src/pb")?;
-
-    prost_build::compile_protos(&v, &["src/pb"])?;
-    Ok(())
+fn main() {
+    let mut files = Vec::new();
+    recurse_dir(&mut files, "src/pb");
+    prost_build::compile_protos(&files, &["src/pb"]).unwrap();
 }

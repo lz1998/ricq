@@ -1,4 +1,3 @@
-
 use crate::command::common::PbToBytes;
 use crate::command::guild::dynamic_msg::DynamicMessage;
 use crate::pb;
@@ -10,7 +9,7 @@ impl super::super::super::Engine {
             last_msg_time: Some(0),
             udc_flag: None,
             seq: Some(0),
-            direct_message_flag: Some(1)
+            direct_message_flag: Some(1),
         };
 
         let b = req.to_bytes();

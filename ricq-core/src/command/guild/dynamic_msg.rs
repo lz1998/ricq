@@ -67,13 +67,13 @@ struct DynamicMessageEncoder {
 }
 
 impl DynamicMessageEncoder {
-    const MAX_VARINT_LEN16: usize = 3;
-    const MAX_VARINT_LEN32: usize = 5;
+    //const MAX_VARINT_LEN16: usize = 3;
+    //const MAX_VARINT_LEN32: usize = 5;
     const MAX_VARINT_LEN64: usize = 10;
 
     pub fn new() -> Self {
         Self {
-            buf: BytesMut::new()
+            buf: BytesMut::new(),
         }
     }
 
