@@ -23,40 +23,6 @@ fn main() -> Result<()> {
     let mut v = Vec::<String>::new();
     recursion(&mut v, "src/pb")?;
 
-    prost_build::Config::new().compile_protos(&v, &["src/pb"])?;
-    let dir = env::var_os("OUT_DIR").unwrap();
-    let dir = Path::new(&dir);
-
-    let mut out = PathBuf::new();
-    out.push("src");
-    out.push("pb");
-
-    for f in fs::read_dir(dir)? {
-        if let Ok(entry) = f {
-            let p = entry.path();
-
-            if p.is_file() {
-                let name = p.file_stem().unwrap();
-                match name.to_str() {
-                    Some("_") => {
-                        continue;
-                    },
-                    Some("pb") => {
-                        fs::copy(&p, "src/pb/pb.rs").expect("Cannot copy pb.rs");
-                        continue;
-                    },
-                    _ => {
-                    }
-                }
-                out.push(name);
-                out.push("mod.rs");
-                fs::copy(&p, &out).expect(&format!("Cannot copy file: {:?}", out));
-                out.pop();
-                out.pop();
-            }
-        }
-    };
-
-    //prost_build::compile_protos(&v, &["src/pb"])?;
+    prost_build::compile_protos(&v, &["src/pb"])?;
     Ok(())
 }
