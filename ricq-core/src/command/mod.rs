@@ -21,3 +21,4 @@ pub mod stat_svc;
 pub mod summary_card;
 pub mod visitor_svc;
 pub mod wtlogin;
+pub mod guild;
