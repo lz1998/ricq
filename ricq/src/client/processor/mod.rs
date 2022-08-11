@@ -34,8 +34,10 @@ impl super::Client {
 
         tracing::trace!("pkt: {} passed packet_promises", &pkt.command_name);
 
-        if let Some(handler) = self.packet_handler.read().await.get(&pkt.command_name) {
-            handler.send(pkt.clone()).ok();
+        {
+            if let Some(handler) = self.packet_handler.read().await.get(&pkt.command_name) {
+                handler.send(pkt.clone()).ok();
+            }
         }
 
         let cli = self.clone();
