@@ -19,7 +19,6 @@ add_includes!(
     cmd0x3bb,
     cmd0x6ff,
     cmd0x899,
-    guild,
     longmsg,
     msf,
     msg,
