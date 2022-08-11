@@ -44,7 +44,7 @@ impl crate::Client {
             ([42, 81, 172, 22], 80),
         ];
         let mut addrs: Vec<SocketAddr> = BUILD_IN.iter().map(|v| SocketAddr::from(*v)).collect();
-        if let Ok(res) = tokio::net::lookup_host("msfwifi.3g.qq.com:80").await {
+        if let Ok(res) = tokio::net::lookup_host("msfwifi.3g.qq.com:8080").await {
             addrs.extend(res);
         }
         // TODO: src/client/processor/config_push_svc.rs

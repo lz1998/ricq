@@ -3,7 +3,7 @@ use bytes::Bytes;
 use crate::{RQError, RQResult};
 
 #[derive(PartialEq, derivative::Derivative, Eq)]
-#[derivative(Default, Debug)]
+#[derivative(Default, Debug, Clone)]
 pub enum PacketType {
     #[derivative(Default)]
     Simple,
@@ -27,7 +27,7 @@ impl PacketType {
     }
 }
 
-#[derive(PartialEq, derivative::Derivative, Eq)]
+#[derive(PartialEq, derivative::Derivative, Eq, Clone)]
 #[derivative(Default, Debug)]
 pub enum EncryptType {
     #[derivative(Default)]
@@ -54,7 +54,7 @@ impl EncryptType {
     }
 }
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, Clone)]
 pub struct Packet {
     pub packet_type: PacketType,
     pub encrypt_type: EncryptType,
