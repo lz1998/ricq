@@ -1,6 +1,7 @@
 use crate::client::decoder::Decoder;
 use crate::protocol::protobuf::FirstViewMsg;
 use crate::protocol::{protobuf, FirstView, FirstViewMessage, GuildSelfProfile, GuildUserProfile};
+use ricq_core::msg::elem::GroupImage;
 use ricq_core::msg::MessageChain;
 use ricq_core::protocol::packet::Packet;
 use ricq_core::RQResult;
@@ -9,7 +10,6 @@ use std::ops::Deref;
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLockReadGuard};
 use tokio::task::JoinHandle;
-use ricq_core::msg::elem::GroupImage;
 
 pub mod builder;
 pub mod decoder;
@@ -90,7 +90,7 @@ impl GuildClient {
                     direct_message_guild_nodes,
                     ..
                 },
-                Some(response)
+                Some(response),
             ) => {
                 let message = FirstViewMessage {
                     push_flag,
@@ -154,13 +154,11 @@ impl GuildClient {
         &self,
         guild_id: u64,
         channel_id: u64,
-        image: Vec<u8>
+        image: Vec<u8>,
     ) -> RQResult<GroupImage> {
-        self.rq_client.upload_common_group_image(
-            channel_id as _,
-            Some(guild_id),
-            image
-        ).await
+        self.rq_client
+            .upload_common_group_image(channel_id as _, Some(guild_id), image)
+            .await
     }
 }
 

@@ -164,7 +164,7 @@ impl super::super::Client {
             message_chain,
             None,
         )
-            .await
+        .await
     }
 
     /// 获取群成员信息
@@ -523,7 +523,7 @@ impl super::super::Client {
                 send_echo: true,
             },
         )
-            .await?;
+        .await?;
         Ok(())
     }
 
@@ -532,10 +532,17 @@ impl super::super::Client {
     }
 
     /// 上传群图片
-    pub async fn upload_common_group_image(&self, common_code: i64, guild_code: Option<u64>,data: Vec<u8>) -> RQResult<GroupImage> {
+    pub async fn upload_common_group_image(
+        &self,
+        common_code: i64,
+        guild_code: Option<u64>,
+        data: Vec<u8>,
+    ) -> RQResult<GroupImage> {
         let image_info = ImageInfo::try_new(&data)?;
 
-        let image_store = self.get_group_image_store(common_code, guild_code, &image_info).await?;
+        let image_store = self
+            .get_group_image_store(common_code, guild_code, &image_info)
+            .await?;
         let signature = self.highway_session.read().await.session_key.to_vec();
         let group_image = match image_store {
             GroupImageStoreResp::Exist { file_id, addrs } => image_info.into_group_image(
@@ -771,7 +778,7 @@ impl super::super::Client {
                     sender_name: self.account_info.read().await.nickname.clone(),
                     elements: message_chain,
                 }
-                    .into()],
+                .into()],
                 true,
             )
             .await?;
