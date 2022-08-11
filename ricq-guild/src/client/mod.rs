@@ -9,6 +9,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLockReadGuard};
 use tokio::task::JoinHandle;
+use ricq_core::msg::elem::GroupImage;
 
 pub mod builder;
 pub mod decoder;
@@ -89,7 +90,7 @@ impl GuildClient {
                     direct_message_guild_nodes,
                     ..
                 },
-                Some(response),
+                Some(response)
             ) => {
                 let message = FirstViewMessage {
                     push_flag,
@@ -147,6 +148,19 @@ impl GuildClient {
         let ret = self.rq_client.send_and_wait(pkt).await?;
 
         Ok(ret) // todo: decode receipt
+    }
+
+    pub async fn upload_channel_image(
+        &self,
+        guild_id: u64,
+        channel_id: u64,
+        image: Vec<u8>
+    ) -> RQResult<GroupImage> {
+        self.rq_client.upload_common_group_image(
+            channel_id as _,
+            Some(guild_id),
+            image
+        ).await
     }
 }
 
