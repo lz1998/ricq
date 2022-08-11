@@ -2,10 +2,12 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU8, Ordering};
 use std::time::UNIX_EPOCH;
 
+use cached::CachedAsync;
 use tokio::sync::{broadcast, RwLock};
 use tokio::sync::{oneshot, Mutex};
 use tokio::time::{sleep, Duration};
 
+pub use net::{Connector, DefaultConnector};
 use ricq_core::command::online_push::GroupMessagePart;
 use ricq_core::command::profile_service::GroupSystemMessages;
 use ricq_core::common::RQAddr;
@@ -14,8 +16,6 @@ use ricq_core::protocol::{device::Device, packet::Packet};
 use ricq_core::structs::{AccountInfo, AddressInfo, OtherClientInfo};
 use ricq_core::Engine;
 pub use ricq_core::Token;
-
-pub use net::{Connector, DefaultConnector};
 
 use crate::{RQError, RQResult};
 
@@ -73,6 +73,8 @@ pub struct Client {
 
     highway_session: RwLock<ricq_core::highway::Session>,
     highway_addrs: RwLock<Vec<RQAddr>>,
+
+    packet_handler: RwLock<HashMap<String, tokio::sync::broadcast::Sender<Packet>>>,
 }
 
 impl super::Client {
@@ -110,6 +112,7 @@ impl super::Client {
             group_sys_message_cache: RwLock::new(Default::default()),
             highway_session: RwLock::new(Default::default()),
             highway_addrs: RwLock::new(Default::default()),
+            packet_handler: Default::default(),
         }
     }
 
@@ -204,6 +207,19 @@ impl super::Client {
 
     pub async fn get_highway_session_key(&self) -> Vec<u8> {
         self.highway_session.read().await.session_key.to_vec()
+    }
+
+    /// 监听指定 command 数据包
+    pub async fn listen_command(
+        &self,
+        command: String,
+    ) -> tokio::sync::broadcast::Receiver<Packet> {
+        self.packet_handler
+            .write()
+            .await
+            .get_or_set_with(command, async || tokio::sync::broadcast::channel(10).0)
+            .await
+            .subscribe()
     }
 }
 
