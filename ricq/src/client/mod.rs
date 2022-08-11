@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU8, Ordering};
 use std::time::UNIX_EPOCH;
 
@@ -30,7 +31,7 @@ mod tcp;
 pub struct Client {
     /// QEvent Handler 调用 handle 方法外发 QEvent
     handler: Box<dyn handler::Handler + Sync + Send + 'static>,
-    engine: RwLock<Engine>,
+    pub engine: RwLock<Engine>,
 
     // 状态相关
     /// 网络状态
@@ -74,7 +75,7 @@ pub struct Client {
     highway_session: RwLock<ricq_core::highway::Session>,
     highway_addrs: RwLock<Vec<RQAddr>>,
 
-    packet_handler: RwLock<HashMap<String, tokio::sync::broadcast::Sender<Packet>>>,
+    packet_handler: RwLock<HashMap<String, broadcast::Sender<Packet>>>,
 }
 
 impl super::Client {
@@ -210,14 +211,11 @@ impl super::Client {
     }
 
     /// 监听指定 command 数据包
-    pub async fn listen_command(
-        &self,
-        command: String,
-    ) -> tokio::sync::broadcast::Receiver<Packet> {
+    pub async fn listen_command<S: ToString>(&self, command: S) -> broadcast::Receiver<Packet> {
         self.packet_handler
             .write()
             .await
-            .get_or_set_with(command, async || tokio::sync::broadcast::channel(10).0)
+            .get_or_set_with(command.to_string(), async || broadcast::channel(10).0)
             .await
             .subscribe()
     }
