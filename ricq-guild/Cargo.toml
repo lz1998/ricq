@@ -11,6 +11,7 @@ prost = { version = "0.9", features = ["std"], default-features = false }
 prost-types = "0.9"
 tracing = "0.1"
 dynamic-protobuf = "0"
+rand = "0"
 
 [dependencies.ricq]
 path = "../ricq"

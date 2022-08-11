@@ -1,6 +1,7 @@
 use crate::client::decoder::Decoder;
 use crate::protocol::protobuf::FirstViewMsg;
 use crate::protocol::{protobuf, FirstView, FirstViewMessage, GuildSelfProfile, GuildUserProfile};
+use ricq_core::msg::MessageChain;
 use ricq_core::protocol::packet::Packet;
 use ricq_core::RQResult;
 use std::collections::HashMap;
@@ -131,12 +132,21 @@ impl GuildClient {
         Ok(prof)
     }
 
-    pub async fn fetch_guild_user_profile(
+    pub async fn send_channel_message(
         &self,
+        elems: MessageChain,
         guild_id: u64,
-        tiny_id: u64,
-    ) -> RQResult<Option<GuildUserProfile>> {
-        todo!()
+        channel_id: u64,
+    ) -> RQResult<Packet> {
+        let pkt = self.engine().await.build_send_channel_message_packet(
+            elems.into(),
+            guild_id,
+            channel_id,
+        );
+
+        let ret = self.rq_client.send_and_wait(pkt).await?;
+
+        Ok(ret) // todo: decode receipt
     }
 }
 
