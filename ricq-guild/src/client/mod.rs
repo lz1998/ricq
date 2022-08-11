@@ -1,11 +1,13 @@
+use crate::client::decoder::Decoder;
+use crate::protocol::protobuf::FirstViewMsg;
+use crate::protocol::{protobuf, FirstView, FirstViewMessage, GuildSelfProfile, GuildUserProfile};
 use ricq_core::protocol::packet::Packet;
+use ricq_core::RQResult;
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::Arc;
 use tokio::sync::{broadcast, RwLockReadGuard};
-use ricq_core::RQResult;
-use crate::client::decoder::Decoder;
-use crate::protocol::{FirstViewResponse, GuildSelfProfile};
+use tokio::task::JoinHandle;
 
 pub mod builder;
 pub mod decoder;
@@ -24,7 +26,7 @@ impl GuildClient {
 
         Self {
             rq_client,
-            listeners
+            listeners,
         }
     }
 
@@ -32,22 +34,106 @@ impl GuildClient {
         Engine::from_rq(self.rq_client.engine.read().await)
     }
 
-    pub async fn fetch_guild_first_view(&self) -> RQResult<Option<FirstViewResponse>> {
-        let engine = self.engine().await;
-        let pkt = engine.build_sync_channel_first_view_packet();
+    pub async fn fetch_guild_first_view(&self) -> RQResult<Option<FirstView>> {
+        let pkt = self.engine().await.build_sync_channel_first_view_packet();
+
+        let cli = self.rq_client.clone();
+        let first_view: JoinHandle<RQResult<FirstViewMsg>> = tokio::spawn(async move {
+            static COMMAND: &str = "trpc.group_pro.synclogic.SyncLogic.PushFirstView";
+
+            let mut rx = cli.listen_command(COMMAND).await;
+
+            let mut first_view: FirstViewMsg;
+            let r = rx.recv().await.unwrap();
+            first_view = Decoder.decode_first_view_msg(r.body)?;
+
+            for _ in 0..2 {
+                let r = rx.recv().await.unwrap();
+                let msg = Decoder.decode_first_view_msg(r.body)?;
+
+                match msg {
+                    FirstViewMsg { guild_nodes, .. } if !guild_nodes.is_empty() => {
+                        first_view.guild_nodes = guild_nodes;
+                    }
+                    FirstViewMsg { channel_msgs, .. } if !channel_msgs.is_empty() => {
+                        first_view.channel_msgs = channel_msgs;
+                    }
+                    FirstViewMsg {
+                        direct_message_guild_nodes,
+                        ..
+                    } if !direct_message_guild_nodes.is_empty() => {
+                        first_view.direct_message_guild_nodes = direct_message_guild_nodes;
+                    }
+                    _ => {}
+                }
+            }
+            Ok(first_view)
+        });
+
         let rsp = self.rq_client.send_and_wait(pkt).await?;
 
-        let first_view = Decoder.decode_guild_first_view_response(rsp.body)?;
+        let first_view_rsp = Decoder.decode_guild_first_view_response(rsp.body)?;
 
-        Ok(first_view)
+        let opt = match (first_view.await.unwrap()?, first_view_rsp) {
+            (
+                FirstViewMsg {
+                    push_flag: Some(push_flag),
+                    seq: Some(seq),
+                    guild_nodes,
+                    channel_msgs,
+                    get_msg_time: Some(get_msg_time),
+                    direct_message_guild_nodes,
+                },
+                Some(response),
+            ) => {
+                let message = FirstViewMessage {
+                    push_flag,
+                    seq,
+                    guild_nodes,
+                    channel_msgs,
+                    get_msg_time,
+                    direct_message_guild_nodes,
+                };
+
+                Some(FirstView { response, message })
+            }
+            _ => None,
+        };
+
+        Ok(opt)
     }
 
-    pub async fn fetch_guild_self_profile(&self, tiny_id: u64) -> RQResult<Option<GuildSelfProfile>> {
-        let engine = self.engine().await;
-
-        let pkt = engine.build_get_user_profile_packet(tiny_id);
+    pub async fn fetch_guild_self_profile(
+        &self,
+        tiny_id: u64,
+    ) -> RQResult<Option<GuildSelfProfile>> {
+        let pkt = self.engine().await.build_get_user_profile_packet(tiny_id);
         let rsp = self.rq_client.send_and_wait(pkt).await?;
-        Decoder.decode_guild_self_profile(rsp.body)
+        let usr = Decoder.decode_guild_user_profile(rsp.body)?;
+
+        let prof = match usr {
+            Some(protobuf::GuildUserProfile {
+                tiny_id: Some(tiny_id),
+                nickname: Some(nickname),
+                avatar_url: Some(avatar_url),
+                ..
+            }) => Some(GuildSelfProfile {
+                tiny_id,
+                nickname,
+                avatar_url,
+            }),
+            _ => None,
+        };
+
+        Ok(prof)
+    }
+
+    pub async fn fetch_guild_user_profile(
+        &self,
+        guild_id: u64,
+        tiny_id: u64,
+    ) -> RQResult<Option<GuildUserProfile>> {
+        todo!()
     }
 }
 

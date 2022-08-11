@@ -1,7 +1,7 @@
+use crate::protocol::protobuf;
 use dynamic_protobuf::{dynamic_message, DynamicMessage};
 use ricq_core::command::common::PbToBytes;
 use ricq_core::protocol::packet::Packet;
-use crate::protocol::protobuf;
 
 impl<'a> super::Engine<'a> {
     pub fn build_sync_channel_first_view_packet(&self) -> Packet {
