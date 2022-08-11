@@ -39,7 +39,11 @@ impl super::Client {
                 tracing::error!("error on sending packet through packet handler: {:?}", e.0);
                 let client = self.clone();
                 tokio::spawn(async move {
-                    client.packet_handler.write().await.remove(&e.0.command_name);
+                    client
+                        .packet_handler
+                        .write()
+                        .await
+                        .remove(&e.0.command_name);
                     tracing::trace!("removed packet_handler {}", e.0.command_name);
                 });
             }
