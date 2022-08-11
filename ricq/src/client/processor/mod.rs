@@ -36,7 +36,7 @@ impl super::Client {
 
         {
             if let Some(handler) = self.packet_handler.read().await.get(&pkt.command_name) {
-                handler.send(pkt.clone()).ok();
+                let _ = handler.send(pkt.clone());
             }
         }
 
