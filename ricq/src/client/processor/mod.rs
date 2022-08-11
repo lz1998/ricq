@@ -35,18 +35,7 @@ impl super::Client {
         tracing::trace!("pkt: {} passed packet_promises", &pkt.command_name);
 
         if let Some(handler) = self.packet_handler.read().await.get(&pkt.command_name) {
-            if let Err(e) = handler.send(pkt.clone()) {
-                tracing::error!("error on sending packet through packet handler: {:?}", e.0);
-                let client = self.clone();
-                tokio::spawn(async move {
-                    client
-                        .packet_handler
-                        .write()
-                        .await
-                        .remove(&e.0.command_name);
-                    tracing::trace!("removed packet_handler {}", e.0.command_name);
-                });
-            }
+            handler.send(pkt.clone()).ok();
         }
 
         let cli = self.clone();
