@@ -11,7 +11,6 @@ pub struct FirstViewResponse {
 #[derive(Clone, Debug, Default)]
 pub struct FirstViewMessage {
     pub push_flag: u32,
-    pub seq: u32,
     pub guild_nodes: Vec<GuildNode>,
     pub channel_msgs: Vec<ChannelMsg>,
     pub get_msg_time: u64,

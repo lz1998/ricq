@@ -52,11 +52,15 @@ impl GuildClient {
                 let msg = Decoder.decode_first_view_msg(r.body)?;
 
                 match msg {
-                    FirstViewMsg { guild_nodes, .. } if !guild_nodes.is_empty() => {
-                        first_view.guild_nodes = guild_nodes;
-                    }
-                    FirstViewMsg { channel_msgs, .. } if !channel_msgs.is_empty() => {
+                    FirstViewMsg {
+                        push_flag,
+                        channel_msgs,
+                        get_msg_time,
+                        ..
+                    } if !channel_msgs.is_empty() => {
+                        first_view.push_flag = push_flag;
                         first_view.channel_msgs = channel_msgs;
+                        first_view.get_msg_time = get_msg_time;
                     }
                     FirstViewMsg {
                         direct_message_guild_nodes,
@@ -78,17 +82,16 @@ impl GuildClient {
             (
                 FirstViewMsg {
                     push_flag: Some(push_flag),
-                    seq: Some(seq),
                     guild_nodes,
                     channel_msgs,
                     get_msg_time: Some(get_msg_time),
                     direct_message_guild_nodes,
+                    ..
                 },
                 Some(response),
             ) => {
                 let message = FirstViewMessage {
                     push_flag,
-                    seq,
                     guild_nodes,
                     channel_msgs,
                     get_msg_time,
