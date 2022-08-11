@@ -1,11 +1,11 @@
-use crate::command::common::PbToBytes;
-use crate::command::guild::dynamic_msg::DynamicMessage;
-use crate::pb;
-use crate::protocol::packet::*;
+use dynamic_protobuf::{dynamic_message, DynamicMessage};
+use ricq_core::command::common::PbToBytes;
+use ricq_core::protocol::packet::Packet;
+use crate::protocol::protobuf;
 
-impl super::super::super::Engine {
+impl<'a> super::Engine<'a> {
     pub fn build_sync_channel_first_view_packet(&self) -> Packet {
-        let req = pb::guild::FirstViewReq {
+        let req = protobuf::FirstViewReq {
             last_msg_time: Some(0),
             udc_flag: None,
             seq: Some(0),
@@ -26,10 +26,11 @@ impl super::super::super::Engine {
         flags.set(100, 1u32);
 
         let payload = {
-            let mut msg = DynamicMessage::new();
-            msg.set(1, flags);
-            msg.set(3, tiny_id);
-            msg.set(4, 0u32);
+            let msg = dynamic_message! {
+                1 => flags,
+                3 => tiny_id,
+                4 => 0u32,
+            };
 
             self.transport.encode_oidb_packet(0xf88, 1, msg.encode())
         };

@@ -2,8 +2,8 @@ syntax = "proto2";
 
 package guild;
 
-import "guild/GuildFeedCloudMeta.proto";
-import "guild/GuildChannelBase.proto";
+import "GuildFeedCloudMeta.proto";
+import "GuildChannelBase.proto";
 
 
 message GetNoticesReq {

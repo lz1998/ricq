@@ -1,5 +1,6 @@
 [workspace]
 members = [
     "ricq",
-    "ricq-core"
+    "ricq-core",
+    "ricq-guild"
 ]

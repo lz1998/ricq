@@ -2,7 +2,7 @@ syntax = "proto2";
 
 package guild;
 
-import "guild/common.proto";
+import "common.proto";
 
 message FocusInfo {
   repeated uint64 channelIdList = 1;

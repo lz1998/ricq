@@ -2,7 +2,7 @@ syntax = "proto2";
 
 package guild;
 
-import "guild/common.proto";
+import "common.proto";
 
 message ChannelMsg {
   optional uint64 guildId = 1;

@@ -2,7 +2,7 @@ syntax = "proto2";
 
 package guild;
 
-import "guild/GuildChannelBase.proto";
+import "GuildChannelBase.proto";
 
 message ContentMetaData {
   optional RichTextContentCount count = 1;

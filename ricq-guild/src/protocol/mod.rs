@@ -1,7 +1,3 @@
-pub mod builder;
-pub mod decoder;
-mod dynamic_msg;
-
 #[derive(Clone, Debug, Default)]
 pub struct FirstViewResponse {
     pub guild_count: u32,
@@ -15,5 +11,16 @@ pub struct GuildUserProfile {
     pub tiny_id: u64,
     pub nickname: String,
     pub avatar_url: String,
-    pub join_time: Option<i64>,
+    pub join_time: i64,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct GuildSelfProfile {
+    pub tiny_id: u64,
+    pub nickname: String,
+    pub avatar_url: String,
+}
+
+pub mod protobuf {
+    include!(concat!(env!("OUT_DIR"), "/", "guild.rs"));
 }

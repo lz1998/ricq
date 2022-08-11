@@ -2,7 +2,7 @@ syntax = "proto2";
 
 package guild;
 
-import "guild/MsgResponsesSvr.proto";
+import "MsgResponsesSvr.proto";
 
 message ChannelUserInfo {
   optional ClientIdentity clientIdentity = 1;
