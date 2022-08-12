@@ -3,7 +3,7 @@
 include!(concat!(env!("OUT_DIR"), "/pb.rs"));
 
 macro_rules! add_includes {
-    ($( $name:ident ),*) => {
+    ($( $name:ident ),* $(,)?) => {
         $(
             pub mod $name {
                 include!(concat!(env!("OUT_DIR"), "/", stringify!($name), ".rs"));
@@ -30,5 +30,5 @@ add_includes!(
     profilecard,
     sig_act,
     structmsg,
-    short_video
+    short_video,
 );

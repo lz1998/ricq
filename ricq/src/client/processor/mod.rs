@@ -31,7 +31,14 @@ impl super::Client {
                 return;
             }
         }
+
         tracing::trace!("pkt: {} passed packet_promises", &pkt.command_name);
+
+        {
+            if let Some(handler) = self.packet_handler.read().await.get(&pkt.command_name) {
+                let _ = handler.send(pkt.clone());
+            }
+        }
 
         let cli = self.clone();
         tokio::spawn(async move {

@@ -482,10 +482,12 @@ impl super::super::Client {
     pub async fn get_group_image_store(
         &self,
         group_code: i64,
+        guild_code: Option<u64>,
         image_info: &ImageInfo,
     ) -> RQResult<GroupImageStoreResp> {
         let req = self.engine.read().await.build_group_image_store_packet(
             group_code,
+            guild_code,
             image_info.filename.clone(),
             image_info.md5.clone(),
             image_info.size as u64,
@@ -500,7 +502,7 @@ impl super::super::Client {
             .decode_group_image_store_response(resp.body)
     }
 
-    pub async fn _upload_group_image(
+    pub async fn _upload_common_group_image(
         &self,
         upload_key: Vec<u8>,
         addr: std::net::SocketAddr,
@@ -525,11 +527,22 @@ impl super::super::Client {
         Ok(())
     }
 
-    /// 上传群图片
     pub async fn upload_group_image(&self, group_code: i64, data: Vec<u8>) -> RQResult<GroupImage> {
+        self.upload_common_group_image(group_code, None, data).await
+    }
+
+    /// 上传群图片
+    pub async fn upload_common_group_image(
+        &self,
+        common_code: i64,
+        guild_code: Option<u64>,
+        data: Vec<u8>,
+    ) -> RQResult<GroupImage> {
         let image_info = ImageInfo::try_new(&data)?;
 
-        let image_store = self.get_group_image_store(group_code, &image_info).await?;
+        let image_store = self
+            .get_group_image_store(common_code, guild_code, &image_info)
+            .await?;
         let signature = self.highway_session.read().await.session_key.to_vec();
         let group_image = match image_store {
             GroupImageStoreResp::Exist { file_id, addrs } => image_info.into_group_image(
@@ -548,7 +561,7 @@ impl super::super::Client {
                         .pop()
                         .ok_or_else(|| RQError::Other("addrs is empty".into()))?,
                 };
-                self._upload_group_image(upload_key, addr.clone().into(), data)
+                self._upload_common_group_image(upload_key, addr.clone().into(), data)
                     .await?;
                 image_info.into_group_image(file_id, addr, signature)
             }

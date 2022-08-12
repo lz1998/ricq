@@ -12,6 +12,10 @@ fn recurse_dir(v: &mut Vec<PathBuf>, dir: impl AsRef<Path>) {
 }
 fn main() {
     let mut files = Vec::new();
-    recurse_dir(&mut files, "src/pb");
-    prost_build::compile_protos(&files, &["src/pb"]).unwrap();
+    recurse_dir(&mut files, "src/protocol/protobuf");
+
+    prost_build::Config::new()
+        .extern_path(".msg", "ricq_core::pb::msg")
+        .compile_protos(&files, &["src/protocol/protobuf", "../ricq-core/src/pb"])
+        .expect("Cannot compile protobuf files");
 }

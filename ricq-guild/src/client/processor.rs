@@ -1,0 +1,1 @@
+impl super::GuildClient {}

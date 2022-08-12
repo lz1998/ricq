@@ -21,7 +21,10 @@ where
     ) -> Pin<Box<dyn Future<Output = RQResult<Vec<u8>>> + Send + 'a>>,
 {
     let sign = cli.get_highway_session_key().await;
-    let group_image = match cli.get_group_image_store(group_code, &image_info).await? {
+    let group_image = match cli
+        .get_group_image_store(group_code, None, &image_info)
+        .await?
+    {
         GroupImageStoreResp::Exist { file_id, addrs } => {
             image_info.into_group_image(file_id, addrs.first().cloned().unwrap_or_default(), sign)
         }
@@ -34,7 +37,7 @@ where
             let addr = upload_addrs
                 .pop()
                 .ok_or_else(|| RQError::Other("addrs is empty".into()))?;
-            cli._upload_group_image(upload_key, addr.clone().into(), data)
+            cli._upload_common_group_image(upload_key, addr.clone().into(), data)
                 .await
                 .map(|_| image_info.into_group_image(file_id, addr, sign))?
         }
