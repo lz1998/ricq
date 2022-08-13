@@ -11,7 +11,7 @@ impl super::super::super::Engine {
         pb::multimsg::MultiRspBody::decode(&*payload)?
             .multimsg_applydown_rsp
             .pop()
-            .ok_or_else(|| RQError::Other("multimsg_applydown_rsp is none".into()))
+            .ok_or(RQError::EmptyField("multimsg_applydown_rsp"))
     }
 
     pub fn decode_multi_msg_apply_up_resp(
@@ -21,6 +21,6 @@ impl super::super::super::Engine {
         pb::multimsg::MultiRspBody::decode(&*payload)?
             .multimsg_applyup_rsp
             .pop()
-            .ok_or_else(|| RQError::Other("multimsg_applyup_rsp is none".into()))
+            .ok_or(RQError::EmptyField("multimsg_applyup_rsp"))
     }
 }

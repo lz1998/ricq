@@ -2,9 +2,10 @@ use std::net::IpAddr;
 use std::sync::atomic::{AtomicI32, Ordering};
 
 use bytes::Bytes;
+use prost::Message;
 
 use crate::command::common::PbToBytes;
-use crate::{pb, RQError, RQResult};
+use crate::{pb, RQResult};
 
 #[derive(Default)]
 pub struct Session {
@@ -98,8 +99,7 @@ impl Session {
     }
 
     pub fn decode_rsp_head(&self, payload: Bytes) -> RQResult<pb::RspDataHighwayHead> {
-        pb::RspDataHighwayHead::from_bytes(&payload)
-            .map_err(|_| RQError::Other("RspDataHighwayHead".into()))
+        pb::RspDataHighwayHead::decode(&*payload).map_err(Into::into)
     }
 
     pub fn build_heartbreak(&self) -> Bytes {
