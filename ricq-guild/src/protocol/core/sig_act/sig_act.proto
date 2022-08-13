@@ -1,0 +1,65 @@
+syntax = "proto2";
+package sig_act;
+
+message Platform {
+  optional int64 platform = 1;
+  optional string osver = 2;
+  optional string mqqver = 3;
+}
+
+message ReqBody {
+  optional uint32 cmd = 1;
+  optional uint64 seq = 2;
+  optional Platform plf = 3;
+  optional SigactReq req = 4;
+  optional SigauthReq authReq = 5;
+  optional uint32 source = 6;
+}
+
+message RspBody {
+  optional int32 ret = 1;
+  optional string desc = 2;
+  optional uint32 cmd = 3;
+  optional uint64 seq = 4;
+  optional SigactRsp rsp = 5;
+  optional SigauthRsp authRsp = 6;
+}
+
+message SigactReq {
+  optional uint64 uinDisable = 1;
+  optional int32 actid = 2;
+  optional int32 acttype = 3;
+}
+
+message SigactRsp {
+  optional uint64 uin = 1;
+  optional uint32 rank = 2;
+}
+
+message SigauthReq {
+  optional uint64 uinDisable = 1;
+  optional int32 itemid = 2;
+  optional int32 len = 3;
+  optional bytes data = 4;
+  optional int32 fontid = 5;
+}
+
+message SigauthRsp {
+  optional bytes result = 1;
+  optional string url = 2;
+  optional TipsInfo tipsInfo = 3;
+  optional int32 authfailedAppid = 4;
+
+  message TipsInfo {
+    optional bool valid = 1;
+    optional int32 ret = 2;
+    optional uint32 type = 3;
+    optional string titleWording = 4;
+    optional string wording = 5;
+    optional string rightBtnWording = 6;
+    optional string leftBtnWording = 7;
+    optional string vipType = 8;
+    optional uint32 vipMonth = 9;
+    optional string url = 10;
+  }
+}

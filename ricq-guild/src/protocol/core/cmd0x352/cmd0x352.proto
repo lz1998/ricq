@@ -1,0 +1,145 @@
+syntax = "proto2";
+
+package cmd0x352;
+/*
+message DelImgReq {
+  optional uint64 srcUin = 1;
+  optional uint64 dstUin = 2;
+  optional uint32 reqTerm = 3;
+  optional uint32 reqPlatformType = 4;
+  optional uint32 buType = 5;
+  optional bytes buildVer = 6;
+  optional bytes fileResid = 7;
+  optional uint32 picWidth = 8;
+  optional uint32 picHeight = 9;
+}
+
+message DelImgRsp {
+  optional uint32 result = 1;
+  optional bytes failMsg = 2;
+  optional bytes fileResid = 3;
+}
+
+message GetImgUrlReq {
+  optional uint64 srcUin = 1;
+  optional uint64 dstUin = 2;
+  optional bytes fileResid = 3;
+  optional uint32 urlFlag = 4;
+  optional uint32 urlType = 6;
+  optional uint32 reqTerm = 7;
+  optional uint32 reqPlatformType = 8;
+  optional uint32 srcFileType = 9;
+  optional uint32 innerIp = 10;
+  optional bool addressBook = 11;
+  optional uint32 buType = 12;
+  optional bytes buildVer = 13;
+  optional uint32 picUpTimestamp = 14;
+  optional uint32 reqTransferType = 15;
+}
+
+message GetImgUrlRsp {
+  optional bytes fileResid = 1;
+  optional uint32 clientIp = 2;
+  optional uint32 result = 3;
+  optional bytes failMsg = 4;
+  repeated bytes thumbDownUrl = 5;
+  repeated bytes originalDownUrl = 6;
+  optional ImgInfo imgInfo = 7;
+  repeated uint32 downIp = 8;
+  repeated uint32 downPort = 9;
+  optional bytes thumbDownPara = 10;
+  optional bytes originalDownPara = 11;
+  optional bytes downDomain = 12;
+  repeated bytes bigDownUrl = 13;
+  optional bytes bigDownPara = 14;
+  optional bytes bigThumbDownPara = 15;
+  optional uint32 httpsUrlFlag = 16;
+  repeated IPv6Info downIp6 = 26;
+  optional bytes clientIp6 = 27;
+}
+
+message IPv6Info {
+  optional bytes ip6 = 1;
+  optional uint32 port = 2;
+}
+*/
+
+message ReqBody {
+  optional uint32 subcmd = 1;
+  repeated D352TryUpImgReq tryupImgReq = 2;
+  // repeated GetImgUrlReq getimgUrlReq = 3;
+  // repeated DelImgReq delImgReq = 4;
+  optional uint32 netType = 10;
+}
+
+message RspBody {
+  optional uint32 subcmd = 1;
+  repeated TryUpImgRsp tryupImgRsp = 2;
+  // repeated GetImgUrlRsp getimgUrlRsp = 3;
+  optional bool newBigchan = 4;
+  // repeated DelImgRsp delImgRsp = 5;
+  optional bytes failMsg = 10;
+}
+
+message D352TryUpImgReq {
+  optional uint64 srcUin = 1;
+  optional uint64 dstUin = 2;
+  optional uint64 fileId = 3;
+  optional bytes fileMd5 = 4;
+  optional uint64 fileSize = 5;
+  optional bytes fileName = 6;
+  optional uint32 srcTerm = 7;
+  optional uint32 platformType = 8;
+  optional uint32 innerIp = 9;
+  optional bool addressBook = 10;
+  optional uint32 retry = 11;
+  optional uint32 buType = 12;
+  optional bool picOriginal = 13;
+  optional uint32 picWidth = 14;
+  optional uint32 picHeight = 15;
+  optional uint32 picType = 16;
+  optional bytes buildVer = 17;
+  optional bytes fileIndex = 18;
+  optional uint32 storeDays = 19;
+  optional uint32 tryupStepflag = 20;
+  optional bool rejectTryfast = 21;
+  optional uint32 srvUpload = 22;
+  optional bytes transferUrl = 23;
+}
+
+message TryUpImgRsp {
+  optional uint64 fileId = 1;
+  optional uint32 clientIp = 2;
+  optional uint32 result = 3;
+  optional bytes failMsg = 4;
+  optional bool fileExit = 5;
+  // optional ImgInfo imgInfo = 6;
+  repeated uint32 upIp = 7;
+  repeated uint32 upPort = 8;
+  optional bytes upUkey = 9;
+  optional string upResid = 10;
+  optional bytes upUuid = 11;
+  optional uint64 upOffset = 12;
+  optional uint64 blockSize = 13;
+  optional bytes encryptDstip = 14;
+  optional uint32 roamdays = 15;
+  // repeated IPv6Info upIp6 = 26;
+  optional bytes clientIp6 = 27;
+  optional bytes thumbDownPara = 60;
+  optional bytes originalDownPara = 61;
+  optional bytes downDomain = 62;
+  optional bytes bigDownPara = 64;
+  optional bytes bigThumbDownPara = 65;
+  optional uint32 httpsUrlFlag = 66;
+  // optional TryUpInfo4Busi info4Busi = 1001;
+}
+
+/*
+message TryUpInfo4Busi {
+  optional bytes fileResid = 1;
+  optional bytes downDomain = 2;
+  optional bytes thumbDownUrl = 3;
+  optional bytes originalDownUrl = 4;
+  optional bytes bigDownUrl = 5;
+}
+*/

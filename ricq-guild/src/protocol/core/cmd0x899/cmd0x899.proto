@@ -1,0 +1,53 @@
+syntax = "proto2";
+
+package cmd0x899;
+
+message ReqBody {
+  optional uint64 groupCode = 1;
+  optional uint64 startUin = 2;
+  optional uint32 identifyFlag = 3;
+  repeated uint64 uinList = 4;
+  optional memberlist memberlistOpt = 5;
+  optional uint32 memberNum = 6;
+  optional uint32 filterMethod = 7;
+  optional uint32 onlineFlag = 8;
+}
+
+message RspBody {
+  optional uint64 groupCode = 1;
+  optional uint64 startUin = 2;
+  optional uint32 identifyFlag = 3;
+  repeated memberlist memberlist = 4;
+  optional bytes errorinfo = 5;
+}
+
+message memberlist {
+  optional uint64 memberUin = 1;
+  optional uint32 uinFlag = 2;
+  optional uint32 uinFlagex = 3;
+  optional uint32 uinMobileFlag = 4;
+  optional uint32 uinArchFlag = 5;
+  optional uint32 joinTime = 6;
+  optional uint32 oldMsgSeq = 7;
+  optional uint32 newMsgSeq = 8;
+  optional uint32 lastSpeakTime = 9;
+  optional uint32 level = 10;
+  optional uint32 point = 11;
+  optional uint32 shutupTimestap = 12;
+  optional uint32 flagex2 = 13;
+  optional bytes specialTitle = 14;
+  optional uint32 specialTitleExpireTime = 15;
+  optional uint32 activeDay = 16;
+  optional bytes uinKey = 17;
+  optional uint32 privilege = 18;
+  optional bytes richInfo = 19;
+}
+
+message uin_key {
+  optional uint64 groupCode = 1;
+  optional uint64 memberUin = 2;
+  optional uint64 genTime = 3;
+  optional uint32 validTime = 4;
+  optional uint32 randNum = 5;
+}
+

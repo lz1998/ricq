@@ -1,0 +1,26 @@
+syntax = "proto2";
+
+package oidb;
+
+message InviteUinInfo {
+  optional uint64 uin = 1;
+  optional uint64 judgeGroupCode = 2;
+  optional uint64 judgeConfCode = 3;
+}
+
+message D758ReqBody {
+  optional uint64 joinGroupCode = 1;
+  repeated InviteUinInfo beInvitedUinInfo = 2;
+  optional string msg = 3;
+  optional uint32 mainSourceId = 4;
+  optional uint32 subSourceId = 5;
+  optional string verifyToken = 6;
+  optional uint32 verifyType = 7;
+}
+
+message D758RspBody {
+  optional uint64 groupCode = 1;
+  optional uint64 currentMaxMsgseq = 2;
+  optional string verifyUrl = 3;
+  optional uint32 verifyType = 4;
+}
