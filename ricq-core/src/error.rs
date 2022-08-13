@@ -12,6 +12,9 @@ pub enum RQError {
     #[error("failed to decode, {0}")]
     Decode(String),
 
+    #[error("failed to decode_prost, {0}")]
+    PbDecode(#[from] prost::DecodeError),
+
     #[error("From utf-8 error {0}")]
     Utf8(#[from] std::string::FromUtf8Error),
 

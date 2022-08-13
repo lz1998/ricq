@@ -10,8 +10,7 @@ impl super::super::super::Engine {
         &self,
         payload: Bytes,
     ) -> RQResult<GroupImageStoreResp> {
-        let mut rsp = pb::cmd0x388::D388RspBody::from_bytes(&payload)
-            .map_err(|_| RQError::Decode("D388RspBody".into()))?;
+        let mut rsp = pb::cmd0x388::D388RspBody::from_bytes(&payload)?;
         let rsp = rsp
             .tryup_img_rsp
             .pop()

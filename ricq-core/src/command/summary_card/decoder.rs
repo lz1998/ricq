@@ -18,7 +18,7 @@ impl super::super::super::Engine {
             .remove("SummaryCard.RespHead")
             .ok_or_else(|| RQError::Decode("missing SummaryCard.RespHead".into()))?;
         head.advance(1);
-        let head: RespSummaryCardHead = jcers::from_buf(&mut head).map_err(RQError::Jce)?;
+        let head: RespSummaryCardHead = jcers::from_buf(&mut head)?;
         let mut rsp = data
             .map
             .remove("RespSummaryCard")
@@ -26,7 +26,7 @@ impl super::super::super::Engine {
             .remove("SummaryCard.RespSummaryCard")
             .ok_or_else(|| RQError::Decode("missing SummaryCard.RespSummaryCard".into()))?;
         rsp.advance(1);
-        let rsp: RespSummaryCard = jcers::from_buf(&mut rsp).map_err(RQError::Jce)?;
+        let rsp: RespSummaryCard = jcers::from_buf(&mut rsp)?;
         let info = SummaryCardInfo {
             sex: rsp.sex,
             age: rsp.age,

@@ -116,10 +116,8 @@ impl super::super::super::Engine {
         &self,
         mut payload: Bytes,
     ) -> RQResult<Vec<RichSigInfo>> {
-        let mut request: jce::RequestPacket =
-            jcers::from_buf(&mut payload).map_err(RQError::Jce)?;
-        let mut data: jce::RequestDataVersion2 =
-            jcers::from_buf(&mut request.s_buffer).map_err(RQError::Jce)?;
+        let mut request: jce::RequestPacket = jcers::from_buf(&mut payload)?;
+        let mut data: jce::RequestDataVersion2 = jcers::from_buf(&mut request.s_buffer)?;
         let mut a = data
             .map
             .remove("GetRichSigRes")
@@ -128,7 +126,7 @@ impl super::super::super::Engine {
             .remove("KQQ.GetRichSigRes")
             .ok_or_else(|| RQError::Decode("missing KQQ.GetRichSigRes".into()))?;
         b.advance(1);
-        let resp: jce::GetRichSigRes = jcers::from_buf(&mut b).map_err(RQError::Jce)?;
+        let resp: jce::GetRichSigRes = jcers::from_buf(&mut b)?;
         Ok(resp
             .sig_infos
             .into_iter()
