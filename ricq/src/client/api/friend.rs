@@ -208,37 +208,12 @@ impl super::super::Client {
                         .pop()
                         .ok_or_else(|| RQError::Other("addrs is empty".into()))?,
                 };
-                self._upload_friend_image(upload_key, addr.into(), data)
+                self.upload_image_data(upload_key, addr.into(), data, 1)
                     .await?;
                 image_info.into_friend_image(res_id, uuid)
             }
         };
         Ok(friend_image)
-    }
-
-    pub async fn _upload_friend_image(
-        &self,
-        upload_key: Vec<u8>,
-        addr: std::net::SocketAddr,
-        data: Vec<u8>,
-    ) -> RQResult<()> {
-        if self.highway_session.read().await.session_key.is_empty() {
-            return Err(RQError::Other("highway_session_key is empty".into()));
-        }
-        self.highway_upload_bdh(
-            addr,
-            BdhInput {
-                command_id: 1,
-                body: data,
-                ticket: upload_key,
-                ext: vec![],
-                encrypt: false,
-                chunk_size: 256 * 1024,
-                send_echo: true,
-            },
-        )
-        .await?;
-        Ok(())
     }
 
     pub async fn get_off_pic_store(

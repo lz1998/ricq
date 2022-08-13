@@ -2,7 +2,6 @@ use crate::protocol::protobuf;
 use dynamic_protobuf::{dynamic_message, DynamicMessage};
 use rand::Rng;
 use ricq_core::command::common::PbToBytes;
-use ricq_core::msg::MessageChain;
 use ricq_core::protocol::packet::Packet;
 use std::sync::atomic::Ordering;
 

@@ -512,32 +512,6 @@ impl super::super::Client {
             .await
     }
 
-    /// 使用 upload_key 上传群图片
-    pub async fn _upload_group_image(
-        &self,
-        upload_key: Vec<u8>,
-        addr: std::net::SocketAddr,
-        data: Vec<u8>,
-    ) -> RQResult<()> {
-        if self.highway_session.read().await.session_key.is_empty() {
-            return Err(RQError::Other("highway_session_key is empty".into()));
-        }
-        self.highway_upload_bdh(
-            addr,
-            BdhInput {
-                command_id: 2,
-                body: data,
-                ticket: upload_key,
-                ext: vec![],
-                encrypt: false,
-                chunk_size: 256 * 1024,
-                send_echo: true,
-            },
-        )
-        .await?;
-        Ok(())
-    }
-
     /// 上传群图片
     pub async fn upload_group_image(&self, group_code: i64, data: Vec<u8>) -> RQResult<GroupImage> {
         self.upload_common_group_image(group_code, None, data).await
@@ -573,7 +547,7 @@ impl super::super::Client {
                         .pop()
                         .ok_or_else(|| RQError::Other("addrs is empty".into()))?,
                 };
-                self._upload_group_image(upload_key, addr.clone().into(), data)
+                self.upload_image_data(upload_key, addr.clone().into(), data, 2)
                     .await?;
                 image_info.into_group_image(file_id, addr, signature)
             }

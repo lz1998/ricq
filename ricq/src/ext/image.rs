@@ -34,7 +34,7 @@ where
             let addr = upload_addrs
                 .pop()
                 .ok_or_else(|| RQError::Other("addrs is empty".into()))?;
-            cli._upload_group_image(upload_key, addr.clone().into(), data)
+            cli.upload_image_data(upload_key, addr.clone().into(), data, 2)
                 .await
                 .map(|_| image_info.into_group_image(file_id, addr, sign))?
         }
@@ -65,7 +65,7 @@ where
             let addr = upload_addrs
                 .pop()
                 .ok_or_else(|| RQError::Other("addrs is empty".into()))?;
-            cli._upload_friend_image(upload_key, addr.clone().into(), data)
+            cli.upload_image_data(upload_key, addr.clone().into(), data, 1)
                 .await
                 .map(|_| image_info.into_friend_image(res_id, uuid))?
         }

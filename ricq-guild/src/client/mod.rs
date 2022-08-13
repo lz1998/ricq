@@ -1,6 +1,6 @@
 use crate::client::decoder::Decoder;
 use crate::protocol::protobuf::FirstViewMsg;
-use crate::protocol::{protobuf, FirstView, FirstViewMessage, GuildSelfProfile, GuildUserProfile};
+use crate::protocol::{protobuf, FirstView, FirstViewMessage, GuildSelfProfile};
 use ricq_core::msg::elem::GroupImage;
 use ricq_core::msg::MessageChain;
 use ricq_core::protocol::packet::Packet;
@@ -15,6 +15,7 @@ pub mod builder;
 pub mod decoder;
 pub mod processor;
 
+#[allow(dead_code)]
 pub struct GuildClient {
     rq_client: Arc<ricq::Client>,
     listeners: HashMap<&'static str, broadcast::Receiver<Packet>>,
