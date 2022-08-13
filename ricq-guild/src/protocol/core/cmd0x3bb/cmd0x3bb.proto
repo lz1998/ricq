@@ -1,0 +1,30 @@
+syntax = "proto2";
+
+package cmd0x3bb;
+
+message AnonyMsg {
+  optional uint32 cmd = 1;
+  optional C3BBReqBody anonyReq = 10;
+  optional C3BBRspBody anonyRsp = 11;
+}
+
+message AnonyStatus {
+  optional uint32 forbidTalking = 1;
+  optional bytes errMsg = 10;
+}
+
+message C3BBReqBody {
+  optional uint64 uin = 1;
+  optional uint64 groupCode = 2;
+}
+
+message C3BBRspBody {
+  optional int32 ret = 1;
+  optional uint64 groupCode = 2;
+  optional bytes anonyName = 3;
+  optional uint32 portraitIndex = 4;
+  optional uint32 bubbleIndex = 5;
+  optional uint32 expiredTime = 6;
+  optional AnonyStatus anonyStatus = 10;
+  optional string color = 15;
+}

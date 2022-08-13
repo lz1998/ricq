@@ -3,6 +3,7 @@ use std::pin::Pin;
 
 use ricq_core::command::img_store::GroupImageStoreResp;
 use ricq_core::command::long_conn::OffPicUpResp;
+use ricq_core::highway::BdhInput;
 use ricq_core::msg::elem::{FriendImage, GroupImage};
 use ricq_core::{RQError, RQResult};
 
@@ -34,9 +35,20 @@ where
             let addr = upload_addrs
                 .pop()
                 .ok_or_else(|| RQError::Other("addrs is empty".into()))?;
-            cli.upload_image_data(upload_key, addr.clone().into(), data, 2)
-                .await
-                .map(|_| image_info.into_group_image(file_id, addr, sign))?
+            cli.highway_upload_bdh(
+                addr.clone().into(),
+                BdhInput {
+                    command_id: 2,
+                    body: data,
+                    ticket: upload_key,
+                    ext: vec![],
+                    encrypt: false,
+                    chunk_size: 256 * 1024,
+                    send_echo: true,
+                },
+            )
+            .await
+            .map(|_| image_info.into_group_image(file_id, addr, sign))?
         }
     };
     Ok(group_image)
@@ -65,9 +77,20 @@ where
             let addr = upload_addrs
                 .pop()
                 .ok_or_else(|| RQError::Other("addrs is empty".into()))?;
-            cli.upload_image_data(upload_key, addr.clone().into(), data, 1)
-                .await
-                .map(|_| image_info.into_friend_image(res_id, uuid))?
+            cli.highway_upload_bdh(
+                addr.clone().into(),
+                BdhInput {
+                    command_id: 1,
+                    body: data,
+                    ticket: upload_key,
+                    ext: vec![],
+                    encrypt: false,
+                    chunk_size: 256 * 1024,
+                    send_echo: true,
+                },
+            )
+            .await
+            .map(|_| image_info.into_friend_image(res_id, uuid))?
         }
     };
     Ok(friend_image)

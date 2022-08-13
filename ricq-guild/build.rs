@@ -1,4 +1,5 @@
 use std::path::{Path, PathBuf};
+
 fn recurse_dir(v: &mut Vec<PathBuf>, dir: impl AsRef<Path>) {
     for entry in
         std::fs::read_dir(&dir).unwrap_or_else(|_| panic!("Unable to read dir: {:?}", dir.as_ref()))
@@ -16,7 +17,7 @@ fn main() {
     recurse_dir(&mut files, "src/protocol/protobuf");
 
     prost_build::Config::new()
-        .extern_path(".msg", "ricq_core::pb::msg")
-        .compile_protos(&files, &["src/protocol/protobuf", "../ricq-core/src/pb"])
+        .extern_path(".msg", "::ricq_core::pb::msg")
+        .compile_protos(&files, &["src/protocol/protobuf", "src/protocol/core"])
         .expect("Cannot compile protobuf files");
 }

@@ -1,0 +1,34 @@
+syntax = "proto2";
+
+package online_status;
+
+message AutoStateBizInfo {
+  optional uint64 updateTime = 1;
+}
+
+message CustomStatus {
+  optional uint64 faceIndex = 1;
+  optional string wording = 2;
+  optional uint64 faceType = 3;
+}
+
+message WeatherBizInfo {
+  optional string weatherType = 1;
+  optional string weatherTypeId = 2;
+  optional uint32 adcode = 3;
+  optional uint64 updateTime = 4;
+  optional string city = 5;
+  optional string area = 6;
+  optional string temper = 7;
+  optional uint32 flag = 8;
+  optional string weatherDesc = 9;
+}
+
+message ZodiacBizInfo {
+  optional string todayTrend = 1;
+  optional string tomorrowTrend = 2;
+  optional string miniapp = 3;
+  optional string todayDate = 4;
+  optional string luckyColor = 5;
+  optional string luckyNumber = 6;
+}
