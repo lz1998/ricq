@@ -1,19 +1,25 @@
-use crate::client::decoder::Decoder;
-use crate::protocol::protobuf::FirstViewMsg;
-use crate::protocol::{protobuf, FirstView, FirstViewMessage, GuildSelfProfile};
+use std::collections::HashMap;
+use std::ops::Deref;
+use std::sync::Arc;
+
+use tokio::sync::{broadcast, RwLockReadGuard};
+use tokio::task::JoinHandle;
+
+use ricq::structs::ImageInfo;
 use ricq_core::msg::elem::GroupImage;
 use ricq_core::msg::MessageChain;
 use ricq_core::protocol::packet::Packet;
 use ricq_core::RQResult;
-use std::collections::HashMap;
-use std::ops::Deref;
-use std::sync::Arc;
-use tokio::sync::{broadcast, RwLockReadGuard};
-use tokio::task::JoinHandle;
+
+use crate::client::decoder::Decoder;
+use crate::protocol::protobuf::FirstViewMsg;
+use crate::protocol::{protobuf, FirstView, FirstViewMessage, GuildSelfProfile};
 
 pub mod builder;
 pub mod decoder;
 pub mod processor;
+
+type GuildImageStoreResp = ricq_core::command::img_store::GroupImageStoreResp;
 
 #[allow(dead_code)]
 pub struct GuildClient {
@@ -156,9 +162,40 @@ impl GuildClient {
         channel_id: u64,
         image: Vec<u8>,
     ) -> RQResult<GroupImage> {
-        self.rq_client
-            .upload_common_group_image(channel_id as _, Some(guild_id), image)
+        let image_store = self
+            .get_guild_image_store(guild_id, channel_id, &image)
+            .await?;
+        match image_store {
+            GuildImageStoreResp::Exist { .. } => {
+                todo!("construct guild image")
+            }
+            GuildImageStoreResp::NotExist { .. } => {
+                todo!("upload guild image")
+            }
+        }
+    }
+
+    pub async fn get_guild_image_store(
+        &self,
+        guild_id: u64,
+        channel_id: u64,
+        data: &[u8],
+    ) -> RQResult<GuildImageStoreResp> {
+        let image_info = ImageInfo::try_new(&data)?;
+        let req = self.engine().await.build_guild_image_store_packet(
+            channel_id as _,
+            guild_id,
+            image_info.filename,
+            image_info.md5,
+            image_info.size as u64,
+            image_info.width,
+            image_info.height,
+            image_info.image_type as u32,
+        );
+        let resp = self.rq_client.send_and_wait(req).await?;
+        self.engine()
             .await
+            .decode_group_image_store_response(resp.body)
     }
 }
 
