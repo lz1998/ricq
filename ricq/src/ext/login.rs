@@ -26,7 +26,10 @@ pub async fn auto_query_qrcode(client: &Arc<Client>, sig: &[u8]) -> RQResult<()>
                     LoginResponse::DeviceLockLogin { .. } => {
                         match client.device_lock_login().await? {
                             LoginResponse::Success { .. } => Ok(()),
-                            _ => Err(RQError::Other("device_lock_login failed".into())),
+                            other => Err(RQError::Other(format!(
+                                "device_lock_login failed {:?}",
+                                other
+                            ))),
                         }
                     }
                     _ => Err(RQError::Other("unknown error".into())),

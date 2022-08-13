@@ -21,7 +21,7 @@ impl ImageInfo {
     pub fn try_new(data: &[u8]) -> RQResult<Self> {
         let md5 = md5::compute(data).to_vec();
 
-        #[cfg(feature = "img-detail")]
+        #[cfg(feature = "image-detail")]
         let (width, height, format, ext_name) = {
             let img_reader = image::io::Reader::new(std::io::Cursor::new(data))
                 .with_guessed_format()
@@ -31,7 +31,7 @@ impl ImageInfo {
             let ext_name = format.extensions_str().first().expect("image_format error");
             (width, height, format, ext_name)
         };
-        #[cfg(not(feature = "img-detail"))]
+        #[cfg(not(feature = "image-detail"))]
         let (width, height, ext_name) = (1280, 720, "png");
 
         Ok(ImageInfo {
@@ -39,7 +39,7 @@ impl ImageInfo {
             md5,
             width,
             height,
-            #[cfg(feature = "img-detail")]
+            #[cfg(feature = "image-detail")]
             image_type: match format {
                 image::ImageFormat::Jpeg => 1000,
                 image::ImageFormat::Png => 1001,
@@ -48,7 +48,7 @@ impl ImageInfo {
                 image::ImageFormat::Gif => 2000,
                 _ => 1000,
             },
-            #[cfg(not(feature = "img-detail"))]
+            #[cfg(not(feature = "image-detail"))]
             image_type: 1001, // PNG
             size: data.len() as u32,
         })
