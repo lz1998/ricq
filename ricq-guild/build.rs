@@ -1,6 +1,7 @@
 use std::path::{Path, PathBuf};
 fn recurse_dir(v: &mut Vec<PathBuf>, dir: impl AsRef<Path>) {
-    for entry in std::fs::read_dir(&dir).unwrap_or_else(|_| panic!("Unable to read dir: {:?}", dir.as_ref()))
+    for entry in
+        std::fs::read_dir(&dir).unwrap_or_else(|_| panic!("Unable to read dir: {:?}", dir.as_ref()))
     {
         let path = entry.expect("Unable to get direntry").path();
         if path.is_dir() {

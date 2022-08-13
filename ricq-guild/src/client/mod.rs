@@ -46,7 +46,6 @@ impl GuildClient {
 
             let mut rx = cli.listen_command(COMMAND).await;
 
-            
             let r = rx.recv().await.unwrap();
             let mut first_view: FirstViewMsg = Decoder.decode_first_view_msg(r.body)?;
 
