@@ -206,7 +206,7 @@ impl super::super::Client {
                     Some(addr) => addr.clone(),
                     None => upload_addrs
                         .pop()
-                        .ok_or_else(|| RQError::Other("addrs is empty".into()))?,
+                        .ok_or(RQError::EmptyField("upload_addrs"))?,
                 };
                 self.highway_upload_bdh(
                     addr.clone().into(),
@@ -301,7 +301,7 @@ impl super::super::Client {
             .await
             .first()
             .cloned()
-            .ok_or_else(|| RQError::Other("highway_addrs is empty".into()))?;
+            .ok_or(RQError::EmptyField("highway_addrs"))?;
         let ticket = self
             .highway_session
             .read()
@@ -367,10 +367,7 @@ impl super::super::Client {
     ) -> RQResult<String> {
         let req = self.engine.read().await.build_c2c_ptt_down_req(
             sender_uin,
-            audio
-                .0
-                .file_uuid
-                .ok_or_else(|| RQError::Other("file_uuid is none".into()))?,
+            audio.0.file_uuid.ok_or(RQError::EmptyField("file_uuid"))?,
         );
         let resp = self.send_and_wait(req).await?;
         self.engine.read().await.decode_c2c_ptt_down(resp.body)

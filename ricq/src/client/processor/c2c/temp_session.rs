@@ -28,7 +28,7 @@ pub fn parse_temp_message(msg: pb::msg::Message) -> RQResult<GroupTempMessage> {
     let head = msg.head.unwrap();
     let tmp_head = head
         .c2c_tmp_msg_head
-        .ok_or_else(|| RQError::Other("tmp head is none".into()))?;
+        .ok_or(RQError::EmptyField("c2c_tmp_msg_head"))?;
 
     Ok(GroupTempMessage {
         seqs: vec![head.msg_seq.unwrap_or_default()],

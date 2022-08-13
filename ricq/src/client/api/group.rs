@@ -254,7 +254,7 @@ impl super::super::Client {
                 ._get_group_member_list(group_code, next_uin, group_owner_uin)
                 .await?;
             if resp.list.is_empty() {
-                return Err(RQError::Other("member list is empty".to_string()));
+                return Err(RQError::EmptyField("GroupMemberListResponse.list"));
             }
             for m in resp.list.iter_mut() {
                 m.group_code = group_code;
@@ -521,7 +521,7 @@ impl super::super::Client {
                     Some(addr) => addr.clone(),
                     None => upload_addrs
                         .pop()
-                        .ok_or_else(|| RQError::Other("addrs is empty".into()))?,
+                        .ok_or(RQError::EmptyField("upload_addrs"))?,
                 };
                 self.highway_upload_bdh(
                     addr.clone().into(),
@@ -564,7 +564,7 @@ impl super::super::Client {
             .await
             .first()
             .cloned()
-            .ok_or_else(|| RQError::Other("highway_addrs is empty".into()))?;
+            .ok_or(RQError::EmptyField("highway_addrs"))?;
         let ticket = self
             .highway_session
             .read()
@@ -611,10 +611,7 @@ impl super::super::Client {
     ) -> RQResult<String> {
         let req = self.engine.read().await.build_group_ptt_down_req(
             group_code,
-            audio
-                .0
-                .file_md5
-                .ok_or_else(|| RQError::Other("file_md5 is none".into()))?,
+            audio.0.file_md5.ok_or(RQError::EmptyField("file_md5"))?,
         );
         let resp = self.send_and_wait(req).await?;
         self.engine.read().await.decode_group_ptt_down(resp.body)
@@ -676,11 +673,11 @@ impl super::super::Client {
             .read()
             .await
             .first()
-            .ok_or_else(|| RQError::Other("addrs is empty".into()))?
+            .ok_or(RQError::EmptyField("highway_addrs"))?
             .clone();
 
         if self.highway_session.read().await.session_key.is_empty() {
-            return Err(RQError::Other("highway_session_key is empty".into()));
+            return Err(RQError::EmptyField("highway_session_key"));
         }
         let ticket = self.highway_session.read().await.sig_session.to_vec();
         let mut data = thumb_data;

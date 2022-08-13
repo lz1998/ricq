@@ -161,7 +161,7 @@ impl Transport {
         match ret_code {
             0 => {}
             -10008 => return Err(RQError::SessionExpired),
-            _ => return Err(RQError::UnsuccessfulRetCode(ret_code)),
+            other => return Err(RQError::UnsuccessfulRetCode(other)),
         }
         pkt.message = head.read_string();
         pkt.command_name = head.read_string();
