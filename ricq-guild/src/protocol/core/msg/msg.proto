@@ -1,0 +1,866 @@
+syntax = "proto2";
+
+package msg;
+
+message GetMessageRequest {
+  optional SyncFlag syncFlag = 1;
+  optional bytes syncCookie = 2;
+  optional int32 rambleFlag = 3;
+  optional int32 latestRambleNumber = 4;
+  optional int32 otherRambleNumber = 5;
+  optional int32 onlineSyncFlag = 6;
+  optional int32 contextFlag = 7;
+  optional int32 whisperSessionId = 8;
+  optional int32 msgReqType = 9;
+  optional bytes pubaccountCookie = 10;
+  optional bytes msgCtrlBuf = 11;
+  optional bytes serverBuf = 12;
+}
+
+message SendMessageRequest {
+  optional RoutingHead routingHead = 1;
+  optional ContentHead contentHead = 2;
+  optional MessageBody msgBody = 3;
+  optional int32 msgSeq = 4;
+  optional int32 msgRand = 5;
+  optional bytes syncCookie = 6;
+  //MsgComm.AppShareInfo? appShare = 7;
+  optional int32 msgVia = 8;
+  optional int32 dataStatist = 9;
+  //MultiMsgAssist? multiMsgAssist = 10;
+  //PbInputNotifyInfo? inputNotifyInfo = 11;
+  optional MsgCtrl msgCtrl = 12;
+  //ImReceipt.ReceiptReq? receiptReq = 13;
+  optional int32 multiSendSeq = 14;
+}
+
+message SendMessageResponse {
+  optional int32 result = 1;
+  optional string errMsg = 2;
+}
+
+message MsgWithDrawReq {
+  repeated C2CMsgWithDrawReq c2cWithDraw = 1;
+  repeated GroupMsgWithDrawReq groupWithDraw = 2;
+}
+
+message C2CMsgWithDrawReq{
+  repeated C2CMsgInfo msgInfo = 1;
+  optional int32 longMessageFlag = 2;
+  optional bytes reserved = 3;
+  optional int32 subCmd = 4;
+}
+
+message GroupMsgWithDrawReq{
+  optional int32 subCmd = 1;
+  optional int32 groupType = 2;
+  optional int64 groupCode = 3;
+  repeated GroupMsgInfo msgList = 4;
+  optional bytes userDef = 5;
+}
+
+message MsgWithDrawResp {
+  repeated C2CMsgWithDrawResp c2cWithDraw = 1;
+  repeated GroupMsgWithDrawResp groupWithDraw = 2;
+}
+
+message C2CMsgWithDrawResp {
+  optional int32 result = 1;
+  optional string errMsg = 2;
+}
+
+message GroupMsgWithDrawResp {
+  optional int32 result = 1;
+  optional string errMsg = 2;
+}
+
+message GroupMsgInfo {
+  optional int32 msgSeq = 1;
+  optional int32 msgRandom = 2;
+  optional int32 msgType = 3;
+}
+
+message C2CMsgInfo {
+  optional int64 fromUin = 1;
+  optional int64 toUin = 2;
+  optional int32 msgSeq = 3;
+  optional int64 msgUid = 4;
+  optional int64 msgTime = 5;
+  optional int32 msgRandom = 6;
+  optional int32 pkgNum = 7;
+  optional int32 pkgIndex = 8;
+  optional int32 divSeq = 9;
+  optional int32 msgType = 10;
+  optional RoutingHead routingHead = 20;
+}
+
+message RoutingHead {
+  oneof RoutingHead{
+    C2C c2c = 1;
+    Grp grp = 2;
+    GrpTmp grpTmp = 3;
+    WPATmp wpaTmp = 6;
+  }
+  /*
+  Dis dis = 4;
+  DisTmp disTmp = 5;
+  SecretFileHead? secretFile = 7;
+  PublicPlat? publicPlat = 8;
+  TransMsg? transMsg = 9;
+  AddressListTmp? addressList = 10;
+  RichStatusTmp? richStatusTmp = 11;
+  TransCmd? transCmd = 12;
+  AccostTmp? accostTmp = 13;
+  PubGroupTmp? pubGroupTmp = 14;
+  Trans0x211? trans0x211 = 15;
+  BusinessWPATmp? businessWpaTmp = 16;
+  AuthTmp? authTmp = 17;
+  BsnsTmp? bsnsTmp = 18;
+  QQQueryBusinessTmp? qqQuerybusinessTmp = 19;
+  NearByDatingTmp? nearbyDatingTmp = 20;
+  NearByAssistantTmp? nearbyAssistantTmp = 21;
+  CommTmp? commTmp = 22;
+  */
+}
+
+message WPATmp {
+  optional uint64 toUin = 1;
+  optional bytes sig = 2;
+}
+
+message C2C {
+  optional int64 toUin = 1;
+}
+
+message Grp {
+  optional int64 groupCode = 1;
+}
+
+message GrpTmp {
+  optional int64 groupUin = 1;
+  optional int64 toUin = 2;
+}
+
+message MsgCtrl {
+  optional int32 msgFlag = 1;
+}
+
+message GetMessageResponse {
+  optional int32 result = 1;
+  optional string errorMessage = 2;
+  optional bytes syncCookie = 3;
+  optional SyncFlag syncFlag = 4;
+  repeated UinPairMessage uinPairMsgs = 5;
+  optional int64 bindUin = 6;
+  optional int32 msgRspType = 7;
+  optional bytes pubAccountCookie = 8;
+  optional bool isPartialSync = 9;
+  optional bytes msgCtrlBuf = 10;
+}
+
+message PushMessagePacket {
+  optional Message message = 1;
+  optional int32 svrip = 2;
+  optional bytes pushToken = 3;
+  optional int32 pingFLag = 4;
+  optional int32 generalFlag = 9;
+}
+
+message UinPairMessage {
+  optional int32 lastReadTime = 1;
+  optional int64 peerUin = 2;
+  optional int32 msgCompleted = 3;
+  repeated Message messages = 4;
+}
+
+message Message {
+  optional MessageHead head = 1;
+  optional ContentHead content = 2;
+  optional MessageBody body = 3;
+}
+
+message MessageBody {
+  optional RichText richText = 1;
+  optional bytes msgContent = 2;
+  optional bytes msgEncryptContent = 3;
+}
+
+message RichText {
+  optional Attr attr = 1;
+  repeated Elem elems = 2;
+  optional NotOnlineFile notOnlineFile = 3;
+  optional Ptt ptt = 4;
+}
+
+message Elem {
+  oneof elem {
+    Text text = 1;
+    Face face = 2;
+    OnlineImage onlineImage = 3;
+    NotOnlineImage notOnlineImage = 4;
+    TransElem transElemInfo = 5;
+    MarketFace marketFace = 6;
+    //ElemFlags elemFlags = 7;
+    CustomFace customFace = 8;
+    ElemFlags2 elemFlags2 = 9;
+    //FunFace funFace = 10;
+    //SecretFileMsg secretFile = 11;
+    RichMsg richMsg = 12;
+    GroupFile groupFile = 13;
+    //PubGroup pubGroup = 14;
+    //MarketTrans marketTrans = 15;
+    ExtraInfo extraInfo = 16;
+    //ShakeWindow? shakeWindow = 17;
+    //PubAccount? pubAccount = 18;
+    VideoFile videoFile = 19;
+    //TipsInfo? tipsInfo = 20;
+    AnonymousGroupMessage anonGroupMsg = 21;
+    //QQLiveOld? qqLiveOld = 22;
+    //LifeOnlineAccount? lifeOnline = 23;
+    QQWalletMsg QQWalletMsg = 24;
+    //CrmElem? crmElem = 25;
+    //ConferenceTipsInfo? conferenceTipsInfo = 26;
+    //RedBagInfo? redbagInfo = 27;
+    //LowVersionTips? lowVersionTips = 28;
+    //bytes bankcodeCtrlInfo = 29;
+    //NearByMessageType? nearByMsg = 30;
+    CustomElem customElem = 31;
+    //LocationInfo? locationInfo = 32;
+    //PubAccInfo? pubAccInfo = 33;
+    //SmallEmoji? smallEmoji = 34;
+    //FSJMessageElem? fsjMsgElem = 35;
+    //ArkAppElem? arkApp = 36;
+    GeneralFlags generalFlags = 37;
+    //CustomFace? hcFlashPic = 38;
+    //DeliverGiftMsg? deliverGiftMsg = 39;
+    //BitAppMsg? bitappMsg = 40;
+    //OpenQQData? openQqData = 41;
+    //ApolloActMsg? apolloMsg = 42;
+    //GroupPubAccountInfo? groupPubAccInfo = 43;
+    //BlessingMessage? blessMsg = 44;
+    SourceMsg srcMsg = 45;
+    //LolaMsg? lolaMsg = 46;
+    //GroupBusinessMsg? groupBusinessMsg = 47;
+    //WorkflowNotifyMsg? msgWorkflowNotify = 48;
+    //PatsElem? patElem = 49;
+    //GroupPostElem? groupPostElem = 50;
+    LightApp lightApp = 51;
+    //EIMInfo? eimInfo = 52;
+    CommonElem commonElem = 53;
+  }
+}
+
+message MarketFace {
+  optional bytes faceName = 1;
+  optional uint32 itemType = 2;
+  optional uint32 faceInfo = 3;
+  optional bytes faceId = 4;
+  optional uint32 tabId = 5;
+  optional uint32 subType = 6;
+  optional bytes key = 7;
+  optional bytes param = 8;
+  optional uint32 mediaType = 9;
+  optional uint32 imageWidth = 10;
+  optional uint32 imageHeight = 11;
+  optional bytes mobileparam = 12;
+  optional bytes pbReserve = 13;
+}
+
+message ElemFlags2 {
+  optional uint32 colorTextId = 1;
+  optional uint64 msgId = 2;
+  optional uint32 whisperSessionId = 3;
+  optional uint32 pttChangeBit = 4;
+  optional uint32 vipStatus = 5;
+  optional uint32 compatibleId = 6;
+  repeated Inst insts = 7;
+  optional uint32 msgRptCnt = 8;
+  optional Inst srcInst = 9;
+  optional uint32 longtitude = 10;
+  optional uint32 latitude = 11;
+  optional uint32 customFont = 12;
+  optional PcSupportDef pcSupportDef = 13;
+  optional uint32 crmFlags = 14;
+
+  message Inst {
+    optional uint32 appId = 1;
+    optional uint32 instId = 2;
+  }
+}
+
+message PcSupportDef {
+  optional uint32 pcPtlBegin = 1;
+  optional uint32 pcPtlEnd = 2;
+  optional uint32 macPtlBegin = 3;
+  optional uint32 macPtlEnd = 4;
+  repeated uint32 ptlsSupport = 5;
+  repeated uint32 ptlsNotSupport = 6;
+}
+
+message CommonElem {
+  optional int32 serviceType = 1;
+  optional bytes pbElem = 2;
+  optional int32 businessType = 3;
+}
+
+message QQWalletMsg {
+  optional QQWalletAioBody aioBody = 1;
+}
+
+message QQWalletAioBody {
+  optional uint64 sendUin = 1;
+  optional QQWalletAioElem sender = 2;
+  optional QQWalletAioElem receiver = 3;
+  optional sint32 ChannelId = 4;
+  optional sint32 templateId = 5;
+  optional uint32 resend = 6;
+  optional uint32 msgPriority = 7;
+  optional sint32 redType = 8;
+  optional bytes billNo = 9;
+  optional bytes authKey = 10;
+  optional sint32 sessionType = 11;
+  optional sint32 msgType = 12;
+  optional sint32 envelOpeId = 13;
+  optional bytes name = 14;
+  optional sint32 confType = 15;
+  optional sint32 msgFrom = 16;
+  optional bytes pcBody = 17;
+  optional bytes index = 18;
+  optional uint32 redChannel = 19;
+  repeated uint64 grapUin = 20;
+  optional bytes pbReserve = 21;
+}
+
+message QQWalletAioElem{
+  optional uint32 background = 1;
+  optional uint32 icon = 2;
+  optional string title = 3;
+  optional string subtitle = 4;
+  optional string content = 5;
+  optional bytes linkUrl = 6;
+  optional bytes blackStripe = 7;
+  optional bytes notice = 8;
+  optional uint32 titleColor = 9;
+  optional uint32 subtitleColor = 10;
+  optional bytes actionsPriority = 11;
+  optional bytes jumpUrl = 12;
+  optional bytes nativeIos = 13;
+  optional bytes nativeAndroid = 14;
+  optional bytes iconUrl = 15;
+  optional uint32 contentColor = 16;
+  optional uint32 contentBgColor = 17;
+  optional bytes aioImageLeft = 18;
+  optional bytes aioImageRight = 19;
+  optional bytes cftImage = 20;
+  optional bytes pbReserve = 21;
+}
+
+message RichMsg {
+  optional bytes template1 = 1;
+  optional int32 serviceId = 2;
+  optional bytes msgResId = 3;
+  optional int32 rand = 4;
+  optional int32 seq = 5;
+}
+
+message CustomElem {
+  optional bytes desc = 1;
+  optional bytes data = 2;
+  optional int32  enumType = 3;
+  optional bytes ext = 4;
+  optional bytes sound = 5;
+}
+
+message Text {
+  optional string str = 1;
+  optional string link = 2;
+  optional bytes attr6Buf = 3;
+  optional bytes attr7Buf = 4;
+  optional bytes buf = 11;
+  optional bytes pbReserve = 12;
+}
+
+message Attr {
+  optional int32 codePage = 1;
+  optional int32 time = 2;
+  optional int32 random = 3;
+  optional int32 color = 4;
+  optional int32 size = 5;
+  optional int32 effect = 6;
+  optional int32 charSet = 7;
+  optional int32 pitchAndFamily = 8;
+  optional string fontName = 9;
+  optional bytes reserveData = 10;
+}
+
+message Ptt {
+  optional int32 fileType = 1;
+  optional int64 srcUin = 2;
+  optional bytes fileUuid = 3;
+  optional bytes fileMd5 = 4;
+  optional string fileName = 5;
+  optional int32 fileSize = 6;
+  optional bytes reserve = 7;
+  optional int32 fileId = 8;
+  optional int32 serverIp = 9;
+  optional int32 serverPort = 10;
+  optional bool boolValid = 11;
+  optional bytes signature = 12;
+  optional bytes shortcut = 13;
+  optional bytes fileKey = 14;
+  optional int32 magicPttIndex = 15;
+  optional int32 voiceSwitch = 16;
+  optional bytes pttUrl = 17;
+  optional bytes groupFileKey = 18;
+  optional int32 time = 19;
+  optional bytes downPara = 20;
+  optional int32 format = 29;
+  optional bytes pbReserve = 30;
+  repeated bytes bytesPttUrls = 31;
+  optional int32 downloadFlag = 32;
+}
+
+message OnlineImage {
+  optional bytes guid = 1;
+  optional bytes filePath = 2;
+  optional  bytes oldVerSendFile = 3;
+}
+
+message NotOnlineImage {
+  optional string filePath = 1;
+  optional uint32 fileLen = 2;
+  optional string downloadPath = 3;
+  optional bytes oldVerSendFile = 4;
+  optional int32 imgType = 5;
+  optional bytes previewsImage = 6;
+  optional bytes picMd5 = 7;
+  optional uint32 picHeight = 8;
+  optional uint32 picWidth = 9;
+  optional string resId = 10;
+  optional bytes flag = 11;
+  optional string thumbUrl = 12;
+  optional int32 original = 13;
+  optional string bigUrl = 14;
+  optional string origUrl = 15;
+  optional int32 bizType = 16;
+  optional int32 result = 17;
+  optional int32 index = 18;
+  optional bytes opFaceBuf = 19;
+  optional bool oldPicMd5 = 20;
+  optional int32 thumbWidth = 21;
+  optional int32 thumbHeight = 22;
+  optional int32 fileId = 23;
+  optional int32 showLen = 24;
+  optional int32 downloadLen = 25;
+  optional bytes pbReserve = 29;
+}
+
+message NotOnlineFile {
+  optional int32 fileType = 1;
+  optional bytes sig = 2;
+  optional bytes fileUuid = 3;
+  optional bytes fileMd5 = 4;
+  optional bytes fileName = 5;
+  optional int64 fileSize = 6;
+  optional bytes note = 7;
+  optional int32 reserved = 8;
+  optional int32 subcmd = 9;
+  optional int32 microCloud = 10;
+  repeated bytes bytesFileUrls = 11;
+  optional int32 downloadFlag = 12;
+  optional int32 dangerEvel = 50;
+  optional int32 lifeTime = 51;
+  optional int32 uploadTime = 52;
+  optional int32 absFileType = 53;
+  optional int32 clientType = 54;
+  optional int32 expireTime = 55;
+  optional bytes pbReserve = 56;
+}
+
+message TransElem {
+  optional int32 elemType = 1;
+  optional bytes elemValue = 2;
+}
+
+message ExtraInfo {
+  optional bytes nick = 1;
+  optional bytes groupCard = 2;
+  optional int32 level = 3;
+  optional int32 flags = 4;
+  optional int32 groupMask = 5;
+  optional int32 msgTailId = 6;
+  optional bytes senderTitle = 7;
+  optional bytes apnsTips = 8;
+  optional int64 uin = 9;
+  optional int32 msgStateFlag = 10;
+  optional int32 apnsSoundType = 11;
+  optional int32 newGroupFlag = 12;
+}
+
+message GroupFile {
+  optional bytes filename = 1;
+  optional int64 fileSize = 2;
+  optional bytes fileId = 3;
+  optional bytes batchId = 4;
+  optional bytes fileKey = 5;
+  optional bytes mark = 6;
+  optional int64 sequence = 7;
+  optional bytes batchItemId = 8;
+  optional int32 feedMsgTime = 9;
+  optional bytes pbReserve = 10;
+}
+
+message AnonymousGroupMessage {
+  optional int32 flags = 1;
+  optional bytes anonId = 2;
+  optional bytes anonNick = 3;
+  optional int32 headPortrait = 4;
+  optional int32 expireTime = 5;
+  optional int32 bubbleId = 6;
+  optional bytes rankColor = 7;
+}
+
+message VideoFile {
+  optional bytes fileUuid = 1;
+  optional bytes fileMd5 = 2;
+  optional string fileName = 3;
+  optional int32 fileFormat = 4;
+  optional int32 fileTime = 5;
+  optional int32 fileSize = 6;
+  optional int32 thumbWidth = 7;
+  optional int32 thumbHeight = 8;
+  optional bytes thumbFileMd5 = 9;
+  optional bytes source = 10;
+  optional int32 thumbFileSize = 11;
+  optional int32 busiType = 12;
+  optional int32 fromChatType = 13;
+  optional int32 toChatType = 14;
+  optional bool boolSupportProgressive = 15;
+  optional int32 fileWidth = 16;
+  optional int32 fileHeight = 17;
+  optional int32 subBusiType = 18;
+  optional int32 videoAttr = 19;
+  repeated bytes bytesThumbFileUrls = 20;
+  repeated bytes bytesVideoFileUrls = 21;
+  optional int32 thumbDownloadFlag = 22;
+  optional int32 videoDownloadFlag = 23;
+  optional bytes pbReserve = 24;
+}
+
+message SourceMsg {
+  repeated int32 origSeqs = 1;
+  optional int64 senderUin = 2;
+  optional int32 time = 3;
+  optional int32 flag = 4;
+  repeated Elem elems = 5;
+  optional int32 type = 6;
+  optional bytes richMsg = 7;
+  optional bytes pbReserve = 8;
+  optional bytes srcMsg = 9;
+  optional int64 toUin = 10;
+  optional bytes troopName = 11;
+}
+
+message Face {
+  optional int32 index = 1;
+  optional bytes old = 2;
+  optional bytes buf = 11;
+}
+
+message LightApp {
+  optional bytes data = 1;
+  optional bytes msgResid = 2;
+}
+
+message CustomFace {
+  optional bytes guid = 1;
+  optional  string filePath = 2;
+  optional string shortcut = 3;
+  optional bytes buffer = 4;
+  optional bytes flag = 5;
+  optional bytes oldData = 6;
+  optional int32 fileId = 7;
+  optional uint32 serverIp = 8;
+  optional uint32 serverPort = 9;
+  optional int32 fileType = 10;
+  optional bytes signature = 11;
+  optional int32 useful = 12;
+  optional bytes md5 = 13;
+  optional string thumbUrl = 14;
+  optional string bigUrl = 15;
+  optional string origUrl = 16;
+  optional int32 bizType = 17;
+  optional int32 repeatIndex = 18;
+  optional int32 repeatImage = 19;
+  optional int32 imageType = 20;
+  optional int32 index = 21;
+  optional uint32 width = 22;
+  optional uint32 height = 23;
+  optional int32 source = 24;
+  optional uint32 size = 25;
+  optional int32 origin = 26;
+  optional int32 thumbWidth = 27;
+  optional int32 thumbHeight = 28;
+  optional int32 showLen = 29;
+  optional int32 downloadLen = 30;
+  optional string x400Url = 31;//x
+  optional int32 x400Width = 32;//x
+  optional int32 x400Height = 33;//x
+  optional bytes pbReserve = 34;
+}
+
+message ContentHead {
+  optional int32 pkgNum = 1;
+  optional int32 pkgIndex = 2;
+  optional int32 divSeq = 3;
+  optional int32 autoReply = 4;
+}
+
+message MessageHead {
+  optional int64 fromUin = 1;
+  optional int64 toUin = 2;
+  optional int32 msgType = 3;
+  optional int32 c2cCmd = 4;
+  optional int32 msgSeq = 5;
+  optional int32 msgTime = 6;
+  optional int64 msgUid = 7;
+  optional C2CTempMessageHead c2cTmpMsgHead = 8;
+  optional GroupInfo groupInfo = 9;
+  optional int32 fromAppid = 10;
+  optional int32 fromInstid = 11;
+  optional int32 userActive = 12;
+  optional DiscussInfo discussInfo = 13;
+  optional string fromNick = 14;
+  optional int64 authUin = 15;
+  optional string authNick = 16;
+  optional int32 msgFlag = 17;
+  optional string authRemark = 18;
+  optional string groupName = 19;
+  optional MutilTransHead mutiltransHead = 20;
+  optional InstCtrl msgInstCtrl = 21;
+  optional int32 publicAccountGroupSendFlag = 22;
+  optional int32 wseqInC2cMsghead = 23;
+  optional int64 cpid = 24;
+  optional ExtGroupKeyInfo extGroupKeyInfo = 25;
+  optional string multiCompatibleText = 26;
+  optional int32 authSex = 27;
+  optional bool isSrcMsg = 28;
+}
+
+message GroupInfo {
+  optional int64 groupCode = 1;
+  optional int32 groupType = 2;
+  optional int64 groupInfoSeq = 3;
+  optional bytes groupCard = 4;
+  optional bytes groupRank = 5;
+  optional int32 groupLevel = 6;
+  optional int32 groupCardType = 7;
+  optional bytes groupName = 8;
+}
+
+message DiscussInfo {
+  optional int64 discussUin = 1;
+  optional int32 discussType = 2;
+  optional int64 discussInfoSeq = 3;
+  optional bytes discussRemark = 4;
+  optional bytes discussName = 5;
+}
+
+message MutilTransHead{
+  optional int32 status = 1;
+  optional int32 msgId = 2;
+}
+
+message C2CTempMessageHead {
+  optional int32 c2cType = 1;
+  optional int32 serviceType = 2;
+  optional int64 groupUin = 3;
+  optional int64 groupCode = 4;
+  optional bytes sig = 5;
+  optional int32 sigType = 6;
+  optional string fromPhone = 7;
+  optional string toPhone = 8;
+  optional int32 lockDisplay = 9;
+  optional int32 directionFlag = 10;
+  optional bytes reserved = 11;
+}
+
+message InstCtrl {
+  repeated InstInfo msgSendToInst = 1;
+  repeated InstInfo msgExcludeInst = 2;
+  optional InstInfo msgFromInst = 3;
+}
+
+message InstInfo {
+  optional int32 apppid = 1;
+  optional int32 instid = 2;
+  optional int32 platform = 3;
+  optional int32 enumDeviceType = 10;
+}
+
+message ExtGroupKeyInfo {
+  optional int32 curMaxSeq = 1;
+  optional int64 curTime = 2;
+}
+
+message SyncCookie {
+  optional int64 time1 = 1;
+  optional int64 time = 2;
+  optional int64 ran1 = 3;
+  optional int64 ran2 = 4;
+  optional int64 const1 = 5;
+  optional int64 const2 = 11;
+  optional int64 const3 = 12;
+  optional int64 lastSyncTime = 13;
+  optional int64 const4 = 14;
+}
+
+message TransMsgInfo {
+  optional int64 fromUin = 1;
+  optional int64 toUin = 2;
+  optional int32 msgType = 3;
+  optional int32 msgSubtype = 4;
+  optional int32 msgSeq = 5;
+  optional int64 msgUid = 6;
+  optional int32 msgTime = 7;
+  optional int32 realMsgTime = 8;
+  optional string nickName = 9;
+  optional bytes msgData = 10;
+  optional int32 svrIp = 11;
+  optional ExtGroupKeyInfo extGroupKeyInfo = 12;
+  optional int32 generalFlag = 17;
+}
+
+message GeneralFlags {
+  optional int32 bubbleDiyTextId = 1;
+  optional int32 groupFlagNew = 2;
+  optional int64 uin = 3;
+  optional bytes rpId = 4;
+  optional int32 prpFold = 5;
+  optional int32 longTextFlag = 6;
+  optional string longTextResid = 7;
+  optional int32 groupType = 8;
+  optional int32 toUinFlag = 9;
+  optional int32 glamourLevel = 10;
+  optional int32 memberLevel = 11;
+  optional int64 groupRankSeq = 12;
+  optional int32 olympicTorch = 13;
+  optional bytes babyqGuideMsgCookie = 14;
+  optional int32 uin32ExpertFlag = 15;
+  optional int32 bubbleSubId = 16;
+  optional int64 pendantId = 17;
+  optional bytes rpIndex = 18;
+  optional bytes pbReserve = 19;
+}
+
+
+message PbMultiMsgItem {
+  optional string fileName = 1;
+  optional PbMultiMsgNew buffer = 2;
+}
+message PbMultiMsgNew {
+  repeated Message msg = 1;
+}
+message PbMultiMsgTransmit {
+  repeated Message msg = 1;
+  repeated PbMultiMsgItem pbItemList = 2;
+}
+
+message MsgElemInfo_servtype3 {
+  optional CustomFace flash_troop_pic = 1;
+  optional NotOnlineImage flash_c2c_pic = 2;
+}
+
+message MsgElemInfo_servtype33 {
+  optional uint32 index = 1;
+  optional bytes text = 2;
+  optional bytes compat = 3;
+  optional bytes buf = 4;
+}
+
+message SubMsgType0x4Body {
+  optional NotOnlineFile notOnlineFile = 1;
+  optional uint32 msgTime = 2;
+  optional uint32 onlineFileForPolyToOffline = 3;
+  // fileImageInfo
+}
+
+enum SyncFlag {
+  START = 0;
+  CONTINUME = 1;
+  STOP = 2;
+}
+
+message ResvAttr {
+  optional uint32 imageBizType = 1;
+  optional AnimationImageShow image_show = 7;
+}
+
+message AnimationImageShow {
+  optional int32 effect_id = 1;
+  optional bytes animation_param = 2;
+}
+
+message UinTypeUserDef {
+  optional int32 fromUinType = 1;
+  optional int64 fromGroupCode = 2;
+  optional string fileUuid = 3;
+}
+
+message GetGroupMsgReq {
+  optional uint64 groupCode = 1;
+  optional uint64 beginSeq = 2;
+  optional uint64 endSeq = 3;
+  optional uint32 filter = 4;
+  optional uint64 memberSeq = 5;
+  optional bool publicGroup = 6;
+  optional uint32 shieldFlag = 7;
+  optional uint32 saveTrafficFlag = 8;
+}
+
+message GetGroupMsgResp {
+  optional uint32 result = 1;
+  optional string errmsg = 2;
+  optional uint64 groupCode = 3;
+  optional uint64 returnBeginSeq = 4;
+  optional uint64 returnEndSeq = 5;
+  repeated Message msg = 6;
+}
+
+message PbGetOneDayRoamMsgReq {
+  optional uint64 peerUin = 1;
+  optional uint64 lastMsgTime = 2;
+  optional uint64 random = 3;
+  optional uint32 readCnt = 4;
+}
+
+message PbGetOneDayRoamMsgResp {
+  optional uint32 result = 1;
+  optional string errMsg = 2;
+  optional uint64 peerUin = 3;
+  optional uint64 lastMsgTime = 4;
+  optional uint64 random = 5;
+  repeated Message msg = 6;
+  optional uint32 isComplete = 7;
+}
+
+message PbPushMsg {
+  optional Message msg = 1;
+  optional int32 svrip = 2;
+  optional bytes pushToken = 3;
+  optional uint32 pingFlag = 4;
+  optional uint32 generalFlag = 9;
+  optional uint64 bindUin = 10;
+}
+
+message MsgElemInfo_servtype37 {
+  optional bytes packid = 1;
+  optional bytes stickerid = 2;
+  optional uint32 qsid = 3;
+  optional uint32 sourcetype = 4;
+  optional uint32 stickertype = 5;
+  optional bytes resultid = 6;
+  optional bytes text = 7;
+  optional bytes surpriseid = 8;
+  optional uint32 randomtype = 9;
+}

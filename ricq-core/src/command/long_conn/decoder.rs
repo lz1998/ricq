@@ -1,16 +1,15 @@
 use bytes::Bytes;
 
-use crate::command::common::PbToBytes;
 use crate::common::RQAddr;
 use crate::{pb, RQError, RQResult};
+use prost::Message;
 
 use super::OffPicUpResp;
 
 impl crate::Engine {
     // LongConn.OffPicUp
     pub fn decode_off_pic_up_response(&self, payload: Bytes) -> RQResult<OffPicUpResp> {
-        let mut resp = pb::cmd0x352::RspBody::from_bytes(&payload)
-            .map_err(|_| RQError::Decode("RspBody".into()))?;
+        let mut resp = pb::cmd0x352::RspBody::decode(&*payload)?;
         if let Some(err) = resp.fail_msg {
             return Err(RQError::Other(String::from_utf8_lossy(&err).to_string()));
         }
@@ -23,7 +22,7 @@ impl crate::Engine {
         let img = resp
             .tryup_img_rsp
             .pop()
-            .ok_or_else(|| RQError::Other("EmptyImgVec".into()))?;
+            .ok_or(RQError::EmptyField("tryup_img_rsp"))?;
 
         if img.result() != 0 {
             return Err(RQError::Other(

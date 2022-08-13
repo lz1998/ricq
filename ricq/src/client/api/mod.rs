@@ -426,32 +426,4 @@ impl super::Client {
         // 除了群聊，都不需要等 receipt 的 seq
         Ok(receipt)
     }
-
-    /// 使用 upload_key 上传图片
-    /// command_id: 1-好友，2-群/频道
-    pub async fn upload_image_data(
-        &self,
-        upload_key: Vec<u8>,
-        addr: std::net::SocketAddr,
-        data: Vec<u8>,
-        command_id: i32,
-    ) -> RQResult<()> {
-        if self.highway_session.read().await.session_key.is_empty() {
-            return Err(RQError::Other("highway_session_key is empty".into()));
-        }
-        self.highway_upload_bdh(
-            addr,
-            BdhInput {
-                command_id,
-                body: data,
-                ticket: upload_key,
-                ext: vec![],
-                encrypt: false,
-                chunk_size: 256 * 1024,
-                send_echo: true,
-            },
-        )
-        .await?;
-        Ok(())
-    }
 }

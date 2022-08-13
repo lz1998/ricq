@@ -141,6 +141,6 @@ impl super::super::super::Engine {
             .map
             .remove("DFRESP")
             .ok_or_else(|| RQError::Decode("decode_remove_friend `DFRESP` not found".into()))?;
-        jcers::from_buf(&mut r).map_err(RQError::Jce)
+        jcers::from_buf(&mut r).map_err(Into::into)
     }
 }

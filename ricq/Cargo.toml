@@ -11,7 +11,7 @@ keywords = ["qq", "protocol", "android", "mirai"]
 
 [features]
 default = []
-img-detail = ["image"]
+image-detail = ["image"]
 
 [dependencies]
 ricq-core = { version = "0.1.16", path = "../ricq-core" }

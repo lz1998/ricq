@@ -1,14 +1,13 @@
 use bytes::Bytes;
+use prost::Message;
 
-use crate::command::common::PbToBytes;
 use crate::structs::{GroupMemberInfo, GroupMemberPermission};
 use crate::{pb, RQError, RQResult};
 
 impl super::super::super::Engine {
     // group_member_card.get_group_member_card_info
     pub fn decode_group_member_info_response(&self, payload: Bytes) -> RQResult<GroupMemberInfo> {
-        let resp = pb::GroupMemberRspBody::from_bytes(&payload)
-            .map_err(|_| RQError::Decode("GroupMemberRspBody".to_string()))?;
+        let resp = pb::GroupMemberRspBody::decode(&*payload)?;
         let group_code = resp.group_code;
         let mem_info = resp
             .mem_info
