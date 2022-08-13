@@ -27,6 +27,6 @@ md5 = "0.7"
 prost = { version = "0.9", features = ["std"], default-features = false }
 rand = "0.8"
 serde = { version = "1", features = ["derive"] }
-tokio = { version = "1", features = ["full"] }
+tokio = { version = "1", features = ["rt", "macros", "net", "time"] }
 tokio-util = { version = "0.7", features = ["codec"] }
 tracing = "0.1"
