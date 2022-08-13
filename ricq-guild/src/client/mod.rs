@@ -181,7 +181,7 @@ impl GuildClient {
         channel_id: u64,
         data: &[u8],
     ) -> RQResult<GuildImageStoreResp> {
-        let image_info = ImageInfo::try_new(&data)?;
+        let image_info = ImageInfo::try_new(data)?;
         let req = self.engine().await.build_guild_image_store_packet(
             channel_id as _,
             guild_id,

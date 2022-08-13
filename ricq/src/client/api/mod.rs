@@ -379,7 +379,7 @@ impl super::Client {
         let prefix=if let Some(pb::multimsg::ExternMsg { channel_type }) = resp.msg_extern_info && channel_type == 2 {
             "https://ssl.htdata.qq.com".into()
         } else {
-            let addr = SocketAddr::from(RQAddr(resp.down_ip.pop().ok_or(RQError::EmptyField("down_ip"))?,resp.down_port.pop().ok_or(RQError::EmptyField("down_port".into()))? as u16));
+            let addr = SocketAddr::from(RQAddr(resp.down_ip.pop().ok_or(RQError::EmptyField("down_ip"))?,resp.down_port.pop().ok_or(RQError::EmptyField("down_port"))? as u16));
             format!("http://{}", addr)
         };
         let _url = format!(
