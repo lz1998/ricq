@@ -1,17 +1,16 @@
 use bytes::Bytes;
 
-use crate::command::common::PbToBytes;
 use crate::command::img_store::GroupImageStoreResp;
 use crate::common::RQAddr;
 use crate::{pb, RQError, RQResult};
+use prost::Message;
 
 impl super::super::super::Engine {
     pub fn decode_group_image_store_response(
         &self,
         payload: Bytes,
     ) -> RQResult<GroupImageStoreResp> {
-        let mut rsp = pb::cmd0x388::D388RspBody::from_bytes(&payload)
-            .map_err(|_| RQError::Decode("D388RspBody".into()))?;
+        let mut rsp = pb::cmd0x388::D388RspBody::decode(&*payload)?;
         let rsp = rsp
             .tryup_img_rsp
             .pop()

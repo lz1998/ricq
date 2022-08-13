@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use bytes::{Buf, Bytes};
+use prost::Message;
 
-use crate::command::common::PbToBytes;
 use crate::command::profile_service::*;
 use crate::{jce, RQResult};
 use crate::{pb, RQError};
@@ -10,7 +10,7 @@ use crate::{pb, RQError};
 impl super::super::super::Engine {
     // ProfileService.Pb.ReqSystemMsgNew.Group
     pub fn decode_system_msg_group_packet(&self, payload: Bytes) -> RQResult<GroupSystemMessages> {
-        let rsp = pb::structmsg::RspSystemMsgNew::from_bytes(&payload);
+        let rsp = pb::structmsg::RspSystemMsgNew::decode(&*payload);
         let mut join_group_requests = Vec::new();
         let mut self_invited = Vec::new();
         match rsp {
@@ -89,7 +89,7 @@ impl super::super::super::Engine {
         &self,
         payload: Bytes,
     ) -> RQResult<FriendSystemMessages> {
-        let rsp = pb::structmsg::RspSystemMsgNew::from_bytes(&payload)
+        let rsp = pb::structmsg::RspSystemMsgNew::decode(&*payload)
             .map_err(|_| RQError::Decode("RspSystemMsgNew".into()))?;
         Ok(FriendSystemMessages {
             requests: rsp
@@ -116,10 +116,8 @@ impl super::super::super::Engine {
         &self,
         mut payload: Bytes,
     ) -> RQResult<Vec<RichSigInfo>> {
-        let mut request: jce::RequestPacket =
-            jcers::from_buf(&mut payload).map_err(RQError::Jce)?;
-        let mut data: jce::RequestDataVersion2 =
-            jcers::from_buf(&mut request.s_buffer).map_err(RQError::Jce)?;
+        let mut request: jce::RequestPacket = jcers::from_buf(&mut payload)?;
+        let mut data: jce::RequestDataVersion2 = jcers::from_buf(&mut request.s_buffer)?;
         let mut a = data
             .map
             .remove("GetRichSigRes")
@@ -128,7 +126,7 @@ impl super::super::super::Engine {
             .remove("KQQ.GetRichSigRes")
             .ok_or_else(|| RQError::Decode("missing KQQ.GetRichSigRes".into()))?;
         b.advance(1);
-        let resp: jce::GetRichSigRes = jcers::from_buf(&mut b).map_err(RQError::Jce)?;
+        let resp: jce::GetRichSigRes = jcers::from_buf(&mut b)?;
         Ok(resp
             .sig_infos
             .into_iter()

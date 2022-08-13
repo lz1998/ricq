@@ -1,18 +1,17 @@
 use bytes::{Buf, Bytes};
 use jcers::Jce;
 
-use crate::command::common::PbToBytes;
 use crate::command::online_push::{GroupMessagePart, OnlinePushTrans, PushTransInfo, ReqPush};
 use crate::common::group_uin2code;
 use crate::structs::{GroupDisband, GroupLeave, GroupMemberPermission, MemberPermissionChange};
 use crate::{jce, pb, RQError, RQResult};
+use prost::Message;
 
 impl super::super::super::Engine {
     // 解析群消息分片 长消息需要合并
     // OnlinePush.PbPushGroupMsg
     pub fn decode_group_message_packet(&self, payload: Bytes) -> RQResult<GroupMessagePart> {
-        let message = pb::msg::PushMessagePacket::from_bytes(&payload)
-            .map_err(|_| RQError::Decode("PushMessagePacket".to_string()))?
+        let message = pb::msg::PushMessagePacket::decode(&*payload)?
             .message
             .ok_or_else(|| RQError::Decode("message is none".to_string()))?;
 
@@ -106,8 +105,7 @@ impl super::super::super::Engine {
     }
 
     pub fn decode_online_push_trans_packet(&self, payload: Bytes) -> RQResult<OnlinePushTrans> {
-        let info = pb::msg::TransMsgInfo::from_bytes(&payload)
-            .map_err(|_| RQError::Decode("failed to decode TransMsgInfo".to_string()))?;
+        let info = pb::msg::TransMsgInfo::decode(&*payload)?;
         let msg_seq = info.msg_seq.unwrap_or_default();
         let msg_uid = info.msg_uid.unwrap_or_default();
         let msg_time = info.msg_time.unwrap_or_default();
@@ -201,6 +199,6 @@ impl super::super::super::Engine {
 
     // OnlinePush.PbC2CMsgSync
     pub fn decode_c2c_sync_packet(&self, payload: Bytes) -> RQResult<pb::msg::PbPushMsg> {
-        pb::msg::PbPushMsg::from_bytes(&payload).map_err(|_| RQError::Decode("PbPushMsg".into()))
+        pb::msg::PbPushMsg::decode(&*payload).map_err(Into::into)
     }
 }
