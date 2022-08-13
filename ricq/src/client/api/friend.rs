@@ -208,8 +208,19 @@ impl super::super::Client {
                         .pop()
                         .ok_or_else(|| RQError::Other("addrs is empty".into()))?,
                 };
-                self.upload_image_data(upload_key, addr.into(), data, 1)
-                    .await?;
+                self.highway_upload_bdh(
+                    addr.clone().into(),
+                    BdhInput {
+                        command_id: 1,
+                        body: data,
+                        ticket: upload_key,
+                        ext: vec![],
+                        encrypt: false,
+                        chunk_size: 256 * 1024,
+                        send_echo: true,
+                    },
+                )
+                .await?;
                 image_info.into_friend_image(res_id, uuid)
             }
         };

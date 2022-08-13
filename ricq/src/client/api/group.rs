@@ -547,8 +547,19 @@ impl super::super::Client {
                         .pop()
                         .ok_or_else(|| RQError::Other("addrs is empty".into()))?,
                 };
-                self.upload_image_data(upload_key, addr.clone().into(), data, 2)
-                    .await?;
+                self.highway_upload_bdh(
+                    addr.clone().into(),
+                    BdhInput {
+                        command_id: 2,
+                        body: data,
+                        ticket: upload_key,
+                        ext: vec![],
+                        encrypt: false,
+                        chunk_size: 256 * 1024,
+                        send_echo: true,
+                    },
+                )
+                .await?;
                 image_info.into_group_image(file_id, addr, signature)
             }
         };
