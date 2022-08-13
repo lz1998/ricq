@@ -13,9 +13,7 @@ impl Client {
         self: &Arc<Self>,
         msg: pb::msg::Message,
     ) -> RQResult<()> {
-        let head = msg
-            .head
-            .ok_or_else(|| RQError::Other("missing head".into()))?;
+        let head = msg.head.ok_or(RQError::EmptyField("msg.head"))?;
         let group_code = group_uin2code(head.from_uin());
         let member_uin = head.auth_uin();
 

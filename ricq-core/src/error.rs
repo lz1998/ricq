@@ -49,7 +49,7 @@ pub enum RQError {
     PacketDropped,
     #[error("session expired")]
     SessionExpired,
-    #[error("session expired, {0}")]
+    #[error("unsuccessful ret code: {0}")]
     UnsuccessfulRetCode(i32),
 
     #[error("Token login failed")]

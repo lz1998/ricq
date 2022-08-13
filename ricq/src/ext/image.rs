@@ -34,7 +34,7 @@ where
             let data = f(&image_info).await?;
             let addr = upload_addrs
                 .pop()
-                .ok_or_else(|| RQError::Other("addrs is empty".into()))?;
+                .ok_or(RQError::EmptyField("upload_addrs"))?;
             cli.highway_upload_bdh(
                 addr.clone().into(),
                 BdhInput {
@@ -76,7 +76,7 @@ where
             let data = f(&image_info).await?;
             let addr = upload_addrs
                 .pop()
-                .ok_or_else(|| RQError::Other("addrs is empty".into()))?;
+                .ok_or(RQError::EmptyField("upload_addrs"))?;
             cli.highway_upload_bdh(
                 addr.clone().into(),
                 BdhInput {
