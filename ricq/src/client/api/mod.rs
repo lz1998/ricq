@@ -317,7 +317,7 @@ impl super::Client {
             .await?;
         let resid = rsp.msg_resid;
         if self.highway_session.read().await.session_key.is_empty() {
-            return Err(RQError::Other("highway_session_key is empty".into()));
+            return Err(RQError::EmptyField("highway_session_key is empty"));
         }
         let addrs: Vec<RQAddr> = rsp
             .uint32_up_ip
@@ -379,7 +379,7 @@ impl super::Client {
         let prefix=if let Some(pb::multimsg::ExternMsg { channel_type }) = resp.msg_extern_info && channel_type == 2 {
             "https://ssl.htdata.qq.com".into()
         } else {
-            let addr = SocketAddr::from(RQAddr(resp.down_ip.pop().ok_or_else(||RQError::Other("ip is empty".into()))?,resp.down_port.pop().ok_or_else(||RQError::Other("port is empty".into()))? as u16));
+            let addr = SocketAddr::from(RQAddr(resp.down_ip.pop().ok_or(RQError::EmptyField("down_ip"))?,resp.down_port.pop().ok_or(RQError::EmptyField("down_port".into()))? as u16));
             format!("http://{}", addr)
         };
         let _url = format!(
