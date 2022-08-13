@@ -184,9 +184,7 @@ impl Transport {
 
         if compress_flag == 1 {
             let mut uncompressed = Vec::new();
-            ZlibDecoder::new(body.chunk())
-                .read_to_end(&mut uncompressed)
-                .map_err(|_| RQError::Other("failed to decode zlib".into()))?;
+            ZlibDecoder::new(body.chunk()).read_to_end(&mut uncompressed)?;
             body = Bytes::from(uncompressed)
         }
 

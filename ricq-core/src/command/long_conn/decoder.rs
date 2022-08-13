@@ -22,7 +22,7 @@ impl crate::Engine {
         let img = resp
             .tryup_img_rsp
             .pop()
-            .ok_or_else(|| RQError::Other("EmptyImgVec".into()))?;
+            .ok_or(RQError::EmptyField("tryup_img_rsp"))?;
 
         if img.result() != 0 {
             return Err(RQError::Other(

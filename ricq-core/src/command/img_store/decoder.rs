@@ -1,9 +1,10 @@
 use bytes::Bytes;
+use prost::Message;
 
 use crate::command::img_store::GroupImageStoreResp;
 use crate::common::RQAddr;
+use crate::RQError::EmptyField;
 use crate::{pb, RQError, RQResult};
-use prost::Message;
 
 impl super::super::super::Engine {
     pub fn decode_group_image_store_response(
@@ -11,10 +12,7 @@ impl super::super::super::Engine {
         payload: Bytes,
     ) -> RQResult<GroupImageStoreResp> {
         let mut rsp = pb::cmd0x388::D388RspBody::decode(&*payload)?;
-        let rsp = rsp
-            .tryup_img_rsp
-            .pop()
-            .ok_or_else(|| RQError::Other("tryup_img_rsp.len = 0".into()))?;
+        let rsp = rsp.tryup_img_rsp.pop().ok_or(EmptyField("tryup_img_rsp"))?;
         if rsp.result() != 0 {
             return Err(RQError::Other(
                 String::from_utf8_lossy(&rsp.fail_msg.unwrap_or_default()).to_string(),
