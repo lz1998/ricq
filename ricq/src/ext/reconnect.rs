@@ -2,9 +2,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use async_trait::async_trait;
+use tokio::io::{AsyncRead, AsyncWrite};
 
 use ricq_core::command::wtlogin::LoginResponse;
-use tokio::io::{AsyncRead, AsyncWrite};
 
 use crate::client::net::Connector;
 use crate::client::NetworkStatus;
@@ -84,7 +84,10 @@ impl FastLogin for ricq_core::Token {
     async fn fast_login(&self, client: &Arc<Client>) -> RQResult<()> {
         match client.token_login(self.clone()).await? {
             LoginResponse::Success(_) => Ok(()),
-            _ => Err(RQError::Other("failed to token_login".into())),
+            other => Err(RQError::Other(format!(
+                "failed to token_login, {:?}",
+                other
+            ))),
         }
     }
 }
@@ -102,7 +105,7 @@ impl FastLogin for Password {
                     Err(RQError::Other("failed to login".into()))
                 };
             }
-            _ => return Err(RQError::Other("failed to login".into())),
+            other => Err(RQError::Other(format!("failed to login, {:?}", other))),
         }
     }
 }

@@ -12,7 +12,7 @@ pub async fn auto_query_qrcode(client: &Arc<Client>, sig: &[u8]) -> RQResult<()>
         tokio::time::sleep(Duration::from_secs(1)).await;
         let qrcode_state = client.query_qrcode_result(sig).await?;
         match qrcode_state {
-            QRCodeState::Timeout => return Err(RQError::Other("timeout".into())),
+            QRCodeState::Timeout => return Err(RQError::Timeout),
             QRCodeState::Canceled => return Err(RQError::Other("canceled".into())),
             QRCodeState::Confirmed(QRCodeConfirmed {
                 ref tmp_pwd,
@@ -32,7 +32,7 @@ pub async fn auto_query_qrcode(client: &Arc<Client>, sig: &[u8]) -> RQResult<()>
                             ))),
                         }
                     }
-                    _ => Err(RQError::Other("unknown error".into())),
+                    other => Err(RQError::Other(format!("invalid login resp: {:?}", other))),
                 };
             }
             _ => {
