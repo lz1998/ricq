@@ -1,8 +1,8 @@
 use bytes::{Buf, Bytes};
 
-use crate::command::common::PbToBytes;
 use crate::pb::msg::GetMessageResponse;
 use crate::{jce, RQError, RQResult};
+use prost::Message;
 
 impl crate::Engine {
     // MessageSvc.PushNotify
@@ -44,8 +44,7 @@ impl crate::Engine {
         &self,
         payload: Bytes,
     ) -> RQResult<super::MessageSyncResponse> {
-        let resp = GetMessageResponse::from_bytes(&payload)
-            .map_err(|_| RQError::Decode("GetMessageResponse".to_string()))?;
+        let resp = GetMessageResponse::decode(&*payload)?;
         Ok(super::MessageSyncResponse {
             msg_rsp_type: resp.msg_rsp_type.unwrap_or_default(),
             sync_flag: resp.sync_flag.unwrap_or(2), // default stop

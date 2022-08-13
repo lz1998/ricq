@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use bytes::{Buf, Bytes};
+use prost::Message;
 
-use crate::command::common::PbToBytes;
 use crate::command::profile_service::*;
 use crate::{jce, RQResult};
 use crate::{pb, RQError};
@@ -10,7 +10,7 @@ use crate::{pb, RQError};
 impl super::super::super::Engine {
     // ProfileService.Pb.ReqSystemMsgNew.Group
     pub fn decode_system_msg_group_packet(&self, payload: Bytes) -> RQResult<GroupSystemMessages> {
-        let rsp = pb::structmsg::RspSystemMsgNew::from_bytes(&payload);
+        let rsp = pb::structmsg::RspSystemMsgNew::decode(&*payload);
         let mut join_group_requests = Vec::new();
         let mut self_invited = Vec::new();
         match rsp {
@@ -89,7 +89,7 @@ impl super::super::super::Engine {
         &self,
         payload: Bytes,
     ) -> RQResult<FriendSystemMessages> {
-        let rsp = pb::structmsg::RspSystemMsgNew::from_bytes(&payload)
+        let rsp = pb::structmsg::RspSystemMsgNew::decode(&*payload)
             .map_err(|_| RQError::Decode("RspSystemMsgNew".into()))?;
         Ok(FriendSystemMessages {
             requests: rsp
