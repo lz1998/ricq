@@ -7,6 +7,7 @@ use crate::command::wtlogin::{
     QRCodeConfirmed,
 };
 use crate::protocol::device::random_string;
+use crate::utils::OptionSet;
 use crate::Transport;
 
 impl super::Engine {
@@ -26,82 +27,56 @@ impl super::Engine {
     }
 
     fn process_login_success(&mut self, resp: LoginSuccess) {
-        if let Some(v) = resp.rand_seed {
-            self.transport.sig.rand_seed = v;
-        }
-        if let Some(v) = resp.ksid {
-            self.transport.sig.ksid = v;
-        }
+        let sig = &mut self.transport.sig;
+        let oicq_codec = &mut self.transport.oicq_codec;
+
+        // update
+        sig.rand_seed.option_set(resp.rand_seed);
+        sig.ksid.option_set(resp.ksid);
+
         if let Some(v) = resp.t512 {
-            self.transport.sig.ps_key_map = v.ps_key_map;
-            self.transport.sig.pt4_token_map = v.pt4_token_map;
+            sig.ps_key_map = v.ps_key_map;
+            sig.pt4_token_map = v.pt4_token_map;
         }
-        if let Some(v) = resp.wt_session_ticket_key {
-            self.transport.oicq_codec.wt_session_ticket_key = v;
-        }
-        if let Some(v) = resp.srm_token {
-            self.transport.sig.srm_token = v;
-        }
-        if let Some(v) = resp.t133 {
-            self.transport.sig.t133 = v;
-        }
-        if let Some(v) = resp.encrypt_a1 {
-            self.transport.sig.encrypted_a1 = v;
-        }
-        if let Some(v) = resp.tgt {
-            self.transport.sig.tgt = v;
-        }
-        if let Some(v) = resp.tgt_key {
-            self.transport.sig.tgt_key = v;
-        }
-        if let Some(v) = resp.user_st_key {
-            self.transport.sig.user_st_key = v;
-        }
-        if let Some(v) = resp.user_st_web_sig {
-            self.transport.sig.user_st_web_sig = v;
-        }
-        if let Some(v) = resp.s_key {
-            self.transport.sig.s_key = v;
-        }
-        self.transport.sig.s_key_expired_time = resp.s_key_expired_time;
-        if let Some(v) = resp.d2 {
-            self.transport.sig.d2 = v;
-        }
-        if let Some(v) = resp.d2key {
-            self.transport.sig.d2key = v;
-        }
-        if let Some(v) = resp.device_token {
-            self.transport.sig.device_token = v;
-        }
+
+        oicq_codec
+            .wt_session_ticket_key
+            .option_set(resp.wt_session_ticket_key);
+
+        sig.srm_token.option_set(resp.srm_token);
+        sig.t133.option_set(resp.t133);
+        sig.encrypted_a1.option_set(resp.encrypt_a1);
+        sig.tgt.option_set(resp.tgt);
+        sig.tgt_key.option_set(resp.tgt_key);
+        sig.user_st_key.option_set(resp.user_st_key);
+        sig.user_st_web_sig.option_set(resp.user_st_web_sig);
+        sig.s_key.option_set(resp.s_key);
+        sig.s_key_expired_time = resp.s_key_expired_time;
+        sig.d2.option_set(resp.d2);
+        sig.d2key.option_set(resp.d2key);
+        sig.device_token.option_set(resp.device_token);
+
         if let Some(v) = resp.t402 {
             set_t402(&mut self.transport, v)
         }
     }
 
     fn process_need_captcha(&mut self, resp: LoginNeedCaptcha) {
-        if let Some(v) = resp.t104 {
-            self.transport.sig.t104 = v;
-        }
+        self.transport.sig.t104.option_set(resp.t104);
     }
 
     fn process_device_locked(&mut self, resp: LoginDeviceLocked) {
-        if let Some(v) = resp.t104 {
-            self.transport.sig.t104 = v
-        }
-        if let Some(v) = resp.t174 {
-            self.transport.sig.t174 = v
-        }
+        self.transport.sig.t104.option_set(resp.t104);
+        self.transport.sig.t174.option_set(resp.t174);
+
         if let Some(v) = resp.t402 {
             set_t402(&mut self.transport, v)
         }
     }
     fn process_device_lock_login(&mut self, resp: LoginDeviceLockLogin) {
-        if let Some(v) = resp.rand_seed {
-            self.transport.sig.rand_seed = v;
-        }
-        if let Some(v) = resp.t104 {
-            self.transport.sig.t104 = v
-        }
+        self.transport.sig.rand_seed.option_set(resp.rand_seed);
+        self.transport.sig.t104.option_set(resp.t104);
+
         if let Some(v) = resp.t402 {
             set_t402(&mut self.transport, v)
         }
