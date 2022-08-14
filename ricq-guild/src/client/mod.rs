@@ -170,25 +170,19 @@ impl GuildClient {
         let image_store = self
             .get_guild_image_store(guild_id, channel_id, &image)
             .await?;
-        let signature = self
-            .rq_client
-            .highway_session
-            .read()
-            .await
-            .session_key
-            .to_vec();
 
         let fid;
         let dn_index;
+        let server;
         match image_store {
             GuildImageStoreResp::Exist {
                 file_id,
-                addrs,
+                mut addrs,
                 download_index,
             } => {
                 fid = file_id;
                 dn_index = download_index;
-                todo!("construct guild image")
+                server = addrs.pop().ok_or(RQError::EmptyField("Address"))?;
             }
             GuildImageStoreResp::NotExist {
                 file_id,
@@ -225,6 +219,7 @@ impl GuildClient {
 
                 fid = file_id;
                 dn_index = download_index;
+                server = addr;
             }
         };
 
@@ -236,8 +231,9 @@ impl GuildClient {
             height: info.height,
             image_type: info.image_type,
             download_index: dn_index,
-            signature,
             md5: info.md5,
+            server_ip: server.0,
+            server_port: server.1,
         };
 
         Ok(guild_image)
