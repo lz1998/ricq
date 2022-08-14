@@ -53,7 +53,7 @@ pub enum RQElem {
 
 impl From<msg::elem::Elem> for RQElem {
     fn from(elem: msg::elem::Elem) -> Self {
-        match elem.clone() {
+        match elem {
             msg::elem::Elem::Text(e) => {
                 // TODO guild at
                 if !e.attr6_buf().is_empty() {
@@ -63,7 +63,7 @@ impl From<msg::elem::Elem> for RQElem {
                 }
             }
             msg::elem::Elem::Face(e) => RQElem::Face(face::Face::from(e)),
-            msg::elem::Elem::CommonElem(e) => match e.service_type() {
+            msg::elem::Elem::CommonElem(ref e) => match e.service_type() {
                 // TODO image
                 3 => {
                     if let Ok(flash) = msg::MsgElemInfoServtype3::decode(e.pb_elem()) {

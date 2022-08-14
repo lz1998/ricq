@@ -87,7 +87,6 @@ impl crate::Client {
             .length_adjustment(-4)
             .new_framed(stream)
             .split();
-        let cli = self.clone();
         // 外发包 Channel Receiver
         let mut rx = self.out_pkt_sender.subscribe();
         let mut disconnect_signal = self.disconnect_signal.subscribe();
@@ -95,9 +94,9 @@ impl crate::Client {
             tokio::select! {
                 input = read_half.next() => {
                     if let Some(Ok(mut input)) = input
-                        && let Ok(pkt) = cli.engine.read().await.transport.decode_packet(&mut input)
+                        && let Ok(pkt) = self.engine.read().await.transport.decode_packet(&mut input)
                     {
-                        cli.process_income_packet(pkt).await;
+                        self.process_income_packet(pkt).await;
                     } else {
                         break;
                     }
