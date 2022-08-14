@@ -13,6 +13,7 @@ use protocol::version::Version;
 
 pub use crate::token::Token;
 
+mod utils;
 pub mod binary;
 pub mod command;
 pub mod common;
