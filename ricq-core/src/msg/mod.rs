@@ -11,17 +11,55 @@ mod macros;
 
 pub type MessageElem = msg::elem::Elem;
 
+/// [`MessageChain`]消息链, 用于发送消息
+///
+///
+/// ## 示例
+///
+/// ```rust
+/// use ricq_core::msg::elem::{At, Text};
+/// use ricq_core::msg::MessageChain;
+/// let mut chain = MessageChain::default();
+/// chain.push(Text::new(String::from("Hello")));
+/// chain.push(At::new(12345));
+/// chain.push(Text::new(String::from("world")));
+/// ```
+///
+/// 另请参阅: [`MessageChainBuilder`]
+///
 #[derive(Debug, Default, Clone)]
 pub struct MessageChain(pub Vec<MessageElem>);
 
 impl MessageChain {
+    /// 从消息元素构造[`MessageChain`]
+    ///
+    /// ## 示例
+    ///
+    /// ```rust
+    /// use ricq_core::msg::elem::Text;
+    /// use ricq_core::msg::MessageChain;
+    /// let chain = MessageChain::new(Text::new(String::from("Hello world!")));
+    /// ```
+    ///
     pub fn new<E: Into<Vec<MessageElem>>>(e: E) -> Self {
         Self(e.into())
     }
 
+    /// 将消息元素添加至[`MessageChain`]
+    ///
+    /// ## 示例
+    ///
+    /// ```rust
+    /// use ricq_core::msg::elem::Text;
+    /// use ricq_core::msg::MessageChain;
+    /// let mut chain = MessageChain::default();
+    /// chain.push(Text::new(String::from("Hello")));
+    /// ```
+    ///
     pub fn push<E: Into<Vec<MessageElem>>>(&mut self, e: E) {
         self.0.extend(e.into())
     }
+
 
     pub fn anonymous(&self) -> Option<Anonymous> {
         self.0.iter().find_map(|e| match e {
@@ -30,6 +68,7 @@ impl MessageChain {
         })
     }
 
+    /// 获取此[`MessageChain`]中的引用回复
     pub fn reply(&self) -> Option<Reply> {
         self.0.iter().find_map(|e| match e {
             MessageElem::SrcMsg(src_msg) => Some(Reply::from(src_msg.clone())),
@@ -41,6 +80,7 @@ impl MessageChain {
         self.0.insert(0, MessageElem::from(anonymous))
     }
 
+    /// 添加引用回复
     pub fn with_reply(&mut self, reply: Reply) {
         let index = if self.anonymous().is_some() { 1 } else { 0 };
         self.0.insert(index, MessageElem::from(reply))
@@ -95,6 +135,21 @@ impl fmt::Display for MessageChain {
     }
 }
 
+/// [`MessageChain`]构造器
+///
+///
+/// ## 示例
+///
+/// ```rust
+/// use ricq_core::msg::elem::At;
+/// use ricq_core::msg::MessageChainBuilder;
+/// let mut builder = MessageChainBuilder::new();
+/// builder.push_str("Hello")
+///     .push(At::new(12345))
+///     .push_str("world");
+/// let chain = builder.build();
+/// ```
+///
 #[derive(Debug, Default, Clone)]
 pub struct MessageChainBuilder {
     pub elems: Vec<MessageElem>,
@@ -102,25 +157,64 @@ pub struct MessageChainBuilder {
 }
 
 impl MessageChainBuilder {
+    /// 创建一个新的[`MessageChainBuilder`]
+    ///
+    /// ## 示例
+    /// ```rust
+    /// use ricq_core::msg::MessageChainBuilder;
+    /// let mut builder = MessageChainBuilder::new();
+    /// ```
+    ///
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// 为当前[`MessageChainBuilder`]添加一个消息元素
+    ///
+    /// ## 示例
+    /// ```rust
+    /// use ricq_core::msg::elem::Text;
+    /// use ricq_core::msg::MessageChainBuilder;
+    /// let mut builder = MessageChainBuilder::new();
+    /// builder.push(Text::new(String::from("Hello world!")));
+    /// ```
+    ///
     pub fn push<E: PushBuilder>(&mut self, elem: E) -> &mut Self {
         E::push_builder(elem, self);
         self
     }
 
+    /// 向当前[`MessageChainBuilder`]的添加一段字符串
+    ///
+    /// 本函数会将字符串直接添加于[`MessageChainBuilder`]内部的字符串缓存，在每次push其他元素时刷新
+    ///
+    /// ## 示例
+    /// ```rust
+    /// use ricq_core::msg::MessageChainBuilder;
+    /// let mut builder = MessageChainBuilder::new();
+    /// builder.push_str("Hello world!");
+    /// ```
+    ///
     pub fn push_str(&mut self, str: &str) -> &mut Self {
         self.buf_string.push_str(str);
         self
     }
 
+    /// 将此[`MessageChainBuilder`]构造为[`MessageChain`]
+    ///
+    /// ## 示例
+    /// ```rust
+    /// use ricq_core::msg::{MessageChain, MessageChainBuilder};
+    /// let mut builder = MessageChainBuilder::new();
+    /// let chain: MessageChain = builder.build();
+    /// ```
+    ///
     pub fn build(mut self) -> MessageChain {
         self.flush();
         MessageChain::new(self.elems)
     }
 
+    /// 清空内部字符串缓存, 将其构造为消息元素
     fn flush(&mut self) {
         flush_builder(self);
     }
@@ -174,21 +268,22 @@ mod tests {
     #[test]
     fn test_builder() {
         let mut builder = MessageChainBuilder::new();
-        builder.push(Anonymous::default());
-        builder.push(Reply::default());
-        builder.push_str("hello");
-        builder.push(At::new(12345));
-        builder.push_str("world");
-        builder.push(Face::new(1));
-        builder.push(Dice::new(1));
-        builder.push(Text::new("hello".into()));
-        builder.push_str("world2");
-        builder.push(FingerGuessing::Rock);
-        builder.push(MarketFace {
-            name: "xx".into(),
-            ..Default::default()
-        });
-        builder.push(LightApp::new("{}".into()));
+        builder.push(Anonymous::default())
+            .push(Reply::default())
+            .push_str("hello")
+            .push(At::new(12345))
+            .push_str("world")
+            .push(Face::new(1))
+            .push(Dice::new(1))
+            .push(Text::new("hello".into()))
+            .push_str("world2")
+            .push(FingerGuessing::Rock)
+            .push(MarketFace {
+                name: "xx".into(),
+                ..Default::default()
+            })
+            .push(LightApp::new("{}".into()));
+
         let chain = builder.build();
         println!("{}", chain);
         assert!(chain.reply().is_some());
