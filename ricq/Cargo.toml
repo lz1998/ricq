@@ -20,7 +20,7 @@ bytes = "1"
 cached = { version = "0.30", features = ["async"], default-features = false }
 derivative = "2"
 flate2 = { version = "1", features = ["rust_backend"], default-features = false }
-futures-util = "0.3"
+futures-util = { version = "0.3", features = ["sink"] }
 image = { version = "0.24", optional = true }
 jcers = "0.1"
 md5 = "0.7"
