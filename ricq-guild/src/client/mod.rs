@@ -1,3 +1,4 @@
+use dynamic_protobuf::dynamic_message;
 use std::collections::HashMap;
 use std::ops::Deref;
 use std::sync::Arc;
@@ -6,20 +7,21 @@ use tokio::sync::{broadcast, RwLockReadGuard};
 use tokio::task::JoinHandle;
 
 use ricq::structs::ImageInfo;
-use ricq_core::msg::elem::GroupImage;
+use ricq_core::highway::BdhInput;
+
 use ricq_core::msg::MessageChain;
 use ricq_core::protocol::packet::Packet;
-use ricq_core::RQResult;
+use ricq_core::{RQError, RQResult};
 
 use crate::client::decoder::Decoder;
 use crate::protocol::protobuf::FirstViewMsg;
-use crate::protocol::{protobuf, FirstView, FirstViewMessage, GuildSelfProfile};
+use crate::protocol::{
+    protobuf, FirstView, FirstViewMessage, GuildImage, GuildImageStoreResp, GuildSelfProfile,
+};
 
 pub mod builder;
 pub mod decoder;
 pub mod processor;
-
-type GuildImageStoreResp = ricq_core::command::img_store::GroupImageStoreResp;
 
 #[allow(dead_code)]
 pub struct GuildClient {
@@ -84,9 +86,10 @@ impl GuildClient {
 
         let rsp = self.rq_client.send_and_wait(pkt).await?;
 
+        let first_view_msg = first_view.await.unwrap()?;
         let first_view_rsp = Decoder.decode_guild_first_view_response(rsp.body)?;
 
-        let opt = match (first_view.await.unwrap()?, first_view_rsp) {
+        let opt = match (first_view_msg, first_view_rsp) {
             (
                 FirstViewMsg {
                     push_flag: Some(push_flag),
@@ -161,18 +164,83 @@ impl GuildClient {
         guild_id: u64,
         channel_id: u64,
         image: Vec<u8>,
-    ) -> RQResult<GroupImage> {
+    ) -> RQResult<GuildImage> {
+        let info = ImageInfo::try_new(&image)?;
+
         let image_store = self
             .get_guild_image_store(guild_id, channel_id, &image)
             .await?;
+        let signature = self
+            .rq_client
+            .highway_session
+            .read()
+            .await
+            .session_key
+            .to_vec();
+
+        let fid;
+        let dn_index;
         match image_store {
-            GuildImageStoreResp::Exist { .. } => {
+            GuildImageStoreResp::Exist {
+                file_id,
+                addrs,
+                download_index,
+            } => {
+                fid = file_id;
+                dn_index = download_index;
                 todo!("construct guild image")
             }
-            GuildImageStoreResp::NotExist { .. } => {
-                todo!("upload guild image")
+            GuildImageStoreResp::NotExist {
+                file_id,
+                upload_key,
+                mut upload_addrs,
+                download_index,
+            } => {
+                let addr = match self.rq_client.highway_addrs.read().await.first() {
+                    Some(addr) => addr.clone(),
+                    None => upload_addrs
+                        .pop()
+                        .ok_or(RQError::EmptyField("upload_addrs"))?,
+                };
+
+                self.rq_client
+                    .highway_upload_bdh(
+                        addr.clone().into(),
+                        BdhInput {
+                            command_id: 83,
+                            body: image,
+                            ticket: upload_key,
+                            ext: dynamic_message! {
+                                11 => guild_id,
+                                12 => channel_id,
+                            }
+                            .encode()
+                            .to_vec(),
+                            encrypt: false,
+                            chunk_size: 256 * 1024,
+                            send_echo: true,
+                        },
+                    )
+                    .await?;
+
+                fid = file_id;
+                dn_index = download_index;
             }
-        }
+        };
+
+        let guild_image = GuildImage {
+            file_id: fid,
+            file_name: info.filename,
+            size: info.size,
+            width: info.width,
+            height: info.height,
+            image_type: info.image_type,
+            download_index: dn_index,
+            signature,
+            md5: info.md5,
+        };
+
+        Ok(guild_image)
     }
 
     pub async fn get_guild_image_store(
@@ -193,9 +261,7 @@ impl GuildClient {
             image_info.image_type as u32,
         );
         let resp = self.rq_client.send_and_wait(req).await?;
-        self.engine()
-            .await
-            .decode_group_image_store_response(resp.body)
+        Decoder.decode_guild_image_store_response(resp.body)
     }
 }
 

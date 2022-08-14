@@ -119,6 +119,7 @@ impl<'a> super::Engine<'a> {
             tryup_img_req: vec![ricq_core::pb::cmd0x388::TryUpImgReq {
                 group_code: Some(channel_id),
                 src_uin: Some(self.uin() as u64),
+                file_id: Some(0),
                 file_md5: Some(md5),
                 file_size: Some(size),
                 file_name: Some(file_name.into_bytes()),
@@ -134,7 +135,7 @@ impl<'a> super::Engine<'a> {
                 qqmeet_channel_id: Some(channel_id),
                 ..Default::default()
             }],
-            extension: Some(vec![]),
+            command_id: Some(83),
             ..Default::default()
         };
         self.uni_packet("ImgStore.QQMeetPicUp", req.to_bytes())

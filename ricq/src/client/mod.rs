@@ -71,8 +71,8 @@ pub struct Client {
     push_trans_cache: RwLock<cached::TimedCache<(i32, i64), ()>>,
     group_sys_message_cache: RwLock<GroupSystemMessages>,
 
-    highway_session: RwLock<ricq_core::highway::Session>,
-    highway_addrs: RwLock<Vec<RQAddr>>,
+    pub highway_session: RwLock<ricq_core::highway::Session>,
+    pub highway_addrs: RwLock<Vec<RQAddr>>,
 
     packet_handler: RwLock<HashMap<String, broadcast::Sender<Packet>>>,
 }

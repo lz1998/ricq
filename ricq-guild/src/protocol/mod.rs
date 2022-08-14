@@ -1,4 +1,5 @@
 use crate::protocol::protobuf::{ChannelMsg, GuildNode};
+use ricq_core::common::RQAddr;
 
 #[derive(Clone, Debug, Default)]
 pub struct FirstViewResponse {
@@ -36,6 +37,34 @@ pub struct GuildSelfProfile {
     pub tiny_id: u64,
     pub nickname: String,
     pub avatar_url: String,
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct GuildImage {
+    pub file_id: u64,
+    pub file_name: String,
+    pub size: u32,
+    pub width: u32,
+    pub height: u32,
+    pub image_type: i32,
+    pub download_index: Vec<u8>,
+    pub signature: Vec<u8>,
+    pub md5: Vec<u8>,
+}
+
+#[derive(Debug, Clone)]
+pub enum GuildImageStoreResp {
+    Exist {
+        file_id: u64,
+        addrs: Vec<RQAddr>,
+        download_index: Vec<u8>,
+    },
+    NotExist {
+        file_id: u64,
+        upload_key: Vec<u8>,
+        upload_addrs: Vec<RQAddr>,
+        download_index: Vec<u8>,
+    },
 }
 
 pub mod protobuf {
