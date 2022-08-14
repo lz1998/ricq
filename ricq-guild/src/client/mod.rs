@@ -84,9 +84,10 @@ impl GuildClient {
 
         let rsp = self.rq_client.send_and_wait(pkt).await?;
 
+        let first_view_msg = first_view.await.unwrap()?;
         let first_view_rsp = Decoder.decode_guild_first_view_response(rsp.body)?;
 
-        let opt = match (first_view.await.unwrap()?, first_view_rsp) {
+        let opt = match (first_view_msg, first_view_rsp) {
             (
                 FirstViewMsg {
                     push_flag: Some(push_flag),
