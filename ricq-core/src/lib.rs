@@ -13,7 +13,6 @@ use protocol::version::Version;
 
 pub use crate::token::Token;
 
-mod utils;
 pub mod binary;
 pub mod command;
 pub mod common;
@@ -27,6 +26,7 @@ pub mod pb;
 pub mod protocol;
 pub mod structs;
 pub mod token;
+mod utils;
 pub mod wtlogin;
 
 // build_packet: param -> bytes
