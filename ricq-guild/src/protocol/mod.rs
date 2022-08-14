@@ -74,8 +74,8 @@ impl ricq_core::msg::PushElem for GuildImage {
             source: Some(200),
             size: Some(img.size),
             origin: Some(1),
-            thumb_width: Some(329), // todo: calculate
-            thumb_height: Some(731),
+            thumb_width: Some((img.width * 10 / 3) as _),
+            thumb_height: Some((img.height * 10 / 3) as _),
             show_len: Some(0),
             download_len: Some(0),
             pb_reserve: {
