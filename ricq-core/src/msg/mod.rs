@@ -60,7 +60,6 @@ impl MessageChain {
         self.0.extend(e.into())
     }
 
-
     pub fn anonymous(&self) -> Option<Anonymous> {
         self.0.iter().find_map(|e| match e {
             MessageElem::AnonGroupMsg(anonymous) => Some(Anonymous::from(anonymous.clone())),
@@ -268,7 +267,8 @@ mod tests {
     #[test]
     fn test_builder() {
         let mut builder = MessageChainBuilder::new();
-        builder.push(Anonymous::default())
+        builder
+            .push(Anonymous::default())
             .push(Reply::default())
             .push_str("hello")
             .push(At::new(12345))

@@ -26,6 +26,7 @@ pub mod pb;
 pub mod protocol;
 pub mod structs;
 pub mod token;
+mod utils;
 pub mod wtlogin;
 
 // build_packet: param -> bytes
