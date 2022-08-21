@@ -12,6 +12,7 @@ use ricq::client::{Connector as _, DefaultConnector};
 use ricq::ext::common::after_login;
 use ricq::handler::DefaultHandler;
 use ricq::structs::ExtOnlineStatus;
+use ricq::version::get_version;
 use ricq::{Client, Device, Protocol};
 use ricq::{LoginDeviceLocked, LoginNeedCaptcha, LoginResponse, LoginSuccess, LoginUnknownStatus};
 
@@ -45,7 +46,11 @@ async fn main() -> Result<()> {
     let mut seed = StdRng::seed_from_u64(uin as u64);
     let device = Device::random_with_rng(&mut seed);
 
-    let client = Arc::new(Client::new(device, Protocol::IPad, DefaultHandler));
+    let client = Arc::new(Client::new(
+        device,
+        get_version(Protocol::IPad),
+        DefaultHandler,
+    ));
     let handle = tokio::spawn({
         let client = client.clone();
         // 连接所有服务器，哪个最快用哪个，可以使用 TcpStream::connect 代替

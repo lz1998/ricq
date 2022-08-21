@@ -10,6 +10,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use ricq::client::{Connector as _, DefaultConnector};
 use ricq::ext::common::after_login;
 use ricq::handler::DefaultHandler;
+use ricq::version::get_version;
 use ricq::{Client, Device, Protocol};
 use ricq::{LoginResponse, QRCodeConfirmed, QRCodeImageFetch, QRCodeState};
 
@@ -40,7 +41,11 @@ async fn main() -> Result<()> {
         }
     };
 
-    let client = Arc::new(Client::new(device, Protocol::AndroidWatch, DefaultHandler));
+    let client = Arc::new(Client::new(
+        device,
+        get_version(Protocol::AndroidWatch),
+        DefaultHandler,
+    ));
     let handle = tokio::spawn({
         let client = client.clone();
         let stream = DefaultConnector.connect(&client).await.unwrap();

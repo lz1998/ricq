@@ -9,6 +9,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use ricq::client::{Connector as _, DefaultConnector, Token};
 use ricq::ext::common::after_login;
 use ricq::handler::DefaultHandler;
+use ricq::version::get_version;
 use ricq::{Client, Device, Protocol};
 
 #[tokio::main(flavor = "current_thread")]
@@ -37,7 +38,11 @@ async fn main() -> Result<()> {
     let token: Token = serde_json::from_str(&token).expect("failed to parse token");
     let device = Device::random_with_rng(&mut StdRng::seed_from_u64(token.uin as u64));
 
-    let client = Arc::new(Client::new(device, Protocol::IPad, DefaultHandler));
+    let client = Arc::new(Client::new(
+        device,
+        get_version(Protocol::IPad),
+        DefaultHandler,
+    ));
 
     let handle = tokio::spawn({
         let client = client.clone();
