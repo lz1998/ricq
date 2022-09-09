@@ -1,0 +1,33 @@
+name: Test
+
+on:
+  pull_request:
+    branches: [ * ]
+  push:
+    branches: [ master ]
+  
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - { name: Linux, os: ubuntu-latest }
+          - { name: macOS-x64, os: macos-latest }
+          - { name: Windows-x64, os: windows-latest }
+
+    name: ${{ matrix.target.name }}
+    runs-on: ${{ matrix.target.os }}
+
+    env:
+      CI: 1
+      CARGO_INCREMENTAL: 0
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set rust toolchain
+        run: rustup default nightly
+
+      - name: Test
+        run: cargo test
