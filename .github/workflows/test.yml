@@ -12,7 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          - { name: Linux, os: ubuntu-latest }
+          - { name: Linux-x64, os: ubuntu-latest }
           - { name: macOS-x64, os: macos-latest }
           - { name: Windows-x64, os: windows-latest }
 
