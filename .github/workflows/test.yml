@@ -26,8 +26,11 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set rust toolchain
+      - name: Setup rust toolchain
         run: rustup default nightly
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v2
 
       - name: Test
         run: cargo test
