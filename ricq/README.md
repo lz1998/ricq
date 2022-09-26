@@ -20,6 +20,7 @@ qq-android 协议的 rust 实现 移植于 [MiraiGo](https://github.com/Mrs4s/Mi
 |  [Walle-Q](https://github.com/abrahum/walle-q) | - | onebot协议 |
 |  [pbrq](https://github.com/ProtobufBot/pbrq) | - | websocket+protobuf协议（附带[Web-UI](https://github.com/ProtobufBot/pbrq-react-ui)） |
 |  [atri_qq](https://github.com/LaoLittle/atri_qq) | - | 加载原生动态库插件，高性能低占用 |
+| [awr](https://github.com/Wybxc/awr) | Python | 基于 ricq 包装，供 Python 使用的 QQ 无头客户端。 |
 
 > 本项目是一个年轻的项目，请使用 nightly channel 构建本项目哦（正经人谁用 stable 啊）
 
