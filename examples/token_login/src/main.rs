@@ -1,6 +1,6 @@
+use std::fs;
 use std::sync::Arc;
 
-use anyhow::Result;
 use rand::prelude::StdRng;
 use rand::SeedableRng;
 use tracing::Level;
@@ -9,11 +9,10 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use ricq::client::{Connector as _, DefaultConnector, Token};
 use ricq::ext::common::after_login;
 use ricq::handler::DefaultHandler;
-use ricq::version::get_version;
 use ricq::{Client, Device, Protocol};
 
 #[tokio::main(flavor = "current_thread")]
-async fn main() -> Result<()> {
+async fn main() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::fmt::layer()
@@ -32,17 +31,11 @@ async fn main() -> Result<()> {
         )
         .init();
 
-    let token = tokio::fs::read_to_string("session.token")
-        .await
-        .expect("failed to read token");
+    let token = fs::read_to_string("session.token").expect("failed to read token");
     let token: Token = serde_json::from_str(&token).expect("failed to parse token");
     let device = Device::random_with_rng(&mut StdRng::seed_from_u64(token.uin as u64));
 
-    let client = Arc::new(Client::new(
-        device,
-        get_version(Protocol::IPad),
-        DefaultHandler,
-    ));
+    let client = Arc::new(Client::new(device, Protocol::IPad.into(), DefaultHandler));
 
     let handle = tokio::spawn({
         let client = client.clone();
@@ -72,5 +65,4 @@ async fn main() -> Result<()> {
     tracing::info!("{:?}", d);
 
     handle.await.unwrap();
-    Ok(())
 }

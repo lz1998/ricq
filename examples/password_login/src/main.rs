@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use anyhow::Result;
 use futures_util::StreamExt;
 use rand::prelude::StdRng;
 use rand::SeedableRng;
@@ -12,12 +11,11 @@ use ricq::client::{Connector as _, DefaultConnector};
 use ricq::ext::common::after_login;
 use ricq::handler::DefaultHandler;
 use ricq::structs::ExtOnlineStatus;
-use ricq::version::get_version;
 use ricq::{Client, Device, Protocol};
 use ricq::{LoginDeviceLocked, LoginNeedCaptcha, LoginResponse, LoginSuccess, LoginUnknownStatus};
 
 #[tokio::main(flavor = "current_thread")]
-async fn main() -> Result<()> {
+async fn main() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::fmt::layer()
@@ -46,11 +44,7 @@ async fn main() -> Result<()> {
     let mut seed = StdRng::seed_from_u64(uin as u64);
     let device = Device::random_with_rng(&mut seed);
 
-    let client = Arc::new(Client::new(
-        device,
-        get_version(Protocol::IPad),
-        DefaultHandler,
-    ));
+    let client = Arc::new(Client::new(device, Protocol::IPad.into(), DefaultHandler));
     let handle = tokio::spawn({
         let client = client.clone();
         // 连接所有服务器，哪个最快用哪个，可以使用 TcpStream::connect 代替
@@ -141,7 +135,7 @@ async fn main() -> Result<()> {
     // 等一下，收到 ConfigPushSvc.PushReq 才可以发
     // use ricq::msg::MessageChain;
     // tokio::time::sleep(std::time::Duration::from_secs(1)).await;
-    // let img_bytes = tokio::fs::read("test.png").await.unwrap();
+    // let img_bytes = fs::read("test.png").unwrap();
     // let group_image = client
     //     .upload_group_image(982166018, img_bytes)
     //     .await
@@ -160,5 +154,4 @@ async fn main() -> Result<()> {
     // let mem_list = client.get_group_member_list(335783090).await;
     // println!("{:?}", mem_list);
     handle.await.unwrap();
-    Ok(())
 }

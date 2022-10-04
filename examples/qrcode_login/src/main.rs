@@ -1,7 +1,7 @@
+use std::fs;
 use std::path::Path;
 use std::sync::Arc;
 
-use anyhow::Result;
 use bytes::Bytes;
 use tokio::time::{sleep, Duration};
 use tracing::Level;
@@ -10,12 +10,11 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use ricq::client::{Connector as _, DefaultConnector};
 use ricq::ext::common::after_login;
 use ricq::handler::DefaultHandler;
-use ricq::version::get_version;
 use ricq::{Client, Device, Protocol};
 use ricq::{LoginResponse, QRCodeConfirmed, QRCodeImageFetch, QRCodeState};
 
 #[tokio::main(flavor = "current_thread")]
-async fn main() -> Result<()> {
+async fn main() {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer().with_target(true))
         .with(
@@ -27,15 +26,12 @@ async fn main() -> Result<()> {
 
     let device = match Path::new("device.json").exists() {
         true => serde_json::from_str(
-            &tokio::fs::read_to_string("device.json")
-                .await
-                .expect("failed to read device.json"),
+            &fs::read_to_string("device.json").expect("failed to read device.json"),
         )
         .expect("failed to parse device info"),
         false => {
             let d = Device::random();
-            tokio::fs::write("device.json", serde_json::to_string(&d).unwrap())
-                .await
+            fs::write("device.json", serde_json::to_string(&d).unwrap())
                 .expect("failed to write device info to file");
             d
         }
@@ -43,7 +39,7 @@ async fn main() -> Result<()> {
 
     let client = Arc::new(Client::new(
         device,
-        get_version(Protocol::AndroidWatch),
+        Protocol::AndroidWatch.into(),
         DefaultHandler,
     ));
     let handle = tokio::spawn({
@@ -61,9 +57,7 @@ async fn main() -> Result<()> {
     //         ref image_data,
     //         ref sig,
     //     } => {
-    //         tokio::fs::write("qrcode.png", &image_data)
-    //             .await
-    //             .expect("failed to write file");
+    //         fs::write("qrcode.png", &image_data).expect("failed to write file");
     //         if let Err(err) = auto_query_qrcode(&client, sig).await {
     //             panic!("登录失败 {}", err)
     //         };
@@ -84,9 +78,7 @@ async fn main() -> Result<()> {
                 ref image_data,
                 ref sig,
             }) => {
-                tokio::fs::write("qrcode.png", &image_data)
-                    .await
-                    .expect("failed to write file");
+                fs::write("qrcode.png", &image_data).expect("failed to write file");
                 image_sig = sig.clone();
                 tracing::info!("二维码: qrcode.png");
             }
@@ -103,9 +95,7 @@ async fn main() -> Result<()> {
                     ref sig,
                 }) = client.fetch_qrcode().await.expect("failed to fetch qrcode")
                 {
-                    tokio::fs::write("qrcode.png", &image_data)
-                        .await
-                        .expect("failed to write file");
+                    fs::write("qrcode.png", &image_data).expect("failed to write file");
                     image_sig = sig.clone();
                     tracing::info!("二维码: qrcode.png");
                 }
@@ -149,5 +139,4 @@ async fn main() -> Result<()> {
     }
 
     handle.await.unwrap();
-    Ok(())
 }
