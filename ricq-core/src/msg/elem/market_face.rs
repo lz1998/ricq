@@ -58,7 +58,7 @@ impl From<msg::MarketFace> for MarketFace {
 
 #[derive(Default, Debug, Clone)]
 pub struct Dice {
-    pub value: i32,
+    pub value: i32, // range: [1, 6]
 }
 
 impl Dice {
@@ -89,10 +89,10 @@ impl From<Dice> for MarketFace {
 impl From<MarketFace> for Dice {
     fn from(e: MarketFace) -> Self {
         Self {
-            value: e.magic_value.split('=').collect::<Vec<&str>>()[1]
-                .parse::<i32>()
-                .unwrap_or_default()
-                + 1,
+            value: e
+                .magic_value
+                .split_once('=')
+                .map_or(1, |v| v.1.parse::<i32>().unwrap_or_default() + 1), // 有一种没点数的奇怪骰子
         }
     }
 }
