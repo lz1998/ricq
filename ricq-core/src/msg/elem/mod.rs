@@ -88,13 +88,12 @@ impl From<msg::elem::Elem> for RQElem {
                 _ => RQElem::Other(Box::new(elem)),
             },
             msg::elem::Elem::MarketFace(e) => {
-                let f = market_face::MarketFace::from(e);
-                if f.name == "[骰子]" || f.name == "[随机骰子]" {
-                    RQElem::Dice(market_face::Dice::from(f))
-                } else if f.name == "[猜拳]" {
-                    RQElem::FingerGuessing(market_face::FingerGuessing::from(f))
-                } else {
-                    RQElem::MarketFace(f)
+                let face = MarketFace::from(e);
+                match face.name.as_str() {
+                    // 从商城添加的会显示为“随机骰子”，但在遥远的曾经收藏的表情，会显示为“骰子”
+                    "[骰子]" | "[随机骰子]" => RQElem::Dice(Dice::from(face)),
+                    "[猜拳]" => RQElem::FingerGuessing(FingerGuessing::from(face)),
+                    _ => RQElem::MarketFace(face),
                 }
             }
             msg::elem::Elem::LightApp(e) => RQElem::LightApp(light_app::LightApp::from(e)),
