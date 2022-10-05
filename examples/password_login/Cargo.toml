@@ -3,10 +3,9 @@ name = "password_login"
 version = "0.1.0"
 edition = "2021"
 
-
 [dependencies]
 ricq = { path = "../../ricq" }
-tokio = { version = "1", features = ["io-std"]}
+tokio = { version = "1", features = ["full"] }
 tokio-util = { version = "0.7", features = ["codec"] }
 futures-util = "0.3"
 tracing = "0.1"

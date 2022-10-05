@@ -1,4 +1,3 @@
-use std::fs;
 use std::sync::Arc;
 
 use rand::prelude::StdRng;
@@ -31,7 +30,9 @@ async fn main() {
         )
         .init();
 
-    let token = fs::read_to_string("session.token").expect("failed to read token");
+    let token = tokio::fs::read_to_string("session.token")
+        .await
+        .expect("failed to read token");
     let token: Token = serde_json::from_str(&token).expect("failed to parse token");
     let device = Device::random_with_rng(&mut StdRng::seed_from_u64(token.uin as u64));
 
