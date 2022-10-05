@@ -13,7 +13,7 @@ keywords = ["ricq", "axum", "http", "api"]
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
-ricq = { version = "0.1.15", path = "../../ricq" }
+ricq = { path = "../../ricq" }
 dashmap = "5.2"
 bytes = "1"
 serde = { version = "1.0", features = ["derive"] }

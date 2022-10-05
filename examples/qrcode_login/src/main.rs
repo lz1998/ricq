@@ -1,7 +1,6 @@
 use std::path::Path;
 use std::sync::Arc;
 
-use anyhow::Result;
 use bytes::Bytes;
 use tokio::time::{sleep, Duration};
 use tracing::Level;
@@ -10,12 +9,11 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use ricq::client::{Connector as _, DefaultConnector};
 use ricq::ext::common::after_login;
 use ricq::handler::DefaultHandler;
-use ricq::version::get_version;
 use ricq::{Client, Device, Protocol};
 use ricq::{LoginResponse, QRCodeConfirmed, QRCodeImageFetch, QRCodeState};
 
 #[tokio::main(flavor = "current_thread")]
-async fn main() -> Result<()> {
+async fn main() {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer().with_target(true))
         .with(
@@ -43,7 +41,7 @@ async fn main() -> Result<()> {
 
     let client = Arc::new(Client::new(
         device,
-        get_version(Protocol::AndroidWatch),
+        Protocol::AndroidWatch.into(),
         DefaultHandler,
     ));
     let handle = tokio::spawn({
@@ -61,9 +59,7 @@ async fn main() -> Result<()> {
     //         ref image_data,
     //         ref sig,
     //     } => {
-    //         tokio::fs::write("qrcode.png", &image_data)
-    //             .await
-    //             .expect("failed to write file");
+    //         tokio::fs::write("qrcode.png", &image_data).await.expect("failed to write file");
     //         if let Err(err) = auto_query_qrcode(&client, sig).await {
     //             panic!("登录失败 {}", err)
     //         };
@@ -149,5 +145,4 @@ async fn main() -> Result<()> {
     }
 
     handle.await.unwrap();
-    Ok(())
 }
