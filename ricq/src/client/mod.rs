@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU8, Ordering};
 use std::time::UNIX_EPOCH;
 
-use cached::CachedAsync;
+use cached::Cached;
 use tokio::sync::{broadcast, RwLock};
 use tokio::sync::{oneshot, Mutex};
 use tokio::time::{sleep, Duration};
@@ -213,8 +213,7 @@ impl super::Client {
         self.packet_handler
             .write()
             .await
-            .get_or_set_with(command.to_string(), async || broadcast::channel(10).0)
-            .await
+            .cache_get_or_set_with(command.to_string(), || broadcast::channel(10).0)
             .subscribe()
     }
 }

@@ -12,7 +12,7 @@ keywords = ["qq", "protocol", "android", "mirai"]
 byteorder = "1"
 bytes = "1"
 derivative = "2"
-flate2 = { version = "1", features = ["rust_backend"], default-features = false }
+flate2 = "1"
 generic-array = "0.14"
 jcers = { version = "0.1", features = ["derive"] }
 md5 = "0.7"

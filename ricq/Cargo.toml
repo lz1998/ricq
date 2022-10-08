@@ -17,9 +17,9 @@ image-detail = ["image"]
 ricq-core = { version = "0.1.16", path = "../ricq-core" }
 async-trait = "0.1"
 bytes = "1"
-cached = { version = "0.30", features = ["async"], default-features = false }
+cached = { version = "0.30", default-features = false }
 derivative = "2"
-flate2 = { version = "1", features = ["rust_backend"], default-features = false }
+flate2 = "1"
 futures-util = { version = "0.3", features = ["sink"] }
 image = { version = "0.24", optional = true }
 jcers = "0.1"

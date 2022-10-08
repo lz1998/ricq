@@ -117,6 +117,7 @@ pub enum GuildImageStoreResp {
     },
 }
 
+#[allow(clippy::all)]
 pub mod protobuf {
     include!(concat!(env!("OUT_DIR"), "/", "guild.rs"));
 }
