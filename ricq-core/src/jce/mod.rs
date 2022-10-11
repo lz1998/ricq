@@ -5,7 +5,7 @@ use jcers::{JceGet, JcePut};
 
 macro_rules! JceStruct {
     ($struct_name: ident {$($tag: expr => $field: ident: $field_t: ty,)*}) => {
-        #[derive(Debug, Clone, PartialEq, JceGet, JcePut, Default)]
+        #[derive(Debug, Clone, PartialEq, Eq, JceGet, JcePut, Default)]
         pub struct $struct_name {
             $(#[jce($tag)]
             pub $field: $field_t),*
