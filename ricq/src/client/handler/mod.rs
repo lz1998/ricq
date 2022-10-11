@@ -1,9 +1,5 @@
 use async_trait::async_trait;
-use tokio::sync::{
-    broadcast::Sender as BroadcastSender,
-    mpsc::{Sender as MpscSender, UnboundedSender},
-    watch::Sender as WatchSender,
-};
+use tokio::sync::{broadcast, mpsc, watch};
 
 use crate::client::event::*;
 
@@ -57,32 +53,43 @@ pub enum QEvent {
     MSFOffline(MSFOfflineEvent),
 }
 
+#[async_trait]
+pub trait RawHandler: Sync + Send + 'static {
+    async fn handle_login(&self, _uin: i64) {}
+    async fn handle_group_message(&self, _event: GroupMessageEvent) {}
+    async fn handle_group_audio(&self, _event: GroupAudioMessageEvent) {}
+    async fn handle_friend_message(&self, _event: FriendMessageEvent) {}
+    async fn handle_friend_audio(&self, _event: FriendAudioMessageEvent) {}
+    async fn handle_group_temp_message(&self, _event: GroupTempMessageEvent) {}
+    async fn handle_group_request(&self, _event: JoinGroupRequestEvent) {}
+    async fn handle_self_invited(&self, _event: SelfInvitedEvent) {}
+    async fn handle_friend_request(&self, _event: NewFriendRequestEvent) {}
+    async fn handle_new_member(&self, _event: NewMemberEvent) {}
+    async fn handle_group_mute(&self, _event: GroupMuteEvent) {}
+    async fn handle_friend_message_recall(&self, _event: FriendMessageRecallEvent) {}
+    async fn handle_group_message_recall(&self, _event: GroupMessageRecallEvent) {}
+    async fn handle_new_friend(&self, _event: NewFriendEvent) {}
+    async fn handle_group_leave(&self, _event: GroupLeaveEvent) {}
+    async fn handle_group_disband(&self, _event: GroupDisbandEvent) {}
+    async fn handle_friend_poke(&self, _event: FriendPokeEvent) {}
+    async fn handle_group_name_update(&self, _event: GroupNameUpdateEvent) {}
+    async fn handle_delete_friend(&self, _event: DeleteFriendEvent) {}
+    async fn handle_member_permission_change(&self, _event: MemberPermissionChangeEvent) {}
+    async fn handle_kicked_offline(&self, _event: KickedOfflineEvent) {}
+    async fn handle_msf_offline(&self, _event: MSFOfflineEvent) {}
+}
+
 /// 事件处理器。
-/// 
-/// 接收到事件时，事件类型对应的 `fn handle_ ...` 会被调用。默认情况下，所有事件处理函数都实现为：将事件包装成 QEvent 并转发到 `async fn handle(&self, e: QEvent)`。
-/// 
-/// # 示例
-/// 
-/// ```
-/// struct MyHandler;
-/// #[async_trait]
-/// impl Handler for MyHandler {
-///     /// 群消息事件
-///     async fn handle_group_message(&self, e: GroupMessageEvent) {
-///         tracing::info!("MyHandler::handle_group_message: {:?}", e.inner);
-///         // 这里没有转发到 fn handle，所以 handle 只能收到……
-///     }
-///     /// 除 群消息 外所有事件
-///     async fn handle(&self, e: QEvent) {
-///         tracing::info!("MyHandler::handle: {:?}", e);
-///     }
-/// }
-/// ```
+#[async_trait]
+pub trait Handler: Sync + Send + 'static {
+    /// 所有事件都会被包装为 QEvent 并在这里接收
+    async fn handle(&self, e: QEvent);
+}
+
+// TODO: using macros
 #[rustfmt::skip]
 #[async_trait]
-pub trait Handler: Sync {
-    /// 默认情况下，所有事件都会被包装为 QEvent 并在这里接收
-    async fn handle(&self, e: QEvent); // 不默认实现，提醒用户还有其他事件
+impl<T:Handler> RawHandler for T {
     async fn handle_login(&self, e: i64) { self.handle(QEvent::Login(e)).await }
     async fn handle_group_message(&self, e: GroupMessageEvent) { self.handle(QEvent::GroupMessage(e)).await }
     async fn handle_group_audio(&self, e: GroupAudioMessageEvent) { self.handle(QEvent::GroupAudioMessage(e)).await }
@@ -112,50 +119,34 @@ pub struct DefaultHandler;
 
 #[async_trait]
 impl Handler for DefaultHandler {
-    async fn handle_group_message(&self, e: GroupMessageEvent) {
-        tracing::info!("DefaultHandler::handle_group_message: {:?}", e.inner);
-    }
-    async fn handle_group_temp_message(&self, e: GroupTempMessageEvent) {
-        tracing::info!("DefaultHandler::handle_group_temp_message: {:?}", e.inner);
-    }
-    async fn handle_friend_message(&self, e: FriendMessageEvent) {
-        tracing::info!("DefaultHandler::handle_friend_message: {:?}", e.inner);
-    }
-    async fn handle_group_request(&self, e: JoinGroupRequestEvent) {
-        tracing::info!("DefaultHandler::handle_group_request: {:?}", e.inner);
-    }
-    async fn handle_friend_request(&self, e: NewFriendRequestEvent) {
-        tracing::info!("DefaultHandler::handle_friend_request: {:?}", e.inner);
-    }
-    /// 其他事件在这里输出
     async fn handle(&self, e: QEvent) {
         tracing::info!("DefaultHandler::handle: {:?}", e);
     }
 }
 
 #[async_trait]
-impl Handler for BroadcastSender<QEvent> {
+impl Handler for broadcast::Sender<QEvent> {
     async fn handle(&self, msg: QEvent) {
         self.send(msg).ok();
     }
 }
 
 #[async_trait]
-impl Handler for MpscSender<QEvent> {
+impl Handler for mpsc::Sender<QEvent> {
     async fn handle(&self, msg: QEvent) {
         self.send(msg).await.ok();
     }
 }
 
 #[async_trait]
-impl Handler for UnboundedSender<QEvent> {
+impl Handler for mpsc::UnboundedSender<QEvent> {
     async fn handle(&self, msg: QEvent) {
         self.send(msg).ok();
     }
 }
 
 #[async_trait]
-impl Handler for WatchSender<QEvent> {
+impl Handler for watch::Sender<QEvent> {
     async fn handle(&self, msg: QEvent) {
         self.send(msg).ok();
     }

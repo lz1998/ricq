@@ -17,6 +17,7 @@ use ricq_core::structs::{AccountInfo, AddressInfo, OtherClientInfo};
 use ricq_core::Engine;
 pub use ricq_core::Token;
 
+use crate::client::handler::RawHandler;
 use crate::{RQError, RQResult};
 
 mod api;
@@ -29,7 +30,7 @@ mod tcp;
 
 pub struct Client {
     /// QEvent Handler 调用 handle 方法外发 QEvent
-    handler: Box<dyn handler::Handler + Sync + Send + 'static>,
+    handler: Box<dyn RawHandler>,
     pub engine: RwLock<Engine>,
 
     // 状态相关
@@ -81,10 +82,7 @@ impl super::Client {
     /// 新建 Clinet
     ///
     /// **Notice: 该方法仅新建 Client 需要调用 start 方法连接到服务器**
-    pub fn new<H>(device: Device, version: Version, handler: H) -> Client
-    where
-        H: crate::client::handler::Handler + 'static + Sync + Send,
-    {
+    pub fn new(device: Device, version: Version, handler: impl RawHandler) -> Client {
         let (out_pkt_sender, _) = tokio::sync::broadcast::channel(1024);
         let (disconnect_signal, _) = tokio::sync::broadcast::channel(8);
 
@@ -118,10 +116,7 @@ impl super::Client {
     /// 新建 Clinet
     ///
     /// **Notice: 该方法仅新建 Client 需要调用 start 方法连接到服务器**
-    pub fn new_with_config<H>(config: crate::Config, handler: H) -> Self
-    where
-        H: crate::client::handler::Handler + 'static + Sync + Send,
-    {
+    pub fn new_with_config(config: crate::Config, handler: impl RawHandler) -> Self {
         Self::new(config.device, config.version, handler)
     }
 
