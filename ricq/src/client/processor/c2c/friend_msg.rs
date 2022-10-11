@@ -1,5 +1,4 @@
 use cached::Cached;
-use std::sync::Arc;
 
 use ricq_core::msg::MessageChain;
 use ricq_core::structs::{FriendAudio, FriendAudioMessage, FriendMessage};
@@ -8,11 +7,8 @@ use ricq_core::{pb, RQResult};
 use crate::client::event::{FriendAudioMessageEvent, FriendMessageEvent};
 use crate::Client;
 
-impl Client {
-    pub(crate) async fn process_friend_message(
-        self: &Arc<Self>,
-        mut msg: pb::msg::Message,
-    ) -> RQResult<()> {
+impl<H: crate::handler::Handler + Send> Client<H> {
+    pub(crate) async fn process_friend_message(&self, mut msg: pb::msg::Message) -> RQResult<()> {
         fn take_ptt(msg: &mut pb::msg::Message) -> Option<pb::msg::Ptt> {
             msg.body.as_mut()?.rich_text.as_mut()?.ptt.take()
         }
@@ -20,8 +16,7 @@ impl Client {
             // TODO self friend audio
             self.handler
                 .handle_friend_audio(FriendAudioMessageEvent {
-                    client: self.clone(),
-                    inner: parse_friend_audio_message(msg, ptt)?,
+                    0: parse_friend_audio_message(msg, ptt)?,
                 })
                 .await;
             return Ok(());
@@ -40,10 +35,7 @@ impl Client {
             }
         }
         self.handler
-            .handle_friend_message(FriendMessageEvent {
-                client: self.clone(),
-                inner: message,
-            })
+            .handle_friend_message(FriendMessageEvent { 0: message })
             .await;
         Ok(())
     }

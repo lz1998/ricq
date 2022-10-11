@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use std::time::UNIX_EPOCH;
 
 use cached::Cached;
@@ -10,8 +9,8 @@ use crate::client::event::KickedOfflineEvent;
 use crate::client::NetworkStatus;
 use crate::Client;
 
-impl Client {
-    pub(crate) async fn process_push_notify(self: &Arc<Self>, notify: jce::RequestPushNotify) {
+impl<H: crate::handler::Handler + Send> Client<H> {
+    pub(crate) async fn process_push_notify(&self, notify: jce::RequestPushNotify) {
         match notify.msg_type {
             35 | 36 | 37 | 45 | 46 | 84 | 85 | 86 | 87 => {
                 // pull group system msg(group request), then process
@@ -51,20 +50,14 @@ impl Client {
         }
     }
 
-    pub(crate) async fn process_push_force_offline(
-        self: &Arc<Self>,
-        offline: jce::RequestPushForceOffline,
-    ) {
+    pub(crate) async fn process_push_force_offline(&self, offline: jce::RequestPushForceOffline) {
         self.stop(NetworkStatus::KickedOffline);
         self.handler
-            .handle_kicked_offline(KickedOfflineEvent {
-                client: self.clone(),
-                inner: offline,
-            })
+            .handle_kicked_offline(KickedOfflineEvent { 0: offline })
             .await;
     }
 
-    pub(crate) async fn process_message_sync(self: &Arc<Self>, msgs: Vec<pb::msg::Message>) {
+    pub(crate) async fn process_message_sync(&self, msgs: Vec<pb::msg::Message>) {
         stream::iter(msgs)
             .filter_map(|msg| async {
                 let head = msg.head.clone().unwrap();

@@ -6,7 +6,7 @@ use ricq_core::command::wtlogin::*;
 use ricq_core::token::Token;
 
 /// 登录相关
-impl super::super::Client {
+impl<H: crate::handler::Handler + Send> super::super::Client<H> {
     /// 二维码登录 - 获取二维码
     pub async fn fetch_qrcode(&self) -> RQResult<QRCodeState> {
         let req = self.engine.read().await.build_qrcode_fetch_request_packet();

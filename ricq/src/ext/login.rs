@@ -7,7 +7,10 @@ use ricq_core::{RQError, RQResult};
 use crate::Client;
 
 /// 扫码登录：自动查询二维码状态，忽略中间结果，成功或失败返回
-pub async fn auto_query_qrcode(client: &Arc<Client>, sig: &[u8]) -> RQResult<()> {
+pub async fn auto_query_qrcode<H: crate::handler::Handler + Send>(
+    client: &Arc<Client<H>>,
+    sig: &[u8],
+) -> RQResult<()> {
     loop {
         tokio::time::sleep(Duration::from_secs(1)).await;
         let qrcode_state = client.query_qrcode_result(sig).await?;

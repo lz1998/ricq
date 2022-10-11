@@ -1,12 +1,10 @@
-use std::sync::Arc;
-
 use ricq_core::command::profile_service::GroupSystemMessages;
 
 use crate::client::event::{JoinGroupRequestEvent, SelfInvitedEvent};
 use crate::Client;
 
-impl Client {
-    pub(crate) async fn process_group_system_messages(self: &Arc<Self>, msgs: GroupSystemMessages) {
+impl<H: crate::handler::Handler + Send> Client<H> {
+    pub(crate) async fn process_group_system_messages(&self, msgs: GroupSystemMessages) {
         for request in msgs.self_invited.clone() {
             if self
                 .self_invited_exists(request.msg_seq, request.msg_time)
@@ -15,10 +13,7 @@ impl Client {
                 continue;
             }
             self.handler
-                .handle_self_invited(SelfInvitedEvent {
-                    client: self.clone(),
-                    inner: request,
-                })
+                .handle_self_invited(SelfInvitedEvent { 0: request })
                 .await;
         }
         for request in msgs.join_group_requests.clone() {
@@ -29,10 +24,7 @@ impl Client {
                 continue;
             }
             self.handler
-                .handle_group_request(JoinGroupRequestEvent {
-                    client: self.clone(),
-                    inner: request,
-                })
+                .handle_group_request(JoinGroupRequestEvent { 0: request })
                 .await;
         }
         let mut cache = self.group_sys_message_cache.write().await;

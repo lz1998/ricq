@@ -23,7 +23,7 @@ use ricq_core::structs::{GroupInfo, GroupMemberInfo, MessageReceipt};
 use crate::structs::ImageInfo;
 use crate::{RQError, RQResult};
 
-impl super::super::Client {
+impl<H: crate::handler::Handler + Send> super::super::Client<H> {
     /// 获取进群申请信息
     async fn get_group_system_messages(&self, suspicious: bool) -> RQResult<GroupSystemMessages> {
         let req = self

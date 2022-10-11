@@ -17,7 +17,7 @@ use ricq_core::structs::MessageReceipt;
 use crate::structs::ImageInfo;
 use crate::{RQError, RQResult};
 
-impl super::super::Client {
+impl<H: crate::handler::Handler + Send> super::super::Client<H> {
     /// 获取好友请求
     pub async fn get_friend_system_messages(&self) -> RQResult<FriendSystemMessages> {
         let req = self
