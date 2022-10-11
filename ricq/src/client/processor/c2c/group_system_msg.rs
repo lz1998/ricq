@@ -3,7 +3,6 @@ use std::sync::Arc;
 use ricq_core::command::profile_service::GroupSystemMessages;
 
 use crate::client::event::{JoinGroupRequestEvent, SelfInvitedEvent};
-use crate::handler::QEvent;
 use crate::Client;
 
 impl Client {
@@ -16,10 +15,10 @@ impl Client {
                 continue;
             }
             self.handler
-                .handle(QEvent::SelfInvited(SelfInvitedEvent {
+                .handle_self_invited(SelfInvitedEvent {
                     client: self.clone(),
                     inner: request,
-                }))
+                })
                 .await;
         }
         for request in msgs.join_group_requests.clone() {
@@ -30,10 +29,10 @@ impl Client {
                 continue;
             }
             self.handler
-                .handle(QEvent::GroupRequest(JoinGroupRequestEvent {
+                .handle_group_request(JoinGroupRequestEvent {
                     client: self.clone(),
                     inner: request,
-                }))
+                })
                 .await;
         }
         let mut cache = self.group_sys_message_cache.write().await;

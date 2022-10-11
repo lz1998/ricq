@@ -21,7 +21,6 @@ use crate::client::event::{
     GroupDisbandEvent, GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent,
     GroupNameUpdateEvent, MemberPermissionChangeEvent, NewFriendEvent,
 };
-use crate::client::handler::QEvent;
 use crate::client::Client;
 use crate::RQResult;
 
@@ -45,7 +44,7 @@ impl Client {
 
         if let Some(ptt) = group_message_part.ptt {
             self.handler
-                .handle(QEvent::GroupAudioMessage(GroupAudioMessageEvent {
+                .handle_group_audio(GroupAudioMessageEvent {
                     client: self.clone(),
                     inner: GroupAudioMessage {
                         seqs: vec![group_message_part.seq],
@@ -57,7 +56,7 @@ impl Client {
                         time: group_message_part.time,
                         audio: GroupAudio(ptt),
                     },
-                }))
+                })
                 .await;
             return Ok(());
         }
@@ -89,10 +88,10 @@ impl Client {
         if let Some(group_msg) = group_msg {
             // message is finish
             self.handler
-                .handle(QEvent::GroupMessage(GroupMessageEvent {
+                .handle_group_message(GroupMessageEvent {
                     client: self.clone(),
                     inner: self.parse_group_message(group_msg).await?,
-                }))
+                })
                 .await; //todo
         }
         Ok(())
@@ -151,7 +150,7 @@ impl Client {
                             let target = r.get_u32() as i64;
                             let duration = Duration::from_secs(r.get_u32() as u64);
                             self.handler
-                                .handle(QEvent::GroupMute(GroupMuteEvent {
+                                .handle_group_mute(GroupMuteEvent {
                                     client: self.clone(),
                                     inner: GroupMute {
                                         group_code,
@@ -159,7 +158,7 @@ impl Client {
                                         target_uin: target,
                                         duration,
                                     },
-                                }))
+                                })
                                 .await;
                         }
                         0x10 | 0x11 | 0x14 | 0x15 => {
@@ -183,12 +182,10 @@ impl Client {
                                     })
                                     .for_each(async move |recall| {
                                         self.handler
-                                            .handle(QEvent::GroupMessageRecall(
-                                                GroupMessageRecallEvent {
-                                                    client: self.clone(),
-                                                    inner: recall,
-                                                },
-                                            ))
+                                            .handle_group_message_recall(GroupMessageRecallEvent {
+                                                client: self.clone(),
+                                                inner: recall,
+                                            })
                                             .await;
                                     })
                                     .await;
@@ -212,12 +209,10 @@ impl Client {
                                 })
                                 .for_each(async move |m| {
                                     self.handler
-                                        .handle(QEvent::FriendMessageRecall(
-                                            FriendMessageRecallEvent {
-                                                client: self.clone(),
-                                                inner: m,
-                                            },
-                                        ))
+                                        .handle_friend_message_recall(FriendMessageRecallEvent {
+                                            client: self.clone(),
+                                            inner: m,
+                                        })
                                         .await;
                                 })
                                 .await;
@@ -227,28 +222,28 @@ impl Client {
                                 pb::SubB3::from_bytes(&msg.v_protobuf).unwrap();
                             if let Some(f) = msg_add_frd_notify.msg_add_frd_notify {
                                 self.handler
-                                    .handle(QEvent::NewFriend(NewFriendEvent {
+                                    .handle_new_friend(NewFriendEvent {
                                         client: self.clone(),
                                         inner: FriendInfo {
                                             uin: f.uin,
                                             nick: f.nick,
                                             ..Default::default()
                                         },
-                                    }))
+                                    })
                                     .await;
                             }
                         }
                         0xD4 => {
                             let d4 = pb::SubD4::from_bytes(&msg.v_protobuf).unwrap();
                             self.handler
-                                .handle(QEvent::GroupLeave(GroupLeaveEvent {
+                                .handle_group_leave(GroupLeaveEvent {
                                     client: self.clone(),
                                     inner: GroupLeave {
                                         group_code: d4.uin,
                                         member_uin: self.uin().await,
                                         operator_uin: None,
                                     },
-                                }))
+                                })
                                 .await;
                         }
                         0x122 | 0x123 => {
@@ -265,10 +260,10 @@ impl Client {
                             }
                             if sender != 0 {
                                 self.handler
-                                    .handle(QEvent::FriendPoke(FriendPokeEvent {
+                                    .handle_friend_poke(FriendPokeEvent {
                                         client: self.clone(),
                                         inner: FriendPoke { sender, receiver },
-                                    }))
+                                    })
                                     .await;
                             }
                         }
@@ -294,12 +289,10 @@ impl Client {
                                                 group_name: new_group_name,
                                             };
                                             self.handler
-                                                .handle(QEvent::GroupNameUpdate(
-                                                    GroupNameUpdateEvent {
-                                                        client: self.clone(),
-                                                        inner: update,
-                                                    },
-                                                ))
+                                                .handle_group_name_update(GroupNameUpdateEvent {
+                                                    client: self.clone(),
+                                                    inner: update,
+                                                })
                                                 .await;
                                         }
                                     }
@@ -313,10 +306,10 @@ impl Client {
                                     stream::iter(delete_friends)
                                         .for_each(async move |delete| {
                                             self.handler
-                                                .handle(QEvent::DeleteFriend(DeleteFriendEvent {
+                                                .handle_delete_friend(DeleteFriendEvent {
                                                     client: self.clone(),
                                                     inner: delete,
-                                                }))
+                                                })
                                                 .await;
                                         })
                                         .await;
@@ -360,28 +353,26 @@ impl Client {
         match push_trans.info {
             PushTransInfo::MemberLeave(leave) => {
                 self.handler
-                    .handle(QEvent::GroupLeave(GroupLeaveEvent {
+                    .handle_group_leave(GroupLeaveEvent {
                         client: self.clone(),
                         inner: leave,
-                    }))
+                    })
                     .await;
             }
             PushTransInfo::MemberPermissionChange(change) => {
                 self.handler
-                    .handle(QEvent::MemberPermissionChange(
-                        MemberPermissionChangeEvent {
-                            client: self.clone(),
-                            inner: change,
-                        },
-                    ))
+                    .handle_member_permission_change(MemberPermissionChangeEvent {
+                        client: self.clone(),
+                        inner: change,
+                    })
                     .await;
             }
             PushTransInfo::GroupDisband(disband) => {
                 self.handler
-                    .handle(QEvent::GroupDisband(GroupDisbandEvent {
+                    .handle_group_disband(GroupDisbandEvent {
                         client: self.clone(),
                         inner: disband,
-                    }))
+                    })
                     .await;
             }
         }

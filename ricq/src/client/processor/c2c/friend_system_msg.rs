@@ -1,5 +1,4 @@
 use crate::client::event::NewFriendRequestEvent;
-use crate::handler::QEvent;
 use crate::Client;
 use ricq_core::command::profile_service::FriendSystemMessages;
 use std::sync::Arc;
@@ -11,10 +10,10 @@ impl Client {
     ) {
         for request in msgs.requests {
             self.handler
-                .handle(QEvent::NewFriendRequest(NewFriendRequestEvent {
+                .handle_friend_request(NewFriendRequestEvent {
                     client: self.clone(),
                     inner: request,
-                }))
+                })
                 .await;
         }
     }

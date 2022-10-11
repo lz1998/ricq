@@ -1,4 +1,3 @@
-use crate::handler::QEvent;
 use crate::Client;
 use ricq_core::command::wtlogin::*;
 
@@ -16,7 +15,7 @@ impl Client {
             .write()
             .await
             .process_login_response(login_response);
-        self.handler.handle(QEvent::Login(self.uin().await)).await;
+        self.handler.handle_login(self.uin().await).await;
     }
 
     pub(crate) async fn process_trans_emp_response(&self, qrcode_state: QRCodeState) {

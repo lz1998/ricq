@@ -8,7 +8,6 @@ use ricq_core::{jce, pb};
 
 use crate::client::event::KickedOfflineEvent;
 use crate::client::NetworkStatus;
-use crate::handler::QEvent;
 use crate::Client;
 
 impl Client {
@@ -58,10 +57,10 @@ impl Client {
     ) {
         self.stop(NetworkStatus::KickedOffline);
         self.handler
-            .handle(QEvent::KickedOffline(KickedOfflineEvent {
+            .handle_kicked_offline(KickedOfflineEvent {
                 client: self.clone(),
                 inner: offline,
-            }))
+            })
             .await;
     }
 

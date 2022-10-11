@@ -5,7 +5,6 @@ use ricq_core::structs::GroupTempMessage;
 use ricq_core::{pb, RQError, RQResult};
 
 use crate::client::event::GroupTempMessageEvent;
-use crate::handler::QEvent;
 use crate::Client;
 
 impl Client {
@@ -15,10 +14,10 @@ impl Client {
     ) -> RQResult<()> {
         let message = parse_temp_message(msg)?;
         self.handler
-            .handle(QEvent::GroupTempMessage(GroupTempMessageEvent {
+            .handle_group_temp_message(GroupTempMessageEvent {
                 client: self.clone(),
                 inner: message,
-            }))
+            })
             .await;
         Ok(())
     }

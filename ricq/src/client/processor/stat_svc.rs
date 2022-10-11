@@ -4,7 +4,6 @@ use ricq_core::jce;
 
 use crate::client::event::MSFOfflineEvent;
 use crate::client::{Client, NetworkStatus};
-use crate::handler::QEvent;
 
 impl Client {
     // TODO 待测试
@@ -17,10 +16,10 @@ impl Client {
             .ok();
         self.stop(NetworkStatus::MsfOffline);
         self.handler
-            .handle(QEvent::MSFOffline(MSFOfflineEvent {
+            .handle_msf_offline(MSFOfflineEvent {
                 client: self.clone(),
                 inner: offline,
-            }))
+            })
             .await;
     }
 }

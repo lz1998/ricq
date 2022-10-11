@@ -6,7 +6,6 @@ use ricq_core::structs::{FriendAudio, FriendAudioMessage, FriendMessage};
 use ricq_core::{pb, RQResult};
 
 use crate::client::event::{FriendAudioMessageEvent, FriendMessageEvent};
-use crate::handler::QEvent;
 use crate::Client;
 
 impl Client {
@@ -20,10 +19,10 @@ impl Client {
         if let Some(ptt) = take_ptt(&mut msg) {
             // TODO self friend audio
             self.handler
-                .handle(QEvent::FriendAudioMessage(FriendAudioMessageEvent {
+                .handle_friend_audio(FriendAudioMessageEvent {
                     client: self.clone(),
                     inner: parse_friend_audio_message(msg, ptt)?,
-                }))
+                })
                 .await;
             return Ok(());
         }
@@ -41,10 +40,10 @@ impl Client {
             }
         }
         self.handler
-            .handle(QEvent::FriendMessage(FriendMessageEvent {
+            .handle_friend_message(FriendMessageEvent {
                 client: self.clone(),
                 inner: message,
-            }))
+            })
             .await;
         Ok(())
     }

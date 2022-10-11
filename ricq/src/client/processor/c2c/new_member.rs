@@ -5,7 +5,6 @@ use ricq_core::structs::NewMember;
 use ricq_core::{pb, RQError, RQResult};
 
 use crate::client::event::NewMemberEvent;
-use crate::handler::QEvent;
 use crate::Client;
 
 impl Client {
@@ -18,13 +17,13 @@ impl Client {
         let member_uin = head.auth_uin();
 
         self.handler
-            .handle(QEvent::NewMember(NewMemberEvent {
+            .handle_new_member(NewMemberEvent {
                 client: self.clone(),
                 inner: NewMember {
                     group_code,
                     member_uin,
                 },
-            }))
+            })
             .await;
 
         Ok(())
