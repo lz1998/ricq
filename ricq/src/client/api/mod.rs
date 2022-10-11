@@ -23,7 +23,7 @@ mod group;
 mod login;
 
 /// API
-impl<H: crate::handler::Handler + Send> super::Client<H> {
+impl super::Client {
     /// 设置在线状态 TODO net_type
     pub async fn update_online_status<T>(&self, status: T) -> RQResult<()>
     where

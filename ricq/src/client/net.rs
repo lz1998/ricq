@@ -1,6 +1,6 @@
 use std::net::SocketAddr;
 use std::sync::atomic::Ordering;
-
+use std::sync::Arc;
 use std::time::Duration;
 
 use async_trait::async_trait;
@@ -20,23 +20,19 @@ pub type OutPktSender = broadcast::Sender<Bytes>;
 
 #[async_trait]
 pub trait Connector<T: AsyncRead + AsyncWrite> {
-    async fn connect<H: crate::handler::Handler + Send>(&self, client: &Client<H>)
-        -> io::Result<T>;
+    async fn connect(&self, client: &Client) -> io::Result<T>;
 }
 
 pub struct DefaultConnector;
 
 #[async_trait]
 impl Connector<TcpStream> for DefaultConnector {
-    async fn connect<H: crate::handler::Handler + Send>(
-        &self,
-        client: &Client<H>,
-    ) -> io::Result<TcpStream> {
+    async fn connect(&self, client: &Client) -> io::Result<TcpStream> {
         tcp_connect_fastest(client.get_address_list().await, Duration::from_secs(5)).await
     }
 }
 
-impl<H: crate::handler::Handler + Send> crate::Client<H> {
+impl crate::Client {
     /// 获取服务器地址
     pub async fn get_address_list(&self) -> Vec<SocketAddr> {
         const BUILD_IN: &[([u8; 4], u16)] = &[
@@ -47,7 +43,7 @@ impl<H: crate::handler::Handler + Send> crate::Client<H> {
             ([114, 221, 144, 215], 80),
             ([42, 81, 172, 22], 80),
         ];
-        let mut addrs: Vec<_> = BUILD_IN.iter().map(|v| SocketAddr::from(*v)).collect();
+        let mut addrs: Vec<SocketAddr> = BUILD_IN.iter().map(|v| SocketAddr::from(*v)).collect();
         if let Ok(res) = tokio::net::lookup_host(("msfwifi.3g.qq.com", 8080)).await {
             addrs.extend(res);
         }
@@ -62,7 +58,7 @@ impl<H: crate::handler::Handler + Send> crate::Client<H> {
     /// 开始处理流数据
     ///
     ///**Notice: 该方法仅开始处理包，需要手动登录并开始心跳包**
-    pub async fn start(&self, stream: impl AsyncRead + AsyncWrite) {
+    pub async fn start(self: &Arc<Self>, stream: impl AsyncRead + AsyncWrite) {
         self.status
             .store(NetworkStatus::Running as u8, Ordering::Relaxed);
         self.net_loop(stream).await; // 阻塞到断开
@@ -85,7 +81,7 @@ impl<H: crate::handler::Handler + Send> crate::Client<H> {
         self.disconnect_signal.send(()).ok();
     }
 
-    async fn net_loop(&self, stream: impl AsyncRead + AsyncWrite) {
+    async fn net_loop(self: &Arc<Client>, stream: impl AsyncRead + AsyncWrite) {
         let (mut write_half, mut read_half) = LengthDelimitedCodec::builder()
             .length_field_length(4)
             .length_adjustment(-4)

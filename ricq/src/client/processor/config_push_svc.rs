@@ -10,7 +10,7 @@ use crate::client::tcp::sort_addrs;
 use crate::client::Client;
 use crate::RQError;
 
-impl<H: crate::handler::Handler + Send> Client<H> {
+impl Client {
     pub(crate) async fn process_config_push_req(
         &self,
         config_push_req: ConfigPushReq,

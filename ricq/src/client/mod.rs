@@ -27,9 +27,9 @@ pub(crate) mod net;
 mod processor;
 mod tcp;
 
-pub struct Client<H: handler::Handler + Send> {
+pub struct Client {
     /// QEvent Handler 调用 handle 方法外发 QEvent
-    handler: H,
+    handler: Box<dyn handler::Handler + Sync + Send + 'static>,
     pub engine: RwLock<Engine>,
 
     // 状态相关
@@ -77,16 +77,19 @@ pub struct Client<H: handler::Handler + Send> {
     packet_handler: RwLock<HashMap<String, broadcast::Sender<Packet>>>,
 }
 
-impl<H: handler::Handler + Send> super::Client<H> {
+impl super::Client {
     /// 新建 Clinet
     ///
     /// **Notice: 该方法仅新建 Client 需要调用 start 方法连接到服务器**
-    pub fn new(device: Device, version: Version, handler: H) -> Self {
+    pub fn new<H>(device: Device, version: Version, handler: H) -> Client
+    where
+        H: crate::client::handler::Handler + 'static + Sync + Send,
+    {
         let (out_pkt_sender, _) = tokio::sync::broadcast::channel(1024);
         let (disconnect_signal, _) = tokio::sync::broadcast::channel(8);
 
         Client {
-            handler,
+            handler: Box::new(handler),
             engine: RwLock::new(Engine::new(device, version)),
             status: AtomicU8::new(NetworkStatus::Unknown as u8),
             heartbeat_enabled: AtomicBool::new(false),
@@ -115,7 +118,10 @@ impl<H: handler::Handler + Send> super::Client<H> {
     /// 新建 Clinet
     ///
     /// **Notice: 该方法仅新建 Client 需要调用 start 方法连接到服务器**
-    pub fn new_with_config(config: crate::Config, handler: H) -> Self {
+    pub fn new_with_config<H>(config: crate::Config, handler: H) -> Self
+    where
+        H: crate::client::handler::Handler + 'static + Sync + Send,
+    {
         Self::new(config.device, config.version, handler)
     }
 
@@ -212,7 +218,7 @@ impl<H: handler::Handler + Send> super::Client<H> {
     }
 }
 
-impl<H: handler::Handler + Send> Drop for Client<H> {
+impl Drop for Client {
     fn drop(&mut self) {
         self.stop(NetworkStatus::Drop);
     }

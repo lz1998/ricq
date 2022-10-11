@@ -12,11 +12,8 @@ use crate::ext::common::after_login;
 use crate::{Client, RQError, RQResult};
 
 /// 自动重连，在掉线后使用，会阻塞到重连结束
-pub async fn auto_reconnect<
-    T: AsyncRead + AsyncWrite + 'static + Send,
-    H: crate::handler::Handler + 'static + Send,
->(
-    client: Arc<Client<H>>,
+pub async fn auto_reconnect<T: AsyncRead + AsyncWrite + 'static + Send>(
+    client: Arc<Client>,
     credential: Credential,
     interval: Duration,
     max: usize,
@@ -79,18 +76,12 @@ pub enum Credential {
 /// 用于重连
 #[async_trait]
 pub trait FastLogin {
-    async fn fast_login<H: crate::handler::Handler + Send>(
-        &self,
-        client: &Client<H>,
-    ) -> RQResult<()>;
+    async fn fast_login(&self, client: &Arc<Client>) -> RQResult<()>;
 }
 
 #[async_trait]
 impl FastLogin for ricq_core::Token {
-    async fn fast_login<H: crate::handler::Handler + Send>(
-        &self,
-        client: &Client<H>,
-    ) -> RQResult<()> {
+    async fn fast_login(&self, client: &Arc<Client>) -> RQResult<()> {
         match client.token_login(self.clone()).await? {
             LoginResponse::Success(_) => Ok(()),
             other => Err(RQError::Other(format!(
@@ -103,10 +94,7 @@ impl FastLogin for ricq_core::Token {
 
 #[async_trait]
 impl FastLogin for Password {
-    async fn fast_login<H: crate::handler::Handler + Send>(
-        &self,
-        client: &Client<H>,
-    ) -> RQResult<()> {
+    async fn fast_login(&self, client: &Arc<Client>) -> RQResult<()> {
         let resp = client.password_login(self.uin, &self.password).await?;
         match resp {
             LoginResponse::Success { .. } => return Ok(()),
@@ -123,10 +111,7 @@ impl FastLogin for Password {
 }
 
 /// 如果你非常确定登录过程中不会遇到验证码，可以用 fast_login
-pub async fn fast_login<H: crate::handler::Handler + Send>(
-    client: &Client<H>,
-    credential: &Credential,
-) -> RQResult<()> {
+pub async fn fast_login(client: &Arc<Client>, credential: &Credential) -> RQResult<()> {
     match credential {
         Credential::Token(token) => token.fast_login(client).await,
         Credential::Password(password) => password.fast_login(client).await,

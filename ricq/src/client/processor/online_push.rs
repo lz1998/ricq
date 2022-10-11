@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use std::time::Duration;
 
 use bytes::{Buf, Bytes};
@@ -23,9 +24,9 @@ use crate::client::event::{
 use crate::client::Client;
 use crate::RQResult;
 
-impl<H: crate::handler::Handler + Send> Client<H> {
+impl Client {
     pub(crate) async fn process_group_message_part(
-        &self,
+        self: &Arc<Self>,
         group_message_part: GroupMessagePart,
     ) -> RQResult<()> {
         // receipt message
@@ -44,7 +45,8 @@ impl<H: crate::handler::Handler + Send> Client<H> {
         if let Some(ptt) = group_message_part.ptt {
             self.handler
                 .handle_group_audio(GroupAudioMessageEvent {
-                    0: GroupAudioMessage {
+                    client: self.clone(),
+                    inner: GroupAudioMessage {
                         seqs: vec![group_message_part.seq],
                         rands: vec![group_message_part.rand],
                         group_code: group_message_part.group_code,
@@ -87,7 +89,8 @@ impl<H: crate::handler::Handler + Send> Client<H> {
             // message is finish
             self.handler
                 .handle_group_message(GroupMessageEvent {
-                    0: self.parse_group_message(group_msg).await?,
+                    client: self.clone(),
+                    inner: self.parse_group_message(group_msg).await?,
                 })
                 .await; //todo
         }
@@ -126,7 +129,7 @@ impl<H: crate::handler::Handler + Send> Client<H> {
         Ok(group_message)
     }
 
-    pub(crate) async fn process_push_req(&self, msg_infos: Vec<jce::PushMessageInfo>) {
+    pub(crate) async fn process_push_req(self: &Arc<Self>, msg_infos: Vec<jce::PushMessageInfo>) {
         for info in msg_infos {
             if self.push_req_exists(&info).await {
                 continue;
@@ -148,7 +151,8 @@ impl<H: crate::handler::Handler + Send> Client<H> {
                             let duration = Duration::from_secs(r.get_u32() as u64);
                             self.handler
                                 .handle_group_mute(GroupMuteEvent {
-                                    0: GroupMute {
+                                    client: self.clone(),
+                                    inner: GroupMute {
                                         group_code,
                                         operator_uin: operator,
                                         target_uin: target,
@@ -179,7 +183,8 @@ impl<H: crate::handler::Handler + Send> Client<H> {
                                     .for_each(async move |recall| {
                                         self.handler
                                             .handle_group_message_recall(GroupMessageRecallEvent {
-                                                0: recall,
+                                                client: self.clone(),
+                                                inner: recall,
                                             })
                                             .await;
                                     })
@@ -205,7 +210,8 @@ impl<H: crate::handler::Handler + Send> Client<H> {
                                 .for_each(async move |m| {
                                     self.handler
                                         .handle_friend_message_recall(FriendMessageRecallEvent {
-                                            0: m,
+                                            client: self.clone(),
+                                            inner: m,
                                         })
                                         .await;
                                 })
@@ -217,7 +223,8 @@ impl<H: crate::handler::Handler + Send> Client<H> {
                             if let Some(f) = msg_add_frd_notify.msg_add_frd_notify {
                                 self.handler
                                     .handle_new_friend(NewFriendEvent {
-                                        0: FriendInfo {
+                                        client: self.clone(),
+                                        inner: FriendInfo {
                                             uin: f.uin,
                                             nick: f.nick,
                                             ..Default::default()
@@ -230,7 +237,8 @@ impl<H: crate::handler::Handler + Send> Client<H> {
                             let d4 = pb::SubD4::from_bytes(&msg.v_protobuf).unwrap();
                             self.handler
                                 .handle_group_leave(GroupLeaveEvent {
-                                    0: GroupLeave {
+                                    client: self.clone(),
+                                    inner: GroupLeave {
                                         group_code: d4.uin,
                                         member_uin: self.uin().await,
                                         operator_uin: None,
@@ -253,7 +261,8 @@ impl<H: crate::handler::Handler + Send> Client<H> {
                             if sender != 0 {
                                 self.handler
                                     .handle_friend_poke(FriendPokeEvent {
-                                        0: FriendPoke { sender, receiver },
+                                        client: self.clone(),
+                                        inner: FriendPoke { sender, receiver },
                                     })
                                     .await;
                             }
@@ -281,7 +290,8 @@ impl<H: crate::handler::Handler + Send> Client<H> {
                                             };
                                             self.handler
                                                 .handle_group_name_update(GroupNameUpdateEvent {
-                                                    0: update,
+                                                    client: self.clone(),
+                                                    inner: update,
                                                 })
                                                 .await;
                                         }
@@ -297,7 +307,8 @@ impl<H: crate::handler::Handler + Send> Client<H> {
                                         .for_each(async move |delete| {
                                             self.handler
                                                 .handle_delete_friend(DeleteFriendEvent {
-                                                    0: delete,
+                                                    client: self.clone(),
+                                                    inner: delete,
                                                 })
                                                 .await;
                                         })
@@ -335,24 +346,33 @@ impl<H: crate::handler::Handler + Send> Client<H> {
         false
     }
 
-    pub(crate) async fn process_push_trans(&self, push_trans: OnlinePushTrans) {
+    pub(crate) async fn process_push_trans(self: &Arc<Self>, push_trans: OnlinePushTrans) {
         if self.push_trans_exists(&push_trans).await {
             return;
         }
         match push_trans.info {
             PushTransInfo::MemberLeave(leave) => {
                 self.handler
-                    .handle_group_leave(GroupLeaveEvent { 0: leave })
+                    .handle_group_leave(GroupLeaveEvent {
+                        client: self.clone(),
+                        inner: leave,
+                    })
                     .await;
             }
             PushTransInfo::MemberPermissionChange(change) => {
                 self.handler
-                    .handle_member_permission_change(MemberPermissionChangeEvent { 0: change })
+                    .handle_member_permission_change(MemberPermissionChangeEvent {
+                        client: self.clone(),
+                        inner: change,
+                    })
                     .await;
             }
             PushTransInfo::GroupDisband(disband) => {
                 self.handler
-                    .handle_group_disband(GroupDisbandEvent { 0: disband })
+                    .handle_group_disband(GroupDisbandEvent {
+                        client: self.clone(),
+                        inner: disband,
+                    })
                     .await;
             }
         }
@@ -377,7 +397,7 @@ impl<H: crate::handler::Handler + Send> Client<H> {
     }
 
     pub(crate) async fn process_c2c_sync(
-        &self,
+        self: &Arc<Self>,
         pkt_seq: i32,
         push: pb::msg::PbPushMsg,
     ) -> RQResult<()> {
@@ -395,7 +415,7 @@ impl<H: crate::handler::Handler + Send> Client<H> {
         Ok(())
     }
 
-    pub(crate) async fn process_sid_ticket_expired(&self, seq: i32) -> RQResult<()> {
+    pub(crate) async fn process_sid_ticket_expired(self: &Arc<Self>, seq: i32) -> RQResult<()> {
         self.request_change_sig(Some(3554528)).await?;
         self.register_client().await?;
         self.send_sid_ticket_expired_response(seq).await?;

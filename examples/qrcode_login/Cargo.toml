@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 ricq = { path = "../../ricq" }
-tokio = { version = "1", features = ["rt", "fs"] }
+tokio = { version = "1", features = ["full"] }
 serde_json = "1"
 bytes = "1"
 tracing = "0.1"

@@ -16,7 +16,7 @@ use crate::client::highway::HighwayFrame;
 use crate::client::tcp::tcp_connect_timeout;
 use crate::Client;
 
-impl<H: crate::handler::Handler + Send> Client<H> {
+impl Client {
     pub async fn highway_upload_bdh(
         &self,
         addr: SocketAddr,

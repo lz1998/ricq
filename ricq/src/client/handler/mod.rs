@@ -113,19 +113,19 @@ pub struct DefaultHandler;
 #[async_trait]
 impl Handler for DefaultHandler {
     async fn handle_group_message(&self, e: GroupMessageEvent) {
-        tracing::info!("DefaultHandler::handle_group_message: {:?}", e.0);
+        tracing::info!("DefaultHandler::handle_group_message: {:?}", e.inner);
     }
     async fn handle_group_temp_message(&self, e: GroupTempMessageEvent) {
-        tracing::info!("DefaultHandler::handle_group_temp_message: {:?}", e.0);
+        tracing::info!("DefaultHandler::handle_group_temp_message: {:?}", e.inner);
     }
     async fn handle_friend_message(&self, e: FriendMessageEvent) {
-        tracing::info!("DefaultHandler::handle_friend_message: {:?}", e.0);
+        tracing::info!("DefaultHandler::handle_friend_message: {:?}", e.inner);
     }
     async fn handle_group_request(&self, e: JoinGroupRequestEvent) {
-        tracing::info!("DefaultHandler::handle_group_request: {:?}", e.0);
+        tracing::info!("DefaultHandler::handle_group_request: {:?}", e.inner);
     }
     async fn handle_friend_request(&self, e: NewFriendRequestEvent) {
-        tracing::info!("DefaultHandler::handle_friend_request: {:?}", e.0);
+        tracing::info!("DefaultHandler::handle_friend_request: {:?}", e.inner);
     }
     /// 其他事件在这里输出
     async fn handle(&self, e: QEvent) {
