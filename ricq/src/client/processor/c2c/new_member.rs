@@ -13,11 +13,10 @@ impl<H: RawHandler> Client<H> {
         let member_uin = head.auth_uin();
 
         self.handler
-            .handle_new_member(NewMemberEvent {
-                0: NewMember {
+            .handle_new_member(NewMember {
                     group_code,
                     member_uin,
-                },
+                
             })
             .await;
 

@@ -11,8 +11,6 @@ impl<H: RawHandler> Client<H> {
             .await
             .ok();
         self.stop(NetworkStatus::MsfOffline);
-        self.handler
-            .handle_msf_offline(MSFOfflineEvent { 0: offline })
-            .await;
+        self.handler.handle_msf_offline(offline).await;
     }
 }

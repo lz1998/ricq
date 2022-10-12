@@ -10,7 +10,7 @@ impl<H: RawHandler> Client<H> {
     pub(crate) async fn process_temp_message(&self, msg: pb::msg::Message) -> RQResult<()> {
         let message = parse_temp_message(msg)?;
         self.handler
-            .handle_group_temp_message(GroupTempMessageEvent { 0: message })
+            .handle_group_temp_message(message)
             .await;
         Ok(())
     }

@@ -44,17 +44,15 @@ impl<H: RawHandler> Client<H> {
 
         if let Some(ptt) = group_message_part.ptt {
             self.handler
-                .handle_group_audio(GroupAudioMessageEvent {
-                    0: GroupAudioMessage {
-                        seqs: vec![group_message_part.seq],
-                        rands: vec![group_message_part.rand],
-                        group_code: group_message_part.group_code,
-                        group_name: group_message_part.group_name,
-                        group_card: group_message_part.group_card,
-                        from_uin: group_message_part.from_uin,
-                        time: group_message_part.time,
-                        audio: GroupAudio(ptt),
-                    },
+                .handle_group_audio(GroupAudioMessage {
+                    seqs: vec![group_message_part.seq],
+                    rands: vec![group_message_part.rand],
+                    group_code: group_message_part.group_code,
+                    group_name: group_message_part.group_name,
+                    group_card: group_message_part.group_card,
+                    from_uin: group_message_part.from_uin,
+                    time: group_message_part.time,
+                    audio: GroupAudio(ptt),
                 })
                 .await;
             return Ok(());
@@ -87,9 +85,7 @@ impl<H: RawHandler> Client<H> {
         if let Some(group_msg) = group_msg {
             // message is finish
             self.handler
-                .handle_group_message(GroupMessageEvent {
-                    0: self.parse_group_message(group_msg).await?,
-                })
+                .handle_group_message(self.parse_group_message(group_msg).await?)
                 .await; //todo
         }
         Ok(())
@@ -148,13 +144,11 @@ impl<H: RawHandler> Client<H> {
                             let target = r.get_u32() as i64;
                             let duration = Duration::from_secs(r.get_u32() as u64);
                             self.handler
-                                .handle_group_mute(GroupMuteEvent {
-                                    0: GroupMute {
-                                        group_code,
-                                        operator_uin: operator,
-                                        target_uin: target,
-                                        duration,
-                                    },
+                                .handle_group_mute(GroupMute {
+                                    group_code,
+                                    operator_uin: operator,
+                                    target_uin: target,
+                                    duration,
                                 })
                                 .await;
                         }
@@ -178,11 +172,7 @@ impl<H: RawHandler> Client<H> {
                                         time: rm.time,
                                     })
                                     .for_each(async move |recall| {
-                                        self.handler
-                                            .handle_group_message_recall(GroupMessageRecallEvent {
-                                                0: recall,
-                                            })
-                                            .await;
+                                        self.handler.handle_group_message_recall(recall).await;
                                     })
                                     .await;
                             }
@@ -204,11 +194,7 @@ impl<H: RawHandler> Client<H> {
                                     time: m.msg_time,
                                 })
                                 .for_each(async move |m| {
-                                    self.handler
-                                        .handle_friend_message_recall(FriendMessageRecallEvent {
-                                            0: m,
-                                        })
-                                        .await;
+                                    self.handler.handle_friend_message_recall(m).await;
                                 })
                                 .await;
                         }
@@ -217,12 +203,10 @@ impl<H: RawHandler> Client<H> {
                                 pb::SubB3::from_bytes(&msg.v_protobuf).unwrap();
                             if let Some(f) = msg_add_frd_notify.msg_add_frd_notify {
                                 self.handler
-                                    .handle_new_friend(NewFriendEvent {
-                                        0: FriendInfo {
-                                            uin: f.uin,
-                                            nick: f.nick,
-                                            ..Default::default()
-                                        },
+                                    .handle_new_friend(FriendInfo {
+                                        uin: f.uin,
+                                        nick: f.nick,
+                                        ..Default::default()
                                     })
                                     .await;
                             }
@@ -231,11 +215,9 @@ impl<H: RawHandler> Client<H> {
                             let d4 = pb::SubD4::from_bytes(&msg.v_protobuf).unwrap();
                             self.handler
                                 .handle_group_leave(GroupLeaveEvent {
-                                    0: GroupLeave {
-                                        group_code: d4.uin,
-                                        member_uin: self.uin().await,
-                                        operator_uin: None,
-                                    },
+                                    group_code: d4.uin,
+                                    member_uin: self.uin().await,
+                                    operator_uin: None,
                                 })
                                 .await;
                         }
@@ -253,9 +235,7 @@ impl<H: RawHandler> Client<H> {
                             }
                             if sender != 0 {
                                 self.handler
-                                    .handle_friend_poke(FriendPokeEvent {
-                                        0: FriendPoke { sender, receiver },
-                                    })
+                                    .handle_friend_poke(FriendPoke { sender, receiver })
                                     .await;
                             }
                         }
@@ -280,11 +260,7 @@ impl<H: RawHandler> Client<H> {
                                                     as i64,
                                                 group_name: new_group_name,
                                             };
-                                            self.handler
-                                                .handle_group_name_update(GroupNameUpdateEvent {
-                                                    0: update,
-                                                })
-                                                .await;
+                                            self.handler.handle_group_name_update(update).await;
                                         }
                                     }
                                 }
@@ -296,11 +272,7 @@ impl<H: RawHandler> Client<H> {
                                         .collect();
                                     stream::iter(delete_friends)
                                         .for_each(async move |delete| {
-                                            self.handler
-                                                .handle_delete_friend(DeleteFriendEvent {
-                                                    0: delete,
-                                                })
-                                                .await;
+                                            self.handler.handle_delete_friend(delete).await;
                                         })
                                         .await;
                                 }
@@ -342,19 +314,13 @@ impl<H: RawHandler> Client<H> {
         }
         match push_trans.info {
             PushTransInfo::MemberLeave(leave) => {
-                self.handler
-                    .handle_group_leave(GroupLeaveEvent { 0: leave })
-                    .await;
+                self.handler.handle_group_leave(leave).await;
             }
             PushTransInfo::MemberPermissionChange(change) => {
-                self.handler
-                    .handle_member_permission_change(MemberPermissionChangeEvent { 0: change })
-                    .await;
+                self.handler.handle_member_permission_change(change).await;
             }
             PushTransInfo::GroupDisband(disband) => {
-                self.handler
-                    .handle_group_disband(GroupDisbandEvent { 0: disband })
-                    .await;
+                self.handler.handle_group_disband(disband).await;
             }
         }
     }

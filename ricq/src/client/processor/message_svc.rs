@@ -54,7 +54,7 @@ impl<H: RawHandler> Client<H> {
     pub(crate) async fn process_push_force_offline(&self, offline: jce::RequestPushForceOffline) {
         self.stop(NetworkStatus::KickedOffline);
         self.handler
-            .handle_kicked_offline(KickedOfflineEvent { 0: offline })
+            .handle_kicked_offline(offline)
             .await;
     }
 

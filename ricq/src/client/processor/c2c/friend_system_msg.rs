@@ -7,7 +7,7 @@ impl<H: RawHandler> Client<H> {
     pub(crate) async fn process_friend_system_messages(&self, msgs: FriendSystemMessages) {
         for request in msgs.requests {
             self.handler
-                .handle_friend_request(NewFriendRequestEvent { 0: request })
+                .handle_friend_request(request)
                 .await;
         }
     }

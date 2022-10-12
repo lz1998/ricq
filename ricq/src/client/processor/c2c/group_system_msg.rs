@@ -13,9 +13,7 @@ impl<H: RawHandler> Client<H> {
             {
                 continue;
             }
-            self.handler
-                .handle_self_invited(SelfInvitedEvent { 0: request })
-                .await;
+            self.handler.handle_self_invited(request).await;
         }
         for request in msgs.join_group_requests.clone() {
             if self
@@ -24,9 +22,7 @@ impl<H: RawHandler> Client<H> {
             {
                 continue;
             }
-            self.handler
-                .handle_group_request(JoinGroupRequestEvent { 0: request })
-                .await;
+            self.handler.handle_group_request(request).await;
         }
         let mut cache = self.group_sys_message_cache.write().await;
         *cache = msgs

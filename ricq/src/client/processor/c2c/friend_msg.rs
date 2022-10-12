@@ -16,9 +16,7 @@ impl<H: RawHandler> Client<H> {
         if let Some(ptt) = take_ptt(&mut msg) {
             // TODO self friend audio
             self.handler
-                .handle_friend_audio(FriendAudioMessageEvent {
-                    0: parse_friend_audio_message(msg, ptt)?,
-                })
+                .handle_friend_audio(parse_friend_audio_message(msg, ptt)?)
                 .await;
             return Ok(());
         }
@@ -35,9 +33,7 @@ impl<H: RawHandler> Client<H> {
                 return Ok(());
             }
         }
-        self.handler
-            .handle_friend_message(FriendMessageEvent { 0: message })
-            .await;
+        self.handler.handle_friend_message(message).await;
         Ok(())
     }
 }
