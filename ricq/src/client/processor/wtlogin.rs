@@ -1,7 +1,7 @@
-use crate::{handler::RawHandler, Client};
+use crate::Client;
 use ricq_core::command::wtlogin::*;
 
-impl<H: RawHandler> Client<H> {
+impl<H: crate::handler::Handler + Send> Client<H> {
     pub(crate) async fn process_login_response(&self, login_response: LoginResponse) {
         if let LoginResponse::Success(ref success) = login_response {
             if let Some(info) = success.account_info.clone() {

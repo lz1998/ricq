@@ -18,7 +18,6 @@ use ricq_core::Engine;
 pub use ricq_core::Token;
 
 use crate::{RQError, RQResult};
-use handler::{ RawHandler};
 
 mod api;
 pub mod event;
@@ -28,7 +27,7 @@ pub(crate) mod net;
 mod processor;
 mod tcp;
 
-pub struct Client<H: RawHandler> {
+pub struct Client<H: handler::Handler + Send> {
     /// QEvent Handler 调用 handle 方法外发 QEvent
     handler: H,
     pub engine: RwLock<Engine>,
@@ -78,7 +77,7 @@ pub struct Client<H: RawHandler> {
     packet_handler: RwLock<HashMap<String, broadcast::Sender<Packet>>>,
 }
 
-impl<H: RawHandler> Client<H> {
+impl<H: handler::Handler + Send> super::Client<H> {
     /// 新建 Clinet
     ///
     /// **Notice: 该方法仅新建 Client 需要调用 start 方法连接到服务器**
@@ -213,7 +212,7 @@ impl<H: RawHandler> Client<H> {
     }
 }
 
-impl<H: RawHandler> Drop for Client<H> {
+impl<H: handler::Handler + Send> Drop for Client<H> {
     fn drop(&mut self) {
         self.stop(NetworkStatus::Drop);
     }

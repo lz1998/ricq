@@ -1,24 +1,15 @@
-use std::sync::Arc;
-
 use ricq_core::msg::MessageChain;
 use ricq_core::structs::GroupTempMessage;
 use ricq_core::{pb, RQError, RQResult};
 
 use crate::client::event::GroupTempMessageEvent;
-use crate::handler::RawHandler;
 use crate::Client;
 
-impl<H: RawHandler> Client<H> {
-    pub(crate) async fn process_temp_message(
-        self: &Arc<Self>,
-        msg: pb::msg::Message,
-    ) -> RQResult<()> {
+impl<H: crate::handler::Handler + Send> Client<H> {
+    pub(crate) async fn process_temp_message(&self, msg: pb::msg::Message) -> RQResult<()> {
         let message = parse_temp_message(msg)?;
         self.handler
-            .handle_group_temp_message(GroupTempMessageEvent {
-                client: self.clone(),
-                inner: message,
-            })
+            .handle_group_temp_message(GroupTempMessageEvent { 0: message })
             .await;
         Ok(())
     }
