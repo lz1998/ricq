@@ -20,10 +20,11 @@ use ricq_core::structs::{ForwardMessage, MessageNode};
 use ricq_core::structs::{GroupAudio, GroupMemberPermission};
 use ricq_core::structs::{GroupInfo, GroupMemberInfo, MessageReceipt};
 
+use crate::handler::RawHandler;
 use crate::structs::ImageInfo;
 use crate::{RQError, RQResult};
 
-impl<H: crate::handler::Handler + Send> super::super::Client<H> {
+impl<H: RawHandler> super::super::Client<H> {
     /// 获取进群申请信息
     async fn get_group_system_messages(&self, suspicious: bool) -> RQResult<GroupSystemMessages> {
         let req = self

@@ -1,9 +1,10 @@
 use std::sync::atomic::Ordering;
 
+use crate::handler::RawHandler;
 use crate::Client;
 
 /// 登录后必须执行的操作
-pub async fn after_login<H: crate::handler::Handler + Send>(client: &Client<H>) {
+pub async fn after_login<H: RawHandler>(client: &Client<H>) {
     if let Err(err) = client.register_client().await {
         tracing::error!("failed to register client: {}", err)
     }
@@ -14,7 +15,7 @@ pub async fn after_login<H: crate::handler::Handler + Send>(client: &Client<H>) 
 }
 
 /// 如果当前启动心跳，开始心跳（blocking）
-pub async fn start_heartbeat<H: crate::handler::Handler + Send>(client: &Client<H>) {
+pub async fn start_heartbeat<H: RawHandler>(client: &Client<H>) {
     if !client.heartbeat_enabled.load(Ordering::Relaxed) {
         client.do_heartbeat().await;
     }

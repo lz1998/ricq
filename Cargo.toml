@@ -2,7 +2,7 @@
 members = [
     "ricq",
     "ricq-core",
-    #"ricq-guild"
+    "ricq-guild"
 ]
 
 [profile.dev]

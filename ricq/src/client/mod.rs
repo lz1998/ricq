@@ -27,7 +27,7 @@ pub(crate) mod net;
 mod processor;
 mod tcp;
 
-pub struct Client<H: handler::Handler + Send> {
+pub struct Client<H: handler::RawHandler + Send> {
     /// QEvent Handler 调用 handle 方法外发 QEvent
     handler: H,
     pub engine: RwLock<Engine>,
@@ -77,7 +77,7 @@ pub struct Client<H: handler::Handler + Send> {
     packet_handler: RwLock<HashMap<String, broadcast::Sender<Packet>>>,
 }
 
-impl<H: handler::Handler + Send> super::Client<H> {
+impl<H: handler::RawHandler + Send> super::Client<H> {
     /// 新建 Clinet
     ///
     /// **Notice: 该方法仅新建 Client 需要调用 start 方法连接到服务器**
@@ -212,7 +212,7 @@ impl<H: handler::Handler + Send> super::Client<H> {
     }
 }
 
-impl<H: handler::Handler + Send> Drop for Client<H> {
+impl<H: handler::RawHandler + Send> Drop for Client<H> {
     fn drop(&mut self) {
         self.stop(NetworkStatus::Drop);
     }

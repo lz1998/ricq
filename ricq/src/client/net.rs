@@ -13,6 +13,7 @@ use tokio_util::codec::LengthDelimitedCodec;
 
 use crate::client::tcp::tcp_connect_fastest;
 use crate::client::NetworkStatus;
+use crate::handler::RawHandler;
 
 use super::Client;
 
@@ -20,23 +21,19 @@ pub type OutPktSender = broadcast::Sender<Bytes>;
 
 #[async_trait]
 pub trait Connector<T: AsyncRead + AsyncWrite> {
-    async fn connect<H: crate::handler::Handler + Send>(&self, client: &Client<H>)
-        -> io::Result<T>;
+    async fn connect<H: RawHandler>(&self, client: &Client<H>) -> io::Result<T>;
 }
 
 pub struct DefaultConnector;
 
 #[async_trait]
 impl Connector<TcpStream> for DefaultConnector {
-    async fn connect<H: crate::handler::Handler + Send>(
-        &self,
-        client: &Client<H>,
-    ) -> io::Result<TcpStream> {
+    async fn connect<H: RawHandler>(&self, client: &Client<H>) -> io::Result<TcpStream> {
         tcp_connect_fastest(client.get_address_list().await, Duration::from_secs(5)).await
     }
 }
 
-impl<H: crate::handler::Handler + Send> crate::Client<H> {
+impl<H: RawHandler> crate::Client<H> {
     /// 获取服务器地址
     pub async fn get_address_list(&self) -> Vec<SocketAddr> {
         const BUILD_IN: &[([u8; 4], u16)] = &[

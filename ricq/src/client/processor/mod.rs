@@ -1,5 +1,6 @@
 use bytes::Bytes;
 
+use crate::handler::RawHandler;
 use ricq_core::protocol::packet::Packet;
 
 pub mod c2c;
@@ -18,7 +19,7 @@ macro_rules! log_error {
     };
 }
 
-impl<H: crate::handler::Handler + Send> super::Client<H> {
+impl<H: RawHandler> super::Client<H> {
     /// 接收到的 Packet 统一分发
     pub async fn process_income_packet(&self, pkt: Packet) {
         tracing::trace!("received pkt: {}", &pkt.command_name);

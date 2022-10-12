@@ -1,9 +1,10 @@
 use crate::client::{Client, OtherClientInfo};
+use crate::handler::RawHandler;
 use crate::RQError;
 
 // use crate::client::income::decoder::online_push::GroupMessagePart;
 
-impl<H: crate::handler::Handler + Send> Client<H> {
+impl<H: RawHandler> Client<H> {
     pub(crate) async fn process_push_param(
         &self,
         other_clients: Vec<OtherClientInfo>,

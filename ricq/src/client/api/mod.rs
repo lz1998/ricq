@@ -15,6 +15,7 @@ use ricq_core::structs::Status;
 use ricq_core::structs::SummaryCardInfo;
 use ricq_core::structs::{ForwardMessage, MessageReceipt};
 
+use crate::handler::RawHandler;
 use crate::jce::SvcDevLoginInfo;
 use crate::{RQError, RQResult};
 
@@ -23,7 +24,7 @@ mod group;
 mod login;
 
 /// API
-impl<H: crate::handler::Handler + Send> super::Client<H> {
+impl<H: RawHandler> super::Client<H> {
     /// 设置在线状态 TODO net_type
     pub async fn update_online_status<T>(&self, status: T) -> RQResult<()>
     where

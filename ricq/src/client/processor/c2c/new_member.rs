@@ -3,9 +3,10 @@ use ricq_core::structs::NewMember;
 use ricq_core::{pb, RQError, RQResult};
 
 use crate::client::event::NewMemberEvent;
+use crate::handler::RawHandler;
 use crate::Client;
 
-impl<H: crate::handler::Handler + Send> Client<H> {
+impl<H: RawHandler> Client<H> {
     pub(crate) async fn process_join_group(&self, msg: pb::msg::Message) -> RQResult<()> {
         let head = msg.head.ok_or(RQError::EmptyField("msg.head"))?;
         let group_code = group_uin2code(head.from_uin());

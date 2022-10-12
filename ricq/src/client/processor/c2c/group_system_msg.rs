@@ -1,9 +1,10 @@
 use ricq_core::command::profile_service::GroupSystemMessages;
 
 use crate::client::event::{JoinGroupRequestEvent, SelfInvitedEvent};
+use crate::handler::RawHandler;
 use crate::Client;
 
-impl<H: crate::handler::Handler + Send> Client<H> {
+impl<H: RawHandler> Client<H> {
     pub(crate) async fn process_group_system_messages(&self, msgs: GroupSystemMessages) {
         for request in msgs.self_invited.clone() {
             if self

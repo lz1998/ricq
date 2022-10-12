@@ -6,7 +6,7 @@ use std::sync::Arc;
 use tokio::sync::{broadcast, RwLockReadGuard};
 use tokio::task::JoinHandle;
 
-use ricq::handler::Handler;
+use ricq::handler::RawHandler;
 use ricq::structs::ImageInfo;
 use ricq_core::highway::BdhInput;
 
@@ -25,12 +25,12 @@ pub mod decoder;
 pub mod processor;
 
 #[allow(dead_code)]
-pub struct GuildClient<H: Handler + Send> {
+pub struct GuildClient<H: RawHandler> {
     rq_client: Arc<ricq::Client<H>>,
     listeners: HashMap<&'static str, broadcast::Receiver<Packet>>,
 }
 
-impl<H: Handler + Send + 'static> GuildClient<H> {
+impl<H: RawHandler> GuildClient<H> {
     pub async fn new(rq_client: &Arc<ricq::Client<H>>) -> Self {
         let rq_client = rq_client.clone();
 

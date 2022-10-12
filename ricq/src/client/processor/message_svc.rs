@@ -7,9 +7,10 @@ use ricq_core::{jce, pb};
 
 use crate::client::event::KickedOfflineEvent;
 use crate::client::NetworkStatus;
+use crate::handler::RawHandler;
 use crate::Client;
 
-impl<H: crate::handler::Handler + Send> Client<H> {
+impl<H: RawHandler> Client<H> {
     pub(crate) async fn process_push_notify(&self, notify: jce::RequestPushNotify) {
         match notify.msg_type {
             35 | 36 | 37 | 45 | 46 | 84 | 85 | 86 | 87 => {

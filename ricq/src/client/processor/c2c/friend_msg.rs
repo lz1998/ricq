@@ -5,9 +5,10 @@ use ricq_core::structs::{FriendAudio, FriendAudioMessage, FriendMessage};
 use ricq_core::{pb, RQResult};
 
 use crate::client::event::{FriendAudioMessageEvent, FriendMessageEvent};
+use crate::handler::RawHandler;
 use crate::Client;
 
-impl<H: crate::handler::Handler + Send> Client<H> {
+impl<H: RawHandler> Client<H> {
     pub(crate) async fn process_friend_message(&self, mut msg: pb::msg::Message) -> RQResult<()> {
         fn take_ptt(msg: &mut pb::msg::Message) -> Option<pb::msg::Ptt> {
             msg.body.as_mut()?.rich_text.as_mut()?.ptt.take()
