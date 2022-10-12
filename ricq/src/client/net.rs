@@ -13,26 +13,26 @@ use tokio_util::codec::LengthDelimitedCodec;
 
 use crate::client::tcp::tcp_connect_fastest;
 use crate::client::NetworkStatus;
-
-use super::Client;
+use crate::handler::RawHandler;
+use crate::Client;
 
 pub type OutPktSender = broadcast::Sender<Bytes>;
 
 #[async_trait]
 pub trait Connector<T: AsyncRead + AsyncWrite> {
-    async fn connect(&self, client: &Client) -> io::Result<T>;
+    async fn connect<H: RawHandler>(&self, client: &Client<H>) -> io::Result<T>;
 }
 
 pub struct DefaultConnector;
 
 #[async_trait]
 impl Connector<TcpStream> for DefaultConnector {
-    async fn connect(&self, client: &Client) -> io::Result<TcpStream> {
+    async fn connect<H: RawHandler>(&self, client: &Client<H>) -> io::Result<TcpStream> {
         tcp_connect_fastest(client.get_address_list().await, Duration::from_secs(5)).await
     }
 }
 
-impl crate::Client {
+impl<H: RawHandler> Client<H> {
     /// 获取服务器地址
     pub async fn get_address_list(&self) -> Vec<SocketAddr> {
         const BUILD_IN: &[([u8; 4], u16)] = &[
@@ -81,7 +81,7 @@ impl crate::Client {
         self.disconnect_signal.send(()).ok();
     }
 
-    async fn net_loop(self: &Arc<Client>, stream: impl AsyncRead + AsyncWrite) {
+    async fn net_loop(self: &Arc<Client<H>>, stream: impl AsyncRead + AsyncWrite) {
         let (mut write_half, mut read_half) = LengthDelimitedCodec::builder()
             .length_field_length(4)
             .length_adjustment(-4)

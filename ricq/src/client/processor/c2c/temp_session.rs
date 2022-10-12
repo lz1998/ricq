@@ -5,9 +5,10 @@ use ricq_core::structs::GroupTempMessage;
 use ricq_core::{pb, RQError, RQResult};
 
 use crate::client::event::GroupTempMessageEvent;
+use crate::handler::RawHandler;
 use crate::Client;
 
-impl Client {
+impl<H: RawHandler> Client<H> {
     pub(crate) async fn process_temp_message(
         self: &Arc<Self>,
         msg: pb::msg::Message,

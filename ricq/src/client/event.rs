@@ -8,20 +8,21 @@ use ricq_core::structs::{
 };
 use ricq_core::{jce, RQResult};
 
+use crate::handler::RawHandler;
 use crate::structs::{FriendMessage, GroupMessage};
 use crate::Client;
 
 #[derive(Clone, derivative::Derivative)]
 #[derivative(Debug)]
-pub struct EventWithClient<T> {
+pub struct EventWithClient<T, H: RawHandler> {
     #[derivative(Debug = "ignore")]
-    pub client: Arc<Client>,
+    pub client: Arc<Client<H>>,
     pub inner: T,
 }
 
-pub type GroupMessageEvent = EventWithClient<GroupMessage>;
+pub type GroupMessageEvent<H> = EventWithClient<GroupMessage, H>;
 
-impl GroupMessageEvent {
+impl<H: RawHandler> GroupMessageEvent<H> {
     pub async fn recall(&self) -> RQResult<()> {
         // TODO check permission
         self.client
@@ -34,11 +35,11 @@ impl GroupMessageEvent {
     }
 }
 
-pub type FriendMessageEvent = EventWithClient<FriendMessage>;
-pub type GroupTempMessageEvent = EventWithClient<GroupTempMessage>;
-pub type JoinGroupRequestEvent = EventWithClient<JoinGroupRequest>;
+pub type FriendMessageEvent<H> = EventWithClient<FriendMessage, H>;
+pub type GroupTempMessageEvent<H> = EventWithClient<GroupTempMessage, H>;
+pub type JoinGroupRequestEvent<H> = EventWithClient<JoinGroupRequest, H>;
 
-impl JoinGroupRequestEvent {
+impl<H: RawHandler> JoinGroupRequestEvent<H> {
     pub async fn accept(&self) -> RQResult<()> {
         self.client
             .solve_group_system_message(
@@ -70,9 +71,9 @@ impl JoinGroupRequestEvent {
     }
 }
 
-pub type NewFriendRequestEvent = EventWithClient<NewFriendRequest>;
+pub type NewFriendRequestEvent<H> = EventWithClient<NewFriendRequest, H>;
 
-impl NewFriendRequestEvent {
+impl<H: RawHandler> NewFriendRequestEvent<H> {
     pub async fn accept(&self) -> RQResult<()> {
         self.client
             .solve_friend_system_message(self.inner.msg_seq, self.inner.req_uin, true)
@@ -86,21 +87,21 @@ impl NewFriendRequestEvent {
     }
 }
 
-pub type NewMemberEvent = EventWithClient<NewMember>;
-pub type GroupMuteEvent = EventWithClient<GroupMute>;
-pub type FriendMessageRecallEvent = EventWithClient<FriendMessageRecall>;
-pub type GroupMessageRecallEvent = EventWithClient<GroupMessageRecall>;
-pub type NewFriendEvent = EventWithClient<FriendInfo>;
-pub type GroupLeaveEvent = EventWithClient<GroupLeave>;
-pub type GroupDisbandEvent = EventWithClient<GroupDisband>;
-pub type FriendPokeEvent = EventWithClient<FriendPoke>;
-pub type GroupNameUpdateEvent = EventWithClient<GroupNameUpdate>;
-pub type DeleteFriendEvent = EventWithClient<DeleteFriend>;
-pub type MemberPermissionChangeEvent = EventWithClient<MemberPermissionChange>;
-pub type SelfInvitedEvent = EventWithClient<SelfInvited>;
-pub type GroupAudioMessageEvent = EventWithClient<GroupAudioMessage>;
+pub type NewMemberEvent<H> = EventWithClient<NewMember, H>;
+pub type GroupMuteEvent<H> = EventWithClient<GroupMute, H>;
+pub type FriendMessageRecallEvent<H> = EventWithClient<FriendMessageRecall, H>;
+pub type GroupMessageRecallEvent<H> = EventWithClient<GroupMessageRecall, H>;
+pub type NewFriendEvent<H> = EventWithClient<FriendInfo, H>;
+pub type GroupLeaveEvent<H> = EventWithClient<GroupLeave, H>;
+pub type GroupDisbandEvent<H> = EventWithClient<GroupDisband, H>;
+pub type FriendPokeEvent<H> = EventWithClient<FriendPoke, H>;
+pub type GroupNameUpdateEvent<H> = EventWithClient<GroupNameUpdate, H>;
+pub type DeleteFriendEvent<H> = EventWithClient<DeleteFriend, H>;
+pub type MemberPermissionChangeEvent<H> = EventWithClient<MemberPermissionChange, H>;
+pub type SelfInvitedEvent<H> = EventWithClient<SelfInvited, H>;
+pub type GroupAudioMessageEvent<H> = EventWithClient<GroupAudioMessage, H>;
 
-impl GroupAudioMessageEvent {
+impl<H: RawHandler> GroupAudioMessageEvent<H> {
     pub async fn url(&self) -> RQResult<String> {
         self.client
             .get_group_audio_url(self.inner.group_code, self.inner.audio.clone())
@@ -108,9 +109,9 @@ impl GroupAudioMessageEvent {
     }
 }
 
-pub type FriendAudioMessageEvent = EventWithClient<FriendAudioMessage>;
+pub type FriendAudioMessageEvent<H> = EventWithClient<FriendAudioMessage, H>;
 
-impl FriendAudioMessageEvent {
+impl<H: RawHandler> FriendAudioMessageEvent<H> {
     pub async fn url(&self) -> RQResult<String> {
         self.client
             .get_friend_audio_url(self.inner.from_uin, self.inner.audio.clone())
@@ -118,5 +119,5 @@ impl FriendAudioMessageEvent {
     }
 }
 
-pub type KickedOfflineEvent = EventWithClient<jce::RequestPushForceOffline>;
-pub type MSFOfflineEvent = EventWithClient<jce::RequestMSFForceOffline>;
+pub type KickedOfflineEvent<H> = EventWithClient<jce::RequestPushForceOffline, H>;
+pub type MSFOfflineEvent<H> = EventWithClient<jce::RequestMSFForceOffline, H>;

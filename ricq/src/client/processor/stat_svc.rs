@@ -4,8 +4,9 @@ use ricq_core::jce;
 
 use crate::client::event::MSFOfflineEvent;
 use crate::client::{Client, NetworkStatus};
+use crate::handler::RawHandler;
 
-impl Client {
+impl<H: RawHandler> Client<H> {
     // TODO 待测试
     pub(crate) async fn process_msf_force_offline(
         self: &Arc<Self>,

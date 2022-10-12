@@ -3,9 +3,10 @@ use std::sync::Arc;
 use ricq_core::command::profile_service::GroupSystemMessages;
 
 use crate::client::event::{JoinGroupRequestEvent, SelfInvitedEvent};
+use crate::handler::RawHandler;
 use crate::Client;
 
-impl Client {
+impl<H: RawHandler> Client<H> {
     pub(crate) async fn process_group_system_messages(self: &Arc<Self>, msgs: GroupSystemMessages) {
         for request in msgs.self_invited.clone() {
             if self

@@ -8,9 +8,10 @@ use ricq_core::common::RQAddr;
 
 use crate::client::tcp::sort_addrs;
 use crate::client::Client;
+use crate::handler::RawHandler;
 use crate::RQError;
 
-impl Client {
+impl<H: RawHandler> Client<H> {
     pub(crate) async fn process_config_push_req(
         &self,
         config_push_req: ConfigPushReq,

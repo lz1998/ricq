@@ -22,9 +22,10 @@ use crate::client::event::{
     GroupNameUpdateEvent, MemberPermissionChangeEvent, NewFriendEvent,
 };
 use crate::client::Client;
+use crate::handler::RawHandler;
 use crate::RQResult;
 
-impl Client {
+impl<H: RawHandler> Client<H> {
     pub(crate) async fn process_group_message_part(
         self: &Arc<Self>,
         group_message_part: GroupMessagePart,

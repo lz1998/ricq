@@ -18,7 +18,7 @@ use ricq_core::Engine;
 pub use ricq_core::Token;
 
 use crate::{RQError, RQResult};
-pub use handler::{Handler, RawHandler};
+use handler::{ RawHandler};
 
 mod api;
 pub mod event;
@@ -28,9 +28,9 @@ pub(crate) mod net;
 mod processor;
 mod tcp;
 
-pub struct Client {
+pub struct Client<H: RawHandler> {
     /// QEvent Handler 调用 handle 方法外发 QEvent
-    handler: Box<dyn RawHandler>,
+    handler: H,
     pub engine: RwLock<Engine>,
 
     // 状态相关
@@ -78,16 +78,16 @@ pub struct Client {
     packet_handler: RwLock<HashMap<String, broadcast::Sender<Packet>>>,
 }
 
-impl Client {
+impl<H: RawHandler> Client<H> {
     /// 新建 Clinet
     ///
     /// **Notice: 该方法仅新建 Client 需要调用 start 方法连接到服务器**
-    pub fn new(device: Device, version: Version, handler: impl RawHandler) -> Client {
+    pub fn new(device: Device, version: Version, handler: H) -> Self {
         let (out_pkt_sender, _) = tokio::sync::broadcast::channel(1024);
         let (disconnect_signal, _) = tokio::sync::broadcast::channel(8);
 
         Client {
-            handler: Box::new(handler),
+            handler,
             engine: RwLock::new(Engine::new(device, version)),
             status: AtomicU8::new(NetworkStatus::Unknown as u8),
             heartbeat_enabled: AtomicBool::new(false),
@@ -116,7 +116,7 @@ impl Client {
     /// 新建 Clinet
     ///
     /// **Notice: 该方法仅新建 Client 需要调用 start 方法连接到服务器**
-    pub fn new_with_config(config: crate::Config, handler: impl RawHandler) -> Self {
+    pub fn new_with_config(config: crate::Config, handler: H) -> Self {
         Self::new(config.device, config.version, handler)
     }
 
@@ -213,7 +213,7 @@ impl Client {
     }
 }
 
-impl Drop for Client {
+impl<H: RawHandler> Drop for Client<H> {
     fn drop(&mut self) {
         self.stop(NetworkStatus::Drop);
     }

@@ -5,9 +5,10 @@ use ricq_core::structs::NewMember;
 use ricq_core::{pb, RQError, RQResult};
 
 use crate::client::event::NewMemberEvent;
+use crate::handler::RawHandler;
 use crate::Client;
 
-impl Client {
+impl<H: RawHandler> Client<H> {
     pub(crate) async fn process_join_group(
         self: &Arc<Self>,
         msg: pb::msg::Message,

@@ -7,11 +7,12 @@ use ricq_core::highway::BdhInput;
 use ricq_core::msg::elem::{FriendImage, GroupImage};
 use ricq_core::{RQError, RQResult};
 
+use crate::handler::RawHandler;
 use crate::structs::ImageInfo;
 use crate::Client;
 
-pub async fn upload_group_image_ext<F>(
-    cli: &Client,
+pub async fn upload_group_image_ext<F, H: RawHandler>(
+    cli: &Client<H>,
     group_code: i64,
     image_info: ImageInfo,
     f: F,
@@ -54,8 +55,8 @@ where
     Ok(group_image)
 }
 
-pub async fn upload_friend_image_ext<F>(
-    cli: &Client,
+pub async fn upload_friend_image_ext<F, H: RawHandler>(
+    cli: &Client<H>,
     target: i64,
     image_info: ImageInfo,
     f: F,

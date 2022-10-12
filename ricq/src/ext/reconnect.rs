@@ -9,11 +9,12 @@ use ricq_core::command::wtlogin::LoginResponse;
 use crate::client::net::Connector;
 use crate::client::NetworkStatus;
 use crate::ext::common::after_login;
+use crate::handler::RawHandler;
 use crate::{Client, RQError, RQResult};
 
 /// 自动重连，在掉线后使用，会阻塞到重连结束
-pub async fn auto_reconnect<T: AsyncRead + AsyncWrite + 'static + Send>(
-    client: Arc<Client>,
+pub async fn auto_reconnect<T: AsyncRead + AsyncWrite + 'static + Send, H: RawHandler>(
+    client: Arc<Client<H>>,
     credential: Credential,
     interval: Duration,
     max: usize,
@@ -44,6 +45,7 @@ pub async fn auto_reconnect<T: AsyncRead + AsyncWrite + 'static + Send>(
             continue;
         };
         let c = client.clone();
+        // KKTODO
         let handle = tokio::spawn(async move { c.start(stream).await });
         tokio::task::yield_now().await; // 等一下，确保连上了
         if let Err(err) = fast_login(&client, &credential).await {
@@ -76,12 +78,12 @@ pub enum Credential {
 /// 用于重连
 #[async_trait]
 pub trait FastLogin {
-    async fn fast_login(&self, client: &Arc<Client>) -> RQResult<()>;
+    async fn fast_login<H: RawHandler>(&self, client: &Arc<Client<H>>) -> RQResult<()>;
 }
 
 #[async_trait]
 impl FastLogin for ricq_core::Token {
-    async fn fast_login(&self, client: &Arc<Client>) -> RQResult<()> {
+    async fn fast_login<H: RawHandler>(&self, client: &Arc<Client<H>>) -> RQResult<()> {
         match client.token_login(self.clone()).await? {
             LoginResponse::Success(_) => Ok(()),
             other => Err(RQError::Other(format!(
@@ -94,7 +96,7 @@ impl FastLogin for ricq_core::Token {
 
 #[async_trait]
 impl FastLogin for Password {
-    async fn fast_login(&self, client: &Arc<Client>) -> RQResult<()> {
+    async fn fast_login<H: RawHandler>(&self, client: &Arc<Client<H>>) -> RQResult<()> {
         let resp = client.password_login(self.uin, &self.password).await?;
         match resp {
             LoginResponse::Success { .. } => return Ok(()),
@@ -111,7 +113,10 @@ impl FastLogin for Password {
 }
 
 /// 如果你非常确定登录过程中不会遇到验证码，可以用 fast_login
-pub async fn fast_login(client: &Arc<Client>, credential: &Credential) -> RQResult<()> {
+pub async fn fast_login<H: RawHandler>(
+    client: &Arc<Client<H>>,
+    credential: &Credential,
+) -> RQResult<()> {
     match credential {
         Credential::Token(token) => token.fast_login(client).await,
         Credential::Password(password) => password.fast_login(client).await,

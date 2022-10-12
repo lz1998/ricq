@@ -14,9 +14,10 @@ use ricq_core::{pb, RQError, RQResult};
 use crate::client::highway::codec::HighwayCodec;
 use crate::client::highway::HighwayFrame;
 use crate::client::tcp::tcp_connect_timeout;
+use crate::handler::RawHandler;
 use crate::Client;
 
-impl Client {
+impl<H: RawHandler> Client<H> {
     pub async fn highway_upload_bdh(
         &self,
         addr: SocketAddr,
