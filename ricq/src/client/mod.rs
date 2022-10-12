@@ -17,8 +17,8 @@ use ricq_core::structs::{AccountInfo, AddressInfo, OtherClientInfo};
 use ricq_core::Engine;
 pub use ricq_core::Token;
 
-use crate::client::handler::RawHandler;
 use crate::{RQError, RQResult};
+pub use handler::{Handler, RawHandler};
 
 mod api;
 pub mod event;
@@ -78,7 +78,7 @@ pub struct Client {
     packet_handler: RwLock<HashMap<String, broadcast::Sender<Packet>>>,
 }
 
-impl super::Client {
+impl Client {
     /// 新建 Clinet
     ///
     /// **Notice: 该方法仅新建 Client 需要调用 start 方法连接到服务器**

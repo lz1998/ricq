@@ -1,3 +1,6 @@
+use std::future::Future;
+use std::pin::Pin;
+
 use async_trait::async_trait;
 use tokio::sync::{broadcast, mpsc, watch};
 
@@ -53,43 +56,65 @@ pub enum QEvent {
     MSFOffline(MSFOfflineEvent),
 }
 
-#[async_trait]
+/*
 pub trait RawHandler: Sync + Send + 'static {
-    async fn handle_login(&self, _uin: i64) {}
-    async fn handle_group_message(&self, _event: GroupMessageEvent) {}
-    async fn handle_group_audio(&self, _event: GroupAudioMessageEvent) {}
-    async fn handle_friend_message(&self, _event: FriendMessageEvent) {}
-    async fn handle_friend_audio(&self, _event: FriendAudioMessageEvent) {}
-    async fn handle_group_temp_message(&self, _event: GroupTempMessageEvent) {}
-    async fn handle_group_request(&self, _event: JoinGroupRequestEvent) {}
-    async fn handle_self_invited(&self, _event: SelfInvitedEvent) {}
-    async fn handle_friend_request(&self, _event: NewFriendRequestEvent) {}
-    async fn handle_new_member(&self, _event: NewMemberEvent) {}
-    async fn handle_group_mute(&self, _event: GroupMuteEvent) {}
-    async fn handle_friend_message_recall(&self, _event: FriendMessageRecallEvent) {}
-    async fn handle_group_message_recall(&self, _event: GroupMessageRecallEvent) {}
-    async fn handle_new_friend(&self, _event: NewFriendEvent) {}
-    async fn handle_group_leave(&self, _event: GroupLeaveEvent) {}
-    async fn handle_group_disband(&self, _event: GroupDisbandEvent) {}
-    async fn handle_friend_poke(&self, _event: FriendPokeEvent) {}
-    async fn handle_group_name_update(&self, _event: GroupNameUpdateEvent) {}
-    async fn handle_delete_friend(&self, _event: DeleteFriendEvent) {}
-    async fn handle_member_permission_change(&self, _event: MemberPermissionChangeEvent) {}
-    async fn handle_kicked_offline(&self, _event: KickedOfflineEvent) {}
-    async fn handle_msf_offline(&self, _event: MSFOfflineEvent) {}
+    #[must_use]
+    #[allow(clippy :: let_unit_value, clippy :: no_effect_underscore_binding,
+    clippy :: shadow_same, clippy :: type_complexity, clippy ::
+    type_repetition_in_bounds, clippy :: used_underscore_binding)]
+    fn handle_login<'life0, 'async_trait>(&'life0 self, _uin: i64)
+        ->
+            ::core::pin::Pin<Box<dyn ::core::future::Future<Output = ()> +
+            ::core::marker::Send + 'async_trait>> where 'life0: 'async_trait,
+        Self: 'async_trait {
+        Box::pin(async move
+                { let __self = self; let _uin = _uin; let _: () = {}; })
+    }
+}
+*/
+
+type HandlerRet<'b> = Pin<Box<dyn Future<Output = ()> + Send + 'b>>;
+fn gen_handler_ret<'b>() -> HandlerRet<'b> {
+    // (), Ready<>, Box<>, Pin<>, all ZST?
+    Box::pin(std::future::ready(()))
+}
+macro_rules! gen_handler_fns {
+    ($snake:tt, $e:tt) => {
+        fn $snake<'a: 'b, 'b>(&'a self, _event: $e) -> HandlerRet<'b> {
+            gen_handler_ret()
+        }
+    };
 }
 
-/// 事件处理器。
-#[async_trait]
-pub trait Handler: Sync + Send + 'static {
-    /// 所有事件都会被包装为 QEvent 并在这里接收
-    async fn handle(&self, e: QEvent);
+pub trait RawHandler: Sync + Send + 'static {
+    gen_handler_fns!(handle_login, i64);
+    gen_handler_fns!(handle_group_message, GroupMessageEvent);
+    gen_handler_fns!(handle_group_audio, GroupAudioMessageEvent);
+    gen_handler_fns!(handle_friend_message, FriendMessageEvent);
+    gen_handler_fns!(handle_friend_audio, FriendAudioMessageEvent);
+    gen_handler_fns!(handle_group_temp_message, GroupTempMessageEvent);
+    gen_handler_fns!(handle_group_request, JoinGroupRequestEvent);
+    gen_handler_fns!(handle_self_invited, SelfInvitedEvent);
+    gen_handler_fns!(handle_friend_request, NewFriendRequestEvent);
+    gen_handler_fns!(handle_new_member, NewMemberEvent);
+    gen_handler_fns!(handle_group_mute, GroupMuteEvent);
+    gen_handler_fns!(handle_friend_message_recall, FriendMessageRecallEvent);
+    gen_handler_fns!(handle_group_message_recall, GroupMessageRecallEvent);
+    gen_handler_fns!(handle_new_friend, NewFriendEvent);
+    gen_handler_fns!(handle_group_leave, GroupLeaveEvent);
+    gen_handler_fns!(handle_group_disband, GroupDisbandEvent);
+    gen_handler_fns!(handle_friend_poke, FriendPokeEvent);
+    gen_handler_fns!(handle_group_name_update, GroupNameUpdateEvent);
+    gen_handler_fns!(handle_delete_friend, DeleteFriendEvent);
+    gen_handler_fns!(handle_member_permission_change, MemberPermissionChangeEvent);
+    gen_handler_fns!(handle_kicked_offline, KickedOfflineEvent);
+    gen_handler_fns!(handle_msf_offline, MSFOfflineEvent);
 }
 
 // TODO: using macros
 #[rustfmt::skip]
 #[async_trait]
-impl<T:Handler> RawHandler for T {
+impl<T: Handler> RawHandler for T {
     async fn handle_login(&self, e: i64) { self.handle(QEvent::Login(e)).await }
     async fn handle_group_message(&self, e: GroupMessageEvent) { self.handle(QEvent::GroupMessage(e)).await }
     async fn handle_group_audio(&self, e: GroupAudioMessageEvent) { self.handle(QEvent::GroupAudioMessage(e)).await }
@@ -112,6 +137,13 @@ impl<T:Handler> RawHandler for T {
     async fn handle_member_permission_change(&self, e: MemberPermissionChangeEvent) { self.handle(QEvent::MemberPermissionChange(e)).await }
     async fn handle_kicked_offline(&self, e: KickedOfflineEvent) { self.handle(QEvent::KickedOffline(e)).await }
     async fn handle_msf_offline(&self, e: MSFOfflineEvent) { self.handle(QEvent::MSFOffline(e)).await }
+}
+
+/// 事件处理器。
+#[async_trait]
+pub trait Handler: Sync + Send + 'static {
+    /// 所有事件都会被包装为 QEvent 并在这里接收
+    async fn handle(&self, e: QEvent);
 }
 
 /// 一个默认 Handler，只是把信息打印出来
