@@ -9,7 +9,7 @@ use tokio::task::JoinHandle;
 
 pub mod handler;
 pub mod processor;
-mod u8_protocol;
+pub mod u8_protocol;
 use serde::{Deserialize, Serialize};
 
 use crate::processor::Processor;
@@ -39,7 +39,7 @@ pub struct QRCodeClient {
     pub network_join_handle: JoinHandle<()>,
 }
 
-pub struct RicqAxumApi<P: Processor = DashMap<(i64, u8), Arc<Client>>> {
+pub struct RicqAxumApi<P: Processor> {
     // key: uin+protocol
     password_clients: DashMap<(i64, u8), PasswordClient>,
 

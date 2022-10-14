@@ -94,9 +94,9 @@ impl From<LoginResponse> for PasswordLoginResp {
     }
 }
 
-pub async fn login(
+pub async fn login<P: Processor>(
     Json(req): Json<CreateClientReq>,
-    ricq_axum_api: Extension<Arc<RicqAxumApi>>,
+    ricq_axum_api: Extension<Arc<RicqAxumApi<P>>>,
 ) -> Result<Json<PasswordLoginResp>, StatusCode> {
     let mut rand_seed = req.device_seed.unwrap_or(req.uin as u64);
     if rand_seed == 0 {
@@ -149,9 +149,9 @@ pub async fn login(
     Ok(Json(PasswordLoginResp::from(resp)))
 }
 
-pub async fn submit_ticket(
+pub async fn submit_ticket<P: Processor>(
     Json(req): Json<SubmitTicketReq>,
-    ricq_axum_api: Extension<Arc<RicqAxumApi>>,
+    ricq_axum_api: Extension<Arc<RicqAxumApi<P>>>,
 ) -> Result<Json<PasswordLoginResp>, StatusCode> {
     let mut resp = ricq_axum_api
         .password_clients
@@ -199,9 +199,9 @@ pub async fn submit_ticket(
     Ok(Json(PasswordLoginResp::from(resp)))
 }
 
-pub async fn request_sms(
+pub async fn request_sms<P: Processor>(
     Json(req): Json<RequestSmsReq>,
-    ricq_axum_api: Extension<Arc<RicqAxumApi>>,
+    ricq_axum_api: Extension<Arc<RicqAxumApi<P>>>,
 ) -> Result<Json<PasswordLoginResp>, StatusCode> {
     let resp = ricq_axum_api
         .password_clients
@@ -219,9 +219,9 @@ pub async fn request_sms(
     Ok(Json(PasswordLoginResp::from(resp)))
 }
 
-pub async fn submit_sms(
+pub async fn submit_sms<P: Processor>(
     Json(req): Json<SubmitSmsReq>,
-    ricq_axum_api: Extension<Arc<RicqAxumApi>>,
+    ricq_axum_api: Extension<Arc<RicqAxumApi<P>>>,
 ) -> Result<Json<PasswordLoginResp>, StatusCode> {
     let mut resp = ricq_axum_api
         .password_clients
@@ -281,8 +281,8 @@ pub struct ListClientRespClient {
     pub resp: PasswordLoginResp,
 }
 
-pub async fn list(
-    ricq_axum_api: Extension<Arc<RicqAxumApi>>,
+pub async fn list<P: Processor>(
+    ricq_axum_api: Extension<Arc<RicqAxumApi<P>>>,
 ) -> Result<Json<ListClientResp>, StatusCode> {
     let mut clients = Vec::new();
     for c in ricq_axum_api.password_clients.iter() {
@@ -304,9 +304,9 @@ pub struct DeleteClientReq {
 #[derive(Default, Serialize, Deserialize)]
 pub struct DeleteClientResp {}
 
-pub async fn delete(
+pub async fn delete<P: Processor>(
     Json(req): Json<DeleteClientReq>,
-    ricq_axum_api: Extension<Arc<RicqAxumApi>>,
+    ricq_axum_api: Extension<Arc<RicqAxumApi<P>>>,
 ) -> Result<Json<DeleteClientResp>, StatusCode> {
     if let Some((_, cli)) = ricq_axum_api
         .password_clients

@@ -12,8 +12,8 @@ pub struct ListBotResp {
     pub bots: Vec<ClientInfo>,
 }
 
-pub async fn list(
-    ricq_axum_api: Extension<Arc<RicqAxumApi>>,
+pub async fn list<P: Processor>(
+    ricq_axum_api: Extension<Arc<RicqAxumApi<P>>>,
 ) -> Result<Json<ListBotResp>, StatusCode> {
     Ok(Json(ListBotResp {
         bots: ricq_axum_api.processor.list_client().await,
@@ -29,9 +29,9 @@ pub struct DeleteBotReq {
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct DeleteBotResp {}
 
-pub async fn delete(
+pub async fn delete<P: Processor>(
     Json(req): Json<DeleteBotReq>,
-    ricq_axum_api: Extension<Arc<RicqAxumApi>>,
+    ricq_axum_api: Extension<Arc<RicqAxumApi<P>>>,
 ) -> Result<Json<DeleteBotResp>, StatusCode> {
     ricq_axum_api
         .processor
