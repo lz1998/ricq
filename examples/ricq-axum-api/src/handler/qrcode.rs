@@ -53,9 +53,9 @@ pub struct CreateClientResp {
     pub image: Vec<u8>,
 }
 
-pub async fn create(
+pub async fn create<P: Processor>(
     Json(req): Json<CreateClientReq>,
-    ricq_axum_api: Extension<Arc<RicqAxumApi>>,
+    ricq_axum_api: Extension<Arc<RicqAxumApi<P>>>,
 ) -> Result<Json<CreateClientResp>, StatusCode> {
     let rand_seed = req.device_seed.unwrap_or_else(rand::random);
     let device = Device::random_with_rng(&mut StdRng::seed_from_u64(rand_seed));
@@ -111,9 +111,9 @@ pub struct QueryQRCodeResp {
     pub state: String,
 }
 
-pub async fn query(
+pub async fn query<P: Processor>(
     Json(req): Json<QueryQRCodeReq>,
-    ricq_axum_api: Extension<Arc<RicqAxumApi>>,
+    ricq_axum_api: Extension<Arc<RicqAxumApi<P>>>,
 ) -> Result<Json<QueryQRCodeResp>, StatusCode> {
     let sig = Bytes::from(req.sig);
 
@@ -191,8 +191,8 @@ pub struct ListClientRespClient {
     pub state: String,
 }
 
-pub async fn list(
-    ricq_axum_api: Extension<Arc<RicqAxumApi>>,
+pub async fn list<P: Processor>(
+    ricq_axum_api: Extension<Arc<RicqAxumApi<P>>>,
 ) -> Result<Json<ListClientResp>, StatusCode> {
     let mut clients = Vec::new();
     for c in ricq_axum_api.qrcode_clients.iter() {
@@ -223,9 +223,9 @@ pub struct DeleteClientReq {
 #[derive(Default, Serialize, Deserialize)]
 pub struct DeleteClientResp {}
 
-pub async fn delete(
+pub async fn delete<P: Processor>(
     Json(req): Json<DeleteClientReq>,
-    ricq_axum_api: Extension<Arc<RicqAxumApi>>,
+    ricq_axum_api: Extension<Arc<RicqAxumApi<P>>>,
 ) -> Result<Json<DeleteClientResp>, StatusCode> {
     if let Some((_, cli)) = ricq_axum_api.qrcode_clients.remove(&Bytes::from(req.sig)) {
         cli.client.stop(NetworkStatus::Stop);

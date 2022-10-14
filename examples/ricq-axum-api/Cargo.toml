@@ -25,3 +25,5 @@ tracing = "0.1"
 base64 = "0.13"
 tower = { version = "0.4" }
 tower-http = { version = "0.3", features = ["fs"] }
+tracing-subscriber = { version = "0.3", features = ["fmt", "local-time"] }
+time = { version = "0.3", features = ["macros", "local-offset"] }
