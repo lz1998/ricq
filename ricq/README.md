@@ -2,7 +2,7 @@
 
 ![](https://socialify.git.ci/lz1998/ricq/image?forks=1&issues=1&language=1&owner=1&pattern=Circuit%20Board&pulls=1&stargazers=1&theme=Dark)
 
-qq-android 协议的 rust 实现 移植于 [MiraiGo](https://github.com/Mrs4s/MiraiGo)、[OICQ](https://github.com/takayama-lily/oicq)、[Mirai](https://github.com/mamoe/mirai)
+qq-android 协议的 rust 实现 移植于 [OICQ](https://github.com/takayama-lily/oicq)
 
 - [ricq](https://crates.io/crates/ricq): 提供异步 API
 - [ricq-core](https://crates.io/crates/ricq-core): 不带 IO 的数据包构造器、解析器（通常用于ffi）
