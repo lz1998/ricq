@@ -14,8 +14,12 @@ use tokio::sync::broadcast;
 use tokio::task::JoinHandle;
 use tower::ServiceBuilder;
 use tower_http::services::ServeDir;
+use tracing::Level;
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+use ricq::client::event::{FriendMessageEvent, GroupMessageEvent};
 use ricq::client::{DefaultConnector, NetworkStatus};
+use ricq::ext::common::after_login;
 use ricq::ext::reconnect::{auto_reconnect, Credential};
 use ricq::handler::QEvent;
 use ricq::Client;
@@ -24,6 +28,7 @@ use ricq_axum_api::processor::Processor;
 use ricq_axum_api::u8_protocol::U8Protocol;
 use ricq_axum_api::{ClientInfo, RicqAxumApi};
 
+// 默认处理器
 struct ClientProcessor(DashMap<(i64, u8), Arc<Client>>);
 
 #[async_trait::async_trait]
@@ -31,13 +36,55 @@ impl Processor for ClientProcessor {
     async fn on_login_success(
         &self,
         client: Arc<Client>,
-        _event_receiver: broadcast::Receiver<QEvent>,
+        mut event_receiver: broadcast::Receiver<QEvent>,
         credential: Credential,
         network_join_handle: JoinHandle<()>,
     ) {
         let uin = client.uin().await;
         let protocol = client.version().await.protocol.to_u8();
         self.0.insert((uin, protocol), client.clone());
+        after_login(&client).await;
+
+        tokio::spawn(async move {
+            while let Ok(event) = event_receiver.recv().await {
+                match event {
+                    QEvent::GroupMessage(e) => {
+                        let GroupMessageEvent {
+                            inner: message,
+                            client,
+                        } = e;
+                        tracing::info!(
+                            "GROUP_MSG, code: {}, content: {}",
+                            message.group_code,
+                            message.elements.to_string()
+                        );
+                        client
+                            .send_group_message(message.group_code, message.elements)
+                            .await
+                            .ok();
+                    }
+                    QEvent::FriendMessage(e) => {
+                        let FriendMessageEvent {
+                            inner: message,
+                            client,
+                        } = e;
+                        tracing::info!(
+                            "FRIEND_MSG, code: {}, content: {}",
+                            message.from_uin,
+                            message.elements.to_string()
+                        );
+                        client
+                            .send_friend_message(message.from_uin, message.elements)
+                            .await
+                            .ok();
+                    }
+                    other => {
+                        tracing::info!("{:?}", other)
+                    }
+                }
+            }
+        });
+
         // DONT BLOCK
         tokio::spawn(async move {
             network_join_handle.await.ok();
@@ -76,7 +123,26 @@ impl Processor for ClientProcessor {
 
 #[tokio::main]
 async fn main() {
-    // 默认处理器，登录后什么也不做，仅作为容器
+    // 初始化日志
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_target(true)
+                .with_timer(tracing_subscriber::fmt::time::OffsetTime::new(
+                    time::UtcOffset::__from_hms_unchecked(8, 0, 0),
+                    time::macros::format_description!(
+                        "[year repr:last_two]-[month]-[day] [hour]:[minute]:[second]"
+                    ),
+                )),
+        )
+        .with(
+            tracing_subscriber::filter::Targets::new()
+                .with_target("main", Level::DEBUG)
+                .with_target("ricq", Level::DEBUG)
+                .with_target("ricq_axum_api", Level::DEBUG),
+        )
+        .init();
+
     let processor = ClientProcessor(Default::default());
     let ricq_axum_api = Arc::new(RicqAxumApi::new(processor));
 
