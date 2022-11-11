@@ -16,7 +16,7 @@ use ricq_core::msg::elem::{Anonymous, GroupImage, RichMsg, VideoFile};
 use ricq_core::msg::MessageChain;
 use ricq_core::pb;
 use ricq_core::pb::short_video::ShortVideoUploadRsp;
-use ricq_core::structs::{ForwardMessage, MessageNode};
+use ricq_core::structs::{ForwardMessage, GroupFileCount, GroupFileList, MessageNode};
 use ricq_core::structs::{GroupAudio, GroupMemberPermission};
 use ricq_core::structs::{GroupInfo, GroupMemberInfo, MessageReceipt};
 
@@ -840,5 +840,71 @@ impl super::super::Client {
             .build_group_sign_in_packet(group_code);
         self.send_and_wait(req).await?;
         Ok(())
+    }
+    // 获取群文件列表
+    pub async fn get_group_file_list(
+        &self,
+        group_code: u64,
+        folder_id: &str,
+        start_index: u32,
+    ) -> RQResult<GroupFileList> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_file_list_request_packet(group_code, folder_id.into(), start_index);
+        let resp = self.send_and_wait(req).await?;
+        self.engine
+            .read()
+            .await
+            .decode_group_file_list_response(resp.body)
+    }
+
+    /// 获取群文件总数
+    pub async fn get_group_files_count(&self, group_code: u64) -> RQResult<GroupFileCount> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_file_count_request_packet(group_code);
+        let resp = self.send_and_wait(req).await?;
+        self.engine
+            .read()
+            .await
+            .decode_group_file_count_response(resp.body)
+    }
+    /// 获取文件下载链接
+    /// # Examples
+    /// ```
+    /// let file_list = client.get_group_file_list(group_code, "/", 0).await.unwrap();
+    /// for item_info in file_list.items {
+    ///     let url = client
+    ///         .get_group_file_download(
+    ///             group_code,
+    ///             &item_info.file_info.file_id,
+    ///             item_info.file_info.bus_id,
+    ///             &item_info.file_info.file_name,
+    ///         )
+    ///         .await;
+    ///     println!("{:?}", url);
+    /// }
+    ///```
+    pub async fn get_group_file_download(
+        &self,
+        group_code: i64,
+        file_id: &str,
+        bus_id: u32,
+        file_name: &str,
+    ) -> RQResult<String> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_group_file_download_request_packet(group_code, file_id.into(), bus_id as i32);
+        let resp = self.send_and_wait(req).await?;
+        self.engine
+            .read()
+            .await
+            .decode_group_file_download_response(resp.body, file_name)
     }
 }

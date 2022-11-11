@@ -261,3 +261,61 @@ pub struct FriendAudioMessage {
     pub from_nick: String,
     pub audio: FriendAudio,
 }
+// 群文件总数
+#[derive(Debug, Clone, Default)]
+pub struct GroupFileCount {
+    pub is_full: bool,
+    pub all_file_count: u32,
+    pub limit_count: u32,
+    pub file_too_many: bool,
+}
+
+// 群文件列表
+#[derive(Debug, Clone, Default)]
+pub struct GroupFileList {
+    pub all_file_count: u32,
+    pub is_end: bool,
+    pub items: Vec<GroupFileItem>,
+    pub role: u32,
+    pub next_index: u32,
+}
+// 群文件列表
+#[derive(Debug, Clone, Default)]
+pub struct GroupFileItem {
+    pub r#type: u32,
+    pub folder_info: GroupFolderInfo,
+    pub file_info: GroupFileInfo,
+}
+
+// 群文件夹
+#[derive(Debug, Clone, Default)]
+pub struct GroupFolderInfo {
+    pub folder_id: String,
+    pub parent_folder_id: String,
+    pub folder_name: String,
+    pub create_time: u32,
+    pub modify_time: u32,
+    pub create_uin: u64,
+    pub creator_name: String,
+    pub total_file_count: u32,
+}
+// 群文件
+#[derive(Debug, Clone, Default)]
+pub struct GroupFileInfo {
+    pub file_id: String,
+    pub file_name: String,
+    pub file_size: u64,
+    pub bus_id: u32,
+    pub uploaded_size: u64,
+    pub upload_time: u32,
+    pub dead_time: u32,
+    pub modify_time: u32,
+    pub download_times: u32,
+    pub sha: String,
+    pub sha3: Bytes,
+    pub md5: Bytes,
+    pub local_path: String,
+    pub uploader_name: String,
+    pub uploader_uin: u64,
+    pub parent_folder_id: String,
+}

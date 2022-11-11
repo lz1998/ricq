@@ -1,9 +1,12 @@
 use std::collections::HashMap;
 
-use bytes::Bytes;
+use bytes::{Bytes, BytesMut};
 
 use crate::command::oidb_svc::GroupAtAllRemainInfo;
-use crate::structs::{GroupInfo, GroupMemberPermission};
+use crate::structs::{
+    GroupFileCount, GroupFileInfo, GroupFileItem, GroupFileList, GroupFolderInfo, GroupInfo,
+    GroupMemberPermission,
+};
 use crate::{pb, RQResult};
 use prost::Message;
 
@@ -102,5 +105,91 @@ impl super::super::super::Engine {
                 )
             })
             .collect())
+    }
+    // OidbSvc.0x6d8_1
+    pub fn decode_group_file_list_response(&self, payload: Bytes) -> RQResult<GroupFileList> {
+        let pkg = pb::oidb::OidbssoPkg::decode(&*payload)?;
+        let resp = pb::oidb::D6d8RspBody::decode(&*pkg.bodybuffer)?;
+        let resp = &resp.file_list_info_rsp.unwrap_or_default();
+        Ok(GroupFileList {
+            all_file_count: resp.all_file_count(),
+            is_end: resp.is_end(),
+            items: resp
+                .item_list
+                .clone()
+                .into_iter()
+                .map(|f| {
+                    if let Some(fi) = f.file_info {
+                        let folder_info = f.folder_info.unwrap_or_default();
+                        GroupFileItem {
+                            file_info: GroupFileInfo {
+                                file_id: fi.file_id().to_string(),
+                                bus_id: fi.bus_id(),
+                                file_name: fi.file_name().to_string(),
+                                sha: format!("{:x}", BytesMut::from(fi.sha())),
+                                dead_time: fi.dead_time(),
+                                file_size: fi.file_size(),
+                                upload_time: fi.upload_time(),
+                                uploader_uin: fi.uploader_uin(),
+                                uploader_name: fi.uploader_name().to_string(),
+                                parent_folder_id: fi.parent_folder_id().to_string(),
+                                local_path: fi.local_path().to_string(),
+                                modify_time: fi.modify_time(),
+                                download_times: fi.download_times(),
+                                md5: Bytes::from(fi.md5.unwrap_or_default()),
+                                sha3: Bytes::from(fi.sha3.unwrap_or_default()),
+                                uploaded_size: fi.uploaded_size.unwrap_or_default(),
+                            },
+                            folder_info: GroupFolderInfo {
+                                create_time: folder_info.create_time(),
+                                create_uin: folder_info.create_uin(),
+                                creator_name: folder_info.creator_name.unwrap_or_default(),
+                                folder_id: folder_info.folder_id.unwrap_or_default(),
+                                folder_name: folder_info.folder_name.unwrap_or_default(),
+                                modify_time: folder_info.modify_time.unwrap_or_default(),
+                                parent_folder_id: folder_info.parent_folder_id.unwrap_or_default(),
+                                total_file_count: folder_info.total_file_count.unwrap_or_default(),
+                            },
+                            r#type: f.r#type.unwrap_or_default(),
+                        }
+                    } else {
+                        GroupFileItem::default()
+                    }
+                })
+                .collect(),
+            next_index: resp.next_index(),
+            role: resp.role(),
+        })
+    }
+    // OidbSvc.0x6d6_2
+    pub fn decode_group_file_download_response(
+        &self,
+        payload: Bytes,
+        filename: &str,
+    ) -> RQResult<String> {
+        let pkg = pb::oidb::OidbssoPkg::decode(&*payload)?;
+        let resp = pb::oidb::D6d6RspBody::decode(&*pkg.bodybuffer)?;
+        let f_rsp = resp.download_file_rsp.unwrap();
+        Ok(format!(
+            "http://{}/ftn_handler/{:x}/?fname={}",
+            f_rsp.download_ip(),
+            BytesMut::from(f_rsp.download_url()),
+            filename
+        ))
+    }
+    // OidbSvc.0x6d8_1
+    pub fn decode_group_file_count_response(&self, payload: Bytes) -> RQResult<GroupFileCount> {
+        let pkg = pb::oidb::OidbssoPkg::decode(&*payload)?;
+        let resp = pb::oidb::D6d8RspBody::decode(&*pkg.bodybuffer)?;
+        if let Some(file_count_rsp) = resp.file_count_rsp {
+            Ok(GroupFileCount {
+                is_full: file_count_rsp.is_full.unwrap_or_default(),
+                all_file_count: file_count_rsp.all_file_count.unwrap_or_default(),
+                limit_count: file_count_rsp.limit_count.unwrap_or_default(),
+                file_too_many: file_count_rsp.file_too_many.unwrap_or_default(),
+            })
+        } else {
+            Err(crate::RQError::GetFileCountFailed)
+        }
     }
 }
