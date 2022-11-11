@@ -379,4 +379,64 @@ impl super::super::super::Engine {
         let payload = self.transport.encode_oidb_packet(0xeb7, 1, body.to_bytes());
         self.uni_packet("OidbSvc.0xeb7", payload)
     }
+    // OidbSvc.0x6d8_1
+    pub fn build_group_file_list_request_packet(
+        &self,
+        group_code: u64,
+        folder_id: String,
+        start_index: u32,
+    ) -> Packet {
+        let body = pb::oidb::D6d8ReqBody {
+            file_list_info_req: Some(pb::oidb::GetFileListReqBody {
+                group_code: Some(group_code),
+                app_id: Some(3),
+                folder_id: Some(folder_id),
+                file_count: Some(20),
+                all_file_count: Some(0),
+                req_from: Some(3),
+                sort_by: Some(1),
+                filter_code: Some(0),
+                uin: Some(0),
+                start_index: Some(start_index),
+                context: None,
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let payload = self.transport.encode_oidb_packet(0x6d8, 1, body.to_bytes());
+        self.uni_packet("OidbSvc.0x6d8_1", payload)
+    }
+    // OidbSvc.0x6d6_2
+    pub fn build_group_file_download_request_packet(
+        &self,
+        group_code: i64,
+        file_id: String,
+        bus_id: i32,
+    ) -> Packet {
+        let body = pb::oidb::D6d6ReqBody {
+            download_file_req: Some(pb::oidb::DownloadFileReqBody {
+                file_id: Some(file_id),
+                group_code: Some(group_code),
+                app_id: Some(3),
+                bus_id: Some(bus_id),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        let payload = self.transport.encode_oidb_packet(1750, 2, body.to_bytes());
+        self.uni_packet("OidbSvc.0x6d6_2", payload)
+    }
+    // OidbSvc.0x6d8_1
+    pub fn build_group_file_count_request_packet(&self, group_code: u64) -> Packet {
+        let body = pb::oidb::D6d8ReqBody {
+            group_file_count_req: Some(pb::oidb::GetFileCountReqBody {
+                group_code: Some(group_code),
+                app_id: Some(3),
+                bus_id: Some(0),
+            }),
+            ..Default::default()
+        };
+        let payload = self.transport.encode_oidb_packet(0x6d8, 2, body.to_bytes());
+        self.uni_packet("OidbSvc.0x6d8_1", payload)
+    }
 }
