@@ -74,8 +74,6 @@ impl crate::Client {
             Ordering::Relaxed,
         ) {
             Ok(_) => {
-                self.status
-                    .store(NetworkStatus::NetworkOffline as u8, Ordering::Relaxed);
                 self.handler
                     .handle(QEvent::ClientDisconnect(ClientDisconnect {
                         client: Arc::clone(self),
@@ -93,7 +91,6 @@ impl crate::Client {
                                 1 => NetworkStatus::Running,
                                 2 => NetworkStatus::Stop,
                                 3 => NetworkStatus::Drop,
-                                4 => NetworkStatus::NetworkOffline,
                                 5 => NetworkStatus::KickedOffline,
                                 6 => NetworkStatus::MsfOffline,
                                 _ => NetworkStatus::Unknown,
