@@ -57,6 +57,9 @@ pub enum QEvent {
     /// 服务端强制下线
     /// 不能用于掉线重连，掉线重连以 start 返回为准
     MSFOffline(MSFOfflineEvent),
+    /// 网络原因/客户端主动掉线
+    /// 可用于掉线重连
+    ClientDisconnect(ClientDisconnect),
 }
 
 /// 处理外发数据的接口
@@ -157,6 +160,7 @@ pub trait PartlyHandler: Sync {
     async fn handle_member_permission_change(&self, _event: MemberPermissionChangeEvent) {}
     async fn handle_kicked_offline(&self, _event: KickedOfflineEvent) {}
     async fn handle_msf_offline(&self, _event: MSFOfflineEvent) {}
+    async fn handle_client_disconnect(&self, _event: ClientDisconnect) {}
 }
 
 #[async_trait]
@@ -188,6 +192,7 @@ where
             QEvent::MemberPermissionChange(m) => self.handle_member_permission_change(m).await,
             QEvent::KickedOffline(m) => self.handle_kicked_offline(m).await,
             QEvent::MSFOffline(m) => self.handle_msf_offline(m).await,
+            QEvent::ClientDisconnect(m) => self.handle_client_disconnect(m).await,
         }
     }
 }

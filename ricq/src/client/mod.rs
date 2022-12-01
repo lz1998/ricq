@@ -224,6 +224,7 @@ impl Drop for Client {
     }
 }
 
+#[derive(Copy, Clone, Debug)]
 #[repr(u8)]
 pub enum NetworkStatus {
     // 未启动
