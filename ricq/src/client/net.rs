@@ -3,6 +3,7 @@ use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::time::Duration;
 
+use crate::client::event::{ClientDisconnect, DisconnectReason};
 use async_trait::async_trait;
 use bytes::Bytes;
 use futures_util::{SinkExt, StreamExt};
@@ -13,6 +14,7 @@ use tokio_util::codec::LengthDelimitedCodec;
 
 use crate::client::tcp::tcp_connect_fastest;
 use crate::client::NetworkStatus;
+use crate::handler::QEvent;
 
 use super::Client;
 
@@ -63,9 +65,42 @@ impl crate::Client {
             .store(NetworkStatus::Running as u8, Ordering::Relaxed);
         self.net_loop(stream).await; // 阻塞到断开
         self.disconnect();
-        if self.get_status() == (NetworkStatus::Running as u8) {
-            self.status
-                .store(NetworkStatus::NetworkOffline as u8, Ordering::Relaxed);
+        self.online.store(false, Ordering::Relaxed);
+
+        match self.status.compare_exchange(
+            NetworkStatus::Running as u8,
+            NetworkStatus::NetworkOffline as u8,
+            Ordering::Relaxed,
+            Ordering::Relaxed,
+        ) {
+            Ok(_) => {
+                self.handler
+                    .handle(QEvent::ClientDisconnect(ClientDisconnect {
+                        client: Arc::clone(self),
+                        inner: DisconnectReason::Network,
+                    }))
+                    .await;
+            }
+            Err(status) => {
+                self.handler
+                    .handle(QEvent::ClientDisconnect(ClientDisconnect {
+                        client: Arc::clone(self),
+                        inner: {
+                            let network = match status {
+                                0 => NetworkStatus::Unknown,
+                                1 => NetworkStatus::Running,
+                                2 => NetworkStatus::Stop,
+                                3 => NetworkStatus::Drop,
+                                5 => NetworkStatus::KickedOffline,
+                                6 => NetworkStatus::MsfOffline,
+                                _ => NetworkStatus::Unknown,
+                            };
+
+                            DisconnectReason::Actively(network)
+                        },
+                    }))
+                    .await;
+            }
         }
     }
 

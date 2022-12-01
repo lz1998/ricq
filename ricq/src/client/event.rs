@@ -8,6 +8,7 @@ use ricq_core::structs::{
 };
 use ricq_core::{jce, RQResult};
 
+use crate::client::NetworkStatus;
 use crate::structs::{FriendMessage, GroupMessage};
 use crate::Client;
 
@@ -120,3 +121,30 @@ impl FriendAudioMessageEvent {
 
 pub type KickedOfflineEvent = EventWithClient<jce::RequestPushForceOffline>;
 pub type MSFOfflineEvent = EventWithClient<jce::RequestMSFForceOffline>;
+
+#[derive(Copy, Clone, Debug)]
+#[repr(u8)]
+pub enum DisconnectReason {
+    /// 主动断开
+    Actively(NetworkStatus),
+    /// 网络原因
+    Network,
+}
+
+impl DisconnectReason {
+    /// 客户端网络状态
+    pub fn status(&self) -> NetworkStatus {
+        match self {
+            Self::Actively(s) => *s,
+            Self::Network => NetworkStatus::NetworkOffline,
+        }
+    }
+}
+
+pub type ClientDisconnect = EventWithClient<DisconnectReason>;
+
+impl ClientDisconnect {
+    pub fn reason(&self) -> DisconnectReason {
+        self.inner
+    }
+}
