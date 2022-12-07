@@ -31,13 +31,12 @@ impl super::super::super::Engine {
                     ConfigPushBody::SsoServers { servers }
                 }
                 2 => {
-                    let mut info: jce::FileStoragePushFSSvcList = jcers::from_buf(&mut jce_buf)?;
-                    let rsp_body = match pb::cmd0x6ff::C501RspBody::decode(
-                        &mut info.big_data_channel.pb_buf,
-                    ) {
-                        Ok(c501_rsp_body) => c501_rsp_body.rsp_body,
-                        _ => None,
-                    };
+                    let info: jce::FileStoragePushFSSvcList = jcers::from_buf(&mut jce_buf)?;
+                    let rsp_body =
+                        match pb::cmd0x6ff::C501RspBody::decode(&*info.big_data_channel.pb_buf) {
+                            Ok(c501_rsp_body) => c501_rsp_body.rsp_body,
+                            _ => None,
+                        };
                     ConfigPushBody::FileStorageInfo { info, rsp_body }
                 }
                 _ => ConfigPushBody::Unknown,

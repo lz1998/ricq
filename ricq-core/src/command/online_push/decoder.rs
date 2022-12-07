@@ -12,7 +12,7 @@ impl super::super::super::Engine {
     // 解析群消息分片 长消息需要合并
     // OnlinePush.PbPushGroupMsg
     pub fn decode_group_message_packet(&self, payload: Bytes) -> RQResult<GroupMessagePart> {
-        let message = pb::msg::PushMessagePacket::decode(payload)?;
+        let message = pb::msg::PushMessagePacket::decode(&*payload)?;
         (|| {
             let msg = message.message.ok_or("message")?;
             let head = msg.head.ok_or("head")?;
