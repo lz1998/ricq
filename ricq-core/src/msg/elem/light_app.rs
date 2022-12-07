@@ -7,6 +7,7 @@ use crate::msg::{MessageElem, PushElem};
 use crate::pb::msg;
 use crate::{push_builder_impl, to_elem_vec_impl};
 
+// Some of the share card message will be a LightApp with pkg id `com.tencent.structmsg`
 #[derive(Default, Debug, Clone)]
 pub struct LightApp {
     pub content: String,

@@ -4,7 +4,9 @@ use crate::pb;
 
 pub mod builder;
 pub mod decoder;
+pub mod link;
 pub mod music;
+pub mod share;
 
 // 群 @全体 剩余次数
 #[derive(Default, Debug)]
