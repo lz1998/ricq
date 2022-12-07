@@ -1,6 +1,7 @@
 use bytes::Bytes;
 
 use crate::common::RQAddr;
+use crate::utils::utf8_to_string;
 use crate::{pb, RQError, RQResult};
 use prost::Message;
 
@@ -11,7 +12,7 @@ impl crate::Engine {
     pub fn decode_off_pic_up_response(&self, payload: Bytes) -> RQResult<OffPicUpResp> {
         let mut resp = pb::cmd0x352::RspBody::decode(&*payload)?;
         if let Some(err) = resp.fail_msg {
-            return Err(RQError::Other(String::from_utf8_lossy(&err).to_string()));
+            return Err(RQError::Other(utf8_to_string(err)));
         }
         if resp.subcmd() != 1 {
             return Err(RQError::Other(format!(
@@ -25,18 +26,18 @@ impl crate::Engine {
             .ok_or(RQError::EmptyField("tryup_img_rsp"))?;
 
         if img.result() != 0 {
-            return Err(RQError::Other(
-                String::from_utf8_lossy(&img.fail_msg.unwrap_or_default()).to_string(),
-            ));
+            return Err(RQError::Other(utf8_to_string(
+                img.fail_msg.unwrap_or_default(),
+            )));
         }
         if img.file_exit() {
             Ok(OffPicUpResp::Exist {
-                uuid: String::from_utf8_lossy(img.up_uuid()).to_string(),
+                uuid: utf8_to_string(img.up_uuid().to_owned()),
                 res_id: img.up_resid.unwrap_or_default(),
             })
         } else {
             Ok(OffPicUpResp::UploadRequired {
-                uuid: String::from_utf8_lossy(img.up_uuid()).to_string(),
+                uuid: utf8_to_string(img.up_uuid().to_owned()),
                 res_id: img.up_resid.unwrap_or_default(),
                 upload_key: img.up_ukey.unwrap_or_default(),
                 upload_addrs: img

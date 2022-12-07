@@ -4,6 +4,7 @@ use jcers::Jce;
 use crate::command::online_push::{GroupMessagePart, OnlinePushTrans, PushTransInfo, ReqPush};
 use crate::common::group_uin2code;
 use crate::structs::{GroupDisband, GroupLeave, GroupMemberPermission, MemberPermissionChange};
+use crate::utils::utf8_to_string;
 use crate::{jce, pb, RQError, RQResult};
 use prost::Message;
 
@@ -11,78 +12,30 @@ impl super::super::super::Engine {
     // 解析群消息分片 长消息需要合并
     // OnlinePush.PbPushGroupMsg
     pub fn decode_group_message_packet(&self, payload: Bytes) -> RQResult<GroupMessagePart> {
-        let message = pb::msg::PushMessagePacket::decode(&*payload)?
-            .message
-            .ok_or_else(|| RQError::Decode("message is none".to_string()))?;
-
-        let head = message
-            .head
-            .as_ref()
-            .ok_or_else(|| RQError::Decode("head is none".to_string()))?;
-        let body = message
-            .body
-            .as_ref()
-            .ok_or_else(|| RQError::Decode("body is none".to_string()))?;
-        let content = message
-            .content
-            .as_ref()
-            .ok_or_else(|| RQError::Decode("content is none".to_string()))?;
-        let rich_text = body
-            .rich_text
-            .as_ref()
-            .ok_or_else(|| RQError::Decode("rich_text is none".to_string()))?;
-        return Ok(GroupMessagePart {
-            seq: head
-                .msg_seq
-                .ok_or_else(|| RQError::Decode("msg_seq is none".to_string()))?,
-            rand: rich_text
-                .attr
-                .as_ref()
-                .ok_or_else(|| RQError::Decode("attr is none".into()))?
-                .random
-                .ok_or_else(|| RQError::Decode("attr.random is none".into()))?,
-            group_code: head
-                .group_info
-                .as_ref()
-                .ok_or_else(|| RQError::Decode("group_info is none".into()))?
-                .group_code
-                .ok_or_else(|| RQError::Decode("group_info.group_code is none".into()))?,
-            group_name: String::from_utf8_lossy(
-                head.group_info
-                    .as_ref()
-                    .ok_or_else(|| RQError::Decode("group_info is none".into()))?
-                    .group_name
-                    .as_ref()
-                    .ok_or_else(|| RQError::Decode("group_info.group_name is none".into()))?,
-            )
-            .to_string(),
-            group_card: String::from_utf8_lossy(
-                head.group_info
-                    .as_ref()
-                    .ok_or_else(|| RQError::Decode("group_info is none".into()))?
-                    .group_card
-                    .as_ref()
-                    .ok_or_else(|| RQError::Decode("group_info.group_card is none".into()))?,
-            )
-            .to_string(),
-            from_uin: head
-                .from_uin
-                .ok_or_else(|| RQError::Decode("from_uin is none".into()))?,
-            elems: rich_text.elems.clone(),
-            time: head
-                .msg_time
-                .ok_or_else(|| RQError::Decode("msg_time is none".into()))?,
-            pkg_num: content
-                .pkg_num
-                .ok_or_else(|| RQError::Decode("pkg_num is none".into()))?,
-            pkg_index: content
-                .pkg_index
-                .ok_or_else(|| RQError::Decode("pkg_index is none".into()))?,
-            div_seq: content
-                .div_seq
-                .ok_or_else(|| RQError::Decode("div_seq is none".into()))?,
-            ptt: rich_text.ptt.clone(),
-        });
+        let message = pb::msg::PushMessagePacket::decode(payload)?;
+        (|| {
+            let msg = message.message.ok_or("message")?;
+            let head = msg.head.ok_or("head")?;
+            let body = msg.body.ok_or("body")?;
+            let content = msg.content.ok_or("content")?;
+            let rich_text = body.rich_text.ok_or("rich_text")?;
+            let group_info = head.group_info.ok_or("group_info")?;
+            Ok(GroupMessagePart {
+                seq: head.msg_seq.ok_or("msg_seq")?,
+                rand: rich_text.attr.ok_or("attr")?.random.ok_or("attr.random")?,
+                group_code: group_info.group_code.ok_or("group_info.group_code")?,
+                group_name: utf8_to_string(group_info.group_name.ok_or("group_info.group_name")?),
+                group_card: utf8_to_string(group_info.group_card.ok_or("group_info.group_card")?),
+                from_uin: head.from_uin.ok_or("from_uin")?,
+                elems: rich_text.elems,
+                time: head.msg_time.ok_or("msg_time")?,
+                pkg_num: content.pkg_num.ok_or("pkg_num")?,
+                pkg_index: content.pkg_index.ok_or("pkg_index")?,
+                div_seq: content.div_seq.ok_or("div_seq")?,
+                ptt: rich_text.ptt,
+            })
+        })()
+        .map_err(|e: &'static str| RQError::Decode(format!("{e} is none")))
     }
 
     // OnlinePush.ReqPush

@@ -2,6 +2,7 @@ use bytes::Bytes;
 use prost::Message;
 
 use crate::msg::elem::Anonymous;
+use crate::utils::utf8_to_string;
 use crate::{pb, RQError, RQResult};
 
 impl super::super::super::Engine {
@@ -18,7 +19,7 @@ impl super::super::super::Engine {
         }
         Ok(Some(Anonymous {
             anon_id: vec![],
-            nick: String::from_utf8_lossy(&rsp.anony_name.unwrap_or_default()).to_string(),
+            nick: utf8_to_string(rsp.anony_name.unwrap_or_default()),
             portrait_index: rsp.portrait_index.unwrap_or_default() as i32,
             bubble_index: rsp.bubble_index.unwrap_or_default() as i32,
             expire_time: rsp.expired_time.unwrap_or_default() as i32,

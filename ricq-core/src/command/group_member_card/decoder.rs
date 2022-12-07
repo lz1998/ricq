@@ -2,6 +2,7 @@ use bytes::Bytes;
 use prost::Message;
 
 use crate::structs::{GroupMemberInfo, GroupMemberPermission};
+use crate::utils::utf8_to_string;
 use crate::{pb, RQError, RQResult};
 
 impl super::super::super::Engine {
@@ -16,12 +17,12 @@ impl super::super::super::Engine {
             group_code,
             uin: mem_info.uin,
             gender: mem_info.sex as u8,
-            nickname: String::from_utf8_lossy(&mem_info.nick).into(),
-            card_name: String::from_utf8_lossy(&mem_info.card).into(),
+            nickname: utf8_to_string(mem_info.nick),
+            card_name: utf8_to_string(mem_info.card),
             level: mem_info.level as u16,
             join_time: mem_info.join,
             last_speak_time: mem_info.last_speak,
-            special_title: String::from_utf8_lossy(&mem_info.special_title).into(),
+            special_title: utf8_to_string(mem_info.special_title),
             special_title_expire_time: mem_info.special_title_expire_time as i64,
             permission: match mem_info.role {
                 3 => GroupMemberPermission::Owner,

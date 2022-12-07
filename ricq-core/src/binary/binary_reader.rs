@@ -2,6 +2,8 @@ use std::collections::HashMap;
 
 use bytes::{Buf, Bytes};
 
+use crate::utils::utf8_to_string;
+
 pub trait BinaryReader {
     fn read_string(&mut self) -> String;
     fn read_string_short(&mut self) -> String;
@@ -16,12 +18,12 @@ where
 {
     fn read_string(&mut self) -> String {
         let len = self.get_i32() as usize - 4;
-        String::from_utf8_lossy(&self.copy_to_bytes(len)).to_string()
+        utf8_to_string(self.copy_to_bytes(len))
     }
 
     fn read_string_short(&mut self) -> String {
         let len = self.get_u16() as usize;
-        String::from_utf8_lossy(&self.copy_to_bytes(len)).to_string()
+        utf8_to_string(self.copy_to_bytes(len))
     }
 
     fn read_bytes_short(&mut self) -> Bytes {
@@ -58,6 +60,6 @@ where
     }
 
     fn read_string_limit(&mut self, limit: usize) -> String {
-        String::from_utf8_lossy(&self.copy_to_bytes(limit)).to_string()
+        utf8_to_string(self.copy_to_bytes(limit))
     }
 }

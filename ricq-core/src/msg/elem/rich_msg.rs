@@ -7,6 +7,7 @@ use flate2::Compression;
 use crate::msg::{MessageChainBuilder, PushBuilder};
 use crate::msg::{MessageElem, PushElem};
 use crate::pb::msg;
+use crate::utils::utf8_to_string;
 use crate::{push_builder_impl, to_elem_vec_impl};
 
 #[derive(Default, Debug, Clone)]
@@ -31,7 +32,7 @@ impl From<msg::RichMsg> for RichMsg {
             if !content.is_empty() && content.len() < 1024 ^ 3 {
                 return Self {
                     service_id: e.service_id.unwrap_or_default(),
-                    template1: String::from_utf8_lossy(&content).to_string(),
+                    template1: utf8_to_string(content),
                 };
             }
         }

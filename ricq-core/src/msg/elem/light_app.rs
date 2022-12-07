@@ -5,6 +5,7 @@ use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
 use crate::msg::{MessageChainBuilder, PushBuilder};
 use crate::msg::{MessageElem, PushElem};
 use crate::pb::msg;
+use crate::utils::utf8_to_string;
 use crate::{push_builder_impl, to_elem_vec_impl};
 
 #[derive(Default, Debug, Clone)]
@@ -46,7 +47,7 @@ impl From<msg::LightApp> for LightApp {
             };
             if !content.is_empty() && content.len() < 1024 ^ 3 {
                 return Self {
-                    content: String::from_utf8_lossy(&content).to_string(),
+                    content: utf8_to_string(content),
                 };
             }
         }

@@ -1,5 +1,6 @@
 use bytes::Bytes;
 
+use crate::utils::utf8_to_string;
 use crate::RQResult;
 use crate::{pb, RQError};
 use prost::Message;
@@ -30,7 +31,7 @@ impl super::super::super::Engine {
         Ok(format!(
             "http://{}{}",
             ptt.domain.ok_or(RQError::EmptyField("ptt_domain"))?,
-            String::from_utf8_lossy(&ptt.down_para.ok_or(RQError::EmptyField("ptt_down_para"))?)
+            utf8_to_string(ptt.down_para.ok_or(RQError::EmptyField("ptt_down_para"))?)
         ))
     }
 }

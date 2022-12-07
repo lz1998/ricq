@@ -72,7 +72,7 @@ impl Decoder {
             .ok_or(RQError::EmptyField("tryup_img_rsp"))?;
         if rsp.result() != 0 {
             return Err(RQError::Other(
-                String::from_utf8_lossy(&rsp.fail_msg.unwrap_or_default()).to_string(),
+                String::from_utf8_lossy(&rsp.fail_msg.unwrap_or_default()).into_owned(),
             ));
         }
 

@@ -1,6 +1,7 @@
 use bytes::{Buf, Bytes};
 
 use crate::structs::OtherClientInfo;
+use crate::utils::utf8_to_string;
 use crate::{jce, RQError, RQResult};
 
 impl super::super::super::Engine {
@@ -24,11 +25,10 @@ impl super::super::super::Engine {
         let rsp: jce::SvcRespParam = jcers::from_buf(&mut reader).map_err(RQError::from)?;
         Ok(rsp
             .online_infos
-            .iter()
+            .into_iter()
             .map(|i| OtherClientInfo {
                 app_id: i.instance_id as i64,
                 instance_id: i.instance_id,
-                sub_platform: String::from_utf8_lossy(&i.sub_platform).to_string(),
                 device_kind: match i.u_client_type {
                     65793 => "Windows".to_string(),
                     65805 | 68104 => "aPad".to_string(),
@@ -36,8 +36,9 @@ impl super::super::super::Engine {
                     68361 | 72194 => "iPad".to_string(),
                     75023 | 78082 | 78096 => "Watch".to_string(),
                     77313 => "Windows TIM".to_string(),
-                    _ => String::from_utf8_lossy(&i.sub_platform).to_string(),
+                    _ => utf8_to_string(i.sub_platform.clone()),
                 },
+                sub_platform: utf8_to_string(i.sub_platform),
             })
             .collect())
     }

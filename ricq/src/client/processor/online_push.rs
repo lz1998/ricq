@@ -9,7 +9,6 @@ use ricq_core::command::common::PbToBytes;
 use ricq_core::command::online_push::GroupMessagePart;
 use ricq_core::command::online_push::{OnlinePushTrans, PushTransInfo};
 use ricq_core::msg::MessageChain;
-use ricq_core::pb::msg;
 use ricq_core::structs::{
     DeleteFriend, FriendInfo, FriendMessageRecall, FriendPoke, GroupAudio, GroupAudioMessage,
     GroupLeave, GroupMessage, GroupMessageRecall, GroupMute, GroupNameUpdate,
@@ -103,31 +102,43 @@ impl Client {
         mut parts: Vec<GroupMessagePart>,
     ) -> RQResult<GroupMessage> {
         parts.sort_by(|a, b| a.pkg_index.cmp(&b.pkg_index));
-        let group_message = GroupMessage {
-            seqs: parts.iter().map(|p| p.seq).collect(),
-            rands: parts.iter().map(|p| p.rand).collect(),
-            group_code: parts.first().map(|p| p.group_code).unwrap_or_default(),
-            group_name: parts
-                .first_mut()
-                .map(|p| std::mem::take(&mut p.group_name))
-                .unwrap_or_default(),
-            group_card: parts
-                .first_mut()
-                .map(|p| std::mem::take(&mut p.group_card))
-                .unwrap_or_default(),
-            from_uin: parts.first().map(|p| p.from_uin).unwrap_or_default(),
-            time: parts.first().map(|p| p.time).unwrap_or_default(),
-            elements: MessageChain::from(
-                parts
-                    .into_iter()
-                    .flat_map(|p| p.elems)
-                    .collect::<Vec<msg::Elem>>(),
-            ),
-        };
-        //todo extInfo
-        //todo group_card_update
-        //todo ptt_store
-        Ok(group_message)
+        let parts_len = parts.len();
+
+        let mut is_first_part = true;
+        let mut seqs = Vec::with_capacity(parts_len);
+        let mut rands = Vec::with_capacity(parts_len);
+        let mut group_code = 0;
+        let mut group_name = String::new();
+        let mut group_card = String::new();
+        let mut from_uin = 0;
+        let mut time = 0;
+        let mut elements = Vec::with_capacity(parts_len);
+        for mut p in parts {
+            if is_first_part {
+                is_first_part = false;
+                group_code = p.group_code;
+                group_name = p.group_name;
+                group_card = p.group_card;
+                from_uin = p.from_uin;
+                time = p.time;
+            }
+            seqs.push(p.seq);
+            rands.push(p.rand);
+            elements.append(&mut p.elems);
+        }
+        Ok(GroupMessage {
+            seqs,
+            rands,
+            group_code,
+            group_name,
+            group_card,
+            from_uin,
+            time,
+            elements: MessageChain::from(elements),
+        })
+        // TODO: extInfo
+        // TODO: group_card_update
+        // TODO: ptt_store
     }
 
     pub(crate) async fn process_push_req(self: &Arc<Self>, msg_infos: Vec<jce::PushMessageInfo>) {

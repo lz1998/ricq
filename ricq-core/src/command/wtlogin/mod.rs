@@ -6,6 +6,7 @@ use bytes::{Buf, Bytes};
 
 use crate::binary::BinaryReader;
 use crate::command::wtlogin::tlv_reader::*;
+use crate::utils::utf8_to_string;
 use crate::{RQError, RQResult};
 
 mod builder;
@@ -167,12 +168,8 @@ impl LoginResponse {
             160 | 239 => LoginResponse::DeviceLocked(LoginDeviceLocked {
                 // TODO?
                 sms_phone: tlv_map.remove(&0x178).map(|_| "todo".into()),
-                verify_url: tlv_map
-                    .remove(&0x204)
-                    .map(|v| String::from_utf8_lossy(&v).to_string()),
-                message: tlv_map
-                    .remove(&0x17e)
-                    .map(|v| String::from_utf8_lossy(&v).to_string()),
+                verify_url: tlv_map.remove(&0x204).map(utf8_to_string),
+                message: tlv_map.remove(&0x17e).map(utf8_to_string),
                 rand_seed: tlv_map.remove(&0x403),
                 t104: tlv_map.remove(&0x104),
                 t174: tlv_map.remove(&0x174),

@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 
+use crate::utils::utf8_to_string;
+
 use bytes::Bytes;
 
 pub mod builder;
@@ -70,6 +72,6 @@ pub struct RichSigInfo {
 
 impl RichSigInfo {
     pub fn get_signature(&self) -> String {
-        String::from_utf8_lossy(&self.infos.get(&3).cloned().unwrap_or_default()).to_string()
+        utf8_to_string(self.infos.get(&3).cloned().unwrap_or_default())
     }
 }
