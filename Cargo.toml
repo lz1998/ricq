@@ -1,6 +1,15 @@
 [workspace]
 members = [
-    "ricq",
+    # "ricq",
     "ricq-core",
-    "ricq-guild"
+    # "ricq-guild"
 ]
+
+[profile.dev]
+# debug = false # this switch disabled backtrace
+panic = "abort"
+incremental = false
+[profile.dev.package."*"]
+debug = false
+strip = true
+opt-level = "z"
