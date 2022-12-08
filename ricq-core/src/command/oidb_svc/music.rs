@@ -1,19 +1,3 @@
-pub enum SendMusicTarget {
-    Friend(i64),
-    Group(i64),
-    Guild { guild_id: u64, channel_id: u64 },
-}
-
-impl SendMusicTarget {
-    pub fn send_type(&self) -> u32 {
-        match self {
-            SendMusicTarget::Friend { .. } => 0,
-            SendMusicTarget::Group { .. } => 1,
-            SendMusicTarget::Guild { .. } => 3,
-        }
-    }
-}
-
 pub struct MusicShare {
     pub title: String,
     pub brief: String,

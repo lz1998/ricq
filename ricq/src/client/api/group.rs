@@ -7,7 +7,9 @@ use cached::Cached;
 use ricq_core::command::common::PbToBytes;
 use ricq_core::command::img_store::GroupImageStoreResp;
 use ricq_core::command::multi_msg::gen_forward_preview;
-use ricq_core::command::oidb_svc::music::{MusicShare, MusicType, SendMusicTarget};
+use ricq_core::command::oidb_svc::link::LinkShare;
+use ricq_core::command::oidb_svc::music::{MusicShare, MusicType};
+use ricq_core::command::oidb_svc::share::ShareTarget;
 use ricq_core::command::{friendlist::*, oidb_svc::*, profile_service::*};
 use ricq_core::common::group_code2uin;
 use ricq_core::hex::encode_hex;
@@ -438,10 +440,25 @@ impl super::super::Client {
         music_type: MusicType,
     ) -> RQResult<()> {
         let req = self.engine.read().await.build_share_music_request_packet(
-            SendMusicTarget::Group(group_code),
+            ShareTarget::Group(group_code),
             music_share,
             music_type.version(),
         );
+        let _ = self.send_and_wait(req).await?;
+        Ok(())
+    }
+
+    /// 分享链接
+    pub async fn send_group_link_share(
+        &self,
+        group_code: i64,
+        link_share: LinkShare,
+    ) -> RQResult<()> {
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_share_link_request_packet(ShareTarget::Group(group_code), link_share);
         let _ = self.send_and_wait(req).await?;
         Ok(())
     }
