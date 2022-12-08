@@ -69,50 +69,6 @@ impl Client {
         // TODO: ptt_store
     }
 
-    pub(crate) async fn parse_group_message(
-        &self,
-        mut parts: Vec<GroupMessagePart>,
-    ) -> RQResult<GroupMessage> {
-        parts.sort_by(|a, b| a.pkg_index.cmp(&b.pkg_index));
-        let parts_len = parts.len();
-
-        let mut is_first_part = true;
-        let mut seqs = Vec::with_capacity(parts_len);
-        let mut rands = Vec::with_capacity(parts_len);
-        let mut group_code = 0;
-        let mut group_name = String::new();
-        let mut group_card = String::new();
-        let mut from_uin = 0;
-        let mut time = 0;
-        let mut elements = Vec::with_capacity(parts_len);
-        for mut p in parts {
-            if is_first_part {
-                is_first_part = false;
-                group_code = p.group_code;
-                group_name = p.group_name;
-                group_card = p.group_card;
-                from_uin = p.from_uin;
-                time = p.time;
-            }
-            seqs.push(p.seq);
-            rands.push(p.rand);
-            elements.append(&mut p.elems);
-        }
-        Ok(GroupMessage {
-            seqs,
-            rands,
-            group_code,
-            group_name,
-            group_card,
-            from_uin,
-            time,
-            elements: MessageChain::from(elements),
-        })
-        // TODO: extInfo
-        // TODO: group_card_update
-        // TODO: ptt_store
-    }
-
     pub(crate) async fn process_push_req(self: &Arc<Self>, msg_infos: Vec<jce::PushMessageInfo>) {
         for info in msg_infos {
             if self.push_req_exists(&info).await {
