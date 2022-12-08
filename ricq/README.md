@@ -123,10 +123,10 @@ QQ Android 协议的 Rust 实现，移植于 [OICQ](https://github.com/takayama-
 
 ### 敏感操作
 
-> 由于[QQ钱包支付用户服务协议](https://www.tenpay.com/v2/html5/basic/public/agreement/protocol_mqq_pay.shtml), 将不支持一切有关QQ钱包的协议
+> 由于 [QQ 钱包支付用户服务协议](https://www.tenpay.com/v2/html5/basic/public/agreement/protocol_mqq_pay.shtml), 将不提供一切有关 QQ 钱包的功能。
 
 > 4.13 您不得利用本服务实施下列任一的行为：
 > \
-> （9） **侵害QQ钱包支付服务系統；**
+> （9） **侵害 QQ 钱包支付服务系統；**
 
-- [ ] ~~QQ钱包协议（收款 / 付款等）~~
+- [ ] ~~QQ 钱包协议（收款 / 付款等）~~
