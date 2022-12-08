@@ -25,76 +25,48 @@ use crate::client::Client;
 use crate::RQResult;
 
 impl Client {
-    pub(crate) async fn process_group_message_part(
-        self: &Arc<Self>,
-        group_message_part: GroupMessagePart,
-    ) -> RQResult<()> {
-        // receipt message
-        if group_message_part.from_uin == self.uin().await {
-            if let Some(tx) = self
-                .receipt_waiters
-                .lock()
-                .await
-                .cache_remove(&group_message_part.rand)
-            {
-                let _ = tx.send(group_message_part.seq);
-                return Ok(());
-            }
-        }
+    pub(crate) async fn parse_group_message(
+        &self,
+        mut parts: Vec<GroupMessagePart>,
+    ) -> RQResult<GroupMessage> {
+        parts.sort_by(|a, b| a.pkg_index.cmp(&b.pkg_index));
 
-        if let Some(ptt) = group_message_part.ptt {
-            self.handler
-                .handle(QEvent::GroupAudioMessage(GroupAudioMessageEvent {
-                    client: self.clone(),
-                    inner: GroupAudioMessage {
-                        seqs: vec![group_message_part.seq],
-                        rands: vec![group_message_part.rand],
-                        group_code: group_message_part.group_code,
-                        group_name: group_message_part.group_name,
-                        group_card: group_message_part.group_card,
-                        from_uin: group_message_part.from_uin,
-                        time: group_message_part.time,
-                        audio: GroupAudio(ptt),
-                    },
-                }))
-                .await;
-            return Ok(());
-        }
+        let group_code = parts.first().map(|p| p.group_code).unwrap_or_default();
+        let group_name = parts
+            .first_mut()
+            .map(|p| std::mem::take(&mut p.group_name))
+            .unwrap_or_default();
+        let group_card = parts
+            .first_mut()
+            .map(|p| std::mem::take(&mut p.group_card))
+            .unwrap_or_default();
+        let from_uin = parts.first().map(|p| p.from_uin).unwrap_or_default();
+        let time = parts.first().map(|p| p.time).unwrap_or_default();
 
-        // merge parts
-        let pkg_num = group_message_part.pkg_num;
-        let group_msg = if pkg_num > 1 {
-            let mut builder = self.group_message_builder.write().await;
-            if builder.cache_misses().unwrap_or_default() > 100 {
-                builder.flush();
-                builder.cache_reset_metrics();
-            }
-            // muti-part
-            let div_seq = group_message_part.div_seq;
-            let parts = builder.cache_get_or_set_with(div_seq, Vec::new);
-            parts.push(group_message_part);
-            if parts.len() < pkg_num as usize {
-                // wait for more parts
-                None
-            } else {
-                Some(builder.cache_remove(&div_seq).unwrap_or_default())
-            }
-        } else {
-            // single-part
-            Some(vec![group_message_part])
-        };
-
-        // handle message
-        if let Some(group_msg) = group_msg {
-            // message is finish
-            self.handler
-                .handle(QEvent::GroupMessage(GroupMessageEvent {
-                    client: self.clone(),
-                    inner: self.parse_group_message(group_msg).await?,
-                }))
-                .await; //todo
+        let mut seqs = Vec::with_capacity(parts.len());
+        let mut rands = Vec::with_capacity(parts.len());
+        let mut elements = Vec::with_capacity(6); // number by experience
+        for p in parts {
+            seqs.push(p.seq);
+            rands.push(p.rand);
+            elements.extend(p.elems.into_iter().filter_map(|e| e.elem));
         }
-        Ok(())
+        // dbg!(elements.len()); // most of message will be 4, complex message like share card is 5
+
+        Ok(GroupMessage {
+            seqs,
+            rands,
+            group_code,
+            group_name,
+            group_card,
+            from_uin,
+            time,
+            elements: MessageChain(elements),
+        })
+
+        // TODO: extInfo
+        // TODO: group_card_update
+        // TODO: ptt_store
     }
 
     pub(crate) async fn parse_group_message(
@@ -292,7 +264,7 @@ impl Client {
                                         if profile_info.field.unwrap_or_default() == 1 {
                                             let new_group_name =
                                                 String::from_utf8_lossy(profile_info.value())
-                                                    .to_string();
+                                                    .into_owned();
                                             let update = GroupNameUpdate {
                                                 group_code: mod_group_profile
                                                     .group_code
