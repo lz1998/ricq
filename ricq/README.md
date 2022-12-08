@@ -4,9 +4,9 @@
 
 QQ Android 协议的 Rust 实现，移植于 [OICQ](https://github.com/takayama-lily/oicq)。
 
-- [ricq](https://crates.io/crates/ricq) 提供异步 API
-- [ricq-core](https://crates.io/crates/ricq-core) 不带 IO 的数据包构造器、解析器（通常用于 FFI）
-- [ricq-axum-api](https://github.com/lz1998/ricq/tree/master/examples/ricq-axum-api) 提供 HTTP API 形式的登录接口，配合 [ricq-react-ui](https://github.com/lz1998/ricq-react-ui)，只需要开发登录后的逻辑。
+- [ricq](https://crates.io/crates/ricq)：提供异步 API
+- [ricq-core](https://crates.io/crates/ricq-core)：不带 IO 的数据包构造器、解析器（通常用于 FFI）
+- [ricq-axum-api](https://github.com/lz1998/ricq/tree/master/examples/ricq-axum-api)：提供 HTTP API 形式的登录接口，配合 [ricq-react-ui](https://github.com/lz1998/ricq-react-ui)，只需要开发登录后的逻辑。
 
 ## 如何使用
 
