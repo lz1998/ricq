@@ -106,7 +106,7 @@ QQ Android 协议的 Rust 实现，移植于 [OICQ](https://github.com/takayama-
 - [x] 设置群精华消息
 - [x] 发送好友消息
 - [x] 发送临时会话消息
-- [x] 修改群成员Card
+- [x] 修改群成员 Card
 - [x] 撤回群消息
 - [x] 撤回好友消息
 - [x] 处理被邀请加群请求
