@@ -1,7 +1,9 @@
 use bytes::{BufMut, BytesMut};
 
 use crate::command::common::PbToBytes;
-use crate::command::oidb_svc::music::{MusicShare, MusicVersion, SendMusicTarget};
+use crate::command::oidb_svc::link::LinkShare;
+use crate::command::oidb_svc::music::{MusicShare, MusicVersion};
+use crate::command::oidb_svc::share::ShareTarget;
 use crate::command::oidb_svc::ProfileDetailUpdate;
 use crate::pb;
 use crate::protocol::packet::Packet;
@@ -304,7 +306,7 @@ impl super::super::super::Engine {
 
     pub fn build_share_music_request_packet(
         &self,
-        send_music_target: SendMusicTarget,
+        share_target: ShareTarget,
         music_share: MusicShare,
         music_version: &'static MusicVersion,
     ) -> Packet {
@@ -323,11 +325,11 @@ impl super::super::super::Engine {
                 android_signature: music_version.signature.into(),
                 ..Default::default()
             }),
-            send_type: send_music_target.send_type(),
-            recv_uin: match send_music_target {
-                SendMusicTarget::Friend(uin) => uin as u64,
-                SendMusicTarget::Group(code) => code as u64,
-                SendMusicTarget::Guild { channel_id, .. } => channel_id,
+            send_type: share_target.send_type(),
+            recv_uin: match share_target {
+                ShareTarget::Friend(uin) => uin as u64,
+                ShareTarget::Group(code) => code as u64,
+                ShareTarget::Guild { channel_id, .. } => channel_id,
             },
             rich_msg_body: Some(pb::oidb::Db77RichMsgBody {
                 title: music_share.title,
@@ -338,7 +340,51 @@ impl super::super::super::Engine {
                 music_url: music_share.music_url,
                 ..Default::default()
             }),
-            recv_guild_id: if let SendMusicTarget::Guild { guild_id, .. } = send_music_target {
+            recv_guild_id: if let ShareTarget::Guild { guild_id, .. } = share_target {
+                guild_id
+            } else {
+                0
+            },
+            ..Default::default()
+        };
+        let payload = self.transport.encode_oidb_packet(0xb77, 9, body.to_bytes());
+        self.uni_packet("OidbSvc.0xb77_9", payload)
+    }
+
+    pub fn build_share_link_request_packet(
+        &self,
+        share_target: ShareTarget,
+        link_share: LinkShare,
+    ) -> Packet {
+        let body = pb::oidb::Db77ReqBody {
+            app_id: 100446242,
+            app_type: 1,
+            msg_style: 0,
+            client_info: Some(pb::oidb::Db77ClientInfo {
+                platform: 1,
+                sdk_version: "0.0.0".into(),
+                android_package_name: "com.tencent.mtt".into(),
+                android_signature: "d8391a394d4a179e6fe7bdb8a301258b".into(),
+                ..Default::default()
+            }),
+            send_type: share_target.send_type(),
+            recv_uin: match share_target {
+                ShareTarget::Friend(uin) => uin as u64,
+                ShareTarget::Group(code) => code as u64,
+                ShareTarget::Guild { channel_id, .. } => channel_id,
+            },
+            rich_msg_body: Some(pb::oidb::Db77RichMsgBody {
+                summary: link_share.summary.unwrap_or_default(),
+                brief: link_share
+                    .brief
+                    .unwrap_or_else(|| format!("[分享] {}", link_share.title)),
+                title: link_share.title,
+                url: link_share.url,
+                picture_url: link_share.picture_url.unwrap_or_else(|| "".into()),
+                music_url: String::new(),
+                action: String::new(),
+            }),
+            recv_guild_id: if let ShareTarget::Guild { guild_id, .. } = share_target {
                 guild_id
             } else {
                 0
