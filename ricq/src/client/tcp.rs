@@ -8,7 +8,7 @@ pub async fn tcp_connect_timeout(
     addr: SocketAddr,
     timeout: Duration,
 ) -> tokio::io::Result<TcpStream> {
-    let conn = tokio::net::TcpStream::connect(SocketAddr::from(addr));
+    let conn = tokio::net::TcpStream::connect(addr);
     tokio::time::timeout(timeout, conn)
         .await
         .map_err(tokio::io::Error::from)
@@ -23,7 +23,7 @@ async fn race_addrs(
     let mut join_set = JoinSet::new();
     for addr in addrs {
         join_set.spawn(async move {
-            let a = addr.clone();
+            let a = addr;
             tcp_connect_timeout(addr, timeout).await.map(|s| (a, s))
         });
     }
@@ -70,8 +70,8 @@ mod tests {
             SocketAddr::new(Ipv4Addr::new(127, 0, 0, 1).into(), 8000),
         ];
         let out = race_addrs(addrs.clone(), Duration::from_secs(10)).await;
-        println!("{:?}", out);
+        println!("{out:?}");
         let str = tcp_connect_fastest(addrs, Duration::from_secs(10)).await;
-        println!("{:?}", str);
+        println!("{str:?}");
     }
 }

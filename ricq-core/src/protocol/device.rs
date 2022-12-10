@@ -108,7 +108,7 @@ pub fn random_string(len: usize) -> String {
 }
 
 pub fn random_uuid<RNG: RngCore>(rng: &mut RNG) -> String {
-    let r = md5::compute(&rng.gen::<[u8; 16]>()).to_vec();
+    let r = md5::compute(rng.gen::<[u8; 16]>()).to_vec();
     format!(
         "{}-{}-{}-{}-{}",
         encode_hex(&r[0..4]),

@@ -379,7 +379,7 @@ impl Client {
     }
 
     async fn push_trans_exists(&self, info: &OnlinePushTrans) -> bool {
-        let msg_time = info.msg_time as i32;
+        let msg_time = info.msg_time;
         if self.start_time > msg_time {
             return true;
         }

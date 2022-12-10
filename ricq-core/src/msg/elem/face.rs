@@ -85,7 +85,7 @@ mod tests {
     #[test]
     fn test() {
         let name = Face::name(1);
-        println!("{:?}", name)
+        println!("{name:?}")
     }
 }
 

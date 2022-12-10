@@ -236,7 +236,7 @@ mod tests {
         let mut chain = MessageChain::default();
         chain.push(Text::new("hello".into()));
         for e in chain.into_iter() {
-            println!("{:?}", e)
+            println!("{e:?}")
         }
     }
 
@@ -256,11 +256,11 @@ mod tests {
             ..Default::default()
         });
         chain.push(LightApp::new("{}".into()));
-        println!("{}", chain);
+        println!("{chain}");
         println!("{:?}", chain.reply());
         println!("{:?}", chain.anonymous());
         for item in chain {
-            println!("{:?}", item)
+            println!("{item:?}")
         }
     }
 
@@ -285,11 +285,11 @@ mod tests {
             .push(LightApp::new("{}".into()));
 
         let chain = builder.build();
-        println!("{}", chain);
+        println!("{chain}");
         assert!(chain.reply().is_some());
         assert!(chain.anonymous().is_some());
         for item in chain {
-            println!("{:?}", item)
+            println!("{item:?}")
         }
     }
 }

@@ -17,7 +17,7 @@ impl At {
     pub fn new(target: i64) -> Self {
         Self {
             target,
-            display: format!("@{}", target),
+            display: format!("@{target}"),
         }
     }
 }

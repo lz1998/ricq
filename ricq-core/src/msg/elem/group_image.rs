@@ -34,7 +34,7 @@ impl GroupImage {
 
     pub fn url(&self) -> String {
         if let Some(orig_url) = &self.orig_url {
-            format!("https://gchat.qpic.cn{}", orig_url)
+            format!("https://gchat.qpic.cn{orig_url}")
         } else {
             format!(
                 "https://gchat.qpic.cn/gchatpic_new/0/0-0-{}/0?term=2",

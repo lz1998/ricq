@@ -54,7 +54,7 @@ impl From<RQAddr> for SocketAddr {
     fn from(addr: RQAddr) -> Self {
         let mut ip: [u8; 4] = addr.0.to_be_bytes();
         ip.reverse();
-        SocketAddr::new(Ipv4Addr::from(ip).into(), addr.1 as u16)
+        SocketAddr::new(Ipv4Addr::from(ip).into(), addr.1)
     }
 }
 

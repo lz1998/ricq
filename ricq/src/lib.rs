@@ -1,4 +1,3 @@
-#![feature(map_first_last)]
 #![feature(async_closure)]
 #![feature(let_chains)]
 #![feature(result_flattening)]

@@ -26,7 +26,7 @@ impl super::super::super::Engine {
             body.get_i32();
             let code = body.get_u8();
             if code != 0 {
-                return Err(RQError::Decode(format!("body code: {}", code)));
+                return Err(RQError::Decode(format!("body code: {code}")));
             }
             let sig = body.read_bytes_short();
             body.get_u16();
@@ -104,8 +104,7 @@ impl super::super::super::Engine {
         let tlv_map = payload.read_tlv_map(2);
         if status != 0 {
             return Err(RQError::Decode(format!(
-                "decode_exchange_emp_response status: {}",
-                status
+                "decode_exchange_emp_response status: {status}"
             )));
         }
         let encrypt_key = if sub_command == 11 {

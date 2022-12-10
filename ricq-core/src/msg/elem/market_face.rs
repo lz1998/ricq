@@ -131,7 +131,7 @@ impl From<FingerGuessing> for MarketFace {
             encrypt_key: vec![
                 55, 100, 101, 51, 57, 102, 101, 98, 99, 102, 52, 53, 101, 54, 100, 98,
             ],
-            magic_value: format!("rscType?1;value={}", value),
+            magic_value: format!("rscType?1;value={value}"),
         }
     }
 }
