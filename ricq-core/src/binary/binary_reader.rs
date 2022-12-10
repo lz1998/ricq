@@ -16,12 +16,12 @@ where
 {
     fn read_string(&mut self) -> String {
         let len = self.get_i32() as usize - 4;
-        String::from_utf8_lossy(&self.copy_to_bytes(len)).to_string()
+        String::from_utf8_lossy(&self.copy_to_bytes(len)).into_owned()
     }
 
     fn read_string_short(&mut self) -> String {
         let len = self.get_u16() as usize;
-        String::from_utf8_lossy(&self.copy_to_bytes(len)).to_string()
+        String::from_utf8_lossy(&self.copy_to_bytes(len)).into_owned()
     }
 
     fn read_bytes_short(&mut self) -> Bytes {
@@ -58,6 +58,6 @@ where
     }
 
     fn read_string_limit(&mut self, limit: usize) -> String {
-        String::from_utf8_lossy(&self.copy_to_bytes(limit)).to_string()
+        String::from_utf8_lossy(&self.copy_to_bytes(limit)).into_owned()
     }
 }

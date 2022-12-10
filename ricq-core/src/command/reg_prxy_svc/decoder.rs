@@ -28,7 +28,7 @@ impl super::super::super::Engine {
             .map(|i| OtherClientInfo {
                 app_id: i.instance_id as i64,
                 instance_id: i.instance_id,
-                sub_platform: String::from_utf8_lossy(&i.sub_platform).to_string(),
+                sub_platform: String::from_utf8_lossy(&i.sub_platform).into_owned(),
                 device_kind: match i.u_client_type {
                     65793 => "Windows".to_string(),
                     65805 | 68104 => "aPad".to_string(),
@@ -36,7 +36,7 @@ impl super::super::super::Engine {
                     68361 | 72194 => "iPad".to_string(),
                     75023 | 78082 | 78096 => "Watch".to_string(),
                     77313 => "Windows TIM".to_string(),
-                    _ => String::from_utf8_lossy(&i.sub_platform).to_string(),
+                    _ => String::from_utf8_lossy(&i.sub_platform).into_owned(),
                 },
             })
             .collect())

@@ -18,7 +18,7 @@ impl super::super::super::Engine {
         }
         Ok(Some(Anonymous {
             anon_id: vec![],
-            nick: String::from_utf8_lossy(&rsp.anony_name.unwrap_or_default()).to_string(),
+            nick: String::from_utf8_lossy(&rsp.anony_name.unwrap_or_default()).into_owned(),
             portrait_index: rsp.portrait_index.unwrap_or_default() as i32,
             bubble_index: rsp.bubble_index.unwrap_or_default() as i32,
             expire_time: rsp.expired_time.unwrap_or_default() as i32,
