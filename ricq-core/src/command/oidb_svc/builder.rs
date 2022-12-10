@@ -1,10 +1,7 @@
 use bytes::{BufMut, BytesMut};
 
+use super::*;
 use crate::command::common::PbToBytes;
-use crate::command::oidb_svc::link::LinkShare;
-use crate::command::oidb_svc::music::{MusicShare, MusicVersion};
-use crate::command::oidb_svc::share::ShareTarget;
-use crate::command::oidb_svc::ProfileDetailUpdate;
 use crate::pb;
 use crate::protocol::packet::Packet;
 
@@ -308,7 +305,7 @@ impl super::super::super::Engine {
         &self,
         share_target: ShareTarget,
         music_share: MusicShare,
-        music_version: &'static MusicVersion,
+        music_version: MusicVersion,
     ) -> Packet {
         let body = pb::oidb::Db77ReqBody {
             app_id: music_version.app_id,

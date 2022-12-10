@@ -1,14 +1,9 @@
 use bytes::Bytes;
 use ricq_core::{RQError, RQResult};
 
-use crate::protocol::protobuf::FirstViewMsg;
-use crate::protocol::{
-    protobuf, protobuf::GuildUserProfile as GuildUserProf, FirstViewResponse, GuildImageStoreResp,
-};
-use crate::{
-    ricq_core::command::common::PbToBytes,
-    ricq_core::pb::{self},
-};
+use crate::protocol::protobuf::{self, FirstViewMsg, GuildUserProfile};
+use crate::protocol::{FirstViewResponse, GuildImageStoreResp};
+use crate::ricq_core::pb;
 use prost::Message;
 use ricq_core::common::RQAddr;
 
@@ -19,7 +14,7 @@ impl Decoder {
         &self,
         payload: Bytes,
     ) -> RQResult<Option<FirstViewResponse>> {
-        let rep = protobuf::FirstViewRsp::from_bytes(&payload)?;
+        let rep = protobuf::FirstViewRsp::decode(&*payload)?;
 
         match rep {
             protobuf::FirstViewRsp {
@@ -48,16 +43,13 @@ impl Decoder {
     }
 
     pub fn decode_first_view_msg(&self, payload: Bytes) -> RQResult<FirstViewMsg> {
-        let msg = FirstViewMsg::from_bytes(&payload)?;
-
+        let msg = FirstViewMsg::decode(&*payload)?;
         Ok(msg)
     }
 
-    pub fn decode_guild_user_profile(&self, payload: Bytes) -> RQResult<Option<GuildUserProf>> {
-        let pkg = pb::oidb::OidbssoPkg::from_bytes(&payload)?;
-
-        let oidb = protobuf::ChannelOidb0xfc9Rsp::from_bytes(&pkg.bodybuffer)?;
-
+    pub fn decode_guild_user_profile(&self, payload: Bytes) -> RQResult<Option<GuildUserProfile>> {
+        let pkg = pb::oidb::OidbssoPkg::decode(&*payload)?;
+        let oidb = protobuf::ChannelOidb0xfc9Rsp::decode(&*pkg.bodybuffer)?;
         Ok(oidb.profile)
     }
 
@@ -72,7 +64,7 @@ impl Decoder {
             .ok_or(RQError::EmptyField("tryup_img_rsp"))?;
         if rsp.result() != 0 {
             return Err(RQError::Other(
-                String::from_utf8_lossy(&rsp.fail_msg.unwrap_or_default()).to_string(),
+                String::from_utf8_lossy(&rsp.fail_msg.unwrap_or_default()).into_owned(),
             ));
         }
 

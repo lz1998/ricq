@@ -2,10 +2,9 @@ use bytes::Bytes;
 use std::time::Duration;
 
 pub use crate::command::multi_msg::{ForwardMessage, ForwardNode, MessageNode};
-pub use crate::command::oidb_svc::link::LinkShare;
-pub use crate::command::oidb_svc::music as music_share; // TODO: merge to share module
-pub use crate::command::oidb_svc::share::ShareTarget;
-pub use crate::command::oidb_svc::ProfileDetailUpdate;
+pub use crate::command::oidb_svc::{
+    LinkShare, MusicShare, MusicVersion, ProfileDetailUpdate, ShareTarget,
+};
 pub use crate::command::stat_svc::{CustomOnlineStatus, ExtOnlineStatus, OnlineStatus, Status};
 use crate::msg::MessageChain;
 use crate::{jce, pb};

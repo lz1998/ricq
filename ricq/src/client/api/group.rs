@@ -3,13 +3,11 @@ use std::time::{Duration, UNIX_EPOCH};
 
 use bytes::Bytes;
 use cached::Cached;
+use prost::Message;
 
 use ricq_core::command::common::PbToBytes;
 use ricq_core::command::img_store::GroupImageStoreResp;
 use ricq_core::command::multi_msg::gen_forward_preview;
-use ricq_core::command::oidb_svc::link::LinkShare;
-use ricq_core::command::oidb_svc::music::{MusicShare, MusicType};
-use ricq_core::command::oidb_svc::share::ShareTarget;
 use ricq_core::command::{friendlist::*, oidb_svc::*, profile_service::*};
 use ricq_core::common::group_code2uin;
 use ricq_core::hex::encode_hex;
@@ -437,12 +435,12 @@ impl super::super::Client {
         &self,
         group_code: i64,
         music_share: MusicShare,
-        music_type: MusicType,
+        music_version: MusicVersion,
     ) -> RQResult<()> {
         let req = self.engine.read().await.build_share_music_request_packet(
             ShareTarget::Group(group_code),
             music_share,
-            music_type.version(),
+            music_version,
         );
         let _ = self.send_and_wait(req).await?;
         Ok(())
@@ -714,7 +712,7 @@ impl super::super::Client {
                 },
             )
             .await?;
-        let rsp = pb::short_video::ShortVideoUploadRsp::from_bytes(&rsp)
+        let rsp = pb::short_video::ShortVideoUploadRsp::decode(&*rsp)
             .map_err(|_| RQError::Decode("ShortVideoUploadRsp".into()))?;
         Ok(VideoFile {
             name: format!("{}.mp4", encode_hex(&video_md5)),
