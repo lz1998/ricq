@@ -152,7 +152,7 @@ impl LoginResponse {
                 t104: tlv_map.remove(&0x104),
                 verify_url: tlv_map
                     .remove(&0x192)
-                    .map(|v| String::from_utf8_lossy(&v).to_string()),
+                    .map(|v| String::from_utf8_lossy(&v).into_owned()),
                 image_captcha: tlv_map.remove(&0x165).map(|mut img_data| {
                     let sign_len = img_data.get_u16();
                     img_data.get_u16();
@@ -169,10 +169,10 @@ impl LoginResponse {
                 sms_phone: tlv_map.remove(&0x178).map(|_| "todo".into()),
                 verify_url: tlv_map
                     .remove(&0x204)
-                    .map(|v| String::from_utf8_lossy(&v).to_string()),
+                    .map(|v| String::from_utf8_lossy(&v).into_owned()),
                 message: tlv_map
                     .remove(&0x17e)
-                    .map(|v| String::from_utf8_lossy(&v).to_string()),
+                    .map(|v| String::from_utf8_lossy(&v).into_owned()),
                 rand_seed: tlv_map.remove(&0x403),
                 t104: tlv_map.remove(&0x104),
                 t174: tlv_map.remove(&0x174),

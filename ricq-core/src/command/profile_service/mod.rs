@@ -70,6 +70,6 @@ pub struct RichSigInfo {
 
 impl RichSigInfo {
     pub fn get_signature(&self) -> String {
-        String::from_utf8_lossy(&self.infos.get(&3).cloned().unwrap_or_default()).to_string()
+        String::from_utf8_lossy(&self.infos.get(&3).cloned().unwrap_or_default()).into_owned()
     }
 }

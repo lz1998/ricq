@@ -25,8 +25,8 @@ impl super::super::super::Engine {
                 Some(GroupInfo {
                     uin: info.group_uin? as i64,
                     code,
-                    name: String::from_utf8_lossy(&info.group_name?).to_string(),
-                    memo: String::from_utf8_lossy(&info.group_memo?).to_string(),
+                    name: String::from_utf8_lossy(&info.group_name?).into_owned(),
+                    memo: String::from_utf8_lossy(&info.group_memo?).into_owned(),
                     owner_uin: info.group_owner? as i64,
                     group_create_time: info.group_create_time.unwrap_or_default(),
                     group_level: info.group_level.unwrap_or_default(),
