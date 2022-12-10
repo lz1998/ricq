@@ -3,9 +3,7 @@ use std::time::Duration;
 use bytes::BufMut;
 
 use ricq_core::command::long_conn::OffPicUpResp;
-use ricq_core::command::oidb_svc::link::LinkShare;
-use ricq_core::command::oidb_svc::music::{MusicShare, MusicType};
-use ricq_core::command::oidb_svc::share::ShareTarget;
+use ricq_core::command::oidb_svc::{LinkShare, MusicShare, MusicVersion, ShareTarget};
 use ricq_core::command::{friendlist::*, profile_service::*};
 use ricq_core::hex::encode_hex;
 use ricq_core::highway::BdhInput;
@@ -255,12 +253,12 @@ impl super::super::Client {
         &self,
         uin: i64,
         music_share: MusicShare,
-        music_type: MusicType,
+        music_version: MusicVersion,
     ) -> RQResult<()> {
         let req = self.engine.read().await.build_share_music_request_packet(
             ShareTarget::Friend(uin),
             music_share,
-            music_type.version(),
+            music_version,
         );
         let _ = self.send_and_wait(req).await?;
         Ok(())
