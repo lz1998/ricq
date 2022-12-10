@@ -6,9 +6,6 @@ pub trait OptionSet: Sized {
 impl<T: Sized> OptionSet for T {
     #[inline]
     fn option_set(&mut self, value: Option<Self>) {
-        match value {
-            Some(value) => *self = value,
-            None => (),
-        }
+        if let Some(value) = value { *self = value }
     }
 }

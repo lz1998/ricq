@@ -44,33 +44,25 @@ impl Client {
         if self.start_time > msg_time as i32 {
             return true;
         }
-        match self
+        self
             .group_sys_message_cache
             .read()
             .await
             .self_invited
             .iter()
-            .find(|m| m.msg_seq == msg_seq)
-        {
-            None => false,
-            Some(_) => true,
-        }
+            .any(|m| m.msg_seq == msg_seq)
     }
 
     async fn join_group_request_exists(&self, msg_seq: i64, msg_time: i64) -> bool {
         if self.start_time > msg_time as i32 {
             return true;
         }
-        match self
+        self
             .group_sys_message_cache
             .read()
             .await
             .join_group_requests
             .iter()
-            .find(|m| m.msg_seq == msg_seq)
-        {
-            None => false,
-            Some(_) => true,
-        }
+            .any(|m| m.msg_seq == msg_seq)
     }
 }
