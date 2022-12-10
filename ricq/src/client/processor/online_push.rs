@@ -3,13 +3,11 @@ use std::time::Duration;
 
 use bytes::{Buf, Bytes};
 use cached::Cached;
-use futures_util::{stream, StreamExt};
 
-use ricq_core::command::common::PbToBytes;
+use prost::Message;
 use ricq_core::command::online_push::GroupMessagePart;
 use ricq_core::command::online_push::{OnlinePushTrans, PushTransInfo};
 use ricq_core::msg::MessageChain;
-use ricq_core::pb::msg;
 use ricq_core::structs::{
     DeleteFriend, FriendInfo, FriendMessageRecall, FriendPoke, GroupAudio, GroupAudioMessage,
     GroupLeave, GroupMessage, GroupMessageRecall, GroupMute, GroupNameUpdate,
@@ -103,31 +101,43 @@ impl Client {
         mut parts: Vec<GroupMessagePart>,
     ) -> RQResult<GroupMessage> {
         parts.sort_by(|a, b| a.pkg_index.cmp(&b.pkg_index));
-        let group_message = GroupMessage {
-            seqs: parts.iter().map(|p| p.seq).collect(),
-            rands: parts.iter().map(|p| p.rand).collect(),
-            group_code: parts.first().map(|p| p.group_code).unwrap_or_default(),
-            group_name: parts
-                .first_mut()
-                .map(|p| std::mem::take(&mut p.group_name))
-                .unwrap_or_default(),
-            group_card: parts
-                .first_mut()
-                .map(|p| std::mem::take(&mut p.group_card))
-                .unwrap_or_default(),
-            from_uin: parts.first().map(|p| p.from_uin).unwrap_or_default(),
-            time: parts.first().map(|p| p.time).unwrap_or_default(),
-            elements: MessageChain::from(
-                parts
-                    .into_iter()
-                    .flat_map(|p| p.elems)
-                    .collect::<Vec<msg::Elem>>(),
-            ),
-        };
-        //todo extInfo
-        //todo group_card_update
-        //todo ptt_store
-        Ok(group_message)
+
+        let group_code = parts.first().map(|p| p.group_code).unwrap_or_default();
+        let group_name = parts
+            .first_mut()
+            .map(|p| std::mem::take(&mut p.group_name))
+            .unwrap_or_default();
+        let group_card = parts
+            .first_mut()
+            .map(|p| std::mem::take(&mut p.group_card))
+            .unwrap_or_default();
+        let from_uin = parts.first().map(|p| p.from_uin).unwrap_or_default();
+        let time = parts.first().map(|p| p.time).unwrap_or_default();
+
+        let mut seqs = Vec::with_capacity(parts.len());
+        let mut rands = Vec::with_capacity(parts.len());
+        let mut elements = Vec::with_capacity(6); // number by experience
+        for p in parts {
+            seqs.push(p.seq);
+            rands.push(p.rand);
+            elements.extend(p.elems.into_iter().filter_map(|e| e.elem));
+        }
+        // dbg!(elements.len()); // most of message will be 4, complex message like share card is 5
+
+        Ok(GroupMessage {
+            seqs,
+            rands,
+            group_code,
+            group_name,
+            group_card,
+            from_uin,
+            time,
+            elements: MessageChain(elements),
+        })
+
+        // TODO: extInfo
+        // TODO: group_card_update
+        // TODO: ptt_store
     }
 
     pub(crate) async fn process_push_req(self: &Arc<Self>, msg_infos: Vec<jce::PushMessageInfo>) {
@@ -165,33 +175,29 @@ impl Client {
                         0x10 | 0x11 | 0x14 | 0x15 => {
                             // group notify msg
                             r.advance(1);
-                            let b = pb::notify::NotifyMsgBody::from_bytes(&r).unwrap();
+                            let b = pb::notify::NotifyMsgBody::decode(&*r).unwrap();
                             if let Some(opt_msg_recall) = b.opt_msg_recall {
                                 let operator_uin = opt_msg_recall.uin;
-                                let recalls: Vec<pb::notify::RecalledMessageMeta> = opt_msg_recall
-                                    .recalled_msg_list
-                                    .into_iter()
-                                    .filter(|rm| rm.msg_type != 2)
-                                    .collect();
-                                stream::iter(recalls)
-                                    .map(|rm| GroupMessageRecall {
-                                        msg_seq: rm.seq,
-                                        group_code,
-                                        operator_uin,
-                                        author_uin: rm.author_uin,
-                                        time: rm.time,
-                                    })
-                                    .for_each(async move |recall| {
-                                        self.handler
-                                            .handle(QEvent::GroupMessageRecall(
-                                                GroupMessageRecallEvent {
-                                                    client: self.clone(),
-                                                    inner: recall,
+                                // use map iterator here will produce massive asm code
+                                for rm in opt_msg_recall.recalled_msg_list {
+                                    if rm.msg_type == 2 {
+                                        continue;
+                                    }
+                                    self.handler
+                                        .handle(QEvent::GroupMessageRecall(
+                                            GroupMessageRecallEvent {
+                                                client: self.clone(),
+                                                inner: GroupMessageRecall {
+                                                    msg_seq: rm.seq,
+                                                    group_code,
+                                                    operator_uin,
+                                                    author_uin: rm.author_uin,
+                                                    time: rm.time,
                                                 },
-                                            ))
-                                            .await;
-                                    })
-                                    .await;
+                                            },
+                                        ))
+                                        .await;
+                                }
                             }
                             // TODO 一些没什么用的 event 暂时没写
                         }
@@ -203,28 +209,22 @@ impl Client {
                     let msg: jce::MsgType0x210 = jcers::from_buf(&mut v_msg).unwrap();
                     match msg.sub_msg_type {
                         0x8A | 0x8B => {
-                            let s8a = pb::Sub8A::from_bytes(&msg.v_protobuf).unwrap();
-                            stream::iter(s8a.msg_info)
-                                .map(|m| FriendMessageRecall {
-                                    msg_seq: m.msg_seq,
-                                    friend_uin: m.from_uin,
-                                    time: m.msg_time,
-                                })
-                                .for_each(async move |m| {
-                                    self.handler
-                                        .handle(QEvent::FriendMessageRecall(
-                                            FriendMessageRecallEvent {
-                                                client: self.clone(),
-                                                inner: m,
-                                            },
-                                        ))
-                                        .await;
-                                })
-                                .await;
+                            let s8a = pb::Sub8A::decode(&*msg.v_protobuf).unwrap();
+                            for m in s8a.msg_info {
+                                self.handler
+                                    .handle(QEvent::FriendMessageRecall(FriendMessageRecallEvent {
+                                        client: self.clone(),
+                                        inner: FriendMessageRecall {
+                                            msg_seq: m.msg_seq,
+                                            friend_uin: m.from_uin,
+                                            time: m.msg_time,
+                                        },
+                                    }))
+                                    .await;
+                            }
                         }
                         0xB3 => {
-                            let msg_add_frd_notify =
-                                pb::SubB3::from_bytes(&msg.v_protobuf).unwrap();
+                            let msg_add_frd_notify = pb::SubB3::decode(&*msg.v_protobuf).unwrap();
                             if let Some(f) = msg_add_frd_notify.msg_add_frd_notify {
                                 self.handler
                                     .handle(QEvent::NewFriend(NewFriendEvent {
@@ -239,7 +239,7 @@ impl Client {
                             }
                         }
                         0xD4 => {
-                            let d4 = pb::SubD4::from_bytes(&msg.v_protobuf).unwrap();
+                            let d4 = pb::SubD4::decode(&*msg.v_protobuf).unwrap();
                             self.handler
                                 .handle(QEvent::GroupLeave(GroupLeaveEvent {
                                     client: self.clone(),
@@ -252,15 +252,15 @@ impl Client {
                                 .await;
                         }
                         0x122 | 0x123 => {
-                            let t = pb::notify::GeneralGrayTipInfo::from_bytes(&msg.v_protobuf)
-                                .unwrap();
+                            let t =
+                                pb::notify::GeneralGrayTipInfo::decode(&*msg.v_protobuf).unwrap();
                             let mut sender: i64 = 0;
                             let mut receiver: i64 = 0;
                             for templ in t.msg_templ_param {
                                 if templ.name == "uin_str1" {
-                                    sender = templ.value.parse::<i64>().unwrap_or_default()
+                                    sender = templ.value.parse().unwrap_or_default()
                                 } else if templ.name == "uin_str2" {
-                                    receiver = templ.value.parse::<i64>().unwrap_or_default()
+                                    receiver = templ.value.parse().unwrap_or_default()
                                 }
                             }
                             if sender != 0 {
@@ -273,53 +273,44 @@ impl Client {
                             }
                         }
                         0x27 => {
-                            let s27 = pb::msgtype0x210::SubMsg0x27Body::from_bytes(&msg.v_protobuf)
-                                .unwrap();
+                            let s27 =
+                                pb::msgtype0x210::SubMsg0x27Body::decode(&*msg.v_protobuf).unwrap();
                             for mod_info in s27.mod_infos {
                                 if let Some(mod_group_profile) = mod_info.mod_group_profile {
                                     for profile_info in mod_group_profile.group_profile_infos {
-                                        if profile_info.field.unwrap_or_default() == 1 {
-                                            let new_group_name =
-                                                String::from_utf8_lossy(profile_info.value())
-                                                    .to_string();
-                                            let update = GroupNameUpdate {
-                                                group_code: mod_group_profile
-                                                    .group_code
-                                                    .unwrap_or_default()
-                                                    as i64,
-                                                operator_uin: mod_group_profile
-                                                    .cmd_uin
-                                                    .unwrap_or_default()
-                                                    as i64,
-                                                group_name: new_group_name,
-                                            };
-                                            self.handler
-                                                .handle(QEvent::GroupNameUpdate(
-                                                    GroupNameUpdateEvent {
-                                                        client: self.clone(),
-                                                        inner: update,
-                                                    },
-                                                ))
-                                                .await;
+                                        if profile_info.field.unwrap_or_default() != 1 {
+                                            continue;
                                         }
+                                        self.handler
+                                            .handle(QEvent::GroupNameUpdate(GroupNameUpdateEvent {
+                                                client: self.clone(),
+                                                inner: GroupNameUpdate {
+                                                    group_code: mod_group_profile
+                                                        .group_code
+                                                        .unwrap_or_default()
+                                                        as i64,
+                                                    operator_uin: mod_group_profile
+                                                        .cmd_uin
+                                                        .unwrap_or_default()
+                                                        as i64,
+                                                    group_name: String::from_utf8_lossy(
+                                                        profile_info.value(),
+                                                    )
+                                                    .into_owned(),
+                                                },
+                                            }))
+                                            .await;
                                     }
                                 }
                                 if let Some(del_friend) = mod_info.del_friend {
-                                    let delete_friends: Vec<DeleteFriend> = del_friend
-                                        .uins
-                                        .into_iter()
-                                        .map(|uin| DeleteFriend { uin: uin as i64 })
-                                        .collect();
-                                    stream::iter(delete_friends)
-                                        .for_each(async move |delete| {
-                                            self.handler
-                                                .handle(QEvent::DeleteFriend(DeleteFriendEvent {
-                                                    client: self.clone(),
-                                                    inner: delete,
-                                                }))
-                                                .await;
-                                        })
-                                        .await;
+                                    for uin in del_friend.uins {
+                                        self.handler
+                                            .handle(QEvent::DeleteFriend(DeleteFriendEvent {
+                                                client: self.clone(),
+                                                inner: DeleteFriend { uin: uin as i64 },
+                                            }))
+                                            .await;
+                                    }
                                 }
                             }
                         }

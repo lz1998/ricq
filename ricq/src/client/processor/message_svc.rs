@@ -2,14 +2,12 @@ use std::sync::Arc;
 use std::time::UNIX_EPOCH;
 
 use cached::Cached;
-use futures_util::{stream, StreamExt};
 
 use ricq_core::{jce, pb};
 
 use crate::client::event::KickedOfflineEvent;
-use crate::client::NetworkStatus;
+use crate::client::{Client, NetworkStatus};
 use crate::handler::QEvent;
-use crate::Client;
 
 impl Client {
     pub(crate) async fn process_push_notify(self: &Arc<Self>, notify: jce::RequestPushNotify) {
@@ -66,39 +64,33 @@ impl Client {
     }
 
     pub(crate) async fn process_message_sync(self: &Arc<Self>, msgs: Vec<pb::msg::Message>) {
-        stream::iter(msgs)
-            .filter_map(|msg| async {
-                let head = msg.head.clone().unwrap();
-                if self.msg_exists(&head).await {
-                    None
-                } else {
-                    Some(msg)
+        for msg in msgs {
+            let head = msg.head.clone().unwrap();
+            if self.msg_exists(&head).await {
+                continue;
+            }
+            match msg.head.as_ref().unwrap().msg_type() {
+                9 | 10 | 31 | 79 | 97 | 120 | 132 | 133 | 166 | 167 => {
+                    if let Err(err) = self.process_friend_message(msg).await {
+                        tracing::error!("failed to process friend message {err}");
+                    }
                 }
-            })
-            .for_each(|msg| async {
-                match msg.head.as_ref().unwrap().msg_type() {
-                    9 | 10 | 31 | 79 | 97 | 120 | 132 | 133 | 166 | 167 => {
-                        if let Err(err) = self.process_friend_message(msg).await {
-                            tracing::error!("failed to process friend message {}", err);
-                        }
+                33 => {
+                    if let Err(err) = self.process_join_group(msg).await {
+                        tracing::error!("failed to process join group {err}");
                     }
-                    33 => {
-                        if let Err(err) = self.process_join_group(msg).await {
-                            tracing::error!("failed to process join group {}", err);
-                        }
-                    }
-                    140 | 141 => {
-                        if let Err(err) = self.process_temp_message(msg).await {
-                            tracing::error!("failed to process temp message {}", err);
-                        }
-                    }
-                    208 => {
-                        // friend ptt_store
-                    }
-                    _ => tracing::warn!("unhandled sync message type"),
                 }
-            })
-            .await;
+                140 | 141 => {
+                    if let Err(err) = self.process_temp_message(msg).await {
+                        tracing::error!("failed to process temp message {err}");
+                    }
+                }
+                208 => {
+                    // friend ptt_store
+                }
+                _ => tracing::warn!("unhandled sync message type"),
+            }
+        }
     }
 
     async fn msg_exists(&self, head: &pb::msg::MessageHead) -> bool {

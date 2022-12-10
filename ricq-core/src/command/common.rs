@@ -1,5 +1,5 @@
 use bytes::{BufMut, Bytes, BytesMut};
-use prost::{DecodeError, Message};
+use prost::Message;
 
 use crate::protocol::oicq;
 use crate::protocol::packet::*;
@@ -42,24 +42,14 @@ pub fn pack_uni_request_data(data: &[u8]) -> Bytes {
     Bytes::from(r)
 }
 
-pub trait PbToBytes<B>
-where
-    B: Message,
-{
+pub trait PbToBytes<B: Message> {
     fn to_bytes(&self) -> Bytes;
-    fn from_bytes(buf: &[u8]) -> Result<B, DecodeError>;
 }
 
-impl<B> PbToBytes<B> for B
-where
-    B: Message + Default,
-{
+impl<B: Message> PbToBytes<B> for B {
     fn to_bytes(&self) -> Bytes {
         let mut buf = BytesMut::new();
         prost::Message::encode(self, &mut buf).expect("prost encode failed");
         buf.freeze()
-    }
-    fn from_bytes(buf: &[u8]) -> Result<Self, DecodeError> {
-        prost::Message::decode(buf)
     }
 }
