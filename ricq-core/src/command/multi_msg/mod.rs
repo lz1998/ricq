@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::Write;
 
 use crate::msg::MessageChain;
 use crate::pb;
@@ -12,26 +13,17 @@ pub enum ForwardMessage {
 }
 
 pub fn gen_forward_preview(messages: &[ForwardMessage]) -> String {
-    messages
-        .iter()
-        .take(4)
-        .map(|n| match n {
-            ForwardMessage::Message(message) => {
-                format!(
-                    r##"<title size="26" color="#777777" maxLines="4" lineSpace="12">{}: {}</title>"##,
-                    message.sender_name,
-                    message.elements
-                )
-            }
-            ForwardMessage::Forward(forward) => {
-                format!(
-                    r##"<title size="26" color="#777777" maxLines="4" lineSpace="12">{}: [转发消息]</title>"##,
-                    forward.sender_name
-                )
-            }
-        })
-        .collect::<Vec<String>>()
-        .join("")
+    let mut ret = String::new();
+    for msg in messages.into_iter().take(4) {
+        ret.push_str(r##"<title size="26" color="#777777" maxLines="4" lineSpace="12">"##);
+        match msg {
+            ForwardMessage::Message(v) => write!(&mut ret, "{}: {}", v.sender_name, v.elements),
+            ForwardMessage::Forward(v) => write!(&mut ret, "{}: [转发消息]", v.sender_name),
+        }
+        .unwrap();
+        ret.push_str("</title>");
+    }
+    ret
 }
 
 pub struct MessageNode {
