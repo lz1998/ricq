@@ -1,9 +1,11 @@
+use std::fmt;
 use std::io::{Read, Write};
 
 use flate2::read::ZlibDecoder;
 use flate2::write::ZlibEncoder;
 use flate2::Compression;
 
+use super::fmt_extract_attr;
 use crate::msg::{MessageChainBuilder, PushBuilder};
 use crate::msg::{MessageElem, PushElem};
 use crate::pb::msg;
@@ -50,6 +52,18 @@ impl PushElem for RichMsg {
             service_id: Some(elem.service_id),
             ..Default::default()
         }));
+    }
+}
+
+impl fmt::Display for RichMsg {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str("[RichMsg:")?;
+        fmt_extract_attr(f, &self.template1, "brief", " brief=\"", "\"")?;
+        fmt_extract_attr(f, &self.template1, "title", "<title>", "</title>")?;
+        fmt_extract_attr(f, &self.template1, "summary", "<summary>", "</summary>")?;
+        fmt_extract_attr(f, &self.template1, "url", " url=\"", "\"")?;
+        fmt_extract_attr(f, &self.template1, "name", " name=\"", "\"")?;
+        f.write_str("]")
     }
 }
 
