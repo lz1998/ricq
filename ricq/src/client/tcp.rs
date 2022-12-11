@@ -37,8 +37,10 @@ where
 {
     let mut join_set = race_addrs(addrs.into_iter().map(Into::into).collect(), timeout).await;
     let mut ret = Vec::new();
-    while let Some(Ok(Ok((addr, _)))) = join_set.join_next().await {
-        ret.push(addr.into());
+    while let Some(result) = join_set.join_next().await {
+        if let Ok(Ok((addr, _))) = result {
+            ret.push(addr.into());
+        }
     }
     ret
 }
@@ -48,8 +50,10 @@ pub async fn tcp_connect_fastest(
     timeout: Duration,
 ) -> tokio::io::Result<TcpStream> {
     let mut join_set = race_addrs(addrs, timeout).await;
-    while let Some(Ok(Ok((_, stream)))) = join_set.join_next().await {
-        return Ok(stream);
+    while let Some(result) = join_set.join_next().await {
+        if let Ok(Ok((_, stream))) = result {
+            return Ok(stream);
+        }
     }
     Err(tokio::io::Error::new(
         tokio::io::ErrorKind::NotConnected,
