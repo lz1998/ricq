@@ -37,7 +37,7 @@ impl Connector<TcpStream> for DefaultConnector {
 impl crate::Client {
     /// 获取服务器地址
     pub async fn get_address_list(&self) -> Vec<SocketAddr> {
-        const BUILD_IN: [([u8; 4], u16); 6] = [
+        const BUILD_IN: &[([u8; 4], u16)] = &[
             ([42, 81, 172, 81], 80),
             ([114, 221, 148, 59], 14000),
             ([42, 81, 172, 147], 443),
@@ -45,7 +45,7 @@ impl crate::Client {
             ([114, 221, 144, 215], 80),
             ([42, 81, 172, 22], 80),
         ];
-        let mut addrs: Vec<_> = BUILD_IN.into_iter().map(SocketAddr::from).collect();
+        let mut addrs: Vec<SocketAddr> = BUILD_IN.iter().map(|v| SocketAddr::from(*v)).collect();
         if let Ok(res) = tokio::net::lookup_host(("msfwifi.3g.qq.com", 8080)).await {
             addrs.extend(res);
         }
@@ -53,14 +53,13 @@ impl crate::Client {
         addrs
     }
 
-    /// 获取网络状态
     pub fn get_status(&self) -> u8 {
         self.status.load(Ordering::Relaxed)
     }
 
-    /// 开始处理流数据，阻塞当前 Task。该方法返回即为断线。
+    /// 开始处理流数据
     ///
-    /// **Notice: 该方法仅开始处理包，需要手动登录并开始心跳包**
+    ///**Notice: 该方法仅开始处理包，需要手动登录并开始心跳包**
     pub async fn start(self: &Arc<Self>, stream: impl AsyncRead + AsyncWrite) {
         self.status
             .store(NetworkStatus::Running as u8, Ordering::Relaxed);

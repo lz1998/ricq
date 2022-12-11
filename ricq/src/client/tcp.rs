@@ -1,57 +1,64 @@
 use std::net::SocketAddr;
 use std::time::Duration;
 
+use futures_util::StreamExt;
 use tokio::net::TcpStream;
-use tokio::task::JoinSet;
 
-pub async fn tcp_connect_timeout(
-    addr: SocketAddr,
+pub async fn tcp_connect_timeout<Addr>(
+    addr: Addr,
     timeout: Duration,
-) -> tokio::io::Result<TcpStream> {
-    let conn = tokio::net::TcpStream::connect(addr);
-    tokio::time::timeout(timeout, conn)
-        .await
-        .map_err(tokio::io::Error::from)
-        .flatten()
+) -> tokio::io::Result<TcpStream>
+where
+    SocketAddr: From<Addr>,
+{
+    tokio::time::timeout(
+        timeout,
+        tokio::net::TcpStream::connect(SocketAddr::from(addr)),
+    )
+    .await
+    .map_err(tokio::io::Error::from)
+    .flatten()
 }
 
-/// Race the given address, call `join_set.join_next()` to get next fastest `(addr, conn)` pair.
-async fn race_addrs(
-    addrs: Vec<SocketAddr>,
-    timeout: Duration,
-) -> JoinSet<tokio::io::Result<(SocketAddr, TcpStream)>> {
-    let mut join_set = JoinSet::new();
-    for addr in addrs {
-        join_set.spawn(async move {
-            let a = addr;
-            tcp_connect_timeout(addr, timeout).await.map(|s| (a, s))
-        });
+pub async fn tcp_ping<Addr>(addr: Addr, timeout: Duration) -> Duration
+where
+    SocketAddr: From<Addr>,
+{
+    let start = std::time::Instant::now();
+    match tcp_connect_timeout(addr, timeout).await {
+        Ok(_) => start.elapsed(),
+        Err(_) => timeout,
     }
-    join_set
 }
 
 pub async fn sort_addrs<Addr>(addrs: Vec<Addr>, timeout: Duration) -> Vec<Addr>
 where
     SocketAddr: From<Addr>,
-    Addr: From<SocketAddr>,
+    Addr: Clone,
 {
-    let mut join_set = race_addrs(addrs.into_iter().map(Into::into).collect(), timeout).await;
-    let mut ret = Vec::new();
-    while let Some(result) = join_set.join_next().await {
-        if let Ok(Ok((addr, _))) = result {
-            ret.push(addr.into());
-        }
-    }
-    ret
+    let len = addrs.len();
+    let mut result = futures_util::stream::iter(addrs)
+        .map(|addr| async move { (addr.clone(), tcp_ping(addr, timeout).await) })
+        .buffer_unordered(len)
+        .collect::<Vec<_>>()
+        .await;
+    result.sort_unstable_by_key(|(_, duration)| *duration);
+    result.into_iter().map(|(addr, _)| addr).collect()
 }
 
-pub async fn tcp_connect_fastest(
-    addrs: Vec<SocketAddr>,
+pub async fn tcp_connect_fastest<Addr>(
+    addrs: Vec<Addr>,
     timeout: Duration,
-) -> tokio::io::Result<TcpStream> {
-    let mut join_set = race_addrs(addrs, timeout).await;
-    while let Some(result) = join_set.join_next().await {
-        if let Ok(Ok((_, stream))) = result {
+) -> tokio::io::Result<TcpStream>
+where
+    SocketAddr: From<Addr>,
+{
+    let len = addrs.len();
+    let mut output = futures_util::stream::iter(addrs)
+        .map(|addr| tcp_connect_timeout(addr, timeout))
+        .buffer_unordered(len);
+    while let Some(result) = output.next().await {
+        if let Ok(stream) = result {
             return Ok(stream);
         }
     }
@@ -73,9 +80,9 @@ mod tests {
             SocketAddr::new(Ipv4Addr::new(127, 0, 0, 1).into(), 80),
             SocketAddr::new(Ipv4Addr::new(127, 0, 0, 1).into(), 8000),
         ];
-        let out = race_addrs(addrs.clone(), Duration::from_secs(10)).await;
-        println!("{out:?}");
+        let out = sort_addrs(addrs.clone(), Duration::from_secs(10)).await;
+        println!("{:?}", out);
         let str = tcp_connect_fastest(addrs, Duration::from_secs(10)).await;
-        println!("{str:?}");
+        println!("{:?}", str);
     }
 }
