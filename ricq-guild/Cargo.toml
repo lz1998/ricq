@@ -1,9 +1,9 @@
 [package]
 name = "ricq-guild"
-version = "0.1.0"
+version = "0.1.20"
 edition = "2021"
 description = "ricq-guild"
-license = "AGPL-3.0"
+license = "MPL-2.0"
 homepage = "https://github.com/lz1998/ricq"
 repository = "https://github.com/lz1998/ricq"
 readme = "README.md"
@@ -19,11 +19,11 @@ dynamic-protobuf = "0"
 rand = "0"
 
 [dependencies.ricq]
-version = "0.1.17"
+version = "=0.1.20"
 path = "../ricq"
 
 [dependencies.ricq-core]
-version = "0.1.17"
+version = "=0.1.20"
 path = "../ricq-core"
 
 [dependencies.tokio]

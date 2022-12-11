@@ -1,9 +1,9 @@
 [package]
 name = "ricq-core"
-version = "0.1.19"
+version = "0.1.20"
 edition = "2021"
 description = "Packet encoders and decoders for ricq"
-license = "AGPL-3.0"
+license = "MPL-2.0"
 homepage = "https://github.com/lz1998/ricq"
 repository = "https://github.com/lz1998/ricq"
 keywords = ["qq", "protocol", "android", "mirai"]
