@@ -54,8 +54,8 @@ pub enum RQError {
 
     #[error("Token login failed")]
     TokenLoginFailed,
-    #[error("获取文件总数失败")]
+    #[error("failed to get file count")]
     GetFileCountFailed,
-    #[error("获取文件总数失败")]
+    #[error("failed to get file list: {0}")]
     GetFileListFailed(String),
 }
