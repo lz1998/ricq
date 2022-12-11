@@ -12,6 +12,8 @@ keywords = ["qq", "protocol", "android", "mirai"]
 [features]
 default = []
 image-detail = ["image"]
+no-svc-notify = [] # 禁用功能：好友申请、群申请等事件
+no-c2c-sync = [] # 禁用功能：在其他设备发送消息时同步
 
 [dependencies]
 ricq-core = { version = "0.1.16", path = "../ricq-core" }

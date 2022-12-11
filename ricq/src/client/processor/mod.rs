@@ -89,6 +89,7 @@ impl super::Client {
                         }
                     }
                 }
+                #[cfg(not(feature = "no-svc-notify"))]
                 "MessageSvc.PushNotify" => {
                     // c2c流程：
                     // 1. Server 发送 PushNotify 到 Client, 表示有通知需要 Client 拉取 (不带具体内容)
@@ -170,6 +171,7 @@ impl super::Client {
                         }
                     }
                 }
+                #[cfg(not(feature = "no-c2c-sync"))]
                 "OnlinePush.PbC2CMsgSync" => {
                     // 其他设备发送消息，同步
                     let push = cli.engine.read().await.decode_c2c_sync_packet(pkt.body);
