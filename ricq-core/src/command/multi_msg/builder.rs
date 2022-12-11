@@ -73,15 +73,12 @@ impl super::super::super::Engine {
             file_name: Some("MultiMsg".into()),
             buffer: Some(pb::msg::PbMultiMsgNew { msg: msgs.clone() }),
         }];
-        pb_item_list.extend(
-            buffer
-                .into_iter()
-                .map(|(filename, msg)| pb::msg::PbMultiMsgItem {
-                    file_name: Some(filename),
-                    buffer: Some(pb::msg::PbMultiMsgNew { msg }),
-                })
-                .collect::<Vec<pb::msg::PbMultiMsgItem>>(),
-        );
+        for (filename, msg) in buffer {
+            pb_item_list.push(pb::msg::PbMultiMsgItem {
+                file_name: Some(filename),
+                buffer: Some(pb::msg::PbMultiMsgNew { msg }),
+            });
+        }
         let trans = pb::msg::PbMultiMsgTransmit {
             msg: msgs,
             pb_item_list,
