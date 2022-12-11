@@ -61,7 +61,8 @@ impl From<RQAddr> for SocketAddr {
 impl From<SocketAddr> for RQAddr {
     fn from(addr: SocketAddr) -> Self {
         let IpAddr::V4(ip) = addr.ip() else { panic!("is not ipv4") };
-        Self(u32::from_be_bytes(ip.octets()), addr.port())
+        // ip.octets() returns little-endian
+        Self(u32::from_le_bytes(ip.octets()), addr.port())
     }
 }
 
