@@ -3,7 +3,7 @@ name = "ricq"
 version = "0.1.18"
 edition = "2021"
 description = "Android IM protocol"
-license = "AGPL-3.0"
+license = "MPL"
 homepage = "https://github.com/lz1998/ricq"
 repository = "https://github.com/lz1998/ricq"
 readme = "README.md"
@@ -14,7 +14,7 @@ default = []
 image-detail = ["image"]
 
 [dependencies]
-ricq-core = { version = "0.1.16", path = "../ricq-core" }
+ricq-core = { version = "=0.1.18", path = "../ricq-core" }
 async-trait = "0.1"
 bytes = "1"
 cached = { version = "0.35", default-features = false }
