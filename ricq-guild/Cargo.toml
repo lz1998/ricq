@@ -19,11 +19,11 @@ dynamic-protobuf = "0"
 rand = "0"
 
 [dependencies.ricq]
-version = "0.1.17"
+version = "=0.1.18"
 path = "../ricq"
 
 [dependencies.ricq-core]
-version = "0.1.17"
+version = "=0.1.18"
 path = "../ricq-core"
 
 [dependencies.tokio]
