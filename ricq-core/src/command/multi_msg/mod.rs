@@ -14,7 +14,7 @@ pub enum ForwardMessage {
 
 pub fn gen_forward_preview(messages: &[ForwardMessage]) -> String {
     let mut ret = String::new();
-    for msg in messages.into_iter().take(4) {
+    for msg in messages.iter().take(4) {
         ret.push_str(r##"<title size="26" color="#777777" maxLines="4" lineSpace="12">"##);
         match msg {
             ForwardMessage::Message(v) => write!(&mut ret, "{}: {}", v.sender_name, v.elements),

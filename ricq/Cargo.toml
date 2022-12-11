@@ -1,6 +1,6 @@
 [package]
 name = "ricq"
-version = "0.1.17"
+version = "0.1.18"
 edition = "2021"
 description = "Android IM protocol"
 license = "AGPL-3.0"
