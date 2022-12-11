@@ -126,9 +126,9 @@ impl fmt::Display for RQElem {
 }
 
 /// Extract a field from xml / json and write to formatter.
-fn fmt_extract_attr<'a>(
+fn fmt_extract_attr(
     f: &mut fmt::Formatter,
-    i: &'a str,
+    i: &str,
     name: &str,
     begin: &str,
     end: &str,
