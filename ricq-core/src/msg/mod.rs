@@ -102,11 +102,7 @@ impl IntoIterator for MessageChain {
     fn into_iter(self) -> Self::IntoIter {
         self.0
             .into_iter()
-            .filter_map(|e| match e {
-                MessageElem::SrcMsg(_) => None,
-                MessageElem::AnonGroupMsg(_) => None,
-                _ => Some(e),
-            })
+            .filter(|e| !matches!(e, MessageElem::SrcMsg(_) | MessageElem::AnonGroupMsg(_)))
             .map(RQElem::from)
     }
 }

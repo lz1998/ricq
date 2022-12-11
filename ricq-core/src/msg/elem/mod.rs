@@ -109,7 +109,7 @@ impl From<msg::elem::Elem> for RQElem {
 }
 
 impl fmt::Display for RQElem {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             RQElem::At(e) => fmt::Display::fmt(e, f),
             RQElem::Text(e) => fmt::Display::fmt(e, f),
@@ -117,9 +117,30 @@ impl fmt::Display for RQElem {
             RQElem::GroupImage(e) => fmt::Display::fmt(e, f),
             RQElem::FriendImage(e) => fmt::Display::fmt(e, f),
             RQElem::FlashImage(e) => fmt::Display::fmt(e, f),
-            _ => write!(f, ""),
-        }
+            RQElem::LightApp(e) => fmt::Display::fmt(e, f),
+            RQElem::RichMsg(e) => fmt::Display::fmt(e, f),
+            _ => return Ok(()),
+        }?;
+        f.write_str(" ")
     }
+}
+
+/// Extract a field from xml / json and write to formatter.
+fn fmt_extract_attr(
+    f: &mut fmt::Formatter,
+    i: &str,
+    name: &str,
+    begin: &str,
+    end: &str,
+) -> fmt::Result {
+    if let Some(v) = i
+        .rsplit_once(begin)
+        .and_then(|v| v.1.split_once(end))
+        .map(|v| v.0)
+    {
+        write!(f, " {name}='{v}'")?;
+    }
+    Ok(())
 }
 
 macro_rules! impl_from {

@@ -71,11 +71,11 @@ impl Device {
                 rng.gen_range(1000000..9999999)
             ),
             boot_id: random_uuid(rng),
+            imei: random_imei(rng),
             proc_version: format!(
                 "Linux 5.4.0-54-generic-{} (android-build@google.com)",
                 Alphanumeric.sample_string(rng, 8)
             ),
-            imei: random_imei(rng),
             brand: "Xiaomi".into(),
             bootloader: "U-boot".into(),
             base_band: "".into(),

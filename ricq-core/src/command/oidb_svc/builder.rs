@@ -377,7 +377,7 @@ impl super::super::super::Engine {
                     .unwrap_or_else(|| format!("[分享] {}", link_share.title)),
                 title: link_share.title,
                 url: link_share.url,
-                picture_url: link_share.picture_url.unwrap_or_else(|| "".into()),
+                picture_url: link_share.picture_url.unwrap_or_else(|| "none".into()), // "none" will use default icon
                 music_url: String::new(),
                 action: String::new(),
             }),
