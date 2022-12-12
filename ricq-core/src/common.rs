@@ -1,4 +1,4 @@
-use std::net::{Ipv4Addr, SocketAddr};
+use std::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 pub fn group_code2uin(code: i64) -> i64 {
     let mut left = code / 1000000;
@@ -55,6 +55,14 @@ impl From<RQAddr> for SocketAddr {
         let mut ip: [u8; 4] = addr.0.to_be_bytes();
         ip.reverse();
         SocketAddr::new(Ipv4Addr::from(ip).into(), addr.1)
+    }
+}
+
+impl From<SocketAddr> for RQAddr {
+    fn from(addr: SocketAddr) -> Self {
+        let IpAddr::V4(ip) = addr.ip() else { panic!("is not ipv4") };
+        // ip.octets() returns little-endian
+        Self(u32::from_le_bytes(ip.octets()), addr.port())
     }
 }
 
