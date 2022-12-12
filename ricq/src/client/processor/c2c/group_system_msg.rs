@@ -44,8 +44,7 @@ impl Client {
         if self.start_time > msg_time as i32 {
             return true;
         }
-        self
-            .group_sys_message_cache
+        self.group_sys_message_cache
             .read()
             .await
             .self_invited
@@ -57,8 +56,7 @@ impl Client {
         if self.start_time > msg_time as i32 {
             return true;
         }
-        self
-            .group_sys_message_cache
+        self.group_sys_message_cache
             .read()
             .await
             .join_group_requests

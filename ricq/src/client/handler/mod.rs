@@ -45,6 +45,8 @@ pub enum QEvent {
     GroupDisband(GroupDisbandEvent),
     /// 好友戳一戳
     FriendPoke(FriendPokeEvent),
+    /// 群成员戳一戳
+    GroupPoke(GroupPokeEvent),
     /// 群名称修改
     GroupNameUpdate(GroupNameUpdateEvent),
     /// 好友删除
@@ -155,6 +157,7 @@ pub trait PartlyHandler: Sync {
     async fn handle_group_leave(&self, _event: GroupLeaveEvent) {}
     async fn handle_group_disband(&self, _event: GroupDisbandEvent) {}
     async fn handle_friend_poke(&self, _event: FriendPokeEvent) {}
+    async fn handle_group_poke(&self, _event: GroupPokeEvent) {}
     async fn handle_group_name_update(&self, _event: GroupNameUpdateEvent) {}
     async fn handle_delete_friend(&self, _event: DeleteFriendEvent) {}
     async fn handle_member_permission_change(&self, _event: MemberPermissionChangeEvent) {}
@@ -187,6 +190,7 @@ where
             QEvent::GroupLeave(m) => self.handle_group_leave(m).await,
             QEvent::GroupDisband(m) => self.handle_group_disband(m).await,
             QEvent::FriendPoke(m) => self.handle_friend_poke(m).await,
+            QEvent::GroupPoke(m) => self.handle_group_poke(m).await,
             QEvent::GroupNameUpdate(m) => self.handle_group_name_update(m).await,
             QEvent::DeleteFriend(m) => self.handle_delete_friend(m).await,
             QEvent::MemberPermissionChange(m) => self.handle_member_permission_change(m).await,

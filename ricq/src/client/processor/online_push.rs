@@ -10,14 +10,14 @@ use ricq_core::command::online_push::{OnlinePushTrans, PushTransInfo};
 use ricq_core::msg::MessageChain;
 use ricq_core::structs::{
     DeleteFriend, FriendInfo, FriendMessageRecall, FriendPoke, GroupAudio, GroupAudioMessage,
-    GroupLeave, GroupMessage, GroupMessageRecall, GroupMute, GroupNameUpdate,
+    GroupLeave, GroupMessage, GroupMessageRecall, GroupMute, GroupNameUpdate, GroupPoke,
 };
 use ricq_core::{jce, pb};
 
 use crate::client::event::{
     DeleteFriendEvent, FriendMessageRecallEvent, FriendPokeEvent, GroupAudioMessageEvent,
     GroupDisbandEvent, GroupLeaveEvent, GroupMessageEvent, GroupMessageRecallEvent, GroupMuteEvent,
-    GroupNameUpdateEvent, MemberPermissionChangeEvent, NewFriendEvent,
+    GroupNameUpdateEvent, GroupPokeEvent, MemberPermissionChangeEvent, NewFriendEvent,
 };
 use crate::client::handler::QEvent;
 use crate::client::Client;
@@ -196,6 +196,30 @@ impl Client {
                                                 },
                                             },
                                         ))
+                                        .await;
+                                }
+                            }
+
+                            if let Some(t) = b.opt_general_gray_tip {
+                                let mut sender: i64 = 0;
+                                let mut receiver: i64 = 0;
+                                for templ in t.msg_templ_param {
+                                    match &*templ.name {
+                                        "uin_str1" => {
+                                            sender = templ.value.parse().unwrap_or_default()
+                                        }
+                                        "uin_str2" => {
+                                            receiver = templ.value.parse().unwrap_or_default()
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                                if sender != 0 {
+                                    self.handler
+                                        .handle(QEvent::GroupPoke(GroupPokeEvent {
+                                            client: self.clone(),
+                                            inner: GroupPoke { sender, receiver },
+                                        }))
                                         .await;
                                 }
                             }
