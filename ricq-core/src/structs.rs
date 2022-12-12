@@ -203,6 +203,12 @@ pub struct FriendPoke {
 }
 
 #[derive(Debug, Clone, Default)]
+pub struct GroupPoke {
+    pub sender: i64,
+    pub receiver: i64,
+}
+
+#[derive(Debug, Clone, Default)]
 pub struct GroupNameUpdate {
     pub group_code: i64,
     pub operator_uin: i64,

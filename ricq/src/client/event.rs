@@ -4,7 +4,7 @@ use ricq_core::command::profile_service::{JoinGroupRequest, NewFriendRequest, Se
 use ricq_core::structs::{
     DeleteFriend, FriendAudioMessage, FriendInfo, FriendMessageRecall, FriendPoke,
     GroupAudioMessage, GroupDisband, GroupLeave, GroupMessageRecall, GroupMute, GroupNameUpdate,
-    GroupTempMessage, MemberPermissionChange, NewMember,
+    GroupPoke, GroupTempMessage, MemberPermissionChange, NewMember,
 };
 use ricq_core::{jce, RQResult};
 
@@ -95,6 +95,7 @@ pub type NewFriendEvent = EventWithClient<FriendInfo>;
 pub type GroupLeaveEvent = EventWithClient<GroupLeave>;
 pub type GroupDisbandEvent = EventWithClient<GroupDisband>;
 pub type FriendPokeEvent = EventWithClient<FriendPoke>;
+pub type GroupPokeEvent = EventWithClient<GroupPoke>;
 pub type GroupNameUpdateEvent = EventWithClient<GroupNameUpdate>;
 pub type DeleteFriendEvent = EventWithClient<DeleteFriend>;
 pub type MemberPermissionChangeEvent = EventWithClient<MemberPermissionChange>;
