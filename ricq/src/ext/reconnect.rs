@@ -84,9 +84,7 @@ impl FastLogin for ricq_core::Token {
     async fn fast_login(&self, client: &Arc<Client>) -> RQResult<()> {
         match client.token_login(self.clone()).await? {
             LoginResponse::Success(_) => Ok(()),
-            other => Err(RQError::Other(format!(
-                "failed to token_login, {other:?}"
-            ))),
+            other => Err(RQError::Other(format!("failed to token_login, {other:?}"))),
         }
     }
 }
