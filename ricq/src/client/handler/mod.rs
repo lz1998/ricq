@@ -1,3 +1,6 @@
+use std::future::Future;
+use std::pin::Pin;
+
 use async_trait::async_trait;
 use tokio::sync::{
     broadcast::Sender as BroadcastSender,
@@ -65,9 +68,43 @@ pub enum QEvent {
 }
 
 /// 处理外发数据的接口
+///
+/// 同时，所有 `async fn(QEvent)` 都已自动实现 `Handler`。
+///
+/// # Examples
+///
+/// 你可以为自己的 struct 实现 Handler：
+/// 
+/// ```
+/// struct MyHandler;
+/// impl Handler for MyHandler { ... }
+/// ```
+/// 
+/// 或者只定义单个事件处理函数，更简洁：
+/// 
+/// ```
+/// async fn on_event(e: QEvent) {
+///     dbg!(e);
+/// }
+/// let client = Client::new(
+///     device,
+///     Protocol::MacOS.into(),
+///     on_event as fn(_) -> _,
+/// );
+/// ```
 #[async_trait]
 pub trait Handler: Sync {
     async fn handle(&self, event: QEvent);
+}
+
+// 这里还有一种 Fn(QEvent) -> Fut 的写法，但是会与 PartlyHandler 冲突
+impl<Fut> Handler for fn(QEvent) -> Fut
+where
+    Fut: Future<Output = ()> + Send,
+{
+    fn handle<'a: 'b, 'b>(&'a self, e: QEvent) -> Pin<Box<dyn Future<Output = ()> + Send + 'b>> {
+        Box::pin(async move { self(e).await })
+    }
 }
 
 /// 一个默认 Handler，只是把信息打印出来
