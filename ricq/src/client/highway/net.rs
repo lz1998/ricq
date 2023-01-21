@@ -46,8 +46,13 @@ impl Client {
         }
         let mut ticket = input.ticket;
         let mut rsp_ext = Bytes::new();
-        for (i, chunk) in data.chunks(input.chunk_size).enumerate() {
-            let chunk = chunk.to_vec();
+        let data = Bytes::copy_from_slice(data);
+        let len = data.len();
+        let chunk_size = input.chunk_size;
+
+        for i in (0..len).step_by(chunk_size) {
+            let min = std::cmp::min(i + chunk_size, len);
+            let chunk = data.slice(i..min);
             let head = pb::ReqDataHighwayHead {
                 msg_basehead: Some(self.highway_session.read().await.build_basehead(
                     "PicUp.DataUp".into(),
@@ -57,7 +62,7 @@ impl Client {
                 )),
                 msg_seghead: Some(self.highway_session.read().await.build_seghead(
                     length as i64,
-                    (i * input.chunk_size) as i64,
+                    i as i64,
                     &chunk,
                     ticket.clone(),
                     sum.clone(),
@@ -68,7 +73,7 @@ impl Client {
             stream
                 .send(HighwayFrame {
                     head: head.to_bytes(),
-                    body: Bytes::from(chunk.clone()),
+                    body: chunk,
                 })
                 .await?;
             let resp = read_response(&mut stream).await?;
