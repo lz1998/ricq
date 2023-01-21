@@ -11,17 +11,17 @@ use crate::utils::OptionSet;
 use crate::Transport;
 
 impl super::Engine {
-    pub fn process_qrcode_confirmed(&mut self, resp: QRCodeConfirmed) {
-        self.transport.sig.tgtgt_key = resp.tgtgt_key;
+    pub fn process_qrcode_confirmed(&mut self, resp: &QRCodeConfirmed) {
+        self.transport.sig.tgtgt_key = resp.tgtgt_key.clone();
         self.uin.store(resp.uin, Ordering::Relaxed);
     }
 
-    pub fn process_login_response(&mut self, login_response: LoginResponse) {
+    pub fn process_login_response(&mut self, login_response: &LoginResponse) {
         match login_response {
-            LoginResponse::Success(resp) => self.process_login_success(resp),
+            LoginResponse::Success(resp) => self.process_login_success(resp.clone()),
             LoginResponse::NeedCaptcha(resp) => self.process_need_captcha(resp),
             LoginResponse::DeviceLocked(resp) => self.process_device_locked(resp),
-            LoginResponse::DeviceLockLogin(resp) => self.process_device_lock_login(resp),
+            LoginResponse::DeviceLockLogin(resp) => self.process_device_lock_login(resp.clone()),
             _ => {}
         }
     }
@@ -61,16 +61,16 @@ impl super::Engine {
         }
     }
 
-    fn process_need_captcha(&mut self, resp: LoginNeedCaptcha) {
-        self.transport.sig.t104.option_set(resp.t104);
+    fn process_need_captcha(&mut self, resp: &LoginNeedCaptcha) {
+        self.transport.sig.t104.option_set(resp.t104.clone());
     }
 
-    fn process_device_locked(&mut self, resp: LoginDeviceLocked) {
-        self.transport.sig.t104.option_set(resp.t104);
-        self.transport.sig.t174.option_set(resp.t174);
+    fn process_device_locked(&mut self, resp: &LoginDeviceLocked) {
+        self.transport.sig.t104.option_set(resp.t104.clone());
+        self.transport.sig.t174.option_set(resp.t174.clone());
 
-        if let Some(v) = resp.t402 {
-            set_t402(&mut self.transport, v)
+        if let Some(v) = &resp.t402 {
+            set_t402(&mut self.transport, v.clone())
         }
     }
     fn process_device_lock_login(&mut self, resp: LoginDeviceLockLogin) {

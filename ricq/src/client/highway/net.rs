@@ -21,6 +21,7 @@ impl Client {
         &self,
         addr: SocketAddr,
         mut input: BdhInput,
+        data: &[u8],
     ) -> RQResult<Bytes> {
         if input.encrypt {
             let session_key = self.highway_session.read().await.session_key.clone();
@@ -31,8 +32,8 @@ impl Client {
             .map_err(RQError::IO)?;
         let mut stream = Framed::new(stream, HighwayCodec);
         // send heartbeat
-        let sum = md5::compute(&input.body).to_vec();
-        let length = input.body.len();
+        let sum = md5::compute(data).to_vec();
+        let length = data.len();
 
         if input.send_echo {
             stream
@@ -45,7 +46,7 @@ impl Client {
         }
         let mut ticket = input.ticket;
         let mut rsp_ext = Bytes::new();
-        for (i, chunk) in input.body.chunks(input.chunk_size).enumerate() {
+        for (i, chunk) in data.chunks(input.chunk_size).enumerate() {
             let chunk = chunk.to_vec();
             let head = pb::ReqDataHighwayHead {
                 msg_basehead: Some(self.highway_session.read().await.build_basehead(

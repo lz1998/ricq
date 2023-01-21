@@ -3,11 +3,11 @@ use crate::Client;
 use ricq_core::command::wtlogin::*;
 
 impl Client {
-    pub(crate) async fn process_login_response(&self, login_response: LoginResponse) {
+    pub(crate) async fn process_login_response(&self, login_response: &LoginResponse) {
         if let LoginResponse::Success(ref success) = login_response {
-            if let Some(info) = success.account_info.clone() {
+            if let Some(info) = &success.account_info {
                 let mut account_info = self.account_info.write().await;
-                account_info.nickname = info.nick;
+                account_info.nickname = info.nick.clone();
                 account_info.age = info.age;
                 account_info.gender = info.gender;
             }
@@ -19,7 +19,7 @@ impl Client {
         self.handler.handle(QEvent::Login(self.uin().await)).await;
     }
 
-    pub(crate) async fn process_trans_emp_response(&self, qrcode_state: QRCodeState) {
+    pub(crate) async fn process_trans_emp_response(&self, qrcode_state: &QRCodeState) {
         if let QRCodeState::Confirmed(resp) = qrcode_state {
             self.engine.write().await.process_qrcode_confirmed(resp);
         }

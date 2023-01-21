@@ -163,7 +163,7 @@ impl GuildClient {
         &self,
         guild_id: u64,
         channel_id: u64,
-        image: Vec<u8>,
+        image: &[u8],
     ) -> RQResult<GuildImage> {
         let info = ImageInfo::try_new(&image)?;
 
@@ -202,7 +202,6 @@ impl GuildClient {
                         addr.clone().into(),
                         BdhInput {
                             command_id: 83,
-                            body: image,
                             ticket: upload_key,
                             ext: dynamic_message! {
                                 11 => guild_id,
@@ -214,6 +213,7 @@ impl GuildClient {
                             chunk_size: 256 * 1024,
                             send_echo: true,
                         },
+                        image,
                     )
                     .await?;
 

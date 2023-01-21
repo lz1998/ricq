@@ -516,7 +516,7 @@ impl super::super::Client {
     }
 
     /// 上传群图片
-    pub async fn upload_group_image(&self, group_code: i64, data: Vec<u8>) -> RQResult<GroupImage> {
+    pub async fn upload_group_image(&self, group_code: i64, data: &[u8]) -> RQResult<GroupImage> {
         let image_info = ImageInfo::try_new(&data)?;
 
         let image_store = self.get_group_image_store(group_code, &image_info).await?;
@@ -524,7 +524,7 @@ impl super::super::Client {
         let group_image = match image_store {
             GroupImageStoreResp::Exist { file_id, addrs } => image_info.into_group_image(
                 file_id,
-                addrs.first().cloned().unwrap_or_default(),
+                addrs.first().copied().unwrap_or_default(),
                 signature,
             ),
             GroupImageStoreResp::NotExist {
@@ -533,22 +533,22 @@ impl super::super::Client {
                 mut upload_addrs,
             } => {
                 let addr = match self.highway_addrs.read().await.first() {
-                    Some(addr) => addr.clone(),
+                    Some(addr) => *addr,
                     None => upload_addrs
                         .pop()
                         .ok_or(RQError::EmptyField("upload_addrs"))?,
                 };
                 self.highway_upload_bdh(
-                    addr.clone().into(),
+                    addr.into(),
                     BdhInput {
                         command_id: 2,
-                        body: data,
                         ticket: upload_key,
                         ext: vec![],
                         encrypt: false,
                         chunk_size: 256 * 1024,
                         send_echo: true,
                     },
+                    data,
                 )
                 .await?;
                 image_info.into_group_image(file_id, addr, signature)
@@ -561,7 +561,7 @@ impl super::super::Client {
     pub async fn upload_group_audio(
         &self,
         group_code: i64,
-        data: Vec<u8>,
+        data: &[u8],
         codec: u32,
     ) -> RQResult<GroupAudio> {
         let md5 = md5::compute(&data).to_vec();
@@ -578,7 +578,7 @@ impl super::super::Client {
             .read()
             .await
             .first()
-            .cloned()
+            .copied()
             .ok_or(RQError::EmptyField("highway_addrs"))?;
         let ticket = self
             .highway_session
@@ -592,13 +592,13 @@ impl super::super::Client {
                 addr.into(),
                 BdhInput {
                     command_id: 29,
-                    body: data,
                     ticket,
                     ext: ext.to_vec(),
                     encrypt: false,
                     chunk_size: 256 * 1024,
                     send_echo: true,
                 },
+                data,
             )
             .await?;
         let file_key = self
@@ -654,8 +654,8 @@ impl super::super::Client {
     pub async fn upload_group_short_video(
         &self,
         group_code: i64,
-        video_data: Vec<u8>,
-        thumb_data: Vec<u8>,
+        video_data: &[u8],
+        thumb_data: &[u8],
     ) -> RQResult<VideoFile> {
         let video_md5 = md5::compute(&video_data).to_vec();
         let thumb_md5 = md5::compute(&thumb_data).to_vec();
@@ -668,9 +668,9 @@ impl super::super::Client {
             video_size as i64,
             thumb_size as i64,
         );
-        let video_store = self
-            .get_group_short_video_store(short_video_up_req.clone())
-            .await?;
+        let ext = short_video_up_req.to_bytes().to_vec();
+
+        let video_store = self.get_group_short_video_store(short_video_up_req).await?;
 
         if video_store.file_exists == 1 {
             return Ok(VideoFile {
@@ -688,28 +688,29 @@ impl super::super::Client {
             .read()
             .await
             .first()
-            .ok_or(RQError::EmptyField("highway_addrs"))?
-            .clone();
+            .copied()
+            .ok_or(RQError::EmptyField("highway_addrs"))?;
 
         if self.highway_session.read().await.session_key.is_empty() {
             return Err(RQError::EmptyField("highway_session_key"));
         }
         let ticket = self.highway_session.read().await.sig_session.to_vec();
-        let mut data = thumb_data;
-        data.extend(video_data);
+        let mut data = Vec::with_capacity(thumb_size + video_size);
+        data.copy_from_slice(thumb_data);
+        data[thumb_size..].copy_from_slice(video_data);
 
         let rsp = self
             .highway_upload_bdh(
                 addr.into(),
                 BdhInput {
                     command_id: 25,
-                    body: data,
                     ticket,
-                    ext: short_video_up_req.to_bytes().to_vec(),
+                    ext,
                     encrypt: true,
                     chunk_size: 256 * 1024,
                     send_echo: true,
                 },
+                &data,
             )
             .await?;
         let rsp = pb::short_video::ShortVideoUploadRsp::decode(&*rsp)

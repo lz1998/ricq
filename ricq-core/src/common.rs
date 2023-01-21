@@ -47,7 +47,7 @@ pub fn group_uin2code(uin: i64) -> i64 {
     left * 1000000 + uin % 1000000
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct RQAddr(pub u32, pub u16);
 
 impl From<RQAddr> for SocketAddr {
