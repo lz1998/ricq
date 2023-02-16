@@ -74,14 +74,14 @@ pub enum QEvent {
 /// # Examples
 ///
 /// 你可以为自己的 struct 实现 Handler：
-/// 
+///
 /// ```
 /// struct MyHandler;
 /// impl Handler for MyHandler { ... }
 /// ```
-/// 
+///
 /// 或者只定义单个事件处理函数，更简洁：
-/// 
+///
 /// ```
 /// async fn on_event(e: QEvent) {
 ///     dbg!(e);

@@ -39,13 +39,13 @@ where
                 addr.clone().into(),
                 BdhInput {
                     command_id: 2,
-                    body: data,
                     ticket: upload_key,
                     ext: vec![],
                     encrypt: false,
                     chunk_size: 256 * 1024,
                     send_echo: true,
                 },
+                &data,
             )
             .await
             .map(|_| image_info.into_group_image(file_id, addr, sign))?
@@ -81,13 +81,13 @@ where
                 addr.clone().into(),
                 BdhInput {
                     command_id: 1,
-                    body: data,
                     ticket: upload_key,
                     ext: vec![],
                     encrypt: false,
                     chunk_size: 256 * 1024,
                     send_echo: true,
                 },
+                &data,
             )
             .await
             .map(|_| image_info.into_friend_image(res_id, uuid))?

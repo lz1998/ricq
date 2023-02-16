@@ -129,10 +129,13 @@ impl crate::Client {
         loop {
             tokio::select! {
                 input = read_half.next() => {
-                    if let Some(Ok(mut input)) = input
-                        && let Ok(pkt) = self.engine.read().await.transport.decode_packet(&mut input)
-                    {
-                        self.process_income_packet(pkt).await;
+                    if let Some(Ok(mut input)) = input {
+                        if let Ok(pkt) = self.engine.read().await.transport.decode_packet(&mut input) {
+                            self.process_income_packet(pkt).await;
+                        } else {
+                            self.status.store(NetworkStatus::MsfOffline as u8, Ordering::Relaxed);
+                            break;
+                        }
                     } else {
                         break;
                     }

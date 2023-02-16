@@ -91,10 +91,11 @@ impl super::Client {
         dst_language: String,
         src_text_list: Vec<String>,
     ) -> RQResult<Vec<String>> {
+        let list_len = src_text_list.len();
         let req = self.engine.read().await.build_translate_request_packet(
             src_language,
             dst_language,
-            src_text_list.clone(),
+            src_text_list,
         );
         let resp = self.send_and_wait(req).await?;
         let translations = self
@@ -102,7 +103,7 @@ impl super::Client {
             .read()
             .await
             .decode_translate_response(resp.body)?;
-        if translations.len() != src_text_list.len() {
+        if translations.len() != list_len {
             return Err(RQError::Other("translate length error".into()));
         }
         Ok(translations)
@@ -336,11 +337,11 @@ impl super::Client {
                     addr.into(),
                     BdhInput {
                         command_id: 27,
-                        body: body.clone(),
                         ticket: rsp.msg_sig.clone(),
                         chunk_size: 8192 * 8,
                         ..Default::default()
                     },
+                    &body,
                 )
                 .await
             {

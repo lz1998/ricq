@@ -16,7 +16,7 @@ impl super::super::Client {
             .read()
             .await
             .decode_trans_emp_response(resp.body)?;
-        self.process_trans_emp_response(resp.clone()).await;
+        self.process_trans_emp_response(&resp).await;
         Ok(resp)
     }
 
@@ -33,7 +33,7 @@ impl super::super::Client {
             .read()
             .await
             .decode_trans_emp_response(resp.body)?;
-        self.process_trans_emp_response(resp.clone()).await;
+        self.process_trans_emp_response(&resp).await;
         Ok(resp)
     }
 
@@ -51,7 +51,7 @@ impl super::super::Client {
                 .build_qrcode_login_packet(tmp_pwd, tmp_no_pic_sig, tgt_qr);
         let resp = self.send_and_wait(req).await?;
         let resp = self.engine.read().await.decode_login_response(resp.body)?;
-        self.process_login_response(resp.clone()).await;
+        self.process_login_response(&resp).await;
         Ok(resp)
     }
 
@@ -69,7 +69,7 @@ impl super::super::Client {
             .build_login_packet(password_md5, true);
         let resp = self.send_and_wait(req).await?;
         let resp = self.engine.read().await.decode_login_response(resp.body)?;
-        self.process_login_response(resp.clone()).await;
+        self.process_login_response(&resp).await;
         Ok(resp)
     }
 
@@ -83,7 +83,7 @@ impl super::super::Client {
         let req = self.engine.read().await.build_sms_request_packet();
         let resp = self.send_and_wait(req).await?;
         let resp = self.engine.read().await.decode_login_response(resp.body)?;
-        self.process_login_response(resp.clone()).await;
+        self.process_login_response(&resp).await;
         Ok(resp)
     }
 
@@ -96,7 +96,7 @@ impl super::super::Client {
             .build_sms_code_submit_packet(code.trim());
         let resp = self.send_and_wait(req).await?;
         let resp = self.engine.read().await.decode_login_response(resp.body)?;
-        self.process_login_response(resp.clone()).await;
+        self.process_login_response(&resp).await;
         Ok(resp)
     }
 
@@ -105,7 +105,7 @@ impl super::super::Client {
         let req = self.engine.read().await.build_ticket_submit_packet(ticket);
         let resp = self.send_and_wait(req).await?;
         let resp = self.engine.read().await.decode_login_response(resp.body)?;
-        self.process_login_response(resp.clone()).await;
+        self.process_login_response(&resp).await;
         Ok(resp)
     }
 
@@ -114,7 +114,7 @@ impl super::super::Client {
         let req = self.engine.read().await.build_device_lock_login_packet();
         let resp = self.send_and_wait(req).await?;
         let resp = self.engine.read().await.decode_login_response(resp.body)?;
-        self.process_login_response(resp.clone()).await;
+        self.process_login_response(&resp).await;
         Ok(resp)
     }
 
@@ -137,7 +137,7 @@ impl super::super::Client {
             .read()
             .await
             .decode_exchange_emp_response(resp.body)?;
-        self.process_login_response(resp.clone()).await;
+        self.process_login_response(&resp).await;
         Ok(resp)
     }
 

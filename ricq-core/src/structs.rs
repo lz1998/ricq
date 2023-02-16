@@ -204,6 +204,7 @@ pub struct FriendPoke {
 
 #[derive(Debug, Clone, Default)]
 pub struct GroupPoke {
+    pub group_code: i64,
     pub sender: i64,
     pub receiver: i64,
 }
