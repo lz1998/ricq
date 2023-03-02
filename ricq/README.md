@@ -12,6 +12,8 @@ QQ Android 协议的 Rust 实现，移植于 [OICQ](https://github.com/takayama-
 
 本项目是协议 Lib，如果需要直接使用，可以参考 [examples](https://github.com/lz1998/ricq/tree/master/examples) 中的例子进行开发。
 
+可以配合前端界面 [ricq-react-ui](https://github.com/lz1998/ricq-react-ui/releases) 解压 static.zip 后，运行 [ricq-axum-api](https://github.com/lz1998/ricq/blob/master/examples/ricq-axum-api/src/bin/main.rs#L125)，使用浏览器 F12-Network 查看调用方式。
+
 普通开发者推荐使用 SDK、框架进行开发：
 
 | 框架 / SDK | 语言 | 说明 |
@@ -30,6 +32,7 @@ QQ Android 协议的 Rust 实现，移植于 [OICQ](https://github.com/takayama-
 | ---- | ---- |
 | [lomirus/gtk-qq](https://github.com/lomirus/gtk-qq) | Unofficial Linux QQ client, based on GTK4 and libadwaita, developed with Rust and Relm4. |
 | [a1967629423/esp32c3-rs-qq](https://github.com/a1967629423/esp32c3-rs-qq) | 在单片机上运行QQ |
+| [ricq-react-ui](https://github.com/lz1998/ricq-react-ui) + [ricq-axum-api](https://github.com/lz1998/ricq/blob/master/examples/ricq-axum-api/src/bin/main.rs#L125) | 登录 demo，附带前端 UI |
 
 ## 已完成功能 / 开发计划
 
