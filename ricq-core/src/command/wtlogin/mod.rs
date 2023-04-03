@@ -164,20 +164,32 @@ impl LoginResponse {
                 }),
             }),
             40 => LoginResponse::AccountFrozen,
-            160 | 239 => LoginResponse::DeviceLocked(LoginDeviceLocked {
-                // TODO?
-                sms_phone: tlv_map.remove(&0x178).map(|_| "todo".into()),
-                verify_url: tlv_map
-                    .remove(&0x204)
-                    .map(|v| String::from_utf8_lossy(&v).into_owned()),
-                message: tlv_map
-                    .remove(&0x17e)
-                    .map(|v| String::from_utf8_lossy(&v).into_owned()),
-                rand_seed: tlv_map.remove(&0x403),
-                t104: tlv_map.remove(&0x104),
-                t174: tlv_map.remove(&0x174),
-                t402: tlv_map.remove(&0x402),
-            }),
+            160 | 239 => {
+                let t174 = tlv_map.remove(&0x174);
+                let t178 = tlv_map.remove(&0x178);
+                let sms_phone = if t174.is_some() {
+                    t178.map(|mut v| {
+                        let country_code = v.read_string_short();
+                        let phone_number = v.read_string_short();
+                        format!("+{} {}", country_code, phone_number)
+                    })
+                } else {
+                    None
+                };
+                LoginResponse::DeviceLocked(LoginDeviceLocked {
+                    sms_phone,
+                    verify_url: tlv_map
+                        .remove(&0x204)
+                        .map(|v| String::from_utf8_lossy(&v).into_owned()),
+                    message: tlv_map
+                        .remove(&0x17e)
+                        .map(|v| String::from_utf8_lossy(&v).into_owned()),
+                    rand_seed: tlv_map.remove(&0x403),
+                    t104: tlv_map.remove(&0x104),
+                    t174,
+                    t402: tlv_map.remove(&0x402),
+                })
+            }
             162 => LoginResponse::TooManySMSRequest,
             204 => LoginResponse::DeviceLockLogin(LoginDeviceLockLogin {
                 t104: tlv_map.remove(&0x104),
