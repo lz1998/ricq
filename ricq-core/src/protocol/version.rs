@@ -7,6 +7,7 @@ pub enum Protocol {
     IPad,
     AndroidPhone,
     AndroidWatch,
+    AndroidPad,
     MacOS,
     QiDian,
 }
@@ -33,6 +34,7 @@ pub const fn get_version(p: Protocol) -> Version {
         Protocol::IPad => IPAD,
         Protocol::AndroidPhone => ANDROID_PHONE,
         Protocol::AndroidWatch => ANDROID_WATCH,
+        Protocol::AndroidPad => ANDROID_PAD,
         Protocol::MacOS => MACOS,
         Protocol::QiDian => QIDIAN,
     }
@@ -99,6 +101,25 @@ pub const ANDROID_WATCH: Version = Version {
     sub_sig_map: 0x10400,
     main_sig_map: 34869472,
     protocol: Protocol::AndroidWatch,
+};
+
+pub const ANDROID_PAD: Version = Version {
+    apk_id: "com.tencent.qqlite",
+    app_id: 537152242,
+    sub_app_id: 537152242,
+    sort_version_name: "8.9.35.10440",
+    build_ver: "8.9.35.10440",
+    build_time: 1676531414,
+    apk_sign: &[
+        0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E, 0xB6,
+        0x8D,
+    ],
+    sdk_version: "6.0.0.253",
+    sso_version: 19,
+    misc_bitmap: 150470524,
+    sub_sig_map: 66560,
+    main_sig_map: 150470524,
+    protocol: Protocol::AndroidPad,
 };
 
 pub const MACOS: Version = Version {
