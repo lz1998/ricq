@@ -107,7 +107,7 @@ pub const ANDROID_PAD: Version = Version {
     apk_id: "com.tencent.qqlite",
     app_id: 537152242,
     sub_app_id: 537152242,
-    sort_version_name: "8.9.35.10440",
+    sort_version_name: "8.9.35",
     build_ver: "8.9.35.10440",
     build_time: 1676531414,
     apk_sign: &[
@@ -182,6 +182,7 @@ impl TryFrom<u8> for Protocol {
             3 => Ok(Protocol::MacOS),
             4 => Ok(Protocol::QiDian),
             5 => Ok(Protocol::IPad),
+            6 => Ok(Protocol::AndroidPad),
             _ => Err(()),
         }
     }
