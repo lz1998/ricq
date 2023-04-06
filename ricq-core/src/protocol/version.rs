@@ -7,6 +7,7 @@ pub enum Protocol {
     IPad,
     AndroidPhone,
     AndroidWatch,
+    AndroidPad,
     MacOS,
     QiDian,
 }
@@ -33,6 +34,7 @@ pub const fn get_version(p: Protocol) -> Version {
         Protocol::IPad => IPAD,
         Protocol::AndroidPhone => ANDROID_PHONE,
         Protocol::AndroidWatch => ANDROID_WATCH,
+        Protocol::AndroidPad => ANDROID_PAD,
         Protocol::MacOS => MACOS,
         Protocol::QiDian => QIDIAN,
     }
@@ -46,19 +48,19 @@ impl From<Protocol> for Version {
 
 pub const ANDROID_PHONE: Version = Version {
     apk_id: "com.tencent.mobileqq",
-    app_id: 537138832,
-    sub_app_id: 537138832,
-    sort_version_name: "8.9.15",
+    app_id: 537154734,
+    sub_app_id: 537154734,
+    sort_version_name: "8.9.38.10545",
     build_ver: "8.9.15.9425",
-    build_time: 1640921786,
+    build_time: 1676531414,
     apk_sign: &[
         0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E, 0xB6,
         0x8D,
     ],
-    sdk_version: "6.0.0.2494",
-    sso_version: 16,
+    sdk_version: "6.0.0.2535",
+    sso_version: 19,
     misc_bitmap: 150470524,
-    sub_sig_map: 0x10400,
+    sub_sig_map: 66560,
     main_sig_map: 16724722,
     protocol: Protocol::AndroidPhone,
 };
@@ -135,6 +137,25 @@ pub const QIDIAN: Version = Version {
     protocol: Protocol::QiDian,
 };
 
+pub const ANDROID_PAD: Version = Version {
+    apk_id: "com.tencent.mobileqq",
+    app_id: 537154261,
+    sub_app_id: 537154261,
+    sort_version_name: "8.9.38.10545",
+    build_ver: "8.8.38.2266",
+    build_time: 1556628836,
+    apk_sign: &[
+        0xa6, 0xb7, 0x45, 0xbf, 0x24, 0xa2, 0xc2, 0x77, 0x52, 0x77, 0x16, 0xf6, 0xf3, 0x6e, 0xb6,
+        0x8d,
+    ],
+    sdk_version: "6.0.0.2535",
+    sso_version: 19,
+    misc_bitmap: 150470524,
+    sub_sig_map: 66560,
+    main_sig_map: 16724722,
+    protocol: Protocol::AndroidPad,
+};
+
 impl TryFrom<&str> for Protocol {
     type Error = ();
 
@@ -161,6 +182,7 @@ impl TryFrom<u8> for Protocol {
             3 => Ok(Protocol::MacOS),
             4 => Ok(Protocol::QiDian),
             5 => Ok(Protocol::IPad),
+            6 => Ok(Protocol::AndroidPad),
             _ => Err(()),
         }
     }
