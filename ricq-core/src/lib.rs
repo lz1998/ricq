@@ -1,3 +1,4 @@
+#![feature(impl_trait_in_assoc_type)]
 #![feature(type_alias_impl_trait)]
 
 use std::sync::atomic::{AtomicI32, AtomicI64, AtomicU16, Ordering};
