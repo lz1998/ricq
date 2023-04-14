@@ -162,8 +162,9 @@ impl TryFrom<&str> for Protocol {
     fn try_from(s: &str) -> Result<Self, Self::Error> {
         match s {
             "IPad" => Ok(Protocol::IPad),
-            "AndroidPhone" => Ok(Protocol::AndroidPhone),
-            "AndroidWatch" => Ok(Protocol::AndroidWatch),
+            "AndroidPhone" | "APhone" => Ok(Protocol::AndroidPhone),
+            "AndroidWatch" | "AWatch" => Ok(Protocol::AndroidWatch),
+            "AndroidPad" | "APad" => Ok(Protocol::AndroidPad),
             "MacOS" => Ok(Protocol::MacOS),
             "QiDian" => Ok(Protocol::QiDian),
             _ => Err(()),
