@@ -892,7 +892,9 @@ impl super::super::Client {
     /// 获取文件下载链接
     /// # Examples
     /// ```
-    /// let file_list = client.get_group_file_list(group_code, "/", 0).await.unwrap();
+    /// # async fn test(client: &ricq::Client) {
+    /// let group_code: i64 = 123456789;
+    /// let file_list = client.get_group_file_list(group_code.try_into().unwrap(), "/", 0).await.unwrap();
     /// for item_info in file_list.items {
     ///     let url = client
     ///         .get_group_file_download(
@@ -904,6 +906,7 @@ impl super::super::Client {
     ///         .await;
     ///     println!("{:?}", url);
     /// }
+    /// # }
     ///```
     pub async fn get_group_file_download(
         &self,

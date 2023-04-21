@@ -75,7 +75,7 @@ pub enum QEvent {
 ///
 /// 你可以为自己的 struct 实现 Handler：
 ///
-/// ```
+/// ```ignore
 /// struct MyHandler;
 /// impl Handler for MyHandler { ... }
 /// ```
@@ -83,6 +83,8 @@ pub enum QEvent {
 /// 或者只定义单个事件处理函数，更简洁：
 ///
 /// ```
+/// # use ricq::{Client, Device, Protocol, handler::QEvent};
+/// # fn test(device: Device) {
 /// async fn on_event(e: QEvent) {
 ///     dbg!(e);
 /// }
@@ -91,6 +93,7 @@ pub enum QEvent {
 ///     Protocol::MacOS.into(),
 ///     on_event as fn(_) -> _,
 /// );
+/// # }
 /// ```
 #[async_trait]
 pub trait Handler: Sync {
