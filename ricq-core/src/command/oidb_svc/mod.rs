@@ -59,6 +59,7 @@ impl ShareTarget {
     }
 }
 
+#[derive(Debug, Clone, Default)]
 pub struct MusicShare {
     pub title: String,
     pub brief: String,
@@ -68,6 +69,7 @@ pub struct MusicShare {
     pub music_url: String,
 }
 
+#[derive(Debug, Clone)]
 pub struct MusicVersion {
     pub app_id: u64,
     pub app_type: u32,
@@ -124,6 +126,7 @@ impl MusicVersion {
     };
 }
 
+#[derive(Debug, Clone, Default)]
 pub struct LinkShare {
     pub title: String,
     pub summary: Option<String>,
