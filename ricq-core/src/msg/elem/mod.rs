@@ -165,3 +165,15 @@ impl_from!(FriendImage, friend_image::FriendImage);
 impl_from!(GroupImage, group_image::GroupImage);
 impl_from!(FlashImage, flash_image::FlashImage);
 impl_from!(Other, Box<msg::elem::Elem>);
+
+impl From<String> for RQElem {
+    fn from(s: String) -> Self {
+        RQElem::Text(text::Text::new(s))
+    }
+}
+
+impl From<&str> for RQElem {
+    fn from(s: &str) -> Self {
+        RQElem::Text(text::Text::new(s.to_string()))
+    }
+}
