@@ -557,6 +557,13 @@ pub fn t202<'a, B: BufMut + WriteLV>(
     }
 }
 
+pub fn t318<B: BufMut + WriteLV>(tgt_qr:&[u8]) -> impl PacketWriter<B>+'_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x318);
+        buf.write_short_lv(tgt_qr);
+    }
+}
+
 pub fn t400<'a, B: BufMut + WriteLV>(
     g: &'a [u8],
     uin: i64,
