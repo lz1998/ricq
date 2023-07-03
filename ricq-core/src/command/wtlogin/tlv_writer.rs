@@ -6,21 +6,28 @@ use std::time::UNIX_EPOCH;
 use crate::binary::packet_writer::{PacketWriter, WriteLV};
 use crate::binary::BinaryWriter;
 
+pub fn tlv<'a, B: BufMut + WriteLV, W: PacketWriter<B> + 'a>(
+    tag: u16,
+    body_writer: W,
+) -> impl PacketWriter<B> + 'a {
+    move |buf: &mut B| {
+        buf.put_u16(tag);
+        buf.write_short_lv(body_writer);
+    }
+}
+
 pub fn t1<B: BufMut + WriteLV>(uin: u32, ip: &[u8]) -> impl PacketWriter<B> + '_ {
     if ip.len() != 4 {
         panic!("invalid ip")
     }
-    move |buf: &mut B| {
-        buf.put_u16(0x01);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u16(1);
-            w.put_u32(rand::random());
-            w.put_u32(uin);
-            w.put_u32(UNIX_EPOCH.elapsed().unwrap().as_secs() as u32);
-            w.put_slice(ip);
-            w.put_u16(0);
-        });
-    }
+    tlv(0x01, move |w: &mut B| {
+        w.put_u16(1);
+        w.put_u32(rand::random());
+        w.put_u32(uin);
+        w.put_u32(UNIX_EPOCH.elapsed().unwrap().as_secs() as u32);
+        w.put_slice(ip);
+        w.put_u16(0);
+    })
 }
 
 pub fn t1b<B: BufMut + WriteLV>(
@@ -32,32 +39,26 @@ pub fn t1b<B: BufMut + WriteLV>(
     ec_level: u32,
     hint: u32,
 ) -> impl PacketWriter<B> {
-    move |buf: &mut B| {
-        buf.put_u16(0x1b);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u32(micro);
-            w.put_u32(version);
-            w.put_u32(size);
-            w.put_u32(margin);
-            w.put_u32(dpi);
-            w.put_u32(ec_level);
-            w.put_u32(hint);
-            w.put_u16(0);
-        });
-    }
+    tlv(0x1b, move |w: &mut B| {
+        w.put_u32(micro);
+        w.put_u32(version);
+        w.put_u32(size);
+        w.put_u32(margin);
+        w.put_u32(dpi);
+        w.put_u32(ec_level);
+        w.put_u32(hint);
+        w.put_u16(0);
+    })
 }
 
 pub fn t1d<B: BufMut + WriteLV>(misc_bitmap: u32) -> impl PacketWriter<B> {
-    move |buf: &mut B| {
-        buf.put_u16(0x1d);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u8(1);
-            w.put_u32(misc_bitmap);
-            w.put_u32(0);
-            w.put_u8(0);
-            w.put_u32(0);
-        });
-    }
+    tlv(0x1d, move |w: &mut B| {
+        w.put_u8(1);
+        w.put_u32(misc_bitmap);
+        w.put_u32(0);
+        w.put_u8(0);
+        w.put_u32(0);
+    })
 }
 
 pub fn t1f<'a, B: BufMut + WriteLV>(
@@ -68,47 +69,35 @@ pub fn t1f<'a, B: BufMut + WriteLV>(
     apn: &'a str,
     network_type: u16,
 ) -> impl PacketWriter<B> + 'a {
-    move |buf: &mut B| {
-        buf.put_u16(0x1f);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u8(if is_root { 1 } else { 0 });
-            w.write_bytes_short(os_name.as_bytes());
-            w.write_bytes_short(os_version.as_bytes());
-            w.put_u16(network_type);
-            w.write_bytes_short(sim_operator_name.as_bytes());
-            w.write_bytes_short(&[]);
-            w.write_bytes_short(apn.as_bytes());
-        });
-    }
+    tlv(0x1f, move |w: &mut B| {
+        w.put_u8(if is_root { 1 } else { 0 });
+        w.write_bytes_short(os_name.as_bytes());
+        w.write_bytes_short(os_version.as_bytes());
+        w.put_u16(network_type);
+        w.write_bytes_short(sim_operator_name.as_bytes());
+        w.write_bytes_short(&[]);
+        w.write_bytes_short(apn.as_bytes());
+    })
 }
 
 pub fn t2<B: BufMut + WriteLV>(result: String, sign: &[u8]) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x02);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u16(0);
-            w.write_bytes_short(result.as_bytes());
-            w.write_bytes_short(sign);
-        });
-    }
+    tlv(0x02, move |w: &mut B| {
+        w.put_u16(0);
+        w.write_bytes_short(result.as_bytes());
+        w.write_bytes_short(sign);
+    })
 }
 
 pub fn t8<B: BufMut + WriteLV>(local_id: u32) -> impl PacketWriter<B> {
-    move |buf: &mut B| {
-        buf.put_u16(0x8);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u16(0);
-            w.put_u32(local_id);
-            w.put_u16(0);
-        });
-    }
+    tlv(0x08, move |w: &mut B| {
+        w.put_u16(0);
+        w.put_u32(local_id);
+        w.put_u16(0);
+    })
 }
 
 pub fn t10a<B: BufMut + WriteLV>(arr: &[u8]) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x10A);
-        buf.write_short_lv(arr);
-    }
+    tlv(0x10A, arr)
 }
 
 pub fn t16<'a, B: BufMut + WriteLV>(
@@ -120,84 +109,57 @@ pub fn t16<'a, B: BufMut + WriteLV>(
     apk_version_name: &'a str,
     apk_sign: &'a [u8],
 ) -> impl PacketWriter<B> + 'a {
-    move |buf: &mut B| {
-        buf.put_u16(0x16);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u32(sso_version);
-            w.put_u32(app_id);
-            w.put_u32(sub_app_id);
-            w.put_slice(guid);
-            w.write_bytes_short(apk_id.as_bytes());
-            w.write_bytes_short(apk_version_name.as_bytes());
-            w.write_bytes_short(apk_sign);
-        });
-    }
+    tlv(0x16, move |w: &mut B| {
+        w.put_u32(sso_version);
+        w.put_u32(app_id);
+        w.put_u32(sub_app_id);
+        w.put_slice(guid);
+        w.write_bytes_short(apk_id.as_bytes());
+        w.write_bytes_short(apk_version_name.as_bytes());
+        w.write_bytes_short(apk_sign);
+    })
 }
 
 pub fn t16a<B: BufMut + WriteLV>(arr: &[u8]) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x16A);
-        buf.write_short_lv(arr);
-    }
+    tlv(0x16A, arr)
 }
 
 pub fn t16e<B: BufMut + WriteLV>(build_model: &[u8]) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x16E);
-        buf.write_short_lv(build_model);
-    }
+    tlv(0x16E, build_model)
 }
 
 pub fn t17a<B: BufMut + WriteLV>(value: i32) -> impl PacketWriter<B> {
-    move |buf: &mut B| {
-        buf.put_u16(0x17a);
-        buf.write_short_lv((value as u32).to_be_bytes().as_slice());
-    }
+    tlv(0x17a, move |buf: &mut B| buf.put_u32(value as u32))
 }
 
 pub fn t17c<B: BufMut + WriteLV>(code: &str) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x17c);
-        buf.write_short_lv(|w: &mut B| {
-            w.write_short_lv(code.as_bytes());
-        });
-    }
+    tlv(0x17c, move |w: &mut B| {
+        w.write_short_lv(code.as_bytes());
+    })
 }
 
 pub fn t18<B: BufMut + WriteLV>(app_id: u32, uin: u32) -> impl PacketWriter<B> {
-    move |buf: &mut B| {
-        buf.put_u16(0x18);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u16(1);
-            w.put_u32(1536);
-            w.put_u32(app_id);
-            w.put_u32(0);
-            w.put_u32(uin);
-            w.put_u16(0);
-            w.put_u16(0);
-        });
-    }
+    tlv(0x18, move |w: &mut B| {
+        w.put_u16(1);
+        w.put_u32(1536);
+        w.put_u32(app_id);
+        w.put_u32(0);
+        w.put_u32(uin);
+        w.put_u16(0);
+        w.put_u16(0);
+    })
 }
 
 pub fn t33<B: BufMut + WriteLV>(guid: &[u8]) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x33);
-        buf.write_short_lv(guid);
-    }
+    tlv(0x33, guid)
 }
 
 pub fn t35<B: BufMut + WriteLV>(product_type: u32) -> impl PacketWriter<B> {
-    move |buf: &mut B| {
-        buf.put_u16(0x35);
-        buf.write_short_lv(product_type.to_be_bytes().as_slice());
-    }
+    tlv(0x35, move |buf: &mut B| buf.put_u32(product_type))
 }
 
 pub fn t52d<B: BufMut + WriteLV>(dev_info: &[u8]) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x52d);
-        buf.write_short_lv(dev_info);
-    }
+    tlv(0x52d, dev_info)
 }
 
 pub fn t100<B: BufMut + WriteLV>(
@@ -205,24 +167,18 @@ pub fn t100<B: BufMut + WriteLV>(
     protocol: u32,
     main_sig_map: u32,
 ) -> impl PacketWriter<B> {
-    move |buf: &mut B| {
-        buf.put_u16(0x100);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u16(1);
-            w.put_u32(sso_version);
-            w.put_u32(16);
-            w.put_u32(protocol);
-            w.put_u32(0); // App client version
-            w.put_u32(main_sig_map); // 34869472
-        });
-    }
+    tlv(0x100, move |w: &mut B| {
+        w.put_u16(1);
+        w.put_u32(sso_version);
+        w.put_u32(16);
+        w.put_u32(protocol);
+        w.put_u32(0); // App client version
+        w.put_u32(main_sig_map); // 34869472
+    })
 }
 
 pub fn t104<B: BufMut + WriteLV>(data: &[u8]) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x104);
-        buf.write_short_lv(data);
-    }
+    tlv(0x104, data)
 }
 
 pub fn t106<'a, B: BufMut + WriteLV>(
@@ -236,20 +192,23 @@ pub fn t106<'a, B: BufMut + WriteLV>(
     tgtgt_key: &'a [u8],
     wtf: u32,
 ) -> impl PacketWriter<B> + 'a {
-    move |buf: &mut B| {
-        buf.put_u16(0x106);
-        let body = &{
+    tlv(0x106, move |w: &mut B| {
+        let key = md5::compute(&{
+            let mut v = BytesMut::new();
+            v.put_slice(password_md5);
+            v.put_slice(&[0; 4]);
+            v.put_u32(if salt != 0 { salt } else { uin });
+            v
+        })
+        .to_vec();
+        w.encrypt_and_write(&key, &{
             let mut w = BytesMut::new();
             w.put_u16(4);
             w.put_u32(rand::random::<u32>());
             w.put_u32(sso_ver);
             w.put_u32(16); // appId
             w.put_u32(0); // app client version
-            if uin == 0 {
-                w.put_u64(salt as u64)
-            } else {
-                w.put_u64(uin as u64)
-            }
+            w.put_u64(if uin == 0 { salt as u64 } else { uin as u64 });
             w.put_u32(UNIX_EPOCH.elapsed().unwrap().as_secs() as u32);
             w.put_slice(&[0x00, 0x00, 0x00, 0x00]); // fake ip
             w.put_u8(0x01);
@@ -269,62 +228,37 @@ pub fn t106<'a, B: BufMut + WriteLV>(
             w.write_short_lv((uin as i64).to_string().as_bytes());
             w.put_u16(0);
             w.freeze()
-        };
-
-        buf.write_short_lv(|w: &mut B| {
-            let mut b = BytesMut::new();
-            if salt != 0 {
-                b.put_u32(salt);
-            } else {
-                b.put_u32(uin);
-            }
-            let mut v = BytesMut::new();
-            v.put_slice(password_md5);
-            v.put_slice(&[0; 4]);
-            v.put_slice(&b);
-            let key = md5::compute(&v).to_vec();
-            w.encrypt_and_write(&key, body);
         });
-    }
+    })
 }
 
 pub fn t107<B: BufMut + WriteLV>(pic_type: u16) -> impl PacketWriter<B> {
-    move |buf: &mut B| {
-        buf.put_u16(0x107);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u16(pic_type);
-            w.put_u8(0x00);
-            w.put_u16(0);
-            w.put_u8(0x01);
-        });
-    }
+    tlv(0x107, move |w: &mut B| {
+        w.put_u16(pic_type);
+        w.put_u8(0x00);
+        w.put_u16(0);
+        w.put_u8(0x01);
+    })
 }
 
 pub fn t108<B: BufMut + WriteLV>(ksid: &[u8]) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x108);
-        buf.write_short_lv(ksid);
-    }
+    tlv(0x108, ksid)
 }
 
 pub fn t109<B: BufMut + WriteLV>(android_id: &str) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x109);
-        buf.write_short_lv(md5::compute(android_id.as_bytes()).as_ref());
-    }
+    tlv(0x109, move |buf: &mut B| {
+        buf.put_slice(md5::compute(android_id.as_bytes()).as_ref());
+    })
 }
 
 pub fn t116<B: BufMut + WriteLV>(misc_bitmap: u32, sub_sig_map: u32) -> impl PacketWriter<B> {
-    move |buf: &mut B| {
-        buf.put_u16(0x116);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u8(0x00);
-            w.put_u32(misc_bitmap);
-            w.put_u32(sub_sig_map);
-            w.put_u8(0x01);
-            w.put_u32(1600000226); // app id list
-        });
-    }
+    tlv(0x116, move |w: &mut B| {
+        w.put_u8(0x00);
+        w.put_u32(misc_bitmap);
+        w.put_u32(sub_sig_map);
+        w.put_u8(0x01);
+        w.put_u32(1600000226); // app id list
+    })
 }
 
 pub fn t124<'a, B: BufMut + WriteLV>(
@@ -333,17 +267,14 @@ pub fn t124<'a, B: BufMut + WriteLV>(
     sim_info: &'a str,
     apn: &'a str,
 ) -> impl PacketWriter<B> + 'a {
-    move |buf: &mut B| {
-        buf.put_u16(0x124);
-        buf.write_short_lv(|w: &mut B| {
-            w.write_tlv_limited_size(os_type.as_bytes(), 16);
-            w.write_tlv_limited_size(os_version.as_bytes(), 16);
-            w.put_u16(2);
-            w.write_tlv_limited_size(sim_info.as_bytes(), 16);
-            w.write_tlv_limited_size(&[], 16);
-            w.write_tlv_limited_size(apn.as_bytes(), 16);
-        });
-    }
+    tlv(0x124, move |w: &mut B| {
+        w.write_tlv_limited_size(os_type.as_bytes(), 16);
+        w.write_tlv_limited_size(os_version.as_bytes(), 16);
+        w.put_u16(2);
+        w.write_tlv_limited_size(sim_info.as_bytes(), 16);
+        w.write_tlv_limited_size(&[], 16);
+        w.write_tlv_limited_size(apn.as_bytes(), 16);
+    })
 }
 
 pub fn t128<'a, B: BufMut + WriteLV>(
@@ -355,48 +286,36 @@ pub fn t128<'a, B: BufMut + WriteLV>(
     guid: &'a [u8],
     build_brand: &'a str,
 ) -> impl PacketWriter<B> + 'a {
-    move |buf: &mut B| {
-        buf.put_u16(0x128);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u16(0);
-            w.put_u8(if is_guid_from_file_null { 1 } else { 0 });
-            w.put_u8(if is_guid_available { 1 } else { 0 });
-            w.put_u8(if is_guid_changed { 1 } else { 0 });
-            w.put_u32(guid_flag);
-            w.write_tlv_limited_size(build_model.as_bytes(), 32);
-            w.write_tlv_limited_size(guid, 16);
-            w.write_tlv_limited_size(build_brand.as_bytes(), 16); // app id list
-        });
-    }
+    tlv(0x128, move |w: &mut B| {
+        w.put_u16(0);
+        w.put_u8(if is_guid_from_file_null { 1 } else { 0 });
+        w.put_u8(if is_guid_available { 1 } else { 0 });
+        w.put_u8(if is_guid_changed { 1 } else { 0 });
+        w.put_u32(guid_flag);
+        w.write_tlv_limited_size(build_model.as_bytes(), 32);
+        w.write_tlv_limited_size(guid, 16);
+        w.write_tlv_limited_size(build_brand.as_bytes(), 16); // app id list
+    })
 }
 
 pub fn t141<'a, B: BufMut + WriteLV>(sim_info: &'a str, apn: &'a str) -> impl PacketWriter<B> + 'a {
-    move |buf: &mut B| {
-        buf.put_u16(0x141);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u16(1);
-            w.write_bytes_short(sim_info.as_bytes());
-            w.put_u16(2);
-            w.write_bytes_short(apn.as_bytes());
-        });
-    }
+    tlv(0x141, move |w: &mut B| {
+        w.put_u16(1);
+        w.write_bytes_short(sim_info.as_bytes());
+        w.put_u16(2);
+        w.write_bytes_short(apn.as_bytes());
+    })
 }
 
 pub fn t142<B: BufMut + WriteLV>(apk_id: &str) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x142);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u16(0);
-            w.write_tlv_limited_size(apk_id.as_bytes(), 32);
-        });
-    }
+    tlv(0x142, move |w: &mut B| {
+        w.put_u16(0);
+        w.write_tlv_limited_size(apk_id.as_bytes(), 32);
+    })
 }
 
 pub fn t143<B: BufMut + WriteLV>(arr: &[u8]) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x143);
-        buf.write_short_lv(arr);
-    }
+    tlv(0x143, arr)
 }
 
 pub fn t144<'a, B: BufMut + WriteLV>(
@@ -415,37 +334,31 @@ pub fn t144<'a, B: BufMut + WriteLV>(
     build_brand: &'a str,
     tgtgt_key: &'a [u8],
 ) -> impl PacketWriter<B> + 'a {
-    move |buf: &mut B| {
-        buf.put_u16(0x144);
-        buf.write_short_lv(|w: &mut B| {
-            w.encrypt_and_write(tgtgt_key, &{
-                let mut w = Vec::new();
-                w.put_u16(5);
-                t109(imei).write(&mut w);
-                t52d(dev_info).write(&mut w);
-                t124(os_type, os_version, sim_info, apn).write(&mut w);
-                t128(
-                    is_guid_from_file_null,
-                    is_guid_available,
-                    is_guid_changed,
-                    guid_flag,
-                    build_model,
-                    guid,
-                    build_brand,
-                )
-                    .write(&mut w);
-                t16e(build_model.as_bytes()).write(&mut w);
-                w
-            });
+    tlv(0x144, move |w: &mut B| {
+        w.encrypt_and_write(tgtgt_key, &{
+            let mut w = Vec::new();
+            w.put_u16(5);
+            t109(imei).write(&mut w);
+            t52d(dev_info).write(&mut w);
+            t124(os_type, os_version, sim_info, apn).write(&mut w);
+            t128(
+                is_guid_from_file_null,
+                is_guid_available,
+                is_guid_changed,
+                guid_flag,
+                build_model,
+                guid,
+                build_brand,
+            )
+            .write(&mut w);
+            t16e(build_model.as_bytes()).write(&mut w);
+            w
         });
-    }
+    })
 }
 
 pub fn t145<B: BufMut + WriteLV>(guid: &[u8]) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x145);
-        buf.write_short_lv(guid);
-    }
+    tlv(0x145, guid)
 }
 
 pub fn t147<'a, B: BufMut + WriteLV>(
@@ -453,115 +366,77 @@ pub fn t147<'a, B: BufMut + WriteLV>(
     apk_version_name: &'a str,
     apk_signature_md5: &'a [u8],
 ) -> impl PacketWriter<B> + 'a {
-    move |buf: &mut B| {
-        buf.put_u16(0x147);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u32(app_id);
-            w.write_tlv_limited_size(apk_version_name.as_bytes(), 32);
-            w.write_tlv_limited_size(apk_signature_md5, 32);
-        });
-    }
+    tlv(0x147, move |w: &mut B| {
+        w.put_u32(app_id);
+        w.write_tlv_limited_size(apk_version_name.as_bytes(), 32);
+        w.write_tlv_limited_size(apk_signature_md5, 32);
+    })
 }
 
 pub fn t154<B: BufMut + WriteLV>(seq: u16) -> impl PacketWriter<B> {
-    move |buf: &mut B| {
-        buf.put_u16(0x154);
-        buf.write_short_lv((seq as u32).to_be_bytes().as_slice());
-    }
+    tlv(0x154, move |buf: &mut B| buf.put_u32(seq as u32))
 }
 
 pub fn t166<B: BufMut + WriteLV>(image_type: u8) -> impl PacketWriter<B> {
-    move |buf: &mut B| {
-        buf.put_u16(0x166);
-        buf.write_short_lv([image_type].as_slice());
-    }
+    tlv(0x166, move |buf: &mut B| buf.put_u8(image_type))
 }
 
 pub fn t174<B: BufMut + WriteLV>(data: &[u8]) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x174);
-        buf.write_short_lv(data);
-    }
+    tlv(0x174, data)
 }
 
 pub fn t177<B: BufMut + WriteLV>(build_time: u32, sdk_version: &str) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x177);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u8(0x01);
-            w.put_u32(build_time);
-            w.write_short_lv(sdk_version.as_bytes());
-        });
-    }
+    tlv(0x177, move |w: &mut B| {
+        w.put_u8(0x01);
+        w.put_u32(build_time);
+        w.write_short_lv(sdk_version.as_bytes());
+    })
 }
 
 pub fn t187<B: BufMut + WriteLV>(mac_address: &str) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x187);
-        buf.write_short_lv(md5::compute(mac_address.as_bytes()).as_ref());
-    }
+    tlv(0x187, move |buf: &mut B| {
+        buf.put_slice(md5::compute(mac_address.as_bytes()).as_ref())
+    })
 }
 
 pub fn t188<B: BufMut + WriteLV>(android_id: &str) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x188);
-        buf.write_short_lv(md5::compute(android_id.as_bytes()).as_ref());
-    }
+    tlv(0x188, move |buf: &mut B| {
+        buf.put_slice(md5::compute(android_id.as_bytes()).as_ref())
+    })
 }
 
 pub fn t191<B: BufMut + WriteLV>(k: u8) -> impl PacketWriter<B> {
-    move |buf: &mut B| {
-        buf.put_u16(0x191);
-        buf.write_short_lv([k].as_slice());
-    }
+    tlv(0x191, move |buf: &mut B| buf.put_u8(k))
 }
 
 pub fn t193<B: BufMut + WriteLV>(ticket: &str) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x193);
-        buf.write_short_lv(ticket.as_bytes());
-    }
+    tlv(0x193, ticket.as_bytes())
 }
 
 pub fn t194<B: BufMut + WriteLV>(imsi_md5: &[u8]) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x194);
-        buf.write_short_lv(imsi_md5);
-    }
+    tlv(0x194, imsi_md5)
 }
 
 pub fn t197<B: BufMut + WriteLV>() -> impl PacketWriter<B> {
-    |buf: &mut B| {
-        buf.put_u16(0x197);
-        buf.write_short_lv([0u8].as_slice());
-    }
+    tlv(0x197, [0u8].as_slice())
 }
 
 pub fn t198<B: BufMut + WriteLV>() -> impl PacketWriter<B> {
-    |buf: &mut B| {
-        buf.put_u16(0x198);
-        buf.write_short_lv([0u8].as_slice());
-    }
+    tlv(0x198, [0u8].as_slice())
 }
 
 pub fn t202<'a, B: BufMut + WriteLV>(
     wifi_bssid: &'a str,
     wifi_ssid: &'a str,
 ) -> impl PacketWriter<B> + 'a {
-    move |buf: &mut B| {
-        buf.put_u16(0x202);
-        buf.write_short_lv(|w: &mut B| {
-            w.write_tlv_limited_size(wifi_bssid.as_bytes(), 16);
-            w.write_tlv_limited_size(wifi_ssid.as_bytes(), 32);
-        });
-    }
+    tlv(0x202, move |w: &mut B| {
+        w.write_tlv_limited_size(wifi_bssid.as_bytes(), 16);
+        w.write_tlv_limited_size(wifi_ssid.as_bytes(), 32);
+    })
 }
 
-pub fn t318<B: BufMut + WriteLV>(tgt_qr:&[u8]) -> impl PacketWriter<B>+'_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x318);
-        buf.write_short_lv(tgt_qr);
-    }
+pub fn t318<B: BufMut + WriteLV>(tgt_qr: &[u8]) -> impl PacketWriter<B> + '_ {
+    tlv(0x318, tgt_qr)
 }
 
 pub fn t400<'a, B: BufMut + WriteLV>(
@@ -573,114 +448,95 @@ pub fn t400<'a, B: BufMut + WriteLV>(
     j3: i64,
     rand_seed: &'a [u8],
 ) -> impl PacketWriter<B> + 'a {
-    move |buf: &mut B| {
-        buf.put_u16(0x400);
-        buf.write_short_lv(|w: &mut B| {
-            w.encrypt_and_write(g, &{
-                let mut ww = Vec::new();
-                ww.put_u16(1);
-                ww.put_u64(uin as u64);
-                ww.put_slice(guid);
-                ww.put_slice(dpwd);
-                ww.put_u32(j2 as u32);
-                ww.put_u32(j3 as u32);
-                ww.put_u32(UNIX_EPOCH.elapsed().unwrap().as_millis() as u32);
-                ww.put_slice(rand_seed);
-                ww
-            });
+    tlv(0x400, move |w: &mut B| {
+        w.encrypt_and_write(g, &{
+            let mut ww = Vec::new();
+            ww.put_u16(1);
+            ww.put_u64(uin as u64);
+            ww.put_slice(guid);
+            ww.put_slice(dpwd);
+            ww.put_u32(j2 as u32);
+            ww.put_u32(j3 as u32);
+            ww.put_u32(UNIX_EPOCH.elapsed().unwrap().as_millis() as u32);
+            ww.put_slice(rand_seed);
+            ww
         });
-    }
+    })
 }
 
 pub fn t401<B: BufMut + WriteLV>(d: &[u8]) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x401);
-        buf.write_short_lv(d);
-    }
+    tlv(0x401, d)
 }
 
 pub fn t511<B: BufMut + WriteLV>(domains: Vec<&str>) -> impl PacketWriter<B> + '_ {
-    |buf: &mut B| {
+    tlv(0x511, move |w: &mut B| {
         let mut arr2 = Vec::new();
         for d in domains {
             if !d.is_empty() {
                 arr2.push(d)
             }
         }
-        buf.put_u16(0x511);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u16(arr2.len() as u16);
-            for d in arr2 {
-                let index_of = match d.find('(') {
-                    None => -1,
-                    Some(i) => i as isize,
-                };
-                let index_of2 = match d.find(')') {
-                    None => -1,
-                    Some(i) => i as isize,
-                };
-                if index_of != 0 || index_of2 <= 0 {
-                    w.put_u8(0x01);
-                    w.write_short_lv(d.as_bytes())
-                } else {
-                    let mut b: u8;
-                    let z: bool;
-                    if let Ok(i) = d[(index_of + 1) as usize..index_of2 as usize].parse::<i32>() {
-                        let z2 = (1048576 & i) > 0;
-                        if (i & 134217728) > 0 {
-                            z = true
-                        } else {
-                            z = false
-                        }
-                        if z2 {
-                            b = 1
-                        } else {
-                            b = 0
-                        }
-                        if z {
-                            b |= 2
-                        }
-                        w.put_u8(b);
-                        w.write_short_lv(d[(index_of2 + 1) as usize..].as_bytes());
+        w.put_u16(arr2.len() as u16);
+        for d in arr2 {
+            let index_of = match d.find('(') {
+                None => -1,
+                Some(i) => i as isize,
+            };
+            let index_of2 = match d.find(')') {
+                None => -1,
+                Some(i) => i as isize,
+            };
+            if index_of != 0 || index_of2 <= 0 {
+                w.put_u8(0x01);
+                w.write_short_lv(d.as_bytes())
+            } else {
+                let mut b: u8;
+                let z: bool;
+                if let Ok(i) = d[(index_of + 1) as usize..index_of2 as usize].parse::<i32>() {
+                    let z2 = (1048576 & i) > 0;
+                    if (i & 134217728) > 0 {
+                        z = true
+                    } else {
+                        z = false
                     }
+                    if z2 {
+                        b = 1
+                    } else {
+                        b = 0
+                    }
+                    if z {
+                        b |= 2
+                    }
+                    w.put_u8(b);
+                    w.write_short_lv(d[(index_of2 + 1) as usize..].as_bytes());
                 }
             }
-        });
-    }
+        }
+    })
 }
 
 pub fn t516<B: BufMut + WriteLV>() -> impl PacketWriter<B> {
-    move |buf: &mut B| {
-        buf.put_u16(0x516);
-        buf.write_short_lv(0u32.to_be_bytes().as_slice());
-    }
+    tlv(0x516, |buf: &mut B| buf.put_u32(0))
 }
 
 pub fn t521<B: BufMut + WriteLV>(i: u32) -> impl PacketWriter<B> {
-    move |buf: &mut B| {
-        buf.put_u16(0x521);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u32(i);
-            w.put_u16(0);
-        });
-    }
+    tlv(0x521, move |w: &mut B| {
+        w.put_u32(i);
+        w.put_u16(0);
+    })
 }
 
-pub fn t525<'a, B: BufMut + WriteLV, T: PacketWriter<B> + 'a>(t536: T) -> impl PacketWriter<B> + 'a {
-    move |buf: &mut B| {
-        buf.put_u16(0x525);
-        buf.write_short_lv(|w: &mut B| {
-            w.put_u16(1);
-            t536.write(w);
-        });
-    }
+pub fn t525<'a, B: BufMut + WriteLV, T: PacketWriter<B> + 'a>(
+    t536: T,
+) -> impl PacketWriter<B> + 'a {
+    tlv(0x525, move |w: &mut B| {
+        w.put_u16(1);
+        t536.write(w);
+    })
 }
 
 pub fn t536<B: BufMut + WriteLV>(login_extra_data: &[u8]) -> impl PacketWriter<B> + '_ {
-    move |buf: &mut B| {
-        buf.put_u16(0x536);
-        buf.write_short_lv(login_extra_data);
-    }
+    tlv(0x526, login_extra_data)
 }
 
 pub fn guid_flag() -> u32 {

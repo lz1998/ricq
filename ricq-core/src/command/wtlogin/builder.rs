@@ -35,7 +35,7 @@ impl super::super::super::Engine {
                     transport.version.sort_version_name,
                     transport.version.apk_sign,
                 )
-                    .write(&mut w);
+                .write(&mut w);
                 t1b(0, 0, 3, 4, 72, 2, 2).write(&mut w);
                 t1d(transport.version.misc_bitmap).write(&mut w);
                 if matches!(transport.version.protocol, Protocol::MacOS) {
@@ -47,7 +47,7 @@ impl super::super::super::Engine {
                         &transport.device.apn,
                         2, // wifi
                     )
-                        .write(&mut w);
+                    .write(&mut w);
                 } else {
                     t1f(
                         false,
@@ -57,7 +57,7 @@ impl super::super::super::Engine {
                         &transport.device.apn,
                         2, // wifi
                     )
-                        .write(&mut w);
+                    .write(&mut w);
                 }
                 t33(&transport.sig.guid).write(&mut w);
                 if matches!(transport.version.protocol, Protocol::MacOS) {
@@ -123,7 +123,12 @@ impl super::super::super::Engine {
     }
 
     // wtlogin.login
-    pub fn build_qrcode_login_packet(&self, tmp_pwd: &[u8], tmp_no_pic_sig: &[u8], tgt_qr: &[u8]) -> Packet {
+    pub fn build_qrcode_login_packet(
+        &self,
+        tmp_pwd: &[u8],
+        tmp_no_pic_sig: &[u8],
+        tgt_qr: &[u8],
+    ) -> Packet {
         let seq = self.next_seq();
         let transport = &self.transport;
         let req = self.build_oicq_request_packet(self.uin(), 0x0810, &{
@@ -133,20 +138,14 @@ impl super::super::super::Engine {
 
             t18(16, self.uin() as u32).write(&mut w);
             t1(self.uin() as u32, &transport.device.ip_address).write(&mut w);
-            fn t106<B:BufMut+WriteLV>(tmp_pwd: &[u8]) -> impl PacketWriter<B> + '_ {
-                move |buf: &mut B| {
-                    buf.put_u16(0x106);
-                    buf.write_short_lv(tmp_pwd);
-                }
-            }
-            t106(tmp_pwd).write(&mut w);
+            tlv(0x106, tmp_pwd).write(&mut w);
             t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
             t100(
                 transport.version.sso_version,
                 transport.version.sub_app_id,
                 transport.version.main_sig_map,
             )
-                .write(&mut w);
+            .write(&mut w);
             t107(0).write(&mut w);
             t142(transport.version.apk_id).write(&mut w);
             t144(
@@ -165,7 +164,7 @@ impl super::super::super::Engine {
                 &transport.device.brand,
                 &transport.sig.tgtgt_key,
             )
-                .write(&mut w);
+            .write(&mut w);
 
             t145(&transport.sig.guid).write(&mut w);
             t147(
@@ -173,7 +172,7 @@ impl super::super::super::Engine {
                 transport.version.sort_version_name,
                 transport.version.apk_sign,
             )
-                .write(&mut w);
+            .write(&mut w);
             t16a(tmp_no_pic_sig).write(&mut w);
             t154(seq).write(&mut w);
             t141(&transport.device.sim_info, &transport.device.apn).write(&mut w);
@@ -194,7 +193,7 @@ impl super::super::super::Engine {
                 "mail.qq.com",
                 "mma.qq.com",
             ])
-                .write(&mut w);
+            .write(&mut w);
             t187(&transport.device.mac_address).write(&mut w);
             t188(&transport.device.android_id).write(&mut w);
             if !transport.device.imsi_md5.is_empty() {
@@ -382,7 +381,7 @@ impl super::super::super::Engine {
                 2,
                 transport.version.main_sig_map,
             )
-                .write(&mut w);
+            .write(&mut w);
             t107(0).write(&mut w);
             t144(
                 &transport.device.android_id,
@@ -400,7 +399,7 @@ impl super::super::super::Engine {
                 &transport.device.brand,
                 &transport.sig.tgtgt_key,
             )
-                .write(&mut w);
+            .write(&mut w);
             t142(transport.version.apk_id).write(&mut w);
             t145(&transport.sig.guid).write(&mut w);
             t16a(&transport.sig.srm_token).write(&mut w);
@@ -422,13 +421,13 @@ impl super::super::super::Engine {
                 "mail.qq.com",
                 "mma.qq.com",
             ])
-                .write(&mut w);
+            .write(&mut w);
             t147(
                 16,
                 transport.version.sort_version_name,
                 transport.version.apk_sign,
             )
-                .write(&mut w);
+            .write(&mut w);
             t177(transport.version.build_time, transport.version.sdk_version).write(&mut w);
             t400(
                 &transport.sig.g,
@@ -439,7 +438,7 @@ impl super::super::super::Engine {
                 16,
                 &transport.sig.rand_seed,
             )
-                .write(&mut w);
+            .write(&mut w);
             t187(&transport.device.mac_address).write(&mut w);
             t188(&transport.device.android_id).write(&mut w);
             t194(&transport.device.imsi_md5).write(&mut w);
@@ -479,7 +478,7 @@ impl super::super::super::Engine {
                 100,
                 main_sig_map.unwrap_or(transport.version.main_sig_map),
             )
-                .write(&mut w);
+            .write(&mut w);
             t10a(&transport.sig.tgt).write(&mut w);
             t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
             t108(&transport.sig.ksid).write(&mut w);
@@ -500,7 +499,7 @@ impl super::super::super::Engine {
                 &transport.device.brand,
                 &h,
             )
-                .write(&mut w);
+            .write(&mut w);
             t143(&transport.sig.d2).write(&mut w);
             t142(transport.version.apk_id).write(&mut w);
             t154(seq).write(&mut w);
@@ -512,7 +511,7 @@ impl super::super::super::Engine {
                 transport.version.sort_version_name,
                 transport.version.apk_sign,
             )
-                .write(&mut w);
+            .write(&mut w);
             t177(transport.version.build_time, transport.version.sdk_version).write(&mut w);
             t187(&transport.device.mac_address).write(&mut w);
             t188(&transport.device.android_id).write(&mut w);
@@ -533,7 +532,7 @@ impl super::super::super::Engine {
                 "mail.qq.com",
                 "mma.qq.com",
             ])
-                .write(&mut w);
+            .write(&mut w);
             // w.put_slice(&t202(self.device_info.wifi_bssid.as_bytes(), self.device_info.wifi_ssid.as_bytes()));
             w
         });
@@ -571,14 +570,14 @@ impl super::super::super::Engine {
                 &transport.sig.tgtgt_key,
                 0,
             )
-                .write(&mut w);
+            .write(&mut w);
             t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
             t100(
                 transport.version.sso_version,
                 transport.version.sub_app_id,
                 transport.version.main_sig_map,
             )
-                .write(&mut w);
+            .write(&mut w);
             t107(0).write(&mut w);
             t142(transport.version.apk_id).write(&mut w);
             t144(
@@ -597,14 +596,14 @@ impl super::super::super::Engine {
                 &transport.device.brand,
                 &transport.sig.tgtgt_key,
             )
-                .write(&mut w);
+            .write(&mut w);
             t145(&transport.sig.guid).write(&mut w);
             t147(
                 16,
                 transport.version.sort_version_name,
                 transport.version.apk_sign,
             )
-                .write(&mut w);
+            .write(&mut w);
             t154(seq).write(&mut w);
             t141(&transport.device.sim_info, &transport.device.apn).write(&mut w);
             t8(2052).write(&mut w);
@@ -624,7 +623,7 @@ impl super::super::super::Engine {
                 "mail.qq.com",
                 "mma.qq.com",
             ])
-                .write(&mut w);
+            .write(&mut w);
 
             t187(&transport.device.mac_address).write(&mut w);
             t188(&transport.device.android_id).write(&mut w);
@@ -696,7 +695,7 @@ mod utils {
                 base_band: self.base_band.to_owned(),
                 inner_version: self.version.incremental.to_owned(),
             }
-                .to_bytes()
+            .to_bytes()
         }
     }
 }
