@@ -251,6 +251,12 @@ pub fn t109<B: BufMut + WriteLV>(android_id: &str) -> impl PacketWriter<B> + '_ 
     })
 }
 
+pub fn t112<B: BufMut + WriteLV>(uin: i64) -> impl PacketWriter<B> {
+    tlv(0x112, move |w: &mut B| {
+        w.put_slice(uin.to_string().as_bytes())
+    })
+}
+
 pub fn t116<B: BufMut + WriteLV>(misc_bitmap: u32, sub_sig_map: u32) -> impl PacketWriter<B> {
     tlv(0x116, move |w: &mut B| {
         w.put_u8(0x00);

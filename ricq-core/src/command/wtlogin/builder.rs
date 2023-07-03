@@ -382,6 +382,7 @@ impl super::super::super::Engine {
                     transport.version.misc_bitmap,
                     transport.version.sub_sig_map,
                 ));
+            // TODO 547, 544
 
             w.put_u16(tlv_writer.count as u16);
             tlv_writer.write(&mut w);
@@ -398,7 +399,7 @@ impl super::super::super::Engine {
         }
     }
 
-    // wtlogin.exchange_emp TODO 少了一个 tlv？
+    // wtlogin.exchange_emp
     pub fn build_request_tgtgt_no_pic_sig_packet(&self) -> Packet {
         let seq = self.next_seq();
         let transport = &self.transport;
@@ -422,6 +423,7 @@ impl super::super::super::Engine {
                     transport.version.main_sig_map,
                 ))
                 .append(t107(0))
+                .append(t108(&transport.sig.ksid))
                 .append(t144(
                     &transport.device.android_id,
                     &dev_info,
@@ -441,6 +443,7 @@ impl super::super::super::Engine {
                 .append(t142(transport.version.apk_id))
                 .append(t145(&transport.sig.guid))
                 .append(t16a(&transport.sig.srm_token))
+                .append(t154(seq))
                 .append(t141(&transport.device.sim_info, &transport.device.apn))
                 .append(t8(2052))
                 .append(t511(vec![
@@ -510,7 +513,7 @@ impl super::super::super::Engine {
         }
     }
 
-    // wtlogin.exchange_emp
+    // wtlogin.exchange_emp TODO change d2
     pub fn build_request_change_sig_packet(&self, main_sig_map: Option<u32>) -> Packet {
         let seq = self.next_seq();
         let transport = &self.transport;
@@ -548,7 +551,8 @@ impl super::super::super::Engine {
                     &transport.device.brand,
                     &tgtgt_key,
                 ))
-                .append(t143(&transport.sig.d2))
+                .append(t112(self.uin()))
+                .append(t143(&transport.sig.d2)) // TODO change d2 145
                 .append(t142(transport.version.apk_id))
                 .append(t154(seq))
                 .append(t18(16, self.uin() as u32))
@@ -581,7 +585,12 @@ impl super::super::super::Engine {
                     "ti.qq.com",
                     "mail.qq.com",
                     "mma.qq.com",
-                ]));
+                ]))
+                .append(t202(
+                    &transport.device.wifi_bssid,
+                    &transport.device.wifi_ssid,
+                ));
+            // TODO 544
             w.put_u16(tlv_writer.count as u16);
             tlv_writer.write(&mut w);
             // w.put_slice(&t202(self.device_info.wifi_bssid.as_bytes(), self.device_info.wifi_ssid.as_bytes()));
@@ -688,6 +697,7 @@ impl super::super::super::Engine {
                 .append(t516())
                 .append(t521(0))
                 .append(t525(t536(&[0x01, 0x00])));
+            // TODO 544, 545
             w.put_u16(tlv_writer.count as u16);
             tlv_writer.write(&mut w);
 
