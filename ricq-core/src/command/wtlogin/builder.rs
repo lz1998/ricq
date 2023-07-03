@@ -1,6 +1,6 @@
 use bytes::{BufMut, BytesMut};
 
-use crate::binary::packet_writer::{PacketWriter, WriteLV};
+use crate::binary::packet_writer::{CounterWriter, PacketAppender, PacketWriter, WriteLV};
 use crate::binary::BinaryWriter;
 use crate::command::wtlogin::builder::utils::*;
 use crate::command::wtlogin::tlv_writer::*;
@@ -24,47 +24,47 @@ impl super::super::super::Engine {
                 w.put_u64(0); // const long user
                 w.put_u8(8); // const
                 w.write_short_lv([].as_slice());
-
-                w.put_u16(6);
-                t16(
-                    transport.version.sso_version,
-                    16, // app id ?
-                    transport.version.sub_app_id,
-                    &transport.sig.guid,
-                    transport.version.apk_id,
-                    transport.version.sort_version_name,
-                    transport.version.apk_sign,
-                )
-                .write(&mut w);
-                t1b(0, 0, 3, 4, 72, 2, 2).write(&mut w);
-                t1d(transport.version.misc_bitmap).write(&mut w);
-                if matches!(transport.version.protocol, Protocol::MacOS) {
-                    t1f(
-                        false,
-                        "Mac OSX",
-                        "10",
-                        "mac carrier",
-                        &transport.device.apn,
-                        2, // wifi
-                    )
-                    .write(&mut w);
-                } else {
-                    t1f(
-                        false,
-                        &transport.device.os_type,
-                        "7.1.2",
-                        &transport.device.sim_info,
-                        &transport.device.apn,
-                        2, // wifi
-                    )
-                    .write(&mut w);
-                }
-                t33(&transport.sig.guid).write(&mut w);
-                if matches!(transport.version.protocol, Protocol::MacOS) {
-                    t35(5).write(&mut w);
-                } else {
-                    t35(8).write(&mut w);
-                }
+                let tlv_writer = CounterWriter::default()
+                    .append(t16(
+                        transport.version.sso_version,
+                        16, // app id ?
+                        transport.version.sub_app_id,
+                        &transport.sig.guid,
+                        transport.version.apk_id,
+                        transport.version.sort_version_name,
+                        transport.version.apk_sign,
+                    ))
+                    .append(t1b(0, 0, 3, 4, 72, 2, 2))
+                    .append(t1d(transport.version.misc_bitmap))
+                    .append(if matches!(transport.version.protocol, Protocol::MacOS) {
+                        t1f(
+                            false,
+                            "Mac OSX",
+                            "10",
+                            "mac carrier",
+                            &transport.device.apn,
+                            2, // wifi
+                        )
+                    } else {
+                        t1f(
+                            false,
+                            &transport.device.os_type,
+                            "7.1.2",
+                            &transport.device.sim_info,
+                            &transport.device.apn,
+                            2, // wifi
+                        )
+                    })
+                    .append(t33(&transport.sig.guid))
+                    .append(t35(
+                        if matches!(transport.version.protocol, Protocol::MacOS) {
+                            5
+                        } else {
+                            8
+                        },
+                    ));
+                w.put_u16(tlv_writer.count as u16);
+                tlv_writer.write(&mut w);
                 w
             });
             w.put_u8(0);
@@ -134,81 +134,97 @@ impl super::super::super::Engine {
         let req = self.build_oicq_request_packet(self.uin(), 0x0810, &{
             let mut w = BytesMut::new();
             w.put_u16(9);
-            w.put_u16(24);
 
-            t18(16, self.uin() as u32).write(&mut w);
-            t1(self.uin() as u32, &transport.device.ip_address).write(&mut w);
-            tlv(0x106, tmp_pwd).write(&mut w);
-            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
-            t100(
-                transport.version.sso_version,
-                transport.version.sub_app_id,
-                transport.version.main_sig_map,
-            )
-            .write(&mut w);
-            t107(0).write(&mut w);
-            t142(transport.version.apk_id).write(&mut w);
-            t144(
-                &transport.device.imei,
-                &transport.device.gen_pb_data(),
-                &transport.device.os_type,
-                &transport.device.version.release,
-                &transport.device.sim_info,
-                &transport.device.apn,
-                false,
-                true,
-                false,
-                guid_flag(),
-                &transport.device.model,
-                &transport.sig.guid,
-                &transport.device.brand,
-                &transport.sig.tgtgt_key,
-            )
-            .write(&mut w);
+            let dev_info = transport.device.gen_pb_data();
+            let tlv_writer = CounterWriter::default()
+                .append(t18(16, self.uin() as u32))
+                .append(t1(self.uin() as u32, &transport.device.ip_address))
+                .append(tlv(0x106, tmp_pwd))
+                .append(t116(
+                    transport.version.misc_bitmap,
+                    transport.version.sub_sig_map,
+                ))
+                .append(t100(
+                    transport.version.sso_version,
+                    transport.version.sub_app_id,
+                    transport.version.main_sig_map,
+                ))
+                .append(t107(0))
+                .append(t142(transport.version.apk_id))
+                .append(t144(
+                    &transport.device.imei,
+                    &dev_info,
+                    &transport.device.os_type,
+                    &transport.device.version.release,
+                    &transport.device.sim_info,
+                    &transport.device.apn,
+                    false,
+                    true,
+                    false,
+                    guid_flag(),
+                    &transport.device.model,
+                    &transport.sig.guid,
+                    &transport.device.brand,
+                    &transport.sig.tgtgt_key,
+                ))
+                .append(t145(&transport.sig.guid))
+                .append(t147(
+                    16,
+                    transport.version.sort_version_name,
+                    transport.version.apk_sign,
+                ))
+                .append(t16a(tmp_no_pic_sig))
+                .append(t154(seq))
+                .append(t141(&transport.device.sim_info, &transport.device.apn))
+                .append(t8(2052))
+                .append(t511(vec![
+                    "tenpay.com",
+                    "openmobile.qq.com",
+                    "docs.qq.com",
+                    "connect.qq.com",
+                    "qzone.qq.com",
+                    "vip.qq.com",
+                    "gamecenter.qq.com",
+                    "qun.qq.com",
+                    "game.qq.com",
+                    "qqweb.qq.com",
+                    "office.qq.com",
+                    "ti.qq.com",
+                    "mail.qq.com",
+                    "mma.qq.com",
+                ]))
+                .append(t187(&transport.device.mac_address))
+                .append(t188(&transport.device.android_id))
+                .append_option(if !transport.device.imsi_md5.is_empty() {
+                    Some(t194(transport.device.imsi_md5.as_slice()))
+                } else {
+                    None
+                })
+                .append(t191(0x00))
+                .append_option(
+                    if !transport.device.wifi_bssid.is_empty()
+                        && !transport.device.wifi_ssid.is_empty()
+                    {
+                        Some(t202(
+                            &transport.device.wifi_bssid,
+                            &transport.device.wifi_ssid,
+                        ))
+                    } else {
+                        None
+                    },
+                )
+                .append(t177(
+                    transport.version.build_time,
+                    transport.version.sdk_version,
+                ))
+                .append(t516())
+                .append(t521(8))
+                .append(t318(tgt_qr));
+            w.put_u16(tlv_writer.count as u16);
+            tlv_writer.write(&mut w);
 
-            t145(&transport.sig.guid).write(&mut w);
-            t147(
-                16,
-                transport.version.sort_version_name,
-                transport.version.apk_sign,
-            )
-            .write(&mut w);
-            t16a(tmp_no_pic_sig).write(&mut w);
-            t154(seq).write(&mut w);
-            t141(&transport.device.sim_info, &transport.device.apn).write(&mut w);
-            t8(2052).write(&mut w);
-            t511(vec![
-                "tenpay.com",
-                "openmobile.qq.com",
-                "docs.qq.com",
-                "connect.qq.com",
-                "qzone.qq.com",
-                "vip.qq.com",
-                "gamecenter.qq.com",
-                "qun.qq.com",
-                "game.qq.com",
-                "qqweb.qq.com",
-                "office.qq.com",
-                "ti.qq.com",
-                "mail.qq.com",
-                "mma.qq.com",
-            ])
-            .write(&mut w);
-            t187(&transport.device.mac_address).write(&mut w);
-            t188(&transport.device.android_id).write(&mut w);
-            if !transport.device.imsi_md5.is_empty() {
-                t194(transport.device.imsi_md5.as_slice()).write(&mut w);
-            }
-            t191(0x00).write(&mut w);
-            if !transport.device.wifi_bssid.is_empty() && !transport.device.wifi_ssid.is_empty() {
-                t202(&transport.device.wifi_bssid, &transport.device.wifi_ssid).write(&mut w);
-            }
-            t177(transport.version.build_time, transport.version.sdk_version).write(&mut w);
-            t516().write(&mut w);
-            t521(8).write(&mut w);
             // let v:Vec<u8> = vec![0x01, 0x00];
             // w.put_slice(&t525(&t536(&v)));
-            t318(tgt_qr).write(&mut w);
             w
         });
         Packet {
@@ -229,12 +245,16 @@ impl super::super::super::Engine {
         let req = self.build_oicq_request_packet(self.uin(), 0x0810, &{
             let mut w = BytesMut::new();
             w.put_u16(20);
-            w.put_u16(4);
-
-            t8(2052).write(&mut w);
-            t104(&*transport.sig.t104).write(&mut w);
-            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
-            t401(&transport.sig.g).write(&mut w);
+            let tlv_writer = CounterWriter::default()
+                .append(t8(2052))
+                .append(t104(&*transport.sig.t104))
+                .append(t116(
+                    transport.version.misc_bitmap,
+                    transport.version.sub_sig_map,
+                ))
+                .append(t401(&transport.sig.g));
+            w.put_u16(tlv_writer.count as u16);
+            tlv_writer.write(&mut w);
             w
         });
         Packet {
@@ -255,11 +275,16 @@ impl super::super::super::Engine {
         let req = self.build_oicq_request_packet(self.uin(), 0x810, &{
             let mut w = BytesMut::new();
             w.put_u16(2); // sub command
-            w.put_u16(4);
-            t2(result, sign).write(&mut w);
-            t8(2052).write(&mut w);
-            t104(&transport.sig.t104).write(&mut w);
-            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
+            let tlv_writer = CounterWriter::default()
+                .append(t2(result, sign))
+                .append(t8(2052))
+                .append(t104(&transport.sig.t104))
+                .append(t116(
+                    transport.version.misc_bitmap,
+                    transport.version.sub_sig_map,
+                ));
+            w.put_u16(tlv_writer.count as u16);
+            tlv_writer.write(&mut w);
             w
         });
 
@@ -281,14 +306,19 @@ impl super::super::super::Engine {
         let req = self.build_oicq_request_packet(self.uin(), 0x810, &{
             let mut w = BytesMut::new();
             w.put_u16(8);
-            w.put_u16(6);
 
-            t8(2052).write(&mut w);
-            t104(&transport.sig.t104).write(&mut w);
-            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
-            t174(&transport.sig.t174).write(&mut w);
-            t17a(9).write(&mut w);
-            t197().write(&mut w);
+            let tlv_writer = CounterWriter::default()
+                .append(t8(2052))
+                .append(t104(&transport.sig.t104))
+                .append(t116(
+                    transport.version.misc_bitmap,
+                    transport.version.sub_sig_map,
+                ))
+                .append(t174(&transport.sig.t174))
+                .append(t17a(9))
+                .append(t197());
+            w.put_u16(tlv_writer.count as u16);
+            tlv_writer.write(&mut w);
             w
         });
         Packet {
@@ -309,15 +339,20 @@ impl super::super::super::Engine {
         let req = self.build_oicq_request_packet(self.uin(), 0x810, &{
             let mut w = BytesMut::new();
             w.put_u16(7);
-            w.put_u16(7);
+            let tlv_writer = CounterWriter::default()
+                .append(t8(2052))
+                .append(t104(&transport.sig.t104))
+                .append(t116(
+                    transport.version.misc_bitmap,
+                    transport.version.sub_sig_map,
+                ))
+                .append(t174(&transport.sig.t174))
+                .append(t17c(code))
+                .append(t401(&transport.sig.g))
+                .append(t198());
 
-            t8(2052).write(&mut w);
-            t104(&transport.sig.t104).write(&mut w);
-            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
-            t174(&transport.sig.t174).write(&mut w);
-            t17c(code).write(&mut w);
-            t401(&transport.sig.g).write(&mut w);
-            t198().write(&mut w);
+            w.put_u16(tlv_writer.count as u16);
+            tlv_writer.write(&mut w);
             w
         });
         Packet {
@@ -338,12 +373,19 @@ impl super::super::super::Engine {
         let req = self.build_oicq_request_packet(self.uin(), 0x810, &{
             let mut w = BytesMut::new();
             w.put_u16(2);
-            w.put_u16(4);
 
-            t193(ticket).write(&mut w);
-            t8(2052).write(&mut w);
-            t104(&transport.sig.t104).write(&mut w);
-            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
+            let tlv_writer = CounterWriter::default()
+                .append(t193(ticket))
+                .append(t8(2052))
+                .append(t104(&transport.sig.t104))
+                .append(t116(
+                    transport.version.misc_bitmap,
+                    transport.version.sub_sig_map,
+                ));
+            // TODO 547, 544
+
+            w.put_u16(tlv_writer.count as u16);
+            tlv_writer.write(&mut w);
             w
         });
         Packet {
@@ -365,87 +407,93 @@ impl super::super::super::Engine {
         let req = {
             let mut w = BytesMut::new();
             w.put_u16(15);
-            w.put_u16(24);
 
-            t18(16, self.uin() as u32).write(&mut w);
-            t1(self.uin() as u32, &transport.device.ip_address).write(&mut w);
-            w.put_slice(&{
-                let mut w = Vec::new();
-                w.put_u16(0x106);
-                w.write_short_lv(&*transport.sig.encrypted_a1);
-                w
-            });
-            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
-            t100(
-                transport.version.sso_version,
-                2,
-                transport.version.main_sig_map,
-            )
-            .write(&mut w);
-            t107(0).write(&mut w);
-            t144(
-                &transport.device.android_id,
-                &transport.device.gen_pb_data(),
-                &transport.device.os_type,
-                &transport.device.version.release,
-                &transport.device.sim_info,
-                &transport.device.apn,
-                false,
-                true,
-                false,
-                guid_flag(),
-                &transport.device.model,
-                &transport.sig.guid,
-                &transport.device.brand,
-                &transport.sig.tgtgt_key,
-            )
-            .write(&mut w);
-            t142(transport.version.apk_id).write(&mut w);
-            t145(&transport.sig.guid).write(&mut w);
-            t16a(&transport.sig.srm_token).write(&mut w);
-            t141(&transport.device.sim_info, &transport.device.apn).write(&mut w);
-            t8(2052).write(&mut w);
-            t511(vec![
-                "tenpay.com",
-                "openmobile.qq.com",
-                "docs.qq.com",
-                "connect.qq.com",
-                "qzone.qq.com",
-                "vip.qq.com",
-                "gamecenter.qq.com",
-                "qun.qq.com",
-                "game.qq.com",
-                "qqweb.qq.com",
-                "office.qq.com",
-                "ti.qq.com",
-                "mail.qq.com",
-                "mma.qq.com",
-            ])
-            .write(&mut w);
-            t147(
-                16,
-                transport.version.sort_version_name,
-                transport.version.apk_sign,
-            )
-            .write(&mut w);
-            t177(transport.version.build_time, transport.version.sdk_version).write(&mut w);
-            t400(
-                &transport.sig.g,
-                self.uin(),
-                &transport.sig.guid,
-                &transport.sig.dpwd,
-                1,
-                16,
-                &transport.sig.rand_seed,
-            )
-            .write(&mut w);
-            t187(&transport.device.mac_address).write(&mut w);
-            t188(&transport.device.android_id).write(&mut w);
-            t194(&transport.device.imsi_md5).write(&mut w);
-            t202(&transport.device.wifi_bssid, &transport.device.wifi_ssid).write(&mut w);
-            t516().write(&mut w);
-            t521(0).write(&mut w);
-            t525(t536(&[0x01, 0x00])).write(&mut w);
+            let dev_info = transport.device.gen_pb_data();
+            let tlv_writer = CounterWriter::default()
+                .append(t18(16, self.uin() as u32))
+                .append(t1(self.uin() as u32, &transport.device.ip_address))
+                .append(tlv(0x106, &*transport.sig.encrypted_a1))
+                .append(t116(
+                    transport.version.misc_bitmap,
+                    transport.version.sub_sig_map,
+                ))
+                .append(t100(
+                    transport.version.sso_version,
+                    2,
+                    transport.version.main_sig_map,
+                ))
+                .append(t107(0))
+                .append(t108(&transport.sig.ksid))
+                .append(t144(
+                    &transport.device.android_id,
+                    &dev_info,
+                    &transport.device.os_type,
+                    &transport.device.version.release,
+                    &transport.device.sim_info,
+                    &transport.device.apn,
+                    false,
+                    true,
+                    false,
+                    guid_flag(),
+                    &transport.device.model,
+                    &transport.sig.guid,
+                    &transport.device.brand,
+                    &transport.sig.tgtgt_key,
+                ))
+                .append(t142(transport.version.apk_id))
+                .append(t145(&transport.sig.guid))
+                .append(t16a(&transport.sig.srm_token))
+                .append(t154(seq))
+                .append(t141(&transport.device.sim_info, &transport.device.apn))
+                .append(t8(2052))
+                .append(t511(vec![
+                    "tenpay.com",
+                    "openmobile.qq.com",
+                    "docs.qq.com",
+                    "connect.qq.com",
+                    "qzone.qq.com",
+                    "vip.qq.com",
+                    "gamecenter.qq.com",
+                    "qun.qq.com",
+                    "game.qq.com",
+                    "qqweb.qq.com",
+                    "office.qq.com",
+                    "ti.qq.com",
+                    "mail.qq.com",
+                    "mma.qq.com",
+                ]))
+                .append(t147(
+                    16,
+                    transport.version.sort_version_name,
+                    transport.version.apk_sign,
+                ))
+                .append(t177(
+                    transport.version.build_time,
+                    transport.version.sdk_version,
+                ))
+                .append(t400(
+                    &transport.sig.g,
+                    self.uin(),
+                    &transport.sig.guid,
+                    &transport.sig.dpwd,
+                    1,
+                    16,
+                    &transport.sig.rand_seed,
+                ))
+                .append(t187(&transport.device.mac_address))
+                .append(t188(&transport.device.android_id))
+                .append(t194(&transport.device.imsi_md5))
+                .append(t202(
+                    &transport.device.wifi_bssid,
+                    &transport.device.wifi_ssid,
+                ))
+                .append(t516())
+                .append(t521(0))
+                .append(t525(t536(&[0x01, 0x00])));
+
+            w.put_u16(tlv_writer.count as u16);
+            tlv_writer.write(&mut w);
+
             w.freeze()
         };
         let m = oicq::Message {
@@ -465,74 +513,86 @@ impl super::super::super::Engine {
         }
     }
 
-    // wtlogin.exchange_emp
+    // wtlogin.exchange_emp TODO change d2
     pub fn build_request_change_sig_packet(&self, main_sig_map: Option<u32>) -> Packet {
         let seq = self.next_seq();
         let transport = &self.transport;
         let req = self.build_oicq_request_packet(self.uin(), 0x810, &{
             let mut w = BytesMut::new();
             w.put_u16(11);
-            w.put_u16(17);
-            t100(
-                transport.version.sso_version,
-                100,
-                main_sig_map.unwrap_or(transport.version.main_sig_map),
-            )
-            .write(&mut w);
-            t10a(&transport.sig.tgt).write(&mut w);
-            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
-            t108(&transport.sig.ksid).write(&mut w);
-            let h = md5::compute(&transport.sig.d2key).to_vec();
-            t144(
-                &transport.device.android_id,
-                &transport.device.gen_pb_data(),
-                &transport.device.os_type,
-                &transport.device.version.release,
-                &transport.device.sim_info,
-                &transport.device.apn,
-                false,
-                true,
-                false,
-                guid_flag(),
-                &transport.device.model,
-                &transport.sig.guid,
-                &transport.device.brand,
-                &h,
-            )
-            .write(&mut w);
-            t143(&transport.sig.d2).write(&mut w);
-            t142(transport.version.apk_id).write(&mut w);
-            t154(seq).write(&mut w);
-            t18(16, self.uin() as u32).write(&mut w);
-            t141(&transport.device.sim_info, &transport.device.apn).write(&mut w);
-            t8(2052).write(&mut w);
-            t147(
-                16,
-                transport.version.sort_version_name,
-                transport.version.apk_sign,
-            )
-            .write(&mut w);
-            t177(transport.version.build_time, transport.version.sdk_version).write(&mut w);
-            t187(&transport.device.mac_address).write(&mut w);
-            t188(&transport.device.android_id).write(&mut w);
-            t194(&transport.device.imsi_md5).write(&mut w);
-            t511(vec![
-                "tenpay.com",
-                "openmobile.qq.com",
-                "docs.qq.com",
-                "connect.qq.com",
-                "qzone.qq.com",
-                "vip.qq.com",
-                "gamecenter.qq.com",
-                "qun.qq.com",
-                "game.qq.com",
-                "qqweb.qq.com",
-                "office.qq.com",
-                "ti.qq.com",
-                "mail.qq.com",
-                "mma.qq.com",
-            ])
-            .write(&mut w);
+
+            let dev_info = transport.device.gen_pb_data();
+            let tgtgt_key = md5::compute(&transport.sig.d2key).to_vec();
+            let tlv_writer = CounterWriter::default()
+                .append(t100(
+                    transport.version.sso_version,
+                    100,
+                    main_sig_map.unwrap_or(transport.version.main_sig_map),
+                ))
+                .append(t10a(&transport.sig.tgt))
+                .append(t116(
+                    transport.version.misc_bitmap,
+                    transport.version.sub_sig_map,
+                ))
+                .append(t108(&transport.sig.ksid))
+                .append(t144(
+                    &transport.device.android_id,
+                    &dev_info,
+                    &transport.device.os_type,
+                    &transport.device.version.release,
+                    &transport.device.sim_info,
+                    &transport.device.apn,
+                    false,
+                    true,
+                    false,
+                    guid_flag(),
+                    &transport.device.model,
+                    &transport.sig.guid,
+                    &transport.device.brand,
+                    &tgtgt_key,
+                ))
+                .append(t112(self.uin()))
+                .append(t143(&transport.sig.d2)) // TODO change d2 145
+                .append(t142(transport.version.apk_id))
+                .append(t154(seq))
+                .append(t18(16, self.uin() as u32))
+                .append(t141(&transport.device.sim_info, &transport.device.apn))
+                .append(t8(2052))
+                .append(t147(
+                    16,
+                    transport.version.sort_version_name,
+                    transport.version.apk_sign,
+                ))
+                .append(t177(
+                    transport.version.build_time,
+                    transport.version.sdk_version,
+                ))
+                .append(t187(&transport.device.mac_address))
+                .append(t188(&transport.device.android_id))
+                .append(t194(&transport.device.imsi_md5))
+                .append(t511(vec![
+                    "tenpay.com",
+                    "openmobile.qq.com",
+                    "docs.qq.com",
+                    "connect.qq.com",
+                    "qzone.qq.com",
+                    "vip.qq.com",
+                    "gamecenter.qq.com",
+                    "qun.qq.com",
+                    "game.qq.com",
+                    "qqweb.qq.com",
+                    "office.qq.com",
+                    "ti.qq.com",
+                    "mail.qq.com",
+                    "mma.qq.com",
+                ]))
+                .append(t202(
+                    &transport.device.wifi_bssid,
+                    &transport.device.wifi_ssid,
+                ));
+            // TODO 544
+            w.put_u16(tlv_writer.count as u16);
+            tlv_writer.write(&mut w);
             // w.put_slice(&t202(self.device_info.wifi_bssid.as_bytes(), self.device_info.wifi_ssid.as_bytes()));
             w
         });
@@ -555,89 +615,91 @@ impl super::super::super::Engine {
             let mut w = BytesMut::new();
             w.put_u16(9);
 
-            w.put_u16(if allow_slider { 0x17 } else { 0x16 });
-
-            t18(16, self.uin() as u32).write(&mut w);
-            t1(self.uin() as u32, &transport.device.ip_address).write(&mut w);
-            t106(
-                self.uin() as u32,
-                0,
-                transport.version.app_id,
-                transport.version.sso_version,
-                password_md5,
-                true,
-                &transport.sig.guid,
-                &transport.sig.tgtgt_key,
-                0,
-            )
-            .write(&mut w);
-            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
-            t100(
-                transport.version.sso_version,
-                transport.version.sub_app_id,
-                transport.version.main_sig_map,
-            )
-            .write(&mut w);
-            t107(0).write(&mut w);
-            t142(transport.version.apk_id).write(&mut w);
-            t144(
-                &transport.device.imei,
-                &transport.device.gen_pb_data(),
-                &transport.device.os_type,
-                &transport.device.version.release,
-                &transport.device.sim_info,
-                &transport.device.apn,
-                false,
-                true,
-                false,
-                guid_flag(),
-                &transport.device.model,
-                &transport.sig.guid,
-                &transport.device.brand,
-                &transport.sig.tgtgt_key,
-            )
-            .write(&mut w);
-            t145(&transport.sig.guid).write(&mut w);
-            t147(
-                16,
-                transport.version.sort_version_name,
-                transport.version.apk_sign,
-            )
-            .write(&mut w);
-            t154(seq).write(&mut w);
-            t141(&transport.device.sim_info, &transport.device.apn).write(&mut w);
-            t8(2052).write(&mut w);
-            t511(vec![
-                "tenpay.com",
-                "openmobile.qq.com",
-                "docs.qq.com",
-                "connect.qq.com",
-                "qzone.qq.com",
-                "vip.qq.com",
-                "gamecenter.qq.com",
-                "qun.qq.com",
-                "game.qq.com",
-                "qqweb.qq.com",
-                "office.qq.com",
-                "ti.qq.com",
-                "mail.qq.com",
-                "mma.qq.com",
-            ])
-            .write(&mut w);
-
-            t187(&transport.device.mac_address).write(&mut w);
-            t188(&transport.device.android_id).write(&mut w);
-
-            t194(&transport.device.imsi_md5).write(&mut w);
-
-            if allow_slider {
-                t191(0x82).write(&mut w);
-            }
-            t202(&transport.device.wifi_bssid, &transport.device.wifi_ssid).write(&mut w);
-            t177(transport.version.build_time, transport.version.sdk_version).write(&mut w);
-            t516().write(&mut w);
-            t521(0).write(&mut w);
-            t525(t536(&[0x01, 0x00])).write(&mut w);
+            let dev_info = transport.device.gen_pb_data();
+            let tlv_writer = CounterWriter::default()
+                .append(t18(16, self.uin() as u32))
+                .append(t1(self.uin() as u32, &transport.device.ip_address))
+                .append(t106(
+                    self.uin() as u32,
+                    0,
+                    transport.version.app_id,
+                    transport.version.sso_version,
+                    password_md5,
+                    true,
+                    &transport.sig.guid,
+                    &transport.sig.tgtgt_key,
+                    0,
+                ))
+                .append(t116(
+                    transport.version.misc_bitmap,
+                    transport.version.sub_sig_map,
+                ))
+                .append(t100(
+                    transport.version.sso_version,
+                    transport.version.sub_app_id,
+                    transport.version.main_sig_map,
+                ))
+                .append(t107(0))
+                .append(t142(transport.version.apk_id))
+                .append(t144(
+                    &transport.device.imei,
+                    &dev_info,
+                    &transport.device.os_type,
+                    &transport.device.version.release,
+                    &transport.device.sim_info,
+                    &transport.device.apn,
+                    false,
+                    true,
+                    false,
+                    guid_flag(),
+                    &transport.device.model,
+                    &transport.sig.guid,
+                    &transport.device.brand,
+                    &transport.sig.tgtgt_key,
+                ))
+                .append(t145(&transport.sig.guid))
+                .append(t147(
+                    16,
+                    transport.version.sort_version_name,
+                    transport.version.apk_sign,
+                ))
+                .append(t154(seq))
+                .append(t141(&transport.device.sim_info, &transport.device.apn))
+                .append(t8(2052))
+                .append(t511(vec![
+                    "tenpay.com",
+                    "openmobile.qq.com",
+                    "docs.qq.com",
+                    "connect.qq.com",
+                    "qzone.qq.com",
+                    "vip.qq.com",
+                    "gamecenter.qq.com",
+                    "qun.qq.com",
+                    "game.qq.com",
+                    "qqweb.qq.com",
+                    "office.qq.com",
+                    "ti.qq.com",
+                    "mail.qq.com",
+                    "mma.qq.com",
+                ]))
+                .append(t187(&transport.device.mac_address))
+                .append(t188(&transport.device.android_id))
+                .append(t194(&transport.device.imsi_md5))
+                .append_option(if allow_slider { Some(t191(0x82)) } else { None })
+                .append(t202(
+                    &transport.device.wifi_bssid,
+                    &transport.device.wifi_ssid,
+                ))
+                .append(t177(
+                    transport.version.build_time,
+                    transport.version.sdk_version,
+                ))
+                .append(t516())
+                .append(t521(0))
+                .append(t525(t536(&[0x01, 0x00])));
+            // TODO 544, 545
+            w.put_u16(tlv_writer.count as u16);
+            tlv_writer.write(&mut w);
 
             w.freeze()
         });
