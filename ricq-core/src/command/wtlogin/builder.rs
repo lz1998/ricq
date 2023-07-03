@@ -1,5 +1,6 @@
 use bytes::{BufMut, BytesMut};
 
+use crate::binary::packet_writer::{PacketWriter, WriteLV};
 use crate::binary::BinaryWriter;
 use crate::command::wtlogin::builder::utils::*;
 use crate::command::wtlogin::tlv_writer::*;
@@ -22,10 +23,10 @@ impl super::super::super::Engine {
                 w.put_u32(16); // app id
                 w.put_u64(0); // const long user
                 w.put_u8(8); // const
-                w.write_bytes_short(&[]);
+                w.write_short_lv([].as_slice());
 
                 w.put_u16(6);
-                w.put_slice(&t16(
+                t16(
                     transport.version.sso_version,
                     16, // app id ?
                     transport.version.sub_app_id,
@@ -33,34 +34,36 @@ impl super::super::super::Engine {
                     transport.version.apk_id,
                     transport.version.sort_version_name,
                     transport.version.apk_sign,
-                ));
-                w.put_slice(&t1b(0, 0, 3, 4, 72, 2, 2));
-                w.put_slice(&t1d(transport.version.misc_bitmap));
+                )
+                .write(&mut w);
+                t1b(0, 0, 3, 4, 72, 2, 2).write(&mut w);
+                t1d(transport.version.misc_bitmap).write(&mut w);
                 if matches!(transport.version.protocol, Protocol::MacOS) {
-                    w.put_slice(&t1f(
+                    t1f(
                         false,
                         "Mac OSX",
                         "10",
                         "mac carrier",
                         &transport.device.apn,
                         2, // wifi
-                    ));
+                    )
+                    .write(&mut w);
                 } else {
-                    w.put_slice(&t1f(
+                    t1f(
                         false,
                         &transport.device.os_type,
                         "7.1.2",
                         &transport.device.sim_info,
                         &transport.device.apn,
                         2, // wifi
-                    ));
+                    )
+                    .write(&mut w);
                 }
-
-                w.put_slice(&t33(&transport.sig.guid));
+                t33(&transport.sig.guid).write(&mut w);
                 if matches!(transport.version.protocol, Protocol::MacOS) {
-                    w.put_slice(&t35(5));
+                    t35(5).write(&mut w);
                 } else {
-                    w.put_slice(&t35(8));
+                    t35(8).write(&mut w);
                 }
                 w
             });
@@ -93,10 +96,10 @@ impl super::super::super::Engine {
                 w.put_u8(1);
                 w.put_u32(8); // 0x68 ?
                 w.put_u32(16);
-                w.write_bytes_short(sig);
+                w.write_short_lv(sig);
                 w.put_u64(0);
                 w.put_u8(8);
-                w.write_bytes_short(&[]);
+                w.write_short_lv([].as_slice());
                 w.put_u16(0);
                 w
             });
@@ -128,26 +131,24 @@ impl super::super::super::Engine {
             w.put_u16(9);
             w.put_u16(24);
 
-            w.put_slice(&t18(16, self.uin() as u32));
-            w.put_slice(&t1(self.uin() as u32, &transport.device.ip_address));
+            t18(16, self.uin() as u32).write(&mut w);
+            t1(self.uin() as u32, &transport.device.ip_address).write(&mut w);
             w.put_slice(&{
                 let mut w = Vec::new();
                 w.put_u16(0x106);
-                w.write_bytes_short(t106);
+                w.write_short_lv(t106);
                 w
             });
-            w.put_slice(&t116(
-                transport.version.misc_bitmap,
-                transport.version.sub_sig_map,
-            ));
-            w.put_slice(&t100(
+            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
+            t100(
                 transport.version.sso_version,
                 transport.version.sub_app_id,
                 transport.version.main_sig_map,
-            ));
-            w.put_slice(&t107(0));
-            w.put_slice(&t142(transport.version.apk_id));
-            w.put_slice(&t144(
+            )
+            .write(&mut w);
+            t107(0).write(&mut w);
+            t142(transport.version.apk_id).write(&mut w);
+            t144(
                 &transport.device.imei,
                 &transport.device.gen_pb_data(),
                 &transport.device.os_type,
@@ -162,24 +163,26 @@ impl super::super::super::Engine {
                 &transport.sig.guid,
                 &transport.device.brand,
                 &transport.sig.tgtgt_key,
-            ));
+            )
+            .write(&mut w);
 
-            w.put_slice(&t145(&transport.sig.guid));
-            w.put_slice(&t147(
+            t145(&transport.sig.guid).write(&mut w);
+            t147(
                 16,
                 transport.version.sort_version_name,
                 transport.version.apk_sign,
-            ));
+            )
+            .write(&mut w);
             w.put_slice(&{
                 let mut w = Vec::new();
                 w.put_u16(0x16A);
-                w.write_bytes_short(t16a);
+                w.write_short_lv(t16a);
                 w
             });
-            w.put_slice(&t154(seq));
-            w.put_slice(&t141(&transport.device.sim_info, &transport.device.apn));
-            w.put_slice(&t8(2052));
-            w.put_slice(&t511(vec![
+            t154(seq).write(&mut w);
+            t141(&transport.device.sim_info, &transport.device.apn).write(&mut w);
+            t8(2052).write(&mut w);
+            t511(vec![
                 "tenpay.com",
                 "openmobile.qq.com",
                 "docs.qq.com",
@@ -194,31 +197,26 @@ impl super::super::super::Engine {
                 "ti.qq.com",
                 "mail.qq.com",
                 "mma.qq.com",
-            ]));
-            w.put_slice(&t187(&transport.device.mac_address));
-            w.put_slice(&t188(&transport.device.android_id));
+            ])
+            .write(&mut w);
+            t187(&transport.device.mac_address).write(&mut w);
+            t188(&transport.device.android_id).write(&mut w);
             if !transport.device.imsi_md5.is_empty() {
-                w.put_slice(&t194(transport.device.imsi_md5.as_slice()))
+                t194(transport.device.imsi_md5.as_slice()).write(&mut w);
             }
-            w.put_slice(&t191(0x00));
+            t191(0x00).write(&mut w);
             if !transport.device.wifi_bssid.is_empty() && !transport.device.wifi_ssid.is_empty() {
-                w.put_slice(&t202(
-                    &transport.device.wifi_bssid,
-                    &transport.device.wifi_ssid,
-                ));
+                t202(&transport.device.wifi_bssid, &transport.device.wifi_ssid).write(&mut w);
             }
-            w.put_slice(&t177(
-                transport.version.build_time,
-                transport.version.sdk_version,
-            ));
-            w.put_slice(&t516());
-            w.put_slice(&t521(8));
+            t177(transport.version.build_time, transport.version.sdk_version).write(&mut w);
+            t516().write(&mut w);
+            t521(8).write(&mut w);
             // let v:Vec<u8> = vec![0x01, 0x00];
             // w.put_slice(&t525(&t536(&v)));
             w.put_slice(&{
                 let mut w = Vec::new();
                 w.put_u16(0x318);
-                w.write_bytes_short(t318);
+                w.write_short_lv(t318);
                 w
             });
             w
@@ -243,13 +241,10 @@ impl super::super::super::Engine {
             w.put_u16(20);
             w.put_u16(4);
 
-            w.put_slice(&t8(2052));
-            w.put_slice(&t104(&transport.sig.t104));
-            w.put_slice(&t116(
-                transport.version.misc_bitmap,
-                transport.version.sub_sig_map,
-            ));
-            w.put_slice(&t401(&transport.sig.g));
+            t8(2052).write(&mut w);
+            t104(&*transport.sig.t104).write(&mut w);
+            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
+            t401(&transport.sig.g).write(&mut w);
             w
         });
         Packet {
@@ -271,14 +266,10 @@ impl super::super::super::Engine {
             let mut w = BytesMut::new();
             w.put_u16(2); // sub command
             w.put_u16(4);
-
-            w.put_slice(&t2(result, sign));
-            w.put_slice(&t8(2052));
-            w.put_slice(&t104(&transport.sig.t104));
-            w.put_slice(&t116(
-                transport.version.misc_bitmap,
-                transport.version.sub_sig_map,
-            ));
+            t2(result, sign).write(&mut w);
+            t8(2052).write(&mut w);
+            t104(&transport.sig.t104).write(&mut w);
+            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
             w
         });
 
@@ -302,15 +293,12 @@ impl super::super::super::Engine {
             w.put_u16(8);
             w.put_u16(6);
 
-            w.put_slice(&t8(2052));
-            w.put_slice(&t104(&transport.sig.t104));
-            w.put_slice(&t116(
-                transport.version.misc_bitmap,
-                transport.version.sub_sig_map,
-            ));
-            w.put_slice(&t174(&transport.sig.t174));
-            w.put_slice(&t17a(9));
-            w.put_slice(&t197());
+            t8(2052).write(&mut w);
+            t104(&transport.sig.t104).write(&mut w);
+            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
+            t174(&transport.sig.t174).write(&mut w);
+            t17a(9).write(&mut w);
+            t197().write(&mut w);
             w
         });
         Packet {
@@ -333,16 +321,13 @@ impl super::super::super::Engine {
             w.put_u16(7);
             w.put_u16(7);
 
-            w.put_slice(&t8(2052));
-            w.put_slice(&t104(&transport.sig.t104));
-            w.put_slice(&t116(
-                transport.version.misc_bitmap,
-                transport.version.sub_sig_map,
-            ));
-            w.put_slice(&t174(&transport.sig.t174));
-            w.put_slice(&t17c(code));
-            w.put_slice(&t401(&transport.sig.g));
-            w.put_slice(&t198());
+            t8(2052).write(&mut w);
+            t104(&transport.sig.t104).write(&mut w);
+            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
+            t174(&transport.sig.t174).write(&mut w);
+            t17c(code).write(&mut w);
+            t401(&transport.sig.g).write(&mut w);
+            t198().write(&mut w);
             w
         });
         Packet {
@@ -365,13 +350,10 @@ impl super::super::super::Engine {
             w.put_u16(2);
             w.put_u16(4);
 
-            w.put_slice(&t193(ticket));
-            w.put_slice(&t8(2052));
-            w.put_slice(&t104(&transport.sig.t104));
-            w.put_slice(&t116(
-                transport.version.misc_bitmap,
-                transport.version.sub_sig_map,
-            ));
+            t193(ticket).write(&mut w);
+            t8(2052).write(&mut w);
+            t104(&transport.sig.t104).write(&mut w);
+            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
             w
         });
         Packet {
@@ -395,25 +377,23 @@ impl super::super::super::Engine {
             w.put_u16(15);
             w.put_u16(24);
 
-            w.put_slice(&t18(16, self.uin() as u32));
-            w.put_slice(&t1(self.uin() as u32, &transport.device.ip_address));
+            t18(16, self.uin() as u32).write(&mut w);
+            t1(self.uin() as u32, &transport.device.ip_address).write(&mut w);
             w.put_slice(&{
                 let mut w = Vec::new();
                 w.put_u16(0x106);
-                w.write_bytes_short(&transport.sig.encrypted_a1);
+                w.write_short_lv(&*transport.sig.encrypted_a1);
                 w
             });
-            w.put_slice(&t116(
-                transport.version.misc_bitmap,
-                transport.version.sub_sig_map,
-            ));
-            w.put_slice(&t100(
+            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
+            t100(
                 transport.version.sso_version,
                 2,
                 transport.version.main_sig_map,
-            ));
-            w.put_slice(&t107(0));
-            w.put_slice(&t144(
+            )
+            .write(&mut w);
+            t107(0).write(&mut w);
+            t144(
                 &transport.device.android_id,
                 &transport.device.gen_pb_data(),
                 &transport.device.os_type,
@@ -428,13 +408,14 @@ impl super::super::super::Engine {
                 &transport.sig.guid,
                 &transport.device.brand,
                 &transport.sig.tgtgt_key,
-            ));
-            w.put_slice(&t142(transport.version.apk_id));
-            w.put_slice(&t145(&transport.sig.guid));
-            w.put_slice(&t16a(&transport.sig.srm_token));
-            w.put_slice(&t141(&transport.device.sim_info, &transport.device.apn));
-            w.put_slice(&t8(2052));
-            w.put_slice(&t511(vec![
+            )
+            .write(&mut w);
+            t142(transport.version.apk_id).write(&mut w);
+            t145(&transport.sig.guid).write(&mut w);
+            t16a(&transport.sig.srm_token).write(&mut w);
+            t141(&transport.device.sim_info, &transport.device.apn).write(&mut w);
+            t8(2052).write(&mut w);
+            t511(vec![
                 "tenpay.com",
                 "openmobile.qq.com",
                 "docs.qq.com",
@@ -449,17 +430,16 @@ impl super::super::super::Engine {
                 "ti.qq.com",
                 "mail.qq.com",
                 "mma.qq.com",
-            ]));
-            w.put_slice(&t147(
+            ])
+            .write(&mut w);
+            t147(
                 16,
                 transport.version.sort_version_name,
                 transport.version.apk_sign,
-            ));
-            w.put_slice(&t177(
-                transport.version.build_time,
-                transport.version.sdk_version,
-            ));
-            w.put_slice(&t400(
+            )
+            .write(&mut w);
+            t177(transport.version.build_time, transport.version.sdk_version).write(&mut w);
+            t400(
                 &transport.sig.g,
                 self.uin(),
                 &transport.sig.guid,
@@ -467,17 +447,15 @@ impl super::super::super::Engine {
                 1,
                 16,
                 &transport.sig.rand_seed,
-            ));
-            w.put_slice(&t187(&transport.device.mac_address));
-            w.put_slice(&t188(&transport.device.android_id));
-            w.put_slice(&t194(&transport.device.imsi_md5));
-            w.put_slice(&t202(
-                &transport.device.wifi_bssid,
-                &transport.device.wifi_ssid,
-            ));
-            w.put_slice(&t516());
-            w.put_slice(&t521(0));
-            w.put_slice(&t525(&t536(&[0x01, 0x00])));
+            )
+            .write(&mut w);
+            t187(&transport.device.mac_address).write(&mut w);
+            t188(&transport.device.android_id).write(&mut w);
+            t194(&transport.device.imsi_md5).write(&mut w);
+            t202(&transport.device.wifi_bssid, &transport.device.wifi_ssid).write(&mut w);
+            t516().write(&mut w);
+            t521(0).write(&mut w);
+            t525(t536(&[0x01, 0x00])).write(&mut w);
             w.freeze()
         };
         let m = oicq::Message {
@@ -505,20 +483,17 @@ impl super::super::super::Engine {
             let mut w = BytesMut::new();
             w.put_u16(11);
             w.put_u16(17);
-
-            w.put_slice(&t100(
+            t100(
                 transport.version.sso_version,
                 100,
                 main_sig_map.unwrap_or(transport.version.main_sig_map),
-            ));
-            w.put_slice(&t10a(&transport.sig.tgt));
-            w.put_slice(&t116(
-                transport.version.misc_bitmap,
-                transport.version.sub_sig_map,
-            ));
-            w.put_slice(&t108(&transport.sig.ksid));
+            )
+            .write(&mut w);
+            t10a(&transport.sig.tgt).write(&mut w);
+            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
+            t108(&transport.sig.ksid).write(&mut w);
             let h = md5::compute(&transport.sig.d2key).to_vec();
-            w.put_slice(&t144(
+            t144(
                 &transport.device.android_id,
                 &transport.device.gen_pb_data(),
                 &transport.device.os_type,
@@ -533,26 +508,25 @@ impl super::super::super::Engine {
                 &transport.sig.guid,
                 &transport.device.brand,
                 &h,
-            ));
-            w.put_slice(&t143(&transport.sig.d2));
-            w.put_slice(&t142(transport.version.apk_id));
-            w.put_slice(&t154(seq));
-            w.put_slice(&t18(16, self.uin() as u32));
-            w.put_slice(&t141(&transport.device.sim_info, &transport.device.apn));
-            w.put_slice(&t8(2052));
-            w.put_slice(&t147(
+            )
+            .write(&mut w);
+            t143(&transport.sig.d2).write(&mut w);
+            t142(transport.version.apk_id).write(&mut w);
+            t154(seq).write(&mut w);
+            t18(16, self.uin() as u32).write(&mut w);
+            t141(&transport.device.sim_info, &transport.device.apn).write(&mut w);
+            t8(2052).write(&mut w);
+            t147(
                 16,
                 transport.version.sort_version_name,
                 transport.version.apk_sign,
-            ));
-            w.put_slice(&t177(
-                transport.version.build_time,
-                transport.version.sdk_version,
-            ));
-            w.put_slice(&t187(&transport.device.mac_address));
-            w.put_slice(&t188(&transport.device.android_id));
-            w.put_slice(&t194(&transport.device.imsi_md5));
-            w.put_slice(&t511(vec![
+            )
+            .write(&mut w);
+            t177(transport.version.build_time, transport.version.sdk_version).write(&mut w);
+            t187(&transport.device.mac_address).write(&mut w);
+            t188(&transport.device.android_id).write(&mut w);
+            t194(&transport.device.imsi_md5).write(&mut w);
+            t511(vec![
                 "tenpay.com",
                 "openmobile.qq.com",
                 "docs.qq.com",
@@ -567,7 +541,8 @@ impl super::super::super::Engine {
                 "ti.qq.com",
                 "mail.qq.com",
                 "mma.qq.com",
-            ]));
+            ])
+            .write(&mut w);
             // w.put_slice(&t202(self.device_info.wifi_bssid.as_bytes(), self.device_info.wifi_ssid.as_bytes()));
             w
         });
@@ -592,9 +567,9 @@ impl super::super::super::Engine {
 
             w.put_u16(if allow_slider { 0x17 } else { 0x16 });
 
-            w.put_slice(&t18(16, self.uin() as u32));
-            w.put_slice(&t1(self.uin() as u32, &transport.device.ip_address));
-            w.put_slice(&t106(
+            t18(16, self.uin() as u32).write(&mut w);
+            t1(self.uin() as u32, &transport.device.ip_address).write(&mut w);
+            t106(
                 self.uin() as u32,
                 0,
                 transport.version.app_id,
@@ -604,19 +579,18 @@ impl super::super::super::Engine {
                 &transport.sig.guid,
                 &transport.sig.tgtgt_key,
                 0,
-            ));
-            w.put_slice(&t116(
-                transport.version.misc_bitmap,
-                transport.version.sub_sig_map,
-            ));
-            w.put_slice(&t100(
+            )
+            .write(&mut w);
+            t116(transport.version.misc_bitmap, transport.version.sub_sig_map).write(&mut w);
+            t100(
                 transport.version.sso_version,
                 transport.version.sub_app_id,
                 transport.version.main_sig_map,
-            ));
-            w.put_slice(&t107(0));
-            w.put_slice(&t142(transport.version.apk_id));
-            w.put_slice(&t144(
+            )
+            .write(&mut w);
+            t107(0).write(&mut w);
+            t142(transport.version.apk_id).write(&mut w);
+            t144(
                 &transport.device.imei,
                 &transport.device.gen_pb_data(),
                 &transport.device.os_type,
@@ -631,17 +605,19 @@ impl super::super::super::Engine {
                 &transport.sig.guid,
                 &transport.device.brand,
                 &transport.sig.tgtgt_key,
-            ));
-            w.put_slice(&t145(&transport.sig.guid));
-            w.put_slice(&t147(
+            )
+            .write(&mut w);
+            t145(&transport.sig.guid).write(&mut w);
+            t147(
                 16,
                 transport.version.sort_version_name,
                 transport.version.apk_sign,
-            ));
-            w.put_slice(&t154(seq));
-            w.put_slice(&t141(&transport.device.sim_info, &transport.device.apn));
-            w.put_slice(&t8(2052));
-            w.put_slice(&t511(vec![
+            )
+            .write(&mut w);
+            t154(seq).write(&mut w);
+            t141(&transport.device.sim_info, &transport.device.apn).write(&mut w);
+            t8(2052).write(&mut w);
+            t511(vec![
                 "tenpay.com",
                 "openmobile.qq.com",
                 "docs.qq.com",
@@ -656,27 +632,22 @@ impl super::super::super::Engine {
                 "ti.qq.com",
                 "mail.qq.com",
                 "mma.qq.com",
-            ]));
+            ])
+            .write(&mut w);
 
-            w.put_slice(&t187(&transport.device.mac_address));
-            w.put_slice(&t188(&transport.device.android_id));
+            t187(&transport.device.mac_address).write(&mut w);
+            t188(&transport.device.android_id).write(&mut w);
 
-            w.put_slice(&t194(&transport.device.imsi_md5));
+            t194(&transport.device.imsi_md5).write(&mut w);
 
             if allow_slider {
-                w.put_slice(&t191(0x82));
+                t191(0x82).write(&mut w);
             }
-            w.put_slice(&t202(
-                &transport.device.wifi_bssid,
-                &transport.device.wifi_ssid,
-            ));
-            w.put_slice(&t177(
-                transport.version.build_time,
-                transport.version.sdk_version,
-            ));
-            w.put_slice(&t516());
-            w.put_slice(&t521(0));
-            w.put_slice(&t525(&t536(&[0x01, 0x00])));
+            t202(&transport.device.wifi_bssid, &transport.device.wifi_ssid).write(&mut w);
+            t177(transport.version.build_time, transport.version.sdk_version).write(&mut w);
+            t516().write(&mut w);
+            t521(0).write(&mut w);
+            t525(t536(&[0x01, 0x00])).write(&mut w);
 
             w.freeze()
         });

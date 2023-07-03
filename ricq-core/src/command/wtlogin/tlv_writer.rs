@@ -1,29 +1,29 @@
 #![allow(clippy::too_many_arguments)]
-use bytes::{BufMut, Bytes, BytesMut};
+
+use bytes::{BufMut, BytesMut};
 use std::time::UNIX_EPOCH;
 
+use crate::binary::packet_writer::{PacketWriter, WriteLV};
 use crate::binary::BinaryWriter;
 
-pub fn t1(uin: u32, ip: &[u8]) -> Bytes {
+pub fn t1<B: BufMut + WriteLV>(uin: u32, ip: &[u8]) -> impl PacketWriter<B> + '_ {
     if ip.len() != 4 {
         panic!("invalid ip")
     }
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x01);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u16(1);
-        w.put_u32(rand::random());
-        w.put_u32(uin);
-        w.put_u32(UNIX_EPOCH.elapsed().unwrap().as_secs() as u32);
-        w.put_slice(ip);
-        w.put_u16(0);
-        w.freeze()
-    });
-    buf.freeze()
+    move |buf: &mut B| {
+        buf.put_u16(0x01);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u16(1);
+            w.put_u32(rand::random());
+            w.put_u32(uin);
+            w.put_u32(UNIX_EPOCH.elapsed().unwrap().as_secs() as u32);
+            w.put_slice(ip);
+            w.put_u16(0);
+        });
+    }
 }
 
-pub fn t1b(
+pub fn t1b<B: BufMut + WriteLV>(
     micro: u32,
     version: u32,
     size: u32,
@@ -31,742 +31,649 @@ pub fn t1b(
     dpi: u32,
     ec_level: u32,
     hint: u32,
-) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x1b);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u32(micro);
-        w.put_u32(version);
-        w.put_u32(size);
-        w.put_u32(margin);
-        w.put_u32(dpi);
-        w.put_u32(ec_level);
-        w.put_u32(hint);
-        w.put_u16(0);
-        w.freeze()
-    });
-    buf.freeze()
+) -> impl PacketWriter<B> {
+    move |buf: &mut B| {
+        buf.put_u16(0x1b);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u32(micro);
+            w.put_u32(version);
+            w.put_u32(size);
+            w.put_u32(margin);
+            w.put_u32(dpi);
+            w.put_u32(ec_level);
+            w.put_u32(hint);
+            w.put_u16(0);
+        });
+    }
 }
 
-pub fn t1d(misc_bitmap: u32) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x1d);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u8(1);
-        w.put_u32(misc_bitmap);
-        w.put_u32(0);
-        w.put_u8(0);
-        w.put_u32(0);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t1d<B: BufMut + WriteLV>(misc_bitmap: u32) -> impl PacketWriter<B> {
+    move |buf: &mut B| {
+        buf.put_u16(0x1d);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u8(1);
+            w.put_u32(misc_bitmap);
+            w.put_u32(0);
+            w.put_u8(0);
+            w.put_u32(0);
+        });
+    }
 }
 
-pub fn t1f(
+pub fn t1f<'a, B: BufMut + WriteLV>(
     is_root: bool,
-    os_name: &str,
-    os_version: &str,
-    sim_operator_name: &str,
-    apn: &str,
+    os_name: &'a str,
+    os_version: &'a str,
+    sim_operator_name: &'a str,
+    apn: &'a str,
     network_type: u16,
-) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x1f);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u8(if is_root { 1 } else { 0 });
-        w.write_bytes_short(os_name.as_bytes());
-        w.write_bytes_short(os_version.as_bytes());
-        w.put_u16(network_type);
-        w.write_bytes_short(sim_operator_name.as_bytes());
-        w.write_bytes_short(&[]);
-        w.write_bytes_short(apn.as_bytes());
-        w.freeze()
-    });
-    buf.freeze()
+) -> impl PacketWriter<B> + 'a {
+    move |buf: &mut B| {
+        buf.put_u16(0x1f);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u8(if is_root { 1 } else { 0 });
+            w.write_bytes_short(os_name.as_bytes());
+            w.write_bytes_short(os_version.as_bytes());
+            w.put_u16(network_type);
+            w.write_bytes_short(sim_operator_name.as_bytes());
+            w.write_bytes_short(&[]);
+            w.write_bytes_short(apn.as_bytes());
+        });
+    }
 }
 
-pub fn t2(result: String, sign: &[u8]) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x02);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u16(0);
-        w.write_bytes_short(result.as_bytes());
-        w.write_bytes_short(sign);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t2<B: BufMut + WriteLV>(result: String, sign: &[u8]) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x02);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u16(0);
+            w.write_bytes_short(result.as_bytes());
+            w.write_bytes_short(sign);
+        });
+    }
 }
 
-pub fn t8(local_id: u32) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x8);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u16(0);
-        w.put_u32(local_id);
-        w.put_u16(0);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t8<B: BufMut + WriteLV>(local_id: u32) -> impl PacketWriter<B> {
+    move |buf: &mut B| {
+        buf.put_u16(0x8);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u16(0);
+            w.put_u32(local_id);
+            w.put_u16(0);
+        });
+    }
 }
 
-pub fn t10a(arr: &[u8]) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x10A);
-    buf.write_bytes_short(arr);
-    buf.freeze()
+pub fn t10a<B: BufMut + WriteLV>(arr: &[u8]) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x10A);
+        buf.write_short_lv(arr);
+    }
 }
 
-pub fn t16(
+pub fn t16<'a, B: BufMut + WriteLV>(
     sso_version: u32,
     app_id: u32,
     sub_app_id: u32,
-    guid: &[u8],
-    apk_id: &str,
-    apk_version_name: &str,
-    apk_sign: &[u8],
-) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x16);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u32(sso_version);
-        w.put_u32(app_id);
-        w.put_u32(sub_app_id);
-        w.put_slice(guid);
-        w.write_bytes_short(apk_id.as_bytes());
-        w.write_bytes_short(apk_version_name.as_bytes());
-        w.write_bytes_short(apk_sign);
-        w.freeze()
-    });
-    buf.freeze()
+    guid: &'a [u8],
+    apk_id: &'a str,
+    apk_version_name: &'a str,
+    apk_sign: &'a [u8],
+) -> impl PacketWriter<B> + 'a {
+    move |buf: &mut B| {
+        buf.put_u16(0x16);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u32(sso_version);
+            w.put_u32(app_id);
+            w.put_u32(sub_app_id);
+            w.put_slice(guid);
+            w.write_bytes_short(apk_id.as_bytes());
+            w.write_bytes_short(apk_version_name.as_bytes());
+            w.write_bytes_short(apk_sign);
+        });
+    }
 }
 
-pub fn t16a(arr: &[u8]) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x16A);
-    buf.write_bytes_short(arr);
-    buf.freeze()
+pub fn t16a<B: BufMut + WriteLV>(arr: &[u8]) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x16A);
+        buf.write_short_lv(arr);
+    }
 }
 
-pub fn t16e(build_model: &[u8]) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x16E);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_slice(build_model);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t16e<B: BufMut + WriteLV>(build_model: &[u8]) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x16E);
+        buf.write_short_lv(build_model);
+    }
 }
 
-pub fn t17a(value: i32) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x17a);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u32(value as u32);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t17a<B: BufMut + WriteLV>(value: i32) -> impl PacketWriter<B> {
+    move |buf: &mut B| {
+        buf.put_u16(0x17a);
+        buf.write_short_lv((value as u32).to_be_bytes().as_slice());
+    }
 }
 
-pub fn t17c(code: &str) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x17c);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.write_bytes_short(code.as_bytes());
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t17c<B: BufMut + WriteLV>(code: &str) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x17c);
+        buf.write_short_lv(|w: &mut B| {
+            w.write_short_lv(code.as_bytes());
+        });
+    }
 }
 
-pub fn t18(app_id: u32, uin: u32) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x18);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u16(1);
-        w.put_u32(1536);
-        w.put_u32(app_id);
-        w.put_u32(0);
-        w.put_u32(uin);
-        w.put_u16(0);
-        w.put_u16(0);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t18<B: BufMut + WriteLV>(app_id: u32, uin: u32) -> impl PacketWriter<B> {
+    move |buf: &mut B| {
+        buf.put_u16(0x18);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u16(1);
+            w.put_u32(1536);
+            w.put_u32(app_id);
+            w.put_u32(0);
+            w.put_u32(uin);
+            w.put_u16(0);
+            w.put_u16(0);
+        });
+    }
 }
 
-pub fn t33(guid: &[u8]) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x33);
-    buf.write_bytes_short(guid);
-    buf.freeze()
+pub fn t33<B: BufMut + WriteLV>(guid: &[u8]) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x33);
+        buf.write_short_lv(guid);
+    }
 }
 
-pub fn t35(product_type: u32) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x35);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u32(product_type);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t35<B: BufMut + WriteLV>(product_type: u32) -> impl PacketWriter<B> {
+    move |buf: &mut B| {
+        buf.put_u16(0x35);
+        buf.write_short_lv(product_type.to_be_bytes().as_slice());
+    }
 }
 
-pub fn t52d(dev_info: &[u8]) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x52d);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_slice(dev_info);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t52d<B: BufMut + WriteLV>(dev_info: &[u8]) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x52d);
+        buf.write_short_lv(dev_info);
+    }
 }
 
-pub fn t100(sso_version: u32, protocol: u32, main_sig_map: u32) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x100);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u16(1);
-        w.put_u32(sso_version);
-        w.put_u32(16);
-        w.put_u32(protocol);
-        w.put_u32(0); // App client version
-        w.put_u32(main_sig_map); // 34869472
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t100<B: BufMut + WriteLV>(
+    sso_version: u32,
+    protocol: u32,
+    main_sig_map: u32,
+) -> impl PacketWriter<B> {
+    move |buf: &mut B| {
+        buf.put_u16(0x100);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u16(1);
+            w.put_u32(sso_version);
+            w.put_u32(16);
+            w.put_u32(protocol);
+            w.put_u32(0); // App client version
+            w.put_u32(main_sig_map); // 34869472
+        });
+    }
 }
 
-pub fn t104(data: &[u8]) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x104);
-    buf.write_bytes_short(data);
-    buf.freeze()
+pub fn t104<B: BufMut + WriteLV>(data: &[u8]) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x104);
+        buf.write_short_lv(data);
+    }
 }
 
-pub fn t106(
+pub fn t106<'a, B: BufMut + WriteLV>(
     uin: u32,
     salt: u32,
     app_id: u32,
     sso_ver: u32,
-    password_md5: &[u8],
+    password_md5: &'a [u8],
     guid_available: bool,
-    guid: &[u8],
-    tgtgt_key: &[u8],
+    guid: &'a [u8],
+    tgtgt_key: &'a [u8],
     wtf: u32,
-) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x106);
-    let body = &{
-        let mut w = BytesMut::new();
-        w.put_u16(4);
-        w.put_u32(rand::random::<u32>());
-        w.put_u32(sso_ver);
-        w.put_u32(16); // appId
-        w.put_u32(0); // app client version
-        if uin == 0 {
-            w.put_u64(salt as u64)
-        } else {
-            w.put_u64(uin as u64)
-        }
-        w.put_u32(UNIX_EPOCH.elapsed().unwrap().as_secs() as u32);
-        w.put_slice(&[0x00, 0x00, 0x00, 0x00]); // fake ip
-        w.put_u8(0x01);
-        w.put_slice(password_md5);
-        w.put_slice(tgtgt_key);
-        w.put_u32(wtf);
-        w.put_u8(if guid_available { 1 } else { 0 });
-        if guid.is_empty() {
-            for _ in 0..4 {
-                w.put_u32(rand::random::<u32>());
-            }
-        } else {
-            w.put_slice(guid)
-        }
-        w.put_u32(app_id);
-        w.put_u32(1); // password login
-        w.write_bytes_short((uin as i64).to_string().as_bytes());
-        w.put_u16(0);
-        w.freeze()
-    };
-
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        let mut b = BytesMut::new();
-        if salt != 0 {
-            b.put_u32(salt);
-        } else {
-            b.put_u32(uin);
-        }
-        let mut v = BytesMut::new();
-        v.put_slice(password_md5);
-        v.put_slice(&[0; 4]);
-        v.put_slice(&b);
-        let key = md5::compute(&v).to_vec();
-        w.encrypt_and_write(&key, body);
-        w.freeze()
-    });
-    buf.freeze()
-}
-
-pub fn t107(pic_type: u16) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x107);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u16(pic_type);
-        w.put_u8(0x00);
-        w.put_u16(0);
-        w.put_u8(0x01);
-        w.freeze()
-    });
-    buf.freeze()
-}
-
-pub fn t108(ksid: &[u8]) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x108);
-    buf.write_bytes_short(ksid);
-    buf.freeze()
-}
-
-pub fn t109(android_id: &str) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x109);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_slice(md5::compute(android_id.as_bytes()).as_ref());
-        w.freeze()
-    });
-    buf.freeze()
-}
-
-pub fn t116(misc_bitmap: u32, sub_sig_map: u32) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x116);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u8(0x00);
-        w.put_u32(misc_bitmap);
-        w.put_u32(sub_sig_map);
-        w.put_u8(0x01);
-        w.put_u32(1600000226); // app id list
-        w.freeze()
-    });
-    buf.freeze()
-}
-
-pub fn t124(os_type: &str, os_version: &str, sim_info: &str, apn: &str) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x124);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.write_tlv_limited_size(os_type.as_bytes(), 16);
-        w.write_tlv_limited_size(os_version.as_bytes(), 16);
-        w.put_u16(2);
-        w.write_tlv_limited_size(sim_info.as_bytes(), 16);
-        w.write_tlv_limited_size(&[], 16);
-        w.write_tlv_limited_size(apn.as_bytes(), 16);
-        w.freeze()
-    });
-    buf.freeze()
-}
-
-pub fn t128(
-    is_guid_from_file_null: bool,
-    is_guid_available: bool,
-    is_guid_changed: bool,
-    guid_flag: u32,
-    build_model: &str,
-    guid: &[u8],
-    build_brand: &str,
-) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x128);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u16(0);
-        w.put_u8(if is_guid_from_file_null { 1 } else { 0 });
-        w.put_u8(if is_guid_available { 1 } else { 0 });
-        w.put_u8(if is_guid_changed { 1 } else { 0 });
-        w.put_u32(guid_flag);
-        w.write_tlv_limited_size(build_model.as_bytes(), 32);
-        w.write_tlv_limited_size(guid, 16);
-        w.write_tlv_limited_size(build_brand.as_bytes(), 16); // app id list
-        w.freeze()
-    });
-    buf.freeze()
-}
-
-pub fn t141(sim_info: &str, apn: &str) -> Bytes {
-    let mut w = BytesMut::new();
-    w.put_u16(0x141);
-    w.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u16(1);
-        w.write_bytes_short(sim_info.as_bytes());
-        w.put_u16(2);
-        w.write_bytes_short(apn.as_bytes());
-        w.freeze()
-    });
-    w.freeze()
-}
-
-pub fn t142(apk_id: &str) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x142);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u16(0);
-        w.write_tlv_limited_size(apk_id.as_bytes(), 32);
-        w.freeze()
-    });
-    buf.freeze()
-}
-
-pub fn t143(arr: &[u8]) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x143);
-    buf.write_bytes_short(arr);
-    buf.freeze()
-}
-
-pub fn t144(
-    imei: &str,
-    dev_info: &[u8],
-    os_type: &str,
-    os_version: &str,
-    sim_info: &str,
-    apn: &str,
-    is_guid_from_file_null: bool,
-    is_guid_available: bool,
-    is_guid_changed: bool,
-    guid_flag: u32,
-    build_model: &str,
-    guid: &[u8],
-    build_brand: &str,
-    tgtgt_key: &[u8],
-) -> Bytes {
-    let mut w = BytesMut::new();
-    w.put_u16(0x144);
-    w.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.encrypt_and_write(tgtgt_key, &{
+) -> impl PacketWriter<B> + 'a {
+    move |buf: &mut B| {
+        buf.put_u16(0x106);
+        let body = &{
             let mut w = BytesMut::new();
-            w.put_u16(5);
-            w.put_slice(&t109(imei));
-            w.put_slice(&t52d(dev_info));
-            w.put_slice(&t124(os_type, os_version, sim_info, apn));
-            w.put_slice(&t128(
-                is_guid_from_file_null,
-                is_guid_available,
-                is_guid_changed,
-                guid_flag,
-                build_model,
-                guid,
-                build_brand,
-            ));
-            w.put_slice(&t16e(build_model.as_bytes()));
+            w.put_u16(4);
+            w.put_u32(rand::random::<u32>());
+            w.put_u32(sso_ver);
+            w.put_u32(16); // appId
+            w.put_u32(0); // app client version
+            if uin == 0 {
+                w.put_u64(salt as u64)
+            } else {
+                w.put_u64(uin as u64)
+            }
+            w.put_u32(UNIX_EPOCH.elapsed().unwrap().as_secs() as u32);
+            w.put_slice(&[0x00, 0x00, 0x00, 0x00]); // fake ip
+            w.put_u8(0x01);
+            w.put_slice(password_md5);
+            w.put_slice(tgtgt_key);
+            w.put_u32(wtf);
+            w.put_u8(if guid_available { 1 } else { 0 });
+            if guid.is_empty() {
+                for _ in 0..4 {
+                    w.put_u32(rand::random::<u32>());
+                }
+            } else {
+                w.put_slice(guid)
+            }
+            w.put_u32(app_id);
+            w.put_u32(1); // password login
+            w.write_short_lv((uin as i64).to_string().as_bytes());
+            w.put_u16(0);
             w.freeze()
+        };
+
+        buf.write_short_lv(|w: &mut B| {
+            let mut b = BytesMut::new();
+            if salt != 0 {
+                b.put_u32(salt);
+            } else {
+                b.put_u32(uin);
+            }
+            let mut v = BytesMut::new();
+            v.put_slice(password_md5);
+            v.put_slice(&[0; 4]);
+            v.put_slice(&b);
+            let key = md5::compute(&v).to_vec();
+            w.encrypt_and_write(&key, body);
         });
-        w.freeze()
-    });
-    w.freeze()
+    }
 }
 
-pub fn t145(guid: &[u8]) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x145);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_slice(guid);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t107<B: BufMut + WriteLV>(pic_type: u16) -> impl PacketWriter<B> {
+    move |buf: &mut B| {
+        buf.put_u16(0x107);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u16(pic_type);
+            w.put_u8(0x00);
+            w.put_u16(0);
+            w.put_u8(0x01);
+        });
+    }
 }
 
-pub fn t147(app_id: u32, apk_version_name: &str, apk_signature_md5: &[u8]) -> Bytes {
-    let mut w = BytesMut::new();
-    w.put_u16(0x147);
-    w.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u32(app_id);
-        w.write_tlv_limited_size(apk_version_name.as_bytes(), 32);
-        w.write_tlv_limited_size(apk_signature_md5, 32);
-        w.freeze()
-    });
-    w.freeze()
+pub fn t108<B: BufMut + WriteLV>(ksid: &[u8]) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x108);
+        buf.write_short_lv(ksid);
+    }
 }
 
-pub fn t154(seq: u16) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x154);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u32(seq as u32);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t109<B: BufMut + WriteLV>(android_id: &str) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x109);
+        buf.write_short_lv(md5::compute(android_id.as_bytes()).as_ref());
+    }
 }
 
-pub fn t166(image_type: u8) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x166);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u8(image_type);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t116<B: BufMut + WriteLV>(misc_bitmap: u32, sub_sig_map: u32) -> impl PacketWriter<B> {
+    move |buf: &mut B| {
+        buf.put_u16(0x116);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u8(0x00);
+            w.put_u32(misc_bitmap);
+            w.put_u32(sub_sig_map);
+            w.put_u8(0x01);
+            w.put_u32(1600000226); // app id list
+        });
+    }
 }
 
-pub fn t174(data: &[u8]) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x174);
-    buf.write_bytes_short(data);
-    buf.freeze()
+pub fn t124<'a, B: BufMut + WriteLV>(
+    os_type: &'a str,
+    os_version: &'a str,
+    sim_info: &'a str,
+    apn: &'a str,
+) -> impl PacketWriter<B> + 'a {
+    move |buf: &mut B| {
+        buf.put_u16(0x124);
+        buf.write_short_lv(|w: &mut B| {
+            w.write_tlv_limited_size(os_type.as_bytes(), 16);
+            w.write_tlv_limited_size(os_version.as_bytes(), 16);
+            w.put_u16(2);
+            w.write_tlv_limited_size(sim_info.as_bytes(), 16);
+            w.write_tlv_limited_size(&[], 16);
+            w.write_tlv_limited_size(apn.as_bytes(), 16);
+        });
+    }
 }
 
-pub fn t177(build_time: u32, sdk_version: &str) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x177);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u8(0x01);
-        w.put_u32(build_time);
-        w.write_bytes_short(sdk_version.as_bytes());
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t128<'a, B: BufMut + WriteLV>(
+    is_guid_from_file_null: bool,
+    is_guid_available: bool,
+    is_guid_changed: bool,
+    guid_flag: u32,
+    build_model: &'a str,
+    guid: &'a [u8],
+    build_brand: &'a str,
+) -> impl PacketWriter<B> + 'a {
+    move |buf: &mut B| {
+        buf.put_u16(0x128);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u16(0);
+            w.put_u8(if is_guid_from_file_null { 1 } else { 0 });
+            w.put_u8(if is_guid_available { 1 } else { 0 });
+            w.put_u8(if is_guid_changed { 1 } else { 0 });
+            w.put_u32(guid_flag);
+            w.write_tlv_limited_size(build_model.as_bytes(), 32);
+            w.write_tlv_limited_size(guid, 16);
+            w.write_tlv_limited_size(build_brand.as_bytes(), 16); // app id list
+        });
+    }
 }
 
-pub fn t187(mac_address: &str) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x187);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_slice(md5::compute(mac_address.as_bytes()).as_ref());
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t141<'a, B: BufMut + WriteLV>(sim_info: &'a str, apn: &'a str) -> impl PacketWriter<B> + 'a {
+    move |buf: &mut B| {
+        buf.put_u16(0x141);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u16(1);
+            w.write_bytes_short(sim_info.as_bytes());
+            w.put_u16(2);
+            w.write_bytes_short(apn.as_bytes());
+        });
+    }
 }
 
-pub fn t188(android_id: &str) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x188);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_slice(md5::compute(android_id.as_bytes()).as_ref());
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t142<B: BufMut + WriteLV>(apk_id: &str) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x142);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u16(0);
+            w.write_tlv_limited_size(apk_id.as_bytes(), 32);
+        });
+    }
 }
 
-pub fn t191(k: u8) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x191);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u8(k);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t143<B: BufMut + WriteLV>(arr: &[u8]) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x143);
+        buf.write_short_lv(arr);
+    }
 }
 
-pub fn t193(ticket: &str) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x193);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_slice(ticket.as_bytes());
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t144<'a, B: BufMut + WriteLV>(
+    imei: &'a str,
+    dev_info: &'a [u8],
+    os_type: &'a str,
+    os_version: &'a str,
+    sim_info: &'a str,
+    apn: &'a str,
+    is_guid_from_file_null: bool,
+    is_guid_available: bool,
+    is_guid_changed: bool,
+    guid_flag: u32,
+    build_model: &'a str,
+    guid: &'a [u8],
+    build_brand: &'a str,
+    tgtgt_key: &'a [u8],
+) -> impl PacketWriter<B> + 'a {
+    move |buf: &mut B| {
+        buf.put_u16(0x144);
+        buf.write_short_lv(|w: &mut B| {
+            w.encrypt_and_write(tgtgt_key, &{
+                let mut w = Vec::new();
+                w.put_u16(5);
+                t109(imei).write(&mut w);
+                t52d(dev_info).write(&mut w);
+                t124(os_type, os_version, sim_info, apn).write(&mut w);
+                t128(
+                    is_guid_from_file_null,
+                    is_guid_available,
+                    is_guid_changed,
+                    guid_flag,
+                    build_model,
+                    guid,
+                    build_brand,
+                )
+                    .write(&mut w);
+                t16e(build_model.as_bytes()).write(&mut w);
+                w
+            });
+        });
+    }
 }
 
-pub fn t194(imsi_md5: &[u8]) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x194);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_slice(imsi_md5);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t145<B: BufMut + WriteLV>(guid: &[u8]) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x145);
+        buf.write_short_lv(guid);
+    }
 }
 
-pub fn t197() -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x197);
-    let v: [u8; 1] = [0];
-    buf.write_bytes_short(&v);
-    buf.freeze()
+pub fn t147<'a, B: BufMut + WriteLV>(
+    app_id: u32,
+    apk_version_name: &'a str,
+    apk_signature_md5: &'a [u8],
+) -> impl PacketWriter<B> + 'a {
+    move |buf: &mut B| {
+        buf.put_u16(0x147);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u32(app_id);
+            w.write_tlv_limited_size(apk_version_name.as_bytes(), 32);
+            w.write_tlv_limited_size(apk_signature_md5, 32);
+        });
+    }
 }
 
-pub fn t198() -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x198);
-    let v: [u8; 1] = [0];
-    buf.write_bytes_short(&v);
-    buf.freeze()
+pub fn t154<B: BufMut + WriteLV>(seq: u16) -> impl PacketWriter<B> {
+    move |buf: &mut B| {
+        buf.put_u16(0x154);
+        buf.write_short_lv((seq as u32).to_be_bytes().as_slice());
+    }
 }
 
-pub fn t202(wifi_bssid: &str, wifi_ssid: &str) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x202);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.write_tlv_limited_size(wifi_bssid.as_bytes(), 16);
-        w.write_tlv_limited_size(wifi_ssid.as_bytes(), 32);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t166<B: BufMut + WriteLV>(image_type: u8) -> impl PacketWriter<B> {
+    move |buf: &mut B| {
+        buf.put_u16(0x166);
+        buf.write_short_lv([image_type].as_slice());
+    }
 }
 
-pub fn t400(
-    g: &[u8],
+pub fn t174<B: BufMut + WriteLV>(data: &[u8]) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x174);
+        buf.write_short_lv(data);
+    }
+}
+
+pub fn t177<B: BufMut + WriteLV>(build_time: u32, sdk_version: &str) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x177);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u8(0x01);
+            w.put_u32(build_time);
+            w.write_short_lv(sdk_version.as_bytes());
+        });
+    }
+}
+
+pub fn t187<B: BufMut + WriteLV>(mac_address: &str) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x187);
+        buf.write_short_lv(md5::compute(mac_address.as_bytes()).as_ref());
+    }
+}
+
+pub fn t188<B: BufMut + WriteLV>(android_id: &str) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x188);
+        buf.write_short_lv(md5::compute(android_id.as_bytes()).as_ref());
+    }
+}
+
+pub fn t191<B: BufMut + WriteLV>(k: u8) -> impl PacketWriter<B> {
+    move |buf: &mut B| {
+        buf.put_u16(0x191);
+        buf.write_short_lv([k].as_slice());
+    }
+}
+
+pub fn t193<B: BufMut + WriteLV>(ticket: &str) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x193);
+        buf.write_short_lv(ticket.as_bytes());
+    }
+}
+
+pub fn t194<B: BufMut + WriteLV>(imsi_md5: &[u8]) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x194);
+        buf.write_short_lv(imsi_md5);
+    }
+}
+
+pub fn t197<B: BufMut + WriteLV>() -> impl PacketWriter<B> {
+    |buf: &mut B| {
+        buf.put_u16(0x197);
+        buf.write_short_lv([0u8].as_slice());
+    }
+}
+
+pub fn t198<B: BufMut + WriteLV>() -> impl PacketWriter<B> {
+    |buf: &mut B| {
+        buf.put_u16(0x198);
+        buf.write_short_lv([0u8].as_slice());
+    }
+}
+
+pub fn t202<'a, B: BufMut + WriteLV>(
+    wifi_bssid: &'a str,
+    wifi_ssid: &'a str,
+) -> impl PacketWriter<B> + 'a {
+    move |buf: &mut B| {
+        buf.put_u16(0x202);
+        buf.write_short_lv(|w: &mut B| {
+            w.write_tlv_limited_size(wifi_bssid.as_bytes(), 16);
+            w.write_tlv_limited_size(wifi_ssid.as_bytes(), 32);
+        });
+    }
+}
+
+pub fn t400<'a, B: BufMut + WriteLV>(
+    g: &'a [u8],
     uin: i64,
-    guid: &[u8],
-    dpwd: &[u8],
+    guid: &'a [u8],
+    dpwd: &'a [u8],
     j2: i64,
     j3: i64,
-    rand_seed: &[u8],
-) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x400);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.encrypt_and_write(g, &{
-            let mut ww = BytesMut::new();
-            ww.put_u16(1);
-            ww.put_u64(uin as u64);
-            ww.put_slice(guid);
-            ww.put_slice(dpwd);
-            ww.put_u32(j2 as u32);
-            ww.put_u32(j3 as u32);
-            ww.put_u32(UNIX_EPOCH.elapsed().unwrap().as_millis() as u32);
-            ww.put_slice(rand_seed);
-            ww.freeze()
+    rand_seed: &'a [u8],
+) -> impl PacketWriter<B> + 'a {
+    move |buf: &mut B| {
+        buf.put_u16(0x400);
+        buf.write_short_lv(|w: &mut B| {
+            w.encrypt_and_write(g, &{
+                let mut ww = Vec::new();
+                ww.put_u16(1);
+                ww.put_u64(uin as u64);
+                ww.put_slice(guid);
+                ww.put_slice(dpwd);
+                ww.put_u32(j2 as u32);
+                ww.put_u32(j3 as u32);
+                ww.put_u32(UNIX_EPOCH.elapsed().unwrap().as_millis() as u32);
+                ww.put_slice(rand_seed);
+                ww
+            });
         });
-        w.freeze()
-    });
-    buf.freeze()
-}
-
-pub fn t401(d: &[u8]) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x401);
-    buf.write_bytes_short(d);
-    buf.freeze()
-}
-
-pub fn t511(domains: Vec<&str>) -> Bytes {
-    let mut arr2 = Vec::new();
-    for d in domains {
-        if !d.is_empty() {
-            arr2.push(d)
-        }
     }
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x511);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u16(arr2.len() as u16);
-        for d in arr2 {
-            let index_of = match d.find('(') {
-                None => -1,
-                Some(i) => i as isize,
-            };
-            let index_of2 = match d.find(')') {
-                None => -1,
-                Some(i) => i as isize,
-            };
-            if index_of != 0 || index_of2 <= 0 {
-                w.put_u8(0x01);
-                w.write_bytes_short(d.as_bytes())
-            } else {
-                let mut b: u8;
-                let z: bool;
-                if let Ok(i) = d[(index_of + 1) as usize..index_of2 as usize].parse::<i32>() {
-                    let z2 = (1048576 & i) > 0;
-                    if (i & 134217728) > 0 {
-                        z = true
-                    } else {
-                        z = false
-                    }
-                    if z2 {
-                        b = 1
-                    } else {
-                        b = 0
-                    }
-                    if z {
-                        b |= 2
-                    }
-                    w.put_u8(b);
-                    w.write_bytes_short(d[(index_of2 + 1) as usize..].as_bytes());
-                }
+}
+
+pub fn t401<B: BufMut + WriteLV>(d: &[u8]) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x401);
+        buf.write_short_lv(d);
+    }
+}
+
+pub fn t511<B: BufMut + WriteLV>(domains: Vec<&str>) -> impl PacketWriter<B> + '_ {
+    |buf: &mut B| {
+        let mut arr2 = Vec::new();
+        for d in domains {
+            if !d.is_empty() {
+                arr2.push(d)
             }
         }
-        w.freeze()
-    });
-    buf.freeze()
+        buf.put_u16(0x511);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u16(arr2.len() as u16);
+            for d in arr2 {
+                let index_of = match d.find('(') {
+                    None => -1,
+                    Some(i) => i as isize,
+                };
+                let index_of2 = match d.find(')') {
+                    None => -1,
+                    Some(i) => i as isize,
+                };
+                if index_of != 0 || index_of2 <= 0 {
+                    w.put_u8(0x01);
+                    w.write_short_lv(d.as_bytes())
+                } else {
+                    let mut b: u8;
+                    let z: bool;
+                    if let Ok(i) = d[(index_of + 1) as usize..index_of2 as usize].parse::<i32>() {
+                        let z2 = (1048576 & i) > 0;
+                        if (i & 134217728) > 0 {
+                            z = true
+                        } else {
+                            z = false
+                        }
+                        if z2 {
+                            b = 1
+                        } else {
+                            b = 0
+                        }
+                        if z {
+                            b |= 2
+                        }
+                        w.put_u8(b);
+                        w.write_short_lv(d[(index_of2 + 1) as usize..].as_bytes());
+                    }
+                }
+            }
+        });
+    }
 }
 
-pub fn t516() -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x516);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u32(0);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t516<B: BufMut + WriteLV>() -> impl PacketWriter<B> {
+    move |buf: &mut B| {
+        buf.put_u16(0x516);
+        buf.write_short_lv(0u32.to_be_bytes().as_slice());
+    }
 }
 
-pub fn t521(i: u32) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x521);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u32(i);
-        w.put_u16(0);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t521<B: BufMut + WriteLV>(i: u32) -> impl PacketWriter<B> {
+    move |buf: &mut B| {
+        buf.put_u16(0x521);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u32(i);
+            w.put_u16(0);
+        });
+    }
 }
 
-pub fn t525(t536: &[u8]) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x525);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_u16(1);
-        w.put_slice(t536);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t525<'a, B: BufMut + WriteLV, T: PacketWriter<B> + 'a>(t536: T) -> impl PacketWriter<B> + 'a {
+    move |buf: &mut B| {
+        buf.put_u16(0x525);
+        buf.write_short_lv(|w: &mut B| {
+            w.put_u16(1);
+            t536.write(w);
+        });
+    }
 }
 
-pub fn t536(login_extra_data: &[u8]) -> Bytes {
-    let mut buf = BytesMut::new();
-    buf.put_u16(0x536);
-    buf.write_bytes_short(&{
-        let mut w = BytesMut::new();
-        w.put_slice(login_extra_data);
-        w.freeze()
-    });
-    buf.freeze()
+pub fn t536<B: BufMut + WriteLV>(login_extra_data: &[u8]) -> impl PacketWriter<B> + '_ {
+    move |buf: &mut B| {
+        buf.put_u16(0x536);
+        buf.write_short_lv(login_extra_data);
+    }
 }
 
 pub fn guid_flag() -> u32 {
@@ -778,7 +685,6 @@ pub fn guid_flag() -> u32 {
 
 #[cfg(test)]
 mod tests {
-
     use crate::command::wtlogin::tlv_writer::*;
 
     const GUID: [u8; 16] = [
