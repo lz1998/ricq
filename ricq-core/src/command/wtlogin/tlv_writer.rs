@@ -500,11 +500,7 @@ pub fn t511<B: BufMut + WriteLV>(domains: Vec<&str>) -> impl PacketWriter<B> + '
                 let z: bool;
                 if let Ok(i) = d[(index_of + 1) as usize..index_of2 as usize].parse::<i32>() {
                     let z2 = (1048576 & i) > 0;
-                    if (i & 134217728) > 0 {
-                        z = true
-                    } else {
-                        z = false
-                    }
+                    z = (i & 134217728) > 0;
                     if z2 {
                         b = 1
                     } else {
@@ -597,10 +593,15 @@ mod tests {
         println!("{GUID:?}");
         println!("{:?}", "test param");
     }
-
+    fn get_buf<W: PacketWriter<Vec<u8>>>(w: W) -> Vec<u8> {
+        let mut buf = vec![];
+        w.write(&mut buf);
+        buf
+    }
     #[test]
     fn test_t1() {
         let result = t1(UIN, &[192, 168, 1, 1]);
+        let result = get_buf(result);
         println!("{:?}", result.len());
         println!("{result:?}")
     }
@@ -608,6 +609,7 @@ mod tests {
     #[test]
     fn test_t1b() {
         let result = t1b(0, 0, 3, 4, 72, 2, 2);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -615,6 +617,7 @@ mod tests {
     #[test]
     fn test_t1d() {
         let result = t1d(MISC_BITMAP);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -622,6 +625,7 @@ mod tests {
     #[test]
     fn test_t1f() {
         let result = t1f(IS_ROOT, OS_NAME, OS_VERSION, "China Mobile GSM", APN, 2);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -629,6 +633,7 @@ mod tests {
     #[test]
     fn test_t2() {
         let result = t2("result".to_string(), "sign".as_ref());
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -636,6 +641,7 @@ mod tests {
     #[test]
     fn test_t8() {
         let result = t8(123456);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -643,6 +649,7 @@ mod tests {
     #[test]
     fn test_t10a() {
         let result = t10a(IMEI.as_bytes());
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -658,6 +665,7 @@ mod tests {
             APK_VERSION_NAME,
             &APK_SIGN,
         );
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -665,6 +673,7 @@ mod tests {
     #[test]
     fn test_t16a() {
         let result = t16a(IMEI.as_bytes());
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -672,6 +681,7 @@ mod tests {
     #[test]
     fn test_t16e() {
         let result = t16e(IMEI.as_bytes());
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -679,6 +689,7 @@ mod tests {
     #[test]
     fn test_t17a() {
         let result = t17a(UIN as i32);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -686,6 +697,7 @@ mod tests {
     #[test]
     fn test_t17c() {
         let result = t17c(IMEI);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -693,6 +705,7 @@ mod tests {
     #[test]
     fn test_t18() {
         let result = t18(APP_ID, UIN);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -700,6 +713,7 @@ mod tests {
     #[test]
     fn test_t33() {
         let result = t33(&GUID);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -708,6 +722,7 @@ mod tests {
     fn test_t35() {
         let product_type = 8;
         let result = t35(product_type);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -715,6 +730,7 @@ mod tests {
     #[test]
     fn test_t52d() {
         let result = t52d(DEV_INFO);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -722,6 +738,7 @@ mod tests {
     #[test]
     fn test_t100() {
         let result = t100(SSO_VERSION, 2, MAIN_SIG_MAP);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -729,6 +746,7 @@ mod tests {
     #[test]
     fn test_t104() {
         let result = t104(&GUID);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -746,6 +764,7 @@ mod tests {
             &TGTGT_KEY,
             0,
         );
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}")
     }
@@ -753,6 +772,7 @@ mod tests {
     #[test]
     fn test_t107() {
         let result = t107(3);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -760,6 +780,7 @@ mod tests {
     #[test]
     fn test_t108() {
         let result = t108(IMEI.as_bytes());
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -767,6 +788,7 @@ mod tests {
     #[test]
     fn test_t109() {
         let result = t109(ANDROID_ID);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -774,6 +796,7 @@ mod tests {
     #[test]
     fn test_t116() {
         let result = t116(MAIN_SIG_MAP, SUB_SIG_MAP);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -781,6 +804,7 @@ mod tests {
     #[test]
     fn test_t124() {
         let result = t124(OS_TYPE, OS_VERSION, SIM_INFO, APN);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -788,6 +812,7 @@ mod tests {
     #[test]
     fn test_t128() {
         let result = t128(false, true, false, 16, BUILD_MODEL, &GUID, BUILD_BRAND);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -795,6 +820,7 @@ mod tests {
     #[test]
     fn test_t141() {
         let result = t141(SIM_INFO, APN);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -802,6 +828,7 @@ mod tests {
     #[test]
     fn test_t142() {
         let result = t142(APK_ID);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -809,6 +836,7 @@ mod tests {
     #[test]
     fn test_t143() {
         let result = t143(&[1, 2, 3]);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -831,6 +859,7 @@ mod tests {
             BUILD_BRAND,
             &TGTGT_KEY,
         );
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -838,6 +867,7 @@ mod tests {
     #[test]
     fn test_t145() {
         let result = t145(&GUID);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -845,6 +875,7 @@ mod tests {
     #[test]
     fn test_t147() {
         let result = t147(16, APK_VERSION_NAME, &APK_SIGN);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -854,6 +885,7 @@ mod tests {
         let seq = (0x3635 + 1) & 0x7FFF;
         println!("{seq}");
         let result = t154(seq);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -861,6 +893,7 @@ mod tests {
     #[test]
     fn test_t166() {
         let result = t166(1);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -868,6 +901,7 @@ mod tests {
     #[test]
     fn test_t174() {
         let result = t174(&GUID);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -875,6 +909,7 @@ mod tests {
     #[test]
     fn test_t177() {
         let result = t177(MISC_BITMAP, SDK_VERSION);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -882,6 +917,7 @@ mod tests {
     #[test]
     fn test_t187() {
         let result = t187(MAC_ADDRESS);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -889,6 +925,7 @@ mod tests {
     #[test]
     fn test_t188() {
         let result = t188(ANDROID_ID);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -896,6 +933,7 @@ mod tests {
     #[test]
     fn test_t191() {
         let result = t191(127_u8);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -903,6 +941,7 @@ mod tests {
     #[test]
     fn test_t193() {
         let result = t193("some ticket");
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -910,6 +949,7 @@ mod tests {
     #[test]
     fn test_t194() {
         let result = t194(IMEI_MD5);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -917,6 +957,7 @@ mod tests {
     #[test]
     fn test_t197() {
         let result = t197();
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -924,6 +965,7 @@ mod tests {
     #[test]
     fn test_t198() {
         let result = t198();
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -931,6 +973,7 @@ mod tests {
     #[test]
     fn test_t202() {
         let result = t202(WIFI_BSSID, WIFI_SSID);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -938,6 +981,7 @@ mod tests {
     #[test]
     fn test_t400() {
         let result = t400(&GUID, UIN as i64, &GUID, &GUID, 2, 2, &GUID);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -945,6 +989,7 @@ mod tests {
     #[test]
     fn test_t401() {
         let result = t401(&GUID);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -967,6 +1012,7 @@ mod tests {
             "mail.qq.com",
             "mma.qq.com",
         ]);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -974,6 +1020,7 @@ mod tests {
     #[test]
     fn test_t516() {
         let result = t516();
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
@@ -981,13 +1028,15 @@ mod tests {
     #[test]
     fn test_t521() {
         let result = t521(6);
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }
 
     #[test]
     fn test_t525() {
-        let result = t525(&t536(&GUID));
+        let result = t525(t536(&GUID));
+        let result = get_buf(result);
         println!("{}", result.len());
         println!("{result:?}");
     }

@@ -23,7 +23,7 @@ impl Client {
                     }
                 }
             }
-            187 | 188 | 189 | 190 | 191 => {
+            187..=191 => {
                 // pull friend system msg(friend request), then process
                 match self.get_friend_system_messages().await {
                     Ok(msgs) => {

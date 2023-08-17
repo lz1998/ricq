@@ -517,7 +517,7 @@ impl super::super::Client {
 
     /// 上传群图片
     pub async fn upload_group_image(&self, group_code: i64, data: &[u8]) -> RQResult<GroupImage> {
-        let image_info = ImageInfo::try_new(&data)?;
+        let image_info = ImageInfo::try_new(data)?;
 
         let image_store = self.get_group_image_store(group_code, &image_info).await?;
         let signature = self.highway_session.read().await.session_key.to_vec();
@@ -564,7 +564,7 @@ impl super::super::Client {
         data: &[u8],
         codec: u32,
     ) -> RQResult<GroupAudio> {
-        let md5 = md5::compute(&data).to_vec();
+        let md5 = md5::compute(data).to_vec();
         let size = data.len();
         let ext = self.engine.read().await.build_group_try_up_ptt_req(
             group_code,
@@ -657,8 +657,8 @@ impl super::super::Client {
         video_data: &[u8],
         thumb_data: &[u8],
     ) -> RQResult<VideoFile> {
-        let video_md5 = md5::compute(&video_data).to_vec();
-        let thumb_md5 = md5::compute(&thumb_data).to_vec();
+        let video_md5 = md5::compute(video_data).to_vec();
+        let thumb_md5 = md5::compute(thumb_data).to_vec();
         let video_size = video_data.len();
         let thumb_size = thumb_data.len();
         let short_video_up_req = self.engine.read().await.build_short_video_up_req(

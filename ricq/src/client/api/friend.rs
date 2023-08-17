@@ -191,7 +191,7 @@ impl super::super::Client {
     }
 
     pub async fn upload_friend_image(&self, target: i64, data: &[u8]) -> RQResult<FriendImage> {
-        let image_info = ImageInfo::try_new(&data)?;
+        let image_info = ImageInfo::try_new(data)?;
         let image_store = self.get_off_pic_store(target, &image_info).await?;
 
         let friend_image = match image_store {
@@ -298,7 +298,7 @@ impl super::super::Client {
         data: &[u8],
         audio_duration: Duration,
     ) -> RQResult<FriendAudio> {
-        let md5 = md5::compute(&data).to_vec();
+        let md5 = md5::compute(data).to_vec();
         let size = data.len();
         let ext = self.engine.read().await.build_friend_try_up_ptt_req(
             target,

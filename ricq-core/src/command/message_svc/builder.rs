@@ -164,7 +164,7 @@ impl super::super::super::Engine {
             c2c_with_draw: vec![pb::msg::C2cMsgWithDrawReq {
                 msg_info: seqs
                     .into_iter()
-                    .zip(rands.into_iter())
+                    .zip(rands)
                     .map(|(seq, ran)| pb::msg::C2cMsgInfo {
                         from_uin: Some(self.uin()),
                         to_uin: Some(uin),
@@ -202,7 +202,7 @@ impl super::super::super::Engine {
                 user_def: Some(vec![0x08, 0x00]),
                 msg_list: seqs
                     .into_iter()
-                    .zip(rands.into_iter())
+                    .zip(rands)
                     .map(|(seq, ran)| pb::msg::GroupMsgInfo {
                         msg_seq: Some(seq),
                         msg_random: Some(ran),

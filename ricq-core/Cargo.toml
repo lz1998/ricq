@@ -9,19 +9,19 @@ repository = "https://github.com/lz1998/ricq"
 keywords = ["qq", "protocol", "android", "mirai"]
 
 [dependencies]
-byteorder = "1"
-bytes = "1"
-derivative = "2"
-flate2 = "1"
-generic-array = "0.14"
-jcers = { version = "0.1", features = ["derive"] }
-md5 = "0.7"
-p256 = { version = "0.10", features = ["ecdh"], default-features = false }
-prost = { version = "0.9", features = ["std"], default-features = false }
-prost-types = "0.9"
-rand = "0.8"
-serde = { version = "1", features = ["derive"] }
-thiserror = "1"
+byteorder.workspace = true
+bytes.workspace = true
+derivative.workspace = true
+flate2.workspace = true
+generic-array.workspace = true
+jcers = { workspace = true, features = ["derive"] }
+md5.workspace = true
+p256 = { workspace = true, features = ["ecdh"], default-features = false }
+prost = { workspace = true, features = ["std"], default-features = false }
+prost-types.workspace = true
+rand.workspace = true
+serde = { workspace = true, features = ["derive"] }
+thiserror.workspace = true
 
 [build-dependencies]
 prost-build = "0.9"

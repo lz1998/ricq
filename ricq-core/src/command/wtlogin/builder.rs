@@ -247,7 +247,7 @@ impl super::super::super::Engine {
             w.put_u16(20);
             let tlv_writer = CounterWriter::default()
                 .append(t8(2052))
-                .append(t104(&*transport.sig.t104))
+                .append(t104(&transport.sig.t104))
                 .append(t116(
                     transport.version.misc_bitmap,
                     transport.version.sub_sig_map,

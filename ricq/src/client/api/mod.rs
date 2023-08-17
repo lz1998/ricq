@@ -323,7 +323,7 @@ impl super::Client {
         let addrs: Vec<RQAddr> = rsp
             .uint32_up_ip
             .into_iter()
-            .zip(rsp.uint32_up_port.into_iter())
+            .zip(rsp.uint32_up_port)
             .map(|(ip, port)| RQAddr(ip as u32, port as u16))
             .collect();
         let body =
