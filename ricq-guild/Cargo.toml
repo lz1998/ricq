@@ -11,24 +11,16 @@ keywords = ["qq", "protocol", "android", "mirai"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.htmlc
 
 [dependencies]
-bytes = "1"
-prost = { version = "0.9", features = ["std"], default-features = false }
-prost-types = "0.9"
-tracing = "0.1"
-dynamic-protobuf = "0"
-rand = "0"
+bytes.workspace = true
+prost = { workspace = true, features = ["std"], default-features = false }
+prost-types.workspace = true
+tracing.workspace = true
+dynamic-protobuf.workspace = true
+rand.workspace = true
+ricq = { path = "../ricq" }
+ricq-core = { path = "../ricq-core" }
+tokio = { workspace = true, features = ["sync"] }
 
-[dependencies.ricq]
-version = "=0.1.20"
-path = "../ricq"
-
-[dependencies.ricq-core]
-version = "=0.1.20"
-path = "../ricq-core"
-
-[dependencies.tokio]
-version = "1"
-features = ["sync"]
 
 [build-dependencies]
 prost-build = "0.9"
