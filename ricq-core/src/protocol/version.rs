@@ -1,4 +1,26 @@
 use std::convert::TryFrom;
+// oicq/wlogin_sdk/request/WtloginHelper.java SigType
+pub const WLOGIN_A2: u32 = 64;
+pub const WLOGIN_A5: u32 = 2;
+pub const WLOGIN_AQSIG: u32 = 2097152;
+pub const WLOGIN_D2: u32 = 262144;
+pub const WLOGIN_DA2: u32 = 33554432;
+pub const WLOGIN_LHSIG: u32 = 4194304;
+pub const WLOGIN_LSKEY: u32 = 512;
+pub const WLOGIN_OPENKEY: u32 = 16384;
+pub const WLOGIN_PAYTOKEN: u32 = 8388608;
+pub const WLOGIN_PF: u32 = 16777216;
+pub const WLOGIN_PSKEY: u32 = 1048576;
+pub const WLOGIN_PT4_TOKEN: u32 = 134217728;
+pub const WLOGIN_QRPUSH: u32 = 67108864;
+pub const WLOGIN_RESERVED: u32 = 16;
+pub const WLOGIN_SID: u32 = 524288;
+pub const WLOGIN_SIG64: u32 = 8192;
+pub const WLOGIN_SKEY: u32 = 4096;
+pub const WLOGIN_ST: u32 = 128;
+pub const WLOGIN_STWEB: u32 = 32;
+pub const WLOGIN_TOKEN: u32 = 32768;
+pub const WLOGIN_VKEY: u32 = 131072;
 
 #[derive(Debug, Clone, derivative::Derivative, serde::Deserialize)]
 #[derivative(Default)]
@@ -16,6 +38,7 @@ pub enum Protocol {
 pub struct Version {
     pub apk_sign: &'static [u8],
     pub apk_id: &'static str,
+    pub app_key: &'static str,
     pub sort_version_name: &'static str,
     pub build_ver: &'static str,
     pub sdk_version: &'static str,
@@ -26,6 +49,7 @@ pub struct Version {
     pub misc_bitmap: u32,
     pub sub_sig_map: u32,
     pub main_sig_map: u32,
+    pub qua: &'static str,
     pub protocol: Protocol,
 }
 
@@ -48,40 +72,104 @@ impl From<Protocol> for Version {
 
 pub const ANDROID_PHONE: Version = Version {
     apk_id: "com.tencent.mobileqq",
-    app_id: 537154734,
-    sub_app_id: 537154734,
-    sort_version_name: "8.9.38.10545",
-    build_ver: "8.9.15.9425",
-    build_time: 1676531414,
+    app_id: 537164840,
+    sub_app_id: 537164840,
+    app_key: "0S200MNJT807V3GE",
+    sort_version_name: "8.9.63.11390",
+    build_ver: "8.9.63.11390",
+    build_time: 1685069178,
     apk_sign: &[
         0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E, 0xB6,
         0x8D,
     ],
-    sdk_version: "6.0.0.2535",
-    sso_version: 19,
+    sdk_version: "6.0.0.2546",
+    sso_version: 20,
     misc_bitmap: 150470524,
-    sub_sig_map: 66560,
-    main_sig_map: 16724722,
+    sub_sig_map: 0x10400,
+    // 16724722
+    main_sig_map: WLOGIN_A5
+        | WLOGIN_RESERVED
+        | WLOGIN_STWEB
+        | WLOGIN_A2
+        | WLOGIN_ST
+        | WLOGIN_LSKEY
+        | WLOGIN_SKEY
+        | WLOGIN_SIG64
+        | 1 << 16
+        | WLOGIN_VKEY
+        | WLOGIN_D2
+        | WLOGIN_SID
+        | WLOGIN_PSKEY
+        | WLOGIN_AQSIG
+        | WLOGIN_LHSIG
+        | WLOGIN_PAYTOKEN,
+    qua: "V1_AND_SQ_8.9.63_4194_YYB_D",
     protocol: Protocol::AndroidPhone,
+};
+
+pub const APAD: Version = Version {
+    apk_id: "com.tencent.mobileqq",
+    app_id: 537164888,
+    sub_app_id: 537164888,
+    sort_version_name: "8.9.63.11390",
+    build_ver: "8.9.33.614",
+    build_time: 1685069178,
+    apk_sign: &[
+        0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E, 0xB6,
+        0x8D,
+    ],
+    sdk_version: "6.0.0.2546",
+    sso_version: 20,
+    misc_bitmap: 150470524,
+    sub_sig_map: 0x10400,
+    // 16724722
+    main_sig_map: WLOGIN_A5
+        | WLOGIN_RESERVED
+        | WLOGIN_STWEB
+        | WLOGIN_A2
+        | WLOGIN_ST
+        | WLOGIN_LSKEY
+        | WLOGIN_SKEY
+        | WLOGIN_SIG64
+        | 1 << 16
+        | WLOGIN_VKEY
+        | WLOGIN_D2
+        | WLOGIN_SID
+        | WLOGIN_PSKEY
+        | WLOGIN_AQSIG
+        | WLOGIN_LHSIG
+        | WLOGIN_PAYTOKEN,
+    protocol: Protocol::AndroidPad,
+    app_key: "0S200MNJT807V3GE",
+    qua: "V1_AND_SQ_8.9.63_4194_YYB_D",
 };
 
 pub const IPAD: Version = Version {
     apk_id: "com.tencent.minihd.qq",
-    app_id: 537065739,
-    sub_app_id: 537065739,
-    sort_version_name: "5.8.9",
-    build_ver: "8.8.38.2266",
+    app_id: 537151363,
+    sub_app_id: 537151363,
+    sort_version_name: "8.9.33.614",
+    build_ver: "8.9.33.614",
     build_time: 1595836208,
     apk_sign: &[
-        0xAA, 0x39, 0x78, 0xF4, 0x1F, 0xD9, 0x6F, 0xF9, 0x91, 0x4A, 0x66, 0x9E, 0x18, 0x64, 0x74,
-        0xC7,
+        170, 57, 120, 244, 31, 217, 111, 249, 145, 74, 102, 158, 24, 100, 116, 199,
     ],
     sdk_version: "6.0.0.2433",
-    sso_version: 12,
+    sso_version: 19,
     misc_bitmap: 150470524,
     sub_sig_map: 66560,
-    main_sig_map: 1970400,
+    // 1970400
+    main_sig_map: WLOGIN_STWEB
+        | WLOGIN_A2
+        | WLOGIN_ST
+        | WLOGIN_SKEY
+        | WLOGIN_VKEY
+        | WLOGIN_D2
+        | WLOGIN_SID
+        | WLOGIN_PSKEY,
     protocol: Protocol::IPad,
+    app_key: "",
+    qua: "",
 };
 
 pub const ANDROID_WATCH: Version = Version {
@@ -101,6 +189,8 @@ pub const ANDROID_WATCH: Version = Version {
     sub_sig_map: 0x10400,
     main_sig_map: 34869472,
     protocol: Protocol::AndroidWatch,
+    qua: "",
+    app_key: "",
 };
 
 pub const MACOS: Version = Version {
@@ -117,6 +207,8 @@ pub const MACOS: Version = Version {
     sub_sig_map: 66560,                    // ?
     main_sig_map: 1970400,                 // ?
     protocol: Protocol::MacOS,
+    app_key: "",
+    qua: "",
 };
 
 pub const QIDIAN: Version = Version {
@@ -135,6 +227,8 @@ pub const QIDIAN: Version = Version {
     sub_sig_map: 66560,
     main_sig_map: 34869472,
     protocol: Protocol::QiDian,
+    app_key: "",
+    qua: "",
 };
 
 pub const ANDROID_PAD: Version = Version {
@@ -154,6 +248,8 @@ pub const ANDROID_PAD: Version = Version {
     sub_sig_map: 66560,
     main_sig_map: 16724722,
     protocol: Protocol::AndroidPad,
+    app_key: "",
+    qua: "",
 };
 
 impl TryFrom<&str> for Protocol {
