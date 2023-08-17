@@ -165,10 +165,10 @@ impl GuildClient {
         channel_id: u64,
         image: &[u8],
     ) -> RQResult<GuildImage> {
-        let info = ImageInfo::try_new(&image)?;
+        let info = ImageInfo::try_new(image)?;
 
         let image_store = self
-            .get_guild_image_store(guild_id, channel_id, &image)
+            .get_guild_image_store(guild_id, channel_id, image)
             .await?;
 
         let fid;
@@ -191,7 +191,7 @@ impl GuildClient {
                 download_index,
             } => {
                 let addr = match self.rq_client.highway_addrs.read().await.first() {
-                    Some(addr) => addr.clone(),
+                    Some(addr) => *addr,
                     None => upload_addrs
                         .pop()
                         .ok_or(RQError::EmptyField("upload_addrs"))?,
@@ -199,7 +199,7 @@ impl GuildClient {
 
                 self.rq_client
                     .highway_upload_bdh(
-                        addr.clone().into(),
+                        addr.into(),
                         BdhInput {
                             command_id: 83,
                             ticket: upload_key,

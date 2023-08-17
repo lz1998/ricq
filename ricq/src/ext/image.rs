@@ -36,7 +36,7 @@ where
                 .pop()
                 .ok_or(RQError::EmptyField("upload_addrs"))?;
             cli.highway_upload_bdh(
-                addr.clone().into(),
+                addr.into(),
                 BdhInput {
                     command_id: 2,
                     ticket: upload_key,
@@ -78,7 +78,7 @@ where
                 .pop()
                 .ok_or(RQError::EmptyField("upload_addrs"))?;
             cli.highway_upload_bdh(
-                addr.clone().into(),
+                addr.into(),
                 BdhInput {
                     command_id: 1,
                     ticket: upload_key,
