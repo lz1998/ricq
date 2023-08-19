@@ -22,6 +22,16 @@ prost-types.workspace = true
 rand.workspace = true
 serde = { workspace = true, features = ["derive"] }
 thiserror.workspace = true
+crypto-common.workspace = true
+serde_json.workspace = true
+block-padding = { workspace = true, features = ["std"] }
+spki.workspace = true
+base64.workspace = true
+cbc = { workspace = true, features = ["alloc"] }
+aes.workspace = true
+rsa.workspace = true
+x509-cert.workspace = true
+chrono.workspace = true
 
 [build-dependencies]
 prost-build = "0.9"

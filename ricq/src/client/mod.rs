@@ -18,13 +18,13 @@ use ricq_core::Engine;
 pub use ricq_core::Token;
 
 use crate::{RQError, RQResult};
-
 mod api;
 pub mod event;
 pub mod handler;
 mod highway;
 pub(crate) mod net;
 mod processor;
+pub mod qimei;
 mod tcp;
 
 pub struct Client {

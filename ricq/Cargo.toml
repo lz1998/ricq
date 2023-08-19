@@ -19,7 +19,7 @@ async-trait.workspace = true
 bytes.workspace = true
 cached = { workspace = true, default-features = false }
 derivative.workspace = true
-flate2 = {workspace = true, features = ["rust_backend"], default-features = false }
+flate2 = { workspace = true, features = ["rust_backend"], default-features = false }
 futures-util = { workspace = true, features = ["sink"] }
 image = { workspace = true, optional = true }
 jcers.workspace = true
@@ -30,3 +30,4 @@ serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = ["rt", "macros", "net", "time"] }
 tokio-util = { workspace = true, features = ["codec"] }
 tracing.workspace = true
+reqwest = { workspace = true, features = ["json"] }

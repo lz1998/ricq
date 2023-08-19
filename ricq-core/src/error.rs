@@ -58,4 +58,18 @@ pub enum RQError {
     GetFileCountFailed,
     #[error("failed to get file list: {0}")]
     GetFileListFailed(String),
+    #[error("crypto invalid length: {0}")]
+    CryptoInvalidLength(#[from] crypto_common::InvalidLength),
+    #[error("serde_json error: {0}")]
+    Serde(#[from] serde_json::Error),
+    #[error("block unpad error: {0}")]
+    BlockUnpad(#[from] block_padding::UnpadError),
+    #[error("spki error: {0}")]
+    Spki(#[from] spki::Error),
+    #[error("qimei error code: {0}")]
+    QimeiError(i64),
+    #[error("base64 decode error: {0}")]
+    Base64Decode(#[from] base64::DecodeError),
+    #[error("rsa error: {0}")]
+    RSA(#[from] rsa::Error),
 }
