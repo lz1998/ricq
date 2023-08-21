@@ -1,6 +1,6 @@
 use rand::{CryptoRng, RngCore};
 use ricq_core::protocol::device::Device;
-use ricq_core::protocol::qimei::{QimeiRequest, QimeiResponse, QimeiResponsePayload};
+use ricq_core::protocol::qimei::{Qimei, QimeiRequest, QimeiResponse};
 use ricq_core::protocol::version::Version;
 use ricq_core::{RQError, RQResult};
 
@@ -8,7 +8,7 @@ pub async fn get_qimei<RNG: RngCore + CryptoRng>(
     rng: &mut RNG,
     device: &Device,
     version: &Version,
-) -> RQResult<QimeiResponsePayload> {
+) -> RQResult<Qimei> {
     let crypt_key = "0123456789abcdef".as_bytes();
     let req = QimeiRequest::new(rng, device, version, crypt_key).unwrap();
     let resp: QimeiResponse = reqwest::Client::new()

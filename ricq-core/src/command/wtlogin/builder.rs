@@ -1,6 +1,6 @@
 use bytes::{BufMut, BytesMut};
 
-use crate::binary::packet_writer::{CounterWriter, PacketAppender, PacketWriter, WriteLV};
+use crate::binary::packet_writer::{CounterWriter, Either, PacketAppender, PacketWriter, WriteLV};
 use crate::binary::BinaryWriter;
 use crate::command::wtlogin::builder::utils::*;
 use crate::command::wtlogin::tlv_writer::*;
@@ -489,7 +489,13 @@ impl super::super::super::Engine {
                 ))
                 .append(t516())
                 .append(t521(0))
-                .append(t525(t536(&[0x01, 0x00])));
+                .append(t525(t536(&[0x01, 0x00])))
+                .append(if let Some(ref qimei) = transport.device.qimei {
+                    Either::Left(tlv(545, qimei.q16.as_bytes()))
+                } else {
+                    Either::Right(tlv(545, transport.device.imei.as_bytes()))
+                });
+            // TODO 544
 
             w.put_u16(tlv_writer.count as u16);
             tlv_writer.write(&mut w);
@@ -696,8 +702,13 @@ impl super::super::super::Engine {
                 ))
                 .append(t516())
                 .append(t521(0))
-                .append(t525(t536(&[0x01, 0x00])));
-            // TODO 544, 545
+                .append(t525(t536(&[0x01, 0x00])))
+                .append(if let Some(ref qimei) = transport.device.qimei {
+                    Either::Left(tlv(545, qimei.q16.as_bytes()))
+                } else {
+                    Either::Right(tlv(545, transport.device.imei.as_bytes()))
+                });
+            // TODO 544
             w.put_u16(tlv_writer.count as u16);
             tlv_writer.write(&mut w);
 
