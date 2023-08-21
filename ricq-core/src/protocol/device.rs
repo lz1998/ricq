@@ -4,6 +4,7 @@ use rand::{distributions::Alphanumeric, Rng, RngCore};
 use serde::{Deserialize, Serialize};
 
 use crate::hex::encode_hex;
+use crate::protocol::qimei::Qimei;
 
 //系统版本
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -52,6 +53,7 @@ pub struct Device {
     pub apn: String,
     pub vendor_name: String,
     pub vendor_os_name: String,
+    pub qimei: Option<Qimei>,
 }
 
 impl Device {
@@ -91,6 +93,7 @@ impl Device {
             apn: "wifi".into(),
             vendor_name: "MIUI".into(),
             vendor_os_name: "ricq".into(),
+            qimei: None,
         }
     }
 
@@ -100,6 +103,10 @@ impl Device {
                 .as_bytes()
                 .to_vec(),
         )
+    }
+
+    pub fn set_qimei(&mut self, qimei: Qimei) {
+        self.qimei = Some(qimei)
     }
 }
 

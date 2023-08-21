@@ -208,9 +208,9 @@ pub struct QimeiResponse {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
-pub struct QimeiResponsePayload {
-    q16: String,
-    q36: String,
+pub struct Qimei {
+    pub q16: String,
+    pub q36: String,
 }
 
 impl QimeiRequest {
@@ -246,7 +246,7 @@ impl QimeiRequest {
 }
 
 impl QimeiResponse {
-    pub fn to_payload(self, crypt_key: &[u8]) -> RQResult<QimeiResponsePayload> {
+    pub fn to_payload(self, crypt_key: &[u8]) -> RQResult<Qimei> {
         if self.code != 0 {
             return Err(RQError::QimeiError(self.code));
         }

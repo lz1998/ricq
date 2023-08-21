@@ -7,6 +7,7 @@ use tokio_util::codec::{FramedRead, LinesCodec};
 use tracing::Level;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+use ricq::client::qimei::get_qimei;
 use ricq::client::{Connector as _, DefaultConnector};
 use ricq::ext::common::after_login;
 use ricq::handler::DefaultHandler;
@@ -41,10 +42,15 @@ async fn main() {
         .expect("failed to parse UIN");
     let password = std::env::var("PASSWORD").expect("failed to read PASSWORD from env");
 
-    let mut seed = StdRng::seed_from_u64(uin as u64);
-    let device = Device::random_with_rng(&mut seed);
+    let mut rng = StdRng::seed_from_u64(uin as u64);
+    let version = Protocol::AndroidPhone.into();
+    let mut device = Device::random_with_rng(&mut rng);
+    let qimei = get_qimei(&mut rng, &device, &version)
+        .await
+        .expect("failed to get qimei");
+    device.set_qimei(qimei);
 
-    let client = Arc::new(Client::new(device, Protocol::IPad.into(), DefaultHandler));
+    let client = Arc::new(Client::new(device, version, DefaultHandler));
     let handle = tokio::spawn({
         let client = client.clone();
         // 连接所有服务器，哪个最快用哪个，可以使用 TcpStream::connect 代替
