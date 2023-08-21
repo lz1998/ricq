@@ -23,8 +23,8 @@ impl super::super::super::Engine {
             .map
             .remove("RespSummaryCard")
             .ok_or_else(|| RQError::Decode("missing RespSummaryCard".into()))?
-            .remove("SummaryCard.RespSummaryCard")
-            .ok_or_else(|| RQError::Decode("missing SummaryCard.RespSummaryCard".into()))?;
+            .remove("SummaryCard_Old.RespSummaryCard")
+            .ok_or_else(|| RQError::Decode("missing SummaryCard_Old.RespSummaryCard".into()))?;
         rsp.advance(1);
         let rsp: RespSummaryCard = jcers::from_buf(&mut rsp)?;
         let info = SummaryCardInfo {
