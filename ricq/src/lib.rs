@@ -1,10 +1,10 @@
 #![feature(async_closure)]
 #![feature(let_chains)]
 #![feature(result_flattening)]
-
 pub mod client;
 mod config;
 pub mod ext;
+pub mod qsign;
 pub mod structs;
 
 pub use client::handler;
