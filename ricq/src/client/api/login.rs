@@ -1,6 +1,7 @@
 use std::sync::atomic::Ordering;
 
 use crate::jce::SvcRespRegister;
+use crate::qsign::QSignClient;
 use crate::{RQError, RQResult};
 use ricq_core::command::wtlogin::*;
 use ricq_core::hex::decode_hex;
@@ -59,12 +60,19 @@ impl super::super::Client {
     pub async fn sign(&self, data: &str) -> RQResult<Vec<u8>> {
         let uin = self.uin().await;
         let engine = self.engine.read().await;
+        let sub_cmd = u8::from_str_radix(&data[4..], 16).unwrap();
+        let salt = QSignClient::calc_salt(
+            uin as u64,
+            &engine.transport.sig.guid,
+            &engine.transport.version.sdk_version,
+            sub_cmd as u32,
+        );
         let resp = self
             .qsign_client
-            .energy(
+            .custom_energy(
                 uin,
                 data,
-                &engine.transport.version.sdk_version,
+                &salt,
                 &engine.transport.sig.guid,
                 &engine.transport.device.android_id,
             )

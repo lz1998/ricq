@@ -116,7 +116,7 @@ impl QSignClient {
         buf.write_short_lv(sdk_version.as_bytes());
         buf.put_u32(sub_cmd);
         match sub_cmd {
-            0 | 0xa | 0xf => buf.put_u32(0),
+            9 | 0xa | 0xf => buf.put_u32(0),
             _ => {}
         }
         buf.to_vec()
