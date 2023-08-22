@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU8, Ordering};
+use std::sync::Arc;
 use std::time::UNIX_EPOCH;
 
 use cached::Cached;
@@ -17,7 +18,9 @@ use ricq_core::structs::{AccountInfo, AddressInfo, OtherClientInfo};
 use ricq_core::Engine;
 pub use ricq_core::Token;
 
+use crate::qsign::QSignClient;
 use crate::{RQError, RQResult};
+
 mod api;
 pub mod event;
 pub mod handler;
@@ -75,13 +78,19 @@ pub struct Client {
     pub highway_addrs: RwLock<Vec<RQAddr>>,
 
     packet_handler: RwLock<HashMap<String, broadcast::Sender<Packet>>>,
+    pub qsign_client: Arc<QSignClient>,
 }
 
 impl super::Client {
     /// 新建 Clinet
     ///
     /// **Notice: 该方法仅新建 Client 需要调用 start 方法连接到服务器**
-    pub fn new<H>(device: Device, version: Version, handler: H) -> Client
+    pub fn new<H>(
+        device: Device,
+        version: Version,
+        qsign_client: Arc<QSignClient>,
+        handler: H,
+    ) -> Client
     where
         H: crate::client::handler::Handler + 'static + Sync + Send,
     {
@@ -112,17 +121,22 @@ impl super::Client {
             highway_session: RwLock::new(Default::default()),
             highway_addrs: RwLock::new(Default::default()),
             packet_handler: Default::default(),
+            qsign_client,
         }
     }
 
     /// 新建 Clinet
     ///
     /// **Notice: 该方法仅新建 Client 需要调用 start 方法连接到服务器**
-    pub fn new_with_config<H>(config: crate::Config, handler: H) -> Self
+    pub fn new_with_config<H>(
+        config: crate::Config,
+        qsign_client: Arc<QSignClient>,
+        handler: H,
+    ) -> Self
     where
         H: crate::client::handler::Handler + 'static + Sync + Send,
     {
-        Self::new(config.device, config.version, handler)
+        Self::new(config.device, config.version, qsign_client, handler)
     }
 
     /// 获取当前 Client uin
