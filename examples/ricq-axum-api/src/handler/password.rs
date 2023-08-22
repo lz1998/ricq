@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use axum::http::StatusCode;
 use axum::{Extension, Json};
@@ -7,6 +8,7 @@ use serde::{Deserialize, Serialize};
 
 use ricq::client::{Connector as _, DefaultConnector, NetworkStatus};
 use ricq::ext::reconnect::{Credential, Password};
+use ricq::qsign::QSignClient;
 use ricq::version::get_version;
 use ricq::{Client, Device, LoginDeviceLocked, LoginNeedCaptcha, LoginResponse, Protocol};
 
@@ -105,7 +107,19 @@ pub async fn login<P: Processor>(
     let device = Device::random_with_rng(&mut StdRng::seed_from_u64(rand_seed));
     let protocol = Protocol::from_u8(req.protocol);
     let (sender, receiver) = tokio::sync::broadcast::channel(10);
-    let cli = Arc::new(Client::new(device, get_version(protocol.clone()), sender));
+    let cli = Arc::new(Client::new(
+        device,
+        get_version(protocol.clone()),
+        Arc::new(
+            QSignClient::new(
+                String::from("http://localhost:8080"),
+                String::from("114514"),
+                Duration::from_secs(60),
+            )
+            .unwrap(),
+        ),
+        sender,
+    ));
     let connector = DefaultConnector;
     let stream = connector
         .connect(&cli)

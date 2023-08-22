@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use axum::http::StatusCode;
 use axum::{Extension, Json};
@@ -10,6 +11,7 @@ use ricq::client::NetworkStatus;
 use ricq::client::{Connector as _, DefaultConnector};
 use ricq::device::Device;
 use ricq::ext::reconnect::Credential;
+use ricq::qsign::QSignClient;
 use ricq::version::{get_version, Protocol};
 use ricq::{Client, LoginResponse, QRCodeState};
 
@@ -65,7 +67,19 @@ pub async fn create<P: Processor>(
         _ => return Err(StatusCode::BAD_REQUEST),
     };
     let (sender, receiver) = tokio::sync::broadcast::channel(10);
-    let cli = Arc::new(Client::new(device, get_version(protocol), sender));
+    let cli = Arc::new(Client::new(
+        device,
+        get_version(protocol),
+        Arc::new(
+            QSignClient::new(
+                String::from("http://localhost:8080"),
+                String::from("114514"),
+                Duration::from_secs(60),
+            )
+            .unwrap(),
+        ),
+        sender,
+    ));
     let connector = DefaultConnector;
     let stream = connector
         .connect(&cli)

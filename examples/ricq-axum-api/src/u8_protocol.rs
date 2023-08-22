@@ -13,6 +13,7 @@ impl U8Protocol for Protocol {
             Protocol::MacOS => 3,
             Protocol::QiDian => 4,
             Protocol::IPad => 5,
+            Protocol::AndroidPad => 6,
         }
     }
 

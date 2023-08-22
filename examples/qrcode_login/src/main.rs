@@ -9,6 +9,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use ricq::client::{Connector as _, DefaultConnector};
 use ricq::ext::common::after_login;
 use ricq::handler::DefaultHandler;
+use ricq::qsign::QSignClient;
 use ricq::{Client, Device, Protocol};
 use ricq::{LoginResponse, QRCodeConfirmed, QRCodeImageFetch, QRCodeState};
 
@@ -42,6 +43,14 @@ async fn main() {
     let client = Arc::new(Client::new(
         device,
         Protocol::AndroidWatch.into(),
+        Arc::new(
+            QSignClient::new(
+                String::from("http://localhost:8080"),
+                String::from("114514"),
+                Duration::from_secs(60),
+            )
+            .unwrap(),
+        ),
         DefaultHandler,
     ));
     let handle = tokio::spawn({

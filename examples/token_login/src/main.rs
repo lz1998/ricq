@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use rand::prelude::StdRng;
 use rand::SeedableRng;
@@ -8,6 +9,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use ricq::client::{Connector as _, DefaultConnector, Token};
 use ricq::ext::common::after_login;
 use ricq::handler::DefaultHandler;
+use ricq::qsign::QSignClient;
 use ricq::{Client, Device, Protocol};
 
 #[tokio::main(flavor = "current_thread")]
@@ -36,7 +38,19 @@ async fn main() {
     let token: Token = serde_json::from_str(&token).expect("failed to parse token");
     let device = Device::random_with_rng(&mut StdRng::seed_from_u64(token.uin as u64));
 
-    let client = Arc::new(Client::new(device, Protocol::IPad.into(), DefaultHandler));
+    let client = Arc::new(Client::new(
+        device,
+        Protocol::IPad.into(),
+        Arc::new(
+            QSignClient::new(
+                String::from("http://localhost:8080"),
+                String::from("114514"),
+                Duration::from_secs(60),
+            )
+            .unwrap(),
+        ),
+        DefaultHandler,
+    ));
 
     let handle = tokio::spawn({
         let client = client.clone();
