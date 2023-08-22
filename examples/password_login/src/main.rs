@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use futures_util::StreamExt;
 use rand::prelude::StdRng;
@@ -11,6 +12,7 @@ use ricq::client::qimei::get_qimei;
 use ricq::client::{Connector as _, DefaultConnector};
 use ricq::ext::common::after_login;
 use ricq::handler::DefaultHandler;
+use ricq::qsign::QSignClient;
 use ricq::structs::ExtOnlineStatus;
 use ricq::{Client, Device, Protocol};
 use ricq::{LoginDeviceLocked, LoginNeedCaptcha, LoginResponse, LoginSuccess, LoginUnknownStatus};
@@ -50,7 +52,19 @@ async fn main() {
         .expect("failed to get qimei");
     device.set_qimei(qimei);
 
-    let client = Arc::new(Client::new(device, version, DefaultHandler));
+    let client = Arc::new(Client::new(
+        device,
+        version,
+        Arc::new(
+            QSignClient::new(
+                String::from("http://localhost:8080"),
+                String::from("114514"),
+                Duration::from_secs(60),
+            )
+            .unwrap(),
+        ),
+        DefaultHandler,
+    ));
     let handle = tokio::spawn({
         let client = client.clone();
         // 连接所有服务器，哪个最快用哪个，可以使用 TcpStream::connect 代替

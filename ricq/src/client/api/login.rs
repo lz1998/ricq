@@ -1,8 +1,10 @@
 use std::sync::atomic::Ordering;
 
 use crate::jce::SvcRespRegister;
+use crate::qsign::QSignClient;
 use crate::{RQError, RQResult};
 use ricq_core::command::wtlogin::*;
+use ricq_core::hex::decode_hex;
 use ricq_core::token::Token;
 
 /// 登录相关
@@ -55,6 +57,34 @@ impl super::super::Client {
         Ok(resp)
     }
 
+    pub async fn sign(&self, data: &str) -> RQResult<Vec<u8>> {
+        let uin = self.uin().await;
+        let engine = self.engine.read().await;
+        let sub_cmd = u8::from_str_radix(&data[4..], 16).unwrap();
+        let salt = QSignClient::calc_salt(
+            uin as u64,
+            &engine.transport.sig.guid,
+            &engine.transport.version.sdk_version,
+            sub_cmd as u32,
+        );
+        let resp = self
+            .qsign_client
+            .custom_energy(
+                uin,
+                data,
+                &salt,
+                &engine.transport.sig.guid,
+                &engine.transport.device.android_id,
+            )
+            .await
+            .map_err(|e| RQError::Other(e.to_string()))?;
+        if resp.code != 0 {
+            return Err(RQError::Other(format!("failed to energy {}", resp.msg)));
+        }
+        decode_hex(&resp.data)
+            .map_err(|err| RQError::Other(format!("failed to decode hex: {}", err)))
+    }
+
     /// 密码登录 - 提交密码md5
     pub async fn password_md5_login(
         &self,
@@ -62,11 +92,12 @@ impl super::super::Client {
         password_md5: &[u8],
     ) -> RQResult<LoginResponse> {
         self.engine.read().await.uin.store(uin, Ordering::Relaxed);
+        let sign = self.sign("810_9").await?;
         let req = self
             .engine
             .read()
             .await
-            .build_login_packet(password_md5, true);
+            .build_login_packet(password_md5, &sign, true);
         let resp = self.send_and_wait(req).await?;
         let resp = self.engine.read().await.decode_login_response(resp.body)?;
         self.process_login_response(&resp).await;
@@ -89,11 +120,12 @@ impl super::super::Client {
 
     /// 密码登录 - 提交短信验证码
     pub async fn submit_sms_code(&self, code: &str) -> RQResult<LoginResponse> {
+        let sign = self.sign("810_7").await?;
         let req = self
             .engine
             .read()
             .await
-            .build_sms_code_submit_packet(code.trim());
+            .build_sms_code_submit_packet(code.trim(), &sign);
         let resp = self.send_and_wait(req).await?;
         let resp = self.engine.read().await.decode_login_response(resp.body)?;
         self.process_login_response(&resp).await;
@@ -102,7 +134,12 @@ impl super::super::Client {
 
     /// 密码登录 - 提交滑块ticket
     pub async fn submit_ticket(&self, ticket: &str) -> RQResult<LoginResponse> {
-        let req = self.engine.read().await.build_ticket_submit_packet(ticket);
+        let sign = self.sign("810_2").await?;
+        let req = self
+            .engine
+            .read()
+            .await
+            .build_ticket_submit_packet(ticket, &sign);
         let resp = self.send_and_wait(req).await?;
         let resp = self.engine.read().await.decode_login_response(resp.body)?;
         self.process_login_response(&resp).await;

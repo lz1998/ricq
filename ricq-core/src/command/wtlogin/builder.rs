@@ -333,7 +333,7 @@ impl super::super::super::Engine {
     }
 
     // wtlogin.login
-    pub fn build_sms_code_submit_packet(&self, code: &str) -> Packet {
+    pub fn build_sms_code_submit_packet(&self, code: &str, sign: &[u8]) -> Packet {
         let seq = self.next_seq();
         let transport = &self.transport;
         let req = self.build_oicq_request_packet(self.uin(), 0x810, &{
@@ -349,7 +349,8 @@ impl super::super::super::Engine {
                 .append(t174(&transport.sig.t174))
                 .append(t17c(code))
                 .append(t401(&transport.sig.g))
-                .append(t198());
+                .append(t198())
+                .append(tlv(544, sign));
 
             w.put_u16(tlv_writer.count as u16);
             tlv_writer.write(&mut w);
@@ -367,7 +368,7 @@ impl super::super::super::Engine {
     }
 
     // wtlogin.login
-    pub fn build_ticket_submit_packet(&self, ticket: &str) -> Packet {
+    pub fn build_ticket_submit_packet(&self, ticket: &str, sign: &[u8]) -> Packet {
         let seq = self.next_seq();
         let transport = &self.transport;
         let req = self.build_oicq_request_packet(self.uin(), 0x810, &{
@@ -381,7 +382,8 @@ impl super::super::super::Engine {
                 .append(t116(
                     transport.version.misc_bitmap,
                     transport.version.sub_sig_map,
-                ));
+                ))
+                .append(tlv(544, sign));
             // TODO 547, 544
 
             w.put_u16(tlv_writer.count as u16);
@@ -614,7 +616,12 @@ impl super::super::super::Engine {
     }
 
     // wtlogin.login
-    pub fn build_login_packet(&self, password_md5: &[u8], allow_slider: bool) -> Packet {
+    pub fn build_login_packet(
+        &self,
+        password_md5: &[u8],
+        sign: &[u8],
+        allow_slider: bool,
+    ) -> Packet {
         let seq = self.next_seq();
         let transport = &self.transport;
         let req = self.build_oicq_request_packet(self.uin(), 0x0810, &{
@@ -703,6 +710,7 @@ impl super::super::super::Engine {
                 .append(t516())
                 .append(t521(0))
                 .append(t525(t536(&[0x01, 0x00])))
+                .append(tlv(544, sign))
                 .append(if let Some(ref qimei) = transport.device.qimei {
                     Either::Left(tlv(545, qimei.q16.as_bytes()))
                 } else {
