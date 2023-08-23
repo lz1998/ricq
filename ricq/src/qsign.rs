@@ -179,6 +179,27 @@ impl QSignClient {
             .json()
             .await
     }
+    pub async fn submit(
+        &self,
+        uin: i64,
+        cmd: &str,
+        callback_id: i64,
+        buffer: &[u8],
+    ) -> reqwest::Result<()> {
+        let url = format!("{}/submit", self.url);
+        self.client
+            .get(url)
+            .query(&[
+                ("uin", uin.to_string().as_str()),
+                ("cmd", cmd),
+                ("callback_id", callback_id.to_string().as_str()),
+                ("buffer", encode_hex(buffer).as_str()),
+            ])
+            .timeout(self.timeout)
+            .send()
+            .await?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]

@@ -31,3 +31,4 @@ tokio = { workspace = true, features = ["rt", "macros", "net", "time"] }
 tokio-util = { workspace = true, features = ["codec"] }
 tracing.workspace = true
 reqwest = { workspace = true, features = ["json"] }
+async-recursion = "1.0"

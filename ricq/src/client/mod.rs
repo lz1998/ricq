@@ -1,9 +1,11 @@
+use bytes::Bytes;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicI64, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::time::UNIX_EPOCH;
 
 use cached::Cached;
+use futures_util::StreamExt;
 use tokio::sync::{broadcast, RwLock};
 use tokio::sync::{oneshot, Mutex};
 use tokio::time::{sleep, Duration};
@@ -20,7 +22,7 @@ use ricq_core::structs::{AccountInfo, AddressInfo, OtherClientInfo};
 use ricq_core::Engine;
 pub use ricq_core::Token;
 
-use crate::qsign::{QSignClient, QSignResponse, SignData};
+use crate::qsign::{QSignClient, QSignResponse, RequestCallback, SignData};
 use crate::{RQError, RQResult};
 
 mod api;
@@ -292,6 +294,42 @@ impl super::Client {
         Ok(resp)
     }
 
+    pub async fn process_sign_callback(&self, callbacks: Vec<RequestCallback>) {
+        let callbacks: Vec<(i64, Packet)> = {
+            let engine = self.engine.read().await;
+            callbacks
+                .into_iter()
+                .map(|cb| {
+                    (
+                        cb.callback_id,
+                        engine.uni_packet(
+                            &cb.cmd,
+                            Bytes::from(decode_hex(&cb.body).unwrap_or_default()),
+                        ),
+                    )
+                })
+                .collect()
+        };
+        let _: Vec<_> = futures_util::stream::iter(callbacks)
+            .map(|(id, pkt)| async move {
+                let uin = pkt.uin;
+                let cmd = pkt.command_name.clone();
+                let resp = self.send_and_wait(pkt).await;
+                if let Err(ref err) = resp {
+                    tracing::error!(
+                        "failed to process sign callback, id: {id}, cmd: {cmd}, err: {err}"
+                    )
+                }
+                let resp = resp.unwrap_or_default();
+                if let Err(err) = self.qsign_client.submit(uin, &cmd, id, &resp.body).await {
+                    tracing::error!("failed to submit sign callback, err: {err}")
+                }
+            })
+            .buffered(10)
+            .collect()
+            .await;
+    }
+
     /// 向服务器发包
     pub async fn send(&self, pkt: Packet) -> RQResult<usize> {
         tracing::trace!("sending pkt {}-{},", pkt.command_name, pkt.seq_id);
@@ -302,7 +340,15 @@ impl super::Client {
     }
 
     /// 向服务器发包并等待接收返回的包，15 秒后超时返回 `Err(RQError::Timeout)`
-    pub async fn send_and_wait(&self, pkt: Packet) -> RQResult<Packet> {
+    #[async_recursion::async_recursion]
+    pub async fn send_and_wait(&self, mut pkt: Packet) -> RQResult<Packet> {
+        let callbacks = self.sign_packet(&mut pkt).await;
+        if let Err(ref err) = callbacks {
+            tracing::error!("failed to sign packet, err: {err}");
+        }
+        let callbacks = callbacks.unwrap_or_default().data.request_callback;
+        let callback_future = self.process_sign_callback(callbacks);
+
         tracing::trace!("send_and_waitting pkt {}-{},", pkt.command_name, pkt.seq_id);
         let seq = pkt.seq_id;
         let expect = pkt.command_name.clone();
@@ -317,7 +363,10 @@ impl super::Client {
             packet_promises.remove(&seq);
             return Err(RQError::Network);
         }
-        match tokio::time::timeout(std::time::Duration::from_secs(15), receiver).await {
+        let packet_future = tokio::time::timeout(std::time::Duration::from_secs(15), receiver);
+
+        let (resp, _) = tokio::join!(packet_future, callback_future);
+        match resp {
             Ok(p) => p.unwrap().check_command_name(&expect),
             Err(_) => {
                 tracing::trace!("waiting pkt {}-{} timeout", expect, seq);
