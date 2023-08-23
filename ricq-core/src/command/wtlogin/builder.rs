@@ -383,8 +383,8 @@ impl super::super::super::Engine {
                     transport.version.misc_bitmap,
                     transport.version.sub_sig_map,
                 ))
-                .append(tlv(0x544, sign));
-            // TODO 547, 544
+                .append(tlv(0x544, sign))
+                .append(tlv(0x547, &*transport.sig.t547));
 
             w.put_u16(tlv_writer.count as u16);
             tlv_writer.write(&mut w);

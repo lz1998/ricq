@@ -63,6 +63,7 @@ impl super::Engine {
 
     fn process_need_captcha(&mut self, resp: &LoginNeedCaptcha) {
         self.transport.sig.t104.option_set(resp.t104.clone());
+        self.transport.sig.t547.option_set(resp.t547.clone());
     }
 
     fn process_device_locked(&mut self, resp: &LoginDeviceLocked) {

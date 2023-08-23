@@ -2,9 +2,10 @@
 use std::collections::HashMap;
 use std::time::UNIX_EPOCH;
 
-use bytes::{Buf, Bytes};
+use bytes::{Buf, BufMut, Bytes, BytesMut};
+use rsa::BigUint;
 
-use crate::binary::BinaryReader;
+use crate::binary::{BinaryReader, BinaryWriter};
 use crate::command::wtlogin::tlv_reader::*;
 use crate::{RQError, RQResult};
 
@@ -87,6 +88,7 @@ pub struct LoginNeedCaptcha {
     pub t104: Option<Bytes>,
     pub verify_url: Option<String>,
     pub image_captcha: Option<ImageCaptcha>,
+    pub t547: Option<Bytes>,
 }
 
 #[derive(Debug, Clone)]
@@ -162,6 +164,7 @@ impl LoginResponse {
                         image: img_data,
                     }
                 }),
+                t547: tlv_map.remove(&0x546).map(t546_to_t547),
             }),
             40 => LoginResponse::AccountFrozen,
             160 | 239 => {
@@ -214,4 +217,49 @@ impl LoginResponse {
         };
         Ok(resp)
     }
+}
+
+pub fn t546_to_t547(mut data: Bytes) -> Bytes {
+    let a = data.get_u8();
+    let typ = data.get_u8();
+    let c = data.get_u8();
+    let mut ok = data.get_u8() != 0;
+    let e = data.get_u16();
+    let f = data.get_u16();
+    let src = data.read_bytes_short();
+    let tgt = data.read_bytes_short().to_vec();
+    let cpy = data.read_bytes_short();
+    let mut cnt = 0;
+    let mut dst = Vec::new();
+    let mut elp = 0;
+    if typ == 2 && tgt.len() == 32 {
+        let start = std::time::SystemTime::now();
+        let mut tmp = BigUint::from_bytes_be(&src);
+        use sha2::{Digest, Sha256};
+        let mut hash = Sha256::digest(tmp.to_bytes_be()).to_vec();
+        while hash != tgt {
+            tmp += 1u8;
+            hash = Sha256::digest(tmp.to_bytes_be()).to_vec();
+            cnt += 1;
+        }
+        ok = true;
+        dst = tmp.to_bytes_be();
+        elp = start.elapsed().unwrap().as_millis() as u32;
+    }
+    let mut w = BytesMut::new();
+    w.put_u8(a);
+    w.put_u8(typ);
+    w.put_u8(c);
+    w.put_u8(if ok { 1 } else { 0 });
+    w.put_u16(e);
+    w.put_u16(f);
+    w.write_bytes_short(&src);
+    w.write_bytes_short(&tgt);
+    w.write_bytes_short(&cpy);
+    if ok {
+        w.write_bytes_short(&dst);
+        w.put_u32(elp);
+        w.put_u32(cnt);
+    }
+    w.freeze()
 }
