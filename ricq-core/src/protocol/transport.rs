@@ -118,7 +118,7 @@ impl Transport {
                 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00,
             ]);
             let tgt = &self.sig.tgt;
-            if tgt.is_empty() {
+            if tgt.is_empty() || tgt.len() == 4 {
                 w.put_u32(0x04);
             } else {
                 w.put_u32(tgt.len() as u32 + 4);
@@ -135,7 +135,25 @@ impl Transport {
             w.put_u16(self.device.ksid().len() as u16 + 2);
             w.put_slice(&self.device.ksid());
         }
-        w.put_u32(0x04);
+        if let Some(ref sign) = pkt.sign {
+            w.put_u32(sign.len() as u32 + 4);
+            w.put_slice(&sign);
+        }
+        w.put_u32(
+            0x04 + self
+                .device
+                .qimei
+                .as_ref()
+                .map(|qimei| qimei.q16.len())
+                .unwrap_or_default() as u32,
+        );
+        w.put_slice(
+            self.device
+                .qimei
+                .as_ref()
+                .map(|qimei| qimei.q16.as_bytes())
+                .unwrap_or_default(),
+        );
 
         // write len
         let len = w.len() - pos;

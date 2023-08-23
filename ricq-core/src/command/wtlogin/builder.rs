@@ -234,7 +234,7 @@ impl super::super::super::Engine {
             body: req,
             command_name: "wtlogin.login".to_string(),
             uin: self.uin(),
-            message: "".to_string(),
+            ..Default::default()
         }
     }
 
@@ -350,7 +350,7 @@ impl super::super::super::Engine {
                 .append(t17c(code))
                 .append(t401(&transport.sig.g))
                 .append(t198())
-                .append(tlv(544, sign));
+                .append(tlv(0x544, sign));
 
             w.put_u16(tlv_writer.count as u16);
             tlv_writer.write(&mut w);
@@ -383,7 +383,7 @@ impl super::super::super::Engine {
                     transport.version.misc_bitmap,
                     transport.version.sub_sig_map,
                 ))
-                .append(tlv(544, sign));
+                .append(tlv(0x544, sign));
             // TODO 547, 544
 
             w.put_u16(tlv_writer.count as u16);
@@ -493,9 +493,9 @@ impl super::super::super::Engine {
                 .append(t521(0))
                 .append(t525(t536(&[0x01, 0x00])))
                 .append(if let Some(ref qimei) = transport.device.qimei {
-                    Either::Left(tlv(545, qimei.q16.as_bytes()))
+                    Either::Left(tlv(0x545, qimei.q16.as_bytes()))
                 } else {
-                    Either::Right(tlv(545, transport.device.imei.as_bytes()))
+                    Either::Right(tlv(0x545, transport.device.imei.as_bytes()))
                 });
             // TODO 544
 
@@ -517,7 +517,7 @@ impl super::super::super::Engine {
             body: codec.encode(m),
             command_name: "wtlogin.exchange_emp".into(),
             uin: self.uin(),
-            message: "".to_string(),
+            ..Default::default()
         }
     }
 
@@ -710,13 +710,12 @@ impl super::super::super::Engine {
                 .append(t516())
                 .append(t521(0))
                 .append(t525(t536(&[0x01, 0x00])))
-                .append(tlv(544, sign))
+                .append(tlv(0x544, sign))
                 .append(if let Some(ref qimei) = transport.device.qimei {
-                    Either::Left(tlv(545, qimei.q16.as_bytes()))
+                    Either::Left(tlv(0x545, qimei.q16.as_bytes()))
                 } else {
-                    Either::Right(tlv(545, transport.device.imei.as_bytes()))
+                    Either::Right(tlv(0x545, transport.device.imei.as_bytes()))
                 });
-            // TODO 544
             w.put_u16(tlv_writer.count as u16);
             tlv_writer.write(&mut w);
 
