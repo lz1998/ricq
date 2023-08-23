@@ -234,7 +234,7 @@ impl super::super::super::Engine {
             body: req,
             command_name: "wtlogin.login".to_string(),
             uin: self.uin(),
-            message: "".to_string(),
+            ..Default::default()
         }
     }
 
@@ -517,7 +517,7 @@ impl super::super::super::Engine {
             body: codec.encode(m),
             command_name: "wtlogin.exchange_emp".into(),
             uin: self.uin(),
-            message: "".to_string(),
+            ..Default::default()
         }
     }
 

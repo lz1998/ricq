@@ -10,14 +10,14 @@ pub struct QSignClient {
     client: reqwest::Client,
     timeout: Duration,
 }
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct QSignResponse<T> {
     pub code: i64,
     pub msg: String,
     pub data: T,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SignData {
     pub token: String,
@@ -32,7 +32,7 @@ pub struct SignData {
     pub request_callback: Vec<RequestCallback>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RequestCallback {
     pub cmd: String,
@@ -154,7 +154,7 @@ impl QSignClient {
         uin: i64,
         qua: &str,
         cmd: &str,
-        seq: u32,
+        seq: i32,
         buffer: &[u8],
         qimei36: &str,
         android_id: &str,

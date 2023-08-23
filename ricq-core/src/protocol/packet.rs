@@ -63,6 +63,7 @@ pub struct Packet {
     pub command_name: String,
     pub uin: i64,
     pub message: String,
+    pub sign: Option<Bytes>,
 }
 
 impl Packet {

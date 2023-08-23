@@ -11,7 +11,7 @@ async-trait = "0.1"
 bytes = "1"
 cached = { version = "0.35", default-features = false }
 derivative = "2"
-flate2 = { version = "1", default-features = false }
+flate2 = { version = "1", features = ["rust_backend"], default-features = false }
 futures-util = "0.3"
 image = "0.24"
 jcers = "0.1"

@@ -9,16 +9,18 @@ use tokio::sync::{oneshot, Mutex};
 use tokio::time::{sleep, Duration};
 
 pub use net::{Connector, DefaultConnector};
+use ricq_core::command::common::PbToBytes;
 use ricq_core::command::online_push::GroupMessagePart;
 use ricq_core::command::profile_service::GroupSystemMessages;
 use ricq_core::common::RQAddr;
+use ricq_core::hex::decode_hex;
 use ricq_core::protocol::version::Version;
 use ricq_core::protocol::{device::Device, packet::Packet};
 use ricq_core::structs::{AccountInfo, AddressInfo, OtherClientInfo};
 use ricq_core::Engine;
 pub use ricq_core::Token;
 
-use crate::qsign::QSignClient;
+use crate::qsign::{QSignClient, QSignResponse, SignData};
 use crate::{RQError, RQResult};
 
 mod api;
@@ -29,6 +31,94 @@ pub(crate) mod net;
 mod processor;
 pub mod qimei;
 mod tcp;
+
+const SIGN_COMMANDS: &str = r#"ConnAuthSvr.fast_qq_login
+ConnAuthSvr.sdk_auth_api
+ConnAuthSvr.sdk_auth_api_emp
+FeedCloudSvr.trpc.feedcloud.commwriter.ComWriter.DoBarrage
+FeedCloudSvr.trpc.feedcloud.commwriter.ComWriter.DoComment
+FeedCloudSvr.trpc.feedcloud.commwriter.ComWriter.DoFollow
+FeedCloudSvr.trpc.feedcloud.commwriter.ComWriter.DoLike
+FeedCloudSvr.trpc.feedcloud.commwriter.ComWriter.DoPush
+FeedCloudSvr.trpc.feedcloud.commwriter.ComWriter.DoReply
+FeedCloudSvr.trpc.feedcloud.commwriter.ComWriter.PublishFeed
+FeedCloudSvr.trpc.videocircle.circleprofile.CircleProfile.SetProfile
+friendlist.addFriend
+friendlist.AddFriendReq
+friendlist.ModifyGroupInfoReq
+MessageSvc.PbSendMsg
+MsgProxy.SendMsg
+OidbSvc.0x4ff_9
+OidbSvc.0x4ff_9_IMCore
+OidbSvc.0x56c_6
+OidbSvc.0x6d9_4
+OidbSvc.0x758
+OidbSvc.0x758_0
+OidbSvc.0x758_1
+OidbSvc.0x88d_0
+OidbSvc.0x89a_0
+OidbSvc.0x89b_1
+OidbSvc.0x8a1_0
+OidbSvc.0x8a1_7
+OidbSvc.0x8ba
+OidbSvc.0x9fa
+OidbSvc.oidb_0x758
+OidbSvcTrpcTcp.0x101e_1
+OidbSvcTrpcTcp.0x101e_2
+OidbSvcTrpcTcp.0x1100_1
+OidbSvcTrpcTcp.0x1105_1
+OidbSvcTrpcTcp.0x1107_1
+OidbSvcTrpcTcp.0x55f_0
+OidbSvcTrpcTcp.0x6d9_4
+OidbSvcTrpcTcp.0xf55_1
+OidbSvcTrpcTcp.0xf57_1
+OidbSvcTrpcTcp.0xf57_106
+OidbSvcTrpcTcp.0xf57_9
+OidbSvcTrpcTcp.0xf65_1
+OidbSvcTrpcTcp.0xf65_10 
+OidbSvcTrpcTcp.0xf67_1
+OidbSvcTrpcTcp.0xf67_5
+OidbSvcTrpcTcp.0xf6e_1
+OidbSvcTrpcTcp.0xf88_1
+OidbSvcTrpcTcp.0xf89_1
+OidbSvcTrpcTcp.0xfa5_1
+ProfileService.getGroupInfoReq
+ProfileService.GroupMngReq
+QChannelSvr.trpc.qchannel.commwriter.ComWriter.DoComment
+QChannelSvr.trpc.qchannel.commwriter.ComWriter.DoReply
+QChannelSvr.trpc.qchannel.commwriter.ComWriter.PublishFeed
+qidianservice.135
+qidianservice.207
+qidianservice.269
+qidianservice.290
+SQQzoneSvc.addComment
+SQQzoneSvc.addReply
+SQQzoneSvc.forward
+SQQzoneSvc.like
+SQQzoneSvc.publishmood
+SQQzoneSvc.shuoshuo
+trpc.group_pro.msgproxy.sendmsg
+trpc.login.ecdh.EcdhService.SsoNTLoginPasswordLoginUnusualDevice
+trpc.o3.ecdh_access.EcdhAccess.SsoEstablishShareKey
+trpc.o3.ecdh_access.EcdhAccess.SsoSecureA2Access
+trpc.o3.ecdh_access.EcdhAccess.SsoSecureA2Establish
+trpc.o3.ecdh_access.EcdhAccess.SsoSecureAccess
+trpc.o3.report.Report.SsoReport
+trpc.passwd.manager.PasswdManager.SetPasswd
+trpc.passwd.manager.PasswdManager.VerifyPasswd
+trpc.qlive.relationchain_svr.RelationchainSvr.Follow
+trpc.qlive.word_svr.WordSvr.NewPublicChat
+trpc.qqhb.qqhb_proxy.Handler.sso_handle
+trpc.springfestival.redpacket.LuckyBag.SsoSubmitGrade
+wtlogin.device_lock
+wtlogin.exchange_emp
+wtlogin.login
+wtlogin.name2uin
+wtlogin.qrlogin
+wtlogin.register
+wtlogin.trans_emp
+wtlogin_device.login
+wtlogin_device.tran_sim_emp"#;
 
 pub struct Client {
     /// QEvent Handler 调用 handle 方法外发 QEvent
@@ -142,6 +232,64 @@ impl super::Client {
     /// 获取当前 Client uin
     pub async fn uin(&self) -> i64 {
         self.engine.read().await.uin.load(Ordering::Relaxed)
+    }
+
+    pub async fn sign_packet(&self, pkt: &mut Packet) -> RQResult<QSignResponse<SignData>> {
+        if !SIGN_COMMANDS.contains(&pkt.command_name) {
+            return Ok(Default::default());
+        }
+        let engine = self.engine.read().await;
+        let resp = self
+            .qsign_client
+            .sign(
+                pkt.uin,
+                engine.transport.version.qua,
+                &pkt.command_name,
+                pkt.seq_id,
+                &pkt.body,
+                &engine
+                    .transport
+                    .device
+                    .qimei
+                    .as_ref()
+                    .map(|qimei| qimei.q36.as_str())
+                    .unwrap_or_default(),
+                &engine.transport.device.android_id,
+                &engine.transport.sig.guid,
+            )
+            .await
+            .map_err(|err| RQError::Other(format!("failed to sign packet: {err}")))?;
+        if resp.code != 0 {
+            return Err(RQError::Other(format!(
+                "failed to sign packet, msg: {}",
+                resp.msg
+            )));
+        }
+        let sign = ricq_core::pb::SsoReserveField {
+            flag: 0,
+            qimei: engine
+                .transport
+                .device
+                .qimei
+                .clone()
+                .unwrap_or_default()
+                .q16,
+            newconn_flag: 0,
+            uid: pkt.uin.to_string(),
+            imsi: 0,
+            network_type: 1,
+            ip_stack_type: 1,
+            message_type: 0,
+            sec_info: Some(ricq_core::pb::SsoSecureInfo {
+                sec_sig: decode_hex(&resp.data.sign).unwrap_or_default(),
+                sec_device_token: decode_hex(&resp.data.token).unwrap_or_default(),
+                sec_extra: decode_hex(&resp.data.extra).unwrap_or_default(),
+            }),
+            sso_ip_origin: 0,
+        }
+        .to_bytes();
+        pkt.sign = Some(sign);
+        Ok(resp)
     }
 
     /// 向服务器发包
