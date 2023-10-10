@@ -381,7 +381,9 @@ impl super::super::super::Engine {
                 .append(t116(
                     transport.version.misc_bitmap,
                     transport.version.sub_sig_map,
-                ));
+                ))
+                .append(tlv(0x544, [0u8, 0, 0, 11].as_slice()))
+                .append(tlv(0x547, &*transport.sig.t547));
             // TODO 547, 544
 
             w.put_u16(tlv_writer.count as u16);
@@ -490,7 +492,7 @@ impl super::super::super::Engine {
                 .append(t516())
                 .append(t521(0))
                 .append(t525(t536(&[0x01, 0x00])))
-                // .append(tlv(0x544,"".as_bytes()))
+                .append(tlv(0x544, [0u8, 0, 0, 11].as_slice()))
                 .append(if let Some(ref qimei) = transport.device.qimei {
                     Either::Left(tlv(545, qimei.q16.as_bytes()))
                 } else {
@@ -704,7 +706,7 @@ impl super::super::super::Engine {
                 .append(t516())
                 .append(t521(0))
                 .append(t525(t536(&[0x01, 0x00])))
-                // .append(tlv(0x544,"1".as_bytes()))
+                .append(tlv(0x544, [0u8, 0, 0, 11].as_slice()))
                 .append(if let Some(ref qimei) = transport.device.qimei {
                     Either::Left(tlv(545, qimei.q16.as_bytes()))
                 } else {

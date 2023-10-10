@@ -32,6 +32,7 @@ aes.workspace = true
 rsa.workspace = true
 x509-cert.workspace = true
 chrono.workspace = true
+sha2.workspace = true
 
 [build-dependencies]
 prost-build = "0.9"

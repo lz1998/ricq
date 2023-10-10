@@ -2,6 +2,8 @@
 #![feature(type_alias_impl_trait)]
 #![feature(return_position_impl_trait_in_trait)]
 
+extern crate core;
+
 use std::sync::atomic::{AtomicI32, AtomicI64, AtomicU16, Ordering};
 
 use bytes::Bytes;

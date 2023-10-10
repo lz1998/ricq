@@ -64,33 +64,43 @@ async fn main() {
         .await
         .expect("failed to login with password");
     loop {
+        tracing::info!("{resp:?}");
         match resp {
             LoginResponse::Success(LoginSuccess {
-                                       ref account_info, ..
-                                   }) => {
+                ref account_info, ..
+            }) => {
                 tracing::info!("login success: {:?}", account_info);
                 break;
             }
             LoginResponse::DeviceLocked(LoginDeviceLocked {
-                                            ref sms_phone,
-                                            ref verify_url,
-                                            ref message,
-                                            ..
-                                        }) => {
+                ref sms_phone,
+                ref verify_url,
+                ref message,
+                ..
+            }) => {
                 tracing::info!("device locked: {:?}", message);
                 tracing::info!("sms_phone: {:?}", sms_phone);
                 tracing::info!("verify_url: {:?}", verify_url);
                 tracing::info!("手机打开url，处理完成后重启程序");
-                std::process::exit(0);
+                // std::process::exit(0);
                 //也可以走短信验证
-                // resp = client.request_sms().await.expect("failed to request sms");
+                resp = client.request_sms().await.expect("failed to request sms");
+                tracing::info!("请输入sms");
+                let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
+                let sms = reader
+                    .next()
+                    .await
+                    .transpose()
+                    .expect("failed to read ticket")
+                    .expect("failed to read ticket");
+                resp = client.submit_sms_code(&sms).await.unwrap();
             }
             LoginResponse::NeedCaptcha(LoginNeedCaptcha {
-                                           ref verify_url,
-                                           // 图片应该没了
-                                           image_captcha: ref _image_captcha,
-                                           ..
-                                       }) => {
+                ref verify_url,
+                // 图片应该没了
+                image_captcha: ref _image_captcha,
+                ..
+            }) => {
                 tracing::info!("滑块URL: {:?}", verify_url);
                 tracing::info!("请输入ticket:");
                 let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
@@ -118,10 +128,10 @@ async fn main() {
                 panic!("too many sms request");
             }
             LoginResponse::UnknownStatus(LoginUnknownStatus {
-                                             ref status,
-                                             ref tlv_map,
-                                             ref message,
-                                         }) => {
+                ref status,
+                ref tlv_map,
+                ref message,
+            }) => {
                 panic!(
                     "unknown login status: {:?}, {:?}, {:?}",
                     message, status, tlv_map

@@ -28,6 +28,7 @@ pub struct Sig {
     pub out_packet_session_id: Bytes,
     pub dpwd: Bytes,
     pub t104: Bytes,
+    pub t547: Bytes,
     pub t174: Bytes,
     pub g: Bytes,
     pub t402: Bytes,
