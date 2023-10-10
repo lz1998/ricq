@@ -1,4 +1,5 @@
 use std::convert::TryFrom;
+
 // oicq/wlogin_sdk/request/WtloginHelper.java SigType
 pub const WLOGIN_A2: u32 = 64;
 pub const WLOGIN_A5: u32 = 2;
@@ -56,7 +57,7 @@ pub struct Version {
 pub const fn get_version(p: Protocol) -> Version {
     match p {
         Protocol::IPad => IPAD,
-        Protocol::AndroidPhone => ANDROID_PHONE,
+        Protocol::AndroidPhone => ANDROID_PHONE_GOOGLE,
         Protocol::AndroidWatch => ANDROID_WATCH,
         Protocol::AndroidPad => ANDROID_PAD,
         Protocol::MacOS => MACOS,
@@ -70,42 +71,61 @@ impl From<Protocol> for Version {
     }
 }
 
-pub const ANDROID_PHONE: Version = Version {
+pub const ANDROID_PHONE_GOOGLE: Version = Version {
     apk_id: "com.tencent.mobileqq",
-    app_id: 537164840,
-    sub_app_id: 537164840,
-    app_key: "0S200MNJT807V3GE",
-    sort_version_name: "8.9.63.11390",
-    build_ver: "8.9.63.11390",
-    build_time: 1685069178,
+    app_id: 537064117,
+    sub_app_id: 1,
+    sort_version_name: "8.2.11.4530",
+    build_ver: "8.2.11.4530",
+    build_time: 1582559746, // TODO
     apk_sign: &[
-        0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E, 0xB6,
-        0x8D,
+        0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E, 0xB6, 0x8D,
     ],
-    sdk_version: "6.0.0.2546",
-    sso_version: 20,
+    sdk_version: "6.0.0.2423",
+    sso_version: 7,
     misc_bitmap: 150470524,
-    sub_sig_map: 0x10400,
-    // 16724722
-    main_sig_map: WLOGIN_A5
-        | WLOGIN_RESERVED
-        | WLOGIN_STWEB
-        | WLOGIN_A2
-        | WLOGIN_ST
-        | WLOGIN_LSKEY
-        | WLOGIN_SKEY
-        | WLOGIN_SIG64
-        | 1 << 16
-        | WLOGIN_VKEY
-        | WLOGIN_D2
-        | WLOGIN_SID
-        | WLOGIN_PSKEY
-        | WLOGIN_AQSIG
-        | WLOGIN_LHSIG
-        | WLOGIN_PAYTOKEN,
-    qua: "V1_AND_SQ_8.9.63_4194_YYB_D",
+    sub_sig_map: 66560,
+    main_sig_map: 16724722,
+    qua: "V1_AND_SQ_8.2.11_1380_GM_D",
     protocol: Protocol::AndroidPhone,
+    app_key: "0S200MNJT807V3GE",
 };
+// pub const ANDROID_PHONE: Version = Version {
+//     apk_id: "com.tencent.mobileqq",
+//     app_id: 537164840,
+//     sub_app_id: 537164840,
+//     app_key: "0S200MNJT807V3GE",
+//     sort_version_name: "8.9.63.11390",
+//     build_ver: "8.9.63.11390",
+//     build_time: 1685069178,
+//     apk_sign: &[
+//         0xA6, 0xB7, 0x45, 0xBF, 0x24, 0xA2, 0xC2, 0x77, 0x52, 0x77, 0x16, 0xF6, 0xF3, 0x6E, 0xB6,
+//         0x8D,
+//     ],
+//     sdk_version: "6.0.0.2546",
+//     sso_version: 20,
+//     misc_bitmap: 150470524,
+//     sub_sig_map: 0x10400,
+//     // 16724722
+//     main_sig_map: WLOGIN_A5
+//         | WLOGIN_RESERVED
+//         | WLOGIN_STWEB
+//         | WLOGIN_A2
+//         | WLOGIN_ST
+//         | WLOGIN_LSKEY
+//         | WLOGIN_SKEY
+//         | WLOGIN_SIG64
+//         | 1 << 16
+//         | WLOGIN_VKEY
+//         | WLOGIN_D2
+//         | WLOGIN_SID
+//         | WLOGIN_PSKEY
+//         | WLOGIN_AQSIG
+//         | WLOGIN_LHSIG
+//         | WLOGIN_PAYTOKEN,
+//     qua: "V1_AND_SQ_8.9.63_4194_YYB_D",
+//     protocol: Protocol::AndroidPhone,
+// };
 
 pub const APAD: Version = Version {
     apk_id: "com.tencent.mobileqq",

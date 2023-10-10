@@ -490,6 +490,7 @@ impl super::super::super::Engine {
                 .append(t516())
                 .append(t521(0))
                 .append(t525(t536(&[0x01, 0x00])))
+                // .append(tlv(0x544,"".as_bytes()))
                 .append(if let Some(ref qimei) = transport.device.qimei {
                     Either::Left(tlv(545, qimei.q16.as_bytes()))
                 } else {
@@ -703,6 +704,7 @@ impl super::super::super::Engine {
                 .append(t516())
                 .append(t521(0))
                 .append(t525(t536(&[0x01, 0x00])))
+                // .append(tlv(0x544,"1".as_bytes()))
                 .append(if let Some(ref qimei) = transport.device.qimei {
                     Either::Left(tlv(545, qimei.q16.as_bytes()))
                 } else {

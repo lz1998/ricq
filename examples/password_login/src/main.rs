@@ -22,7 +22,7 @@ async fn main() {
             tracing_subscriber::fmt::layer()
                 .with_target(true)
                 .with_timer(tracing_subscriber::fmt::time::OffsetTime::new(
-                    time::UtcOffset::__from_hms_unchecked(8, 0, 0),
+                    unsafe { time::UtcOffset::__from_hms_unchecked(8, 0, 0) },
                     time::macros::format_description!(
                         "[year repr:last_two]-[month]-[day] [hour]:[minute]:[second]"
                     ),
@@ -66,17 +66,17 @@ async fn main() {
     loop {
         match resp {
             LoginResponse::Success(LoginSuccess {
-                ref account_info, ..
-            }) => {
+                                       ref account_info, ..
+                                   }) => {
                 tracing::info!("login success: {:?}", account_info);
                 break;
             }
             LoginResponse::DeviceLocked(LoginDeviceLocked {
-                ref sms_phone,
-                ref verify_url,
-                ref message,
-                ..
-            }) => {
+                                            ref sms_phone,
+                                            ref verify_url,
+                                            ref message,
+                                            ..
+                                        }) => {
                 tracing::info!("device locked: {:?}", message);
                 tracing::info!("sms_phone: {:?}", sms_phone);
                 tracing::info!("verify_url: {:?}", verify_url);
@@ -86,11 +86,11 @@ async fn main() {
                 // resp = client.request_sms().await.expect("failed to request sms");
             }
             LoginResponse::NeedCaptcha(LoginNeedCaptcha {
-                ref verify_url,
-                // 图片应该没了
-                image_captcha: ref _image_captcha,
-                ..
-            }) => {
+                                           ref verify_url,
+                                           // 图片应该没了
+                                           image_captcha: ref _image_captcha,
+                                           ..
+                                       }) => {
                 tracing::info!("滑块URL: {:?}", verify_url);
                 tracing::info!("请输入ticket:");
                 let mut reader = FramedRead::new(tokio::io::stdin(), LinesCodec::new());
@@ -118,10 +118,10 @@ async fn main() {
                 panic!("too many sms request");
             }
             LoginResponse::UnknownStatus(LoginUnknownStatus {
-                ref status,
-                ref tlv_map,
-                ref message,
-            }) => {
+                                             ref status,
+                                             ref tlv_map,
+                                             ref message,
+                                         }) => {
                 panic!(
                     "unknown login status: {:?}, {:?}, {:?}",
                     message, status, tlv_map
